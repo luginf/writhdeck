@@ -29,6 +29,8 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
+set ::version          "v20260507"
+
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
 
@@ -1041,6 +1043,24 @@ proc status-build {tokens state} {
 
 markers-update
 
+proc build-extra-entries {shown} {
+    if {!$::state_cache_valid} { state-load }
+    set result {}
+    set vfav {}
+    foreach p $::favorites_list { if {[file isfile $p]} { lappend vfav $p } }
+    if {[llength $vfav]} {
+        lappend result [list header "" [t br_favorites]]
+        foreach p $vfav { lappend result [list favorite [file dirname $p] [file tail $p]] }
+    }
+    set vrec {}
+    foreach p $::recent_list { if {[file isfile $p] && $p ni $shown} { lappend vrec $p } }
+    if {[llength $vrec]} {
+        lappend result [list header "" [t br_recent]]
+        foreach p $vrec { lappend result [list recent [file dirname $p] [file tail $p]] }
+    }
+    return $result
+}
+
 if {!$::no_gui} {
 wm title . "Writhdeck"
 
@@ -1193,24 +1213,6 @@ if {$::cfg_bar_height > 0} {
 
 # browser state — each entry: {type dir name}  (type = header | file | favorite | recent)
 set ::br_entries {}
-
-proc build-extra-entries {shown} {
-    if {!$::state_cache_valid} { state-load }
-    set result {}
-    set vfav {}
-    foreach p $::favorites_list { if {[file isfile $p]} { lappend vfav $p } }
-    if {[llength $vfav]} {
-        lappend result [list header "" [t br_favorites]]
-        foreach p $vfav { lappend result [list favorite [file dirname $p] [file tail $p]] }
-    }
-    set vrec {}
-    foreach p $::recent_list { if {[file isfile $p] && $p ni $shown} { lappend vrec $p } }
-    if {[llength $vrec]} {
-        lappend result [list header "" [t br_recent]]
-        foreach p $vrec { lappend result [list recent [file dirname $p] [file tail $p]] }
-    }
-    return $result
-}
 
 proc br-refresh {} {
     set prev ""
@@ -2372,11 +2374,14 @@ proc help-dialog {} {
     set sections {}
     set height 23
     set _ts [clock seconds]
+    lappend sections "WRITHDECK" [list \
+        "Version"       $::version \
+    ]
     lappend sections "DATE & TIME" [list \
         "Current time"  [clock format $_ts -format "%H:%M:%S"] \
         "Date"          [clock format $_ts -format "%Y-%m-%d"] \
     ]
-    incr height 4
+    incr height 5
     set _sel_txt ""
     catch { set _sel_txt [[active-ed] get sel.first sel.last] }
     if {$_sel_txt ne ""} {
@@ -2460,10 +2465,14 @@ proc help-dialog {} {
     }
     pack $w.ok -pady 8
 
-    bind $w <Escape>    [list destroy $w]
-    bind $w <Return>    [list destroy $w]
-    bind $w <Control-h> [list destroy $w]
-    focus $w.ok
+    bind $w.t <Up>         {%W yview scroll -1 units; break}
+    bind $w.t <Down>       {%W yview scroll  1 units; break}
+    bind $w.t <Prior>      {%W yview scroll -5 units; break}
+    bind $w.t <Next>       {%W yview scroll  5 units; break}
+    bind $w.t <KeyPress-q> "[list after idle [list destroy $w]]; break"
+    bind $w.t <Control-h>  "[list after idle [list destroy $w]]; break"
+    bind $w   <Control-h>  [list after idle [list destroy $w]]
+    focus $w.t
 }
 
 proc active-ed {} {
@@ -2940,6 +2949,7 @@ proc tui-help-dialog {rows cols wc cc {sel_wc -1} {sel_cc -1}} {
         [list [format "  [t help_cur_time]" \
             [clock format $_ts -format "%H:%M:%S"] \
             [clock format $_ts -format "%Y-%m-%d"]] 0] \
+        [list "  WrithDeck $::version" 0] \
         [list "" 0] \
     ]
     if {$sel_wc >= 0} {
@@ -2966,21 +2976,37 @@ proc tui-help-dialog {rows cols wc cc {sel_wc -1} {sel_cc -1}} {
         [list [format "  %-16s %s" $lbl_toc  [t help_k_toc]]  0] \
         [list [format "  %-16s %s" $lbl_help [t help_k_help]] 0] \
         [list "" 0] \
-        [list "  [t help_close]" 1]
+        [list "" 0]
     set h [llength $lines]
     set w 60
-    set top  [expr {max(0, ($rows - $h) / 2)}]
-    set left [expr {max(0, ($cols - $w) / 2)}]
-    puts -nonewline "\033\[2J"
-    for {set i 0} {$i < $h} {incr i} {
-        tui-move [expr {$top + $i}] $left
-        lassign [lindex $lines $i] txt inv
-        if {$inv} { tui-attr reverse }
-        puts -nonewline "[string range $txt 0 [expr {$w-1}]]\033\[K"
-        if {$inv} { tui-attr off }
+    set left   [expr {max(0, ($cols - $w) / 2)}]
+    set usable [expr {$rows - 2}]
+    set scroll 0
+
+    while 1 {
+        set max_scroll [expr {max(0, $h - $usable)}]
+        puts -nonewline "\033\[2J"
+        for {set i 0} {$i < $usable} {incr i} {
+            set li [expr {$scroll + $i}]
+            set row_y [expr {$i + 1}]
+            if {$li < $h} {
+                tui-move $row_y $left
+                lassign [lindex $lines $li] txt inv
+                if {$inv} { tui-attr reverse }
+                puts -nonewline "[string range $txt 0 [expr {$w-1}]]\033\[K"
+                if {$inv} { tui-attr off }
+            } else {
+                tui-move $row_y 0; puts -nonewline "\033\[K"
+            }
+        }
+        set hint [expr {$max_scroll > 0 ? "  ↑↓ scroll   q / Ctrl+H  close" : "  q / Ctrl+H  close"}]
+        tui-bar [expr {$rows-1}] $hint "" $cols
+        flush stdout
+        set key [tui-getch]
+        if {$key eq "q" || $key eq $::cfg_tui_help} break
+        if {$key eq "UP"   && $scroll > 0}            { incr scroll -1 }
+        if {$key eq "DOWN" && $scroll < $max_scroll}  { incr scroll  1 }
     }
-    flush stdout
-    tui-getch
     puts -nonewline "\033\[2J"
 }
 
