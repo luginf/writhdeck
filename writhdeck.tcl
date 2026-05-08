@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260508"
+set ::version          "v20260508e"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -242,8 +242,12 @@ proc recent-remove {path} {
 
 proc recent-rename {old new} {
     if {!$::state_cache_valid} { state-load }
+    set changed 0
     set idx [lsearch -exact $::recent_list $old]
-    if {$idx >= 0} { set ::recent_list [lreplace $::recent_list $idx $idx $new]; state-save }
+    if {$idx >= 0} { set ::recent_list [lreplace $::recent_list $idx $idx $new]; set changed 1 }
+    set idx [lsearch -exact $::favorites_list $old]
+    if {$idx >= 0} { set ::favorites_list [lreplace $::favorites_list $idx $idx $new]; set changed 1 }
+    if {$changed} { state-save }
 }
 
 # ─── daily writing stats ──────────────────────────────────────────────────────
@@ -1169,7 +1173,7 @@ proc build-extra-entries {shown} {
         foreach p $vfav { lappend result [list favorite [file dirname $p] [file tail $p]] }
     }
     set vrec {}
-    foreach p $::recent_list { if {[file isfile $p] && $p ni $shown} { lappend vrec $p } }
+    foreach p $::recent_list { if {[file isfile $p] && $p ni $shown && $p ni $vfav} { lappend vrec $p } }
     if {[llength $vrec]} {
         lappend result [list header "" [t br_recent]]
         foreach p $vrec { lappend result [list recent [file dirname $p] [file tail $p]] }
@@ -1312,6 +1316,7 @@ wm minsize . 500 400
 
 bind Button <FocusIn>  { %W configure -state active }
 bind Button <FocusOut> { %W configure -state normal }
+bind Button <Return>   { %W invoke }
 
 # ─── browser frame ────────────────────────────────────────────────────────────
 frame .br -bg $bg
@@ -1399,7 +1404,7 @@ proc br-refresh {} {
     if {$new_sel < 0} { set new_sel $first_file }
     if {$new_sel >= 0} {
         .br.mid.lst selection set $new_sel
-        .br.mid.lst see $new_sel
+        if {$prev eq ""} { .br.mid.lst yview 0 } else { .br.mid.lst see $new_sel }
     }
 }
 
