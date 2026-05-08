@@ -817,9 +817,9 @@ set ::i18n {
         toc_jump_bar       "↵ jump  esc/ctrl+q cancel"
         toc_headings       "%d heading%s"
         br_no_docs         "No documents yet. Press n to create one."
-        br_help_gui        " ↵ open  n new  t scratchpad  f fav  s stats  b backup  d delete  r rename  i info  z reload  q quit  h help"
-        br_help_tui        "↵ open  n new  t scratchpad  f fav  s stats  b backup  d delete  r rename  i info  q quit   %s help"
-        br_backed_up       "backup: %s"
+        br_help_gui        "(h)elp (n)ew scra(t)chpad (f)av (s)tats (b)ackup  (d)elete (r)ename (i)nfo z:reload %s sections (q)uit"
+        br_help_tui        "%s help (n)ew scra(t)chpad (f)av (s)tats (b)ackup  (d)elete (r)ename (i)nfo %s sections (q)uit"
+        br_backed_up       "backup %s → %s"
         br_favorites       "Favorites"
         br_stats_title     "Writing stats"
         br_stats_no_data   "No writing stats yet for this file."
@@ -867,6 +867,9 @@ set ::i18n {
         help_shift_arrows  "Shift+Arrows  Extend selection"
         help_k_split       "Split view (toggle)"
         help_k_split_focus "Split view — cycle focus"
+        br_toc_title       "Browser sections"
+        br_toc_empty       "no sections"
+        br_toc_bar         "↑↓ nav  ↵ jump  esc cancel"
         dlg_yes            "Yes"
         dlg_no             "No"
         dlg_cancel         "Cancel"
@@ -879,9 +882,9 @@ set ::i18n {
         toc_jump_bar       "↵ aller  esc/ctrl+q annuler"
         toc_headings       "%d titre%s"
         br_no_docs         "Aucun document. Appuyez sur n pour en créer un."
-        br_help_gui        " ↵ ouvrir  n nouveau  t bloc-notes  f fav  s stats  b backup  d supprimer  r renommer  i infos  z recharger  q quitter  h aide"
-        br_help_tui        "↵ ouvrir  n nouveau  t bloc-notes  f fav  s stats  b backup  d supprimer  r renommer  i infos  q quitter   %s aide"
-        br_backed_up       "sauvegarde : %s"
+        br_help_gui        " h:aide (n)ouveau  t:bloc-notes  (f)av  (s)tats  (b)ackup  d:supprimer  (r)enommer  (i)nfos  z:recharger  %s sections  (q)uitter"
+        br_help_tui        "%s aide (n)ouveau bloc-no(t)es  (f)av  (s)tats  (b)ackup  d:supprimer  (r)enommer  (i)nfos  %s sections  (q)uitter"
+        br_backed_up       "sauvegarde %s → %s"
         br_favorites       "Favoris"
         br_stats_title     "Statistiques d'écriture"
         br_stats_no_data   "Aucune statistique d'écriture pour ce fichier."
@@ -929,6 +932,9 @@ set ::i18n {
         help_shift_arrows  "Maj+Flèches   Étendre la sélection"
         help_k_split       "Vue partagée (bascule)"
         help_k_split_focus "Vue partagée — changer de fenêtre"
+        br_toc_title       "Sections du navigateur"
+        br_toc_empty       "aucune section"
+        br_toc_bar         "↑↓ nav  ↵ aller  esc annuler"
         dlg_yes            "Oui"
         dlg_no             "Non"
         dlg_cancel         "Annuler"
@@ -1176,8 +1182,10 @@ proc do-backup {dir name} {
     file mkdir $bdir
     set ts  [clock format [clock seconds] -format "%Y-%m-%dT%Hh%M"]
     set dst [file join $bdir "[file rootname $name]_${ts}[file extension $name]"]
-    file copy -force [file join $dir $name] $dst
-    return [file tail $dst]
+    set src [file join $dir $name]
+    if {[file type $src] eq "link"} { set src [file normalize $src] }
+    file copy -force $src $dst
+    return $dst
 }
 
 proc toggle-favorite {path} {
@@ -1329,7 +1337,7 @@ pack .br.mid     -fill both  -expand 1
 
 frame .br.bar -bg $bg_bar
 label .br.bar.help \
-    -text [t br_help_gui] \
+    -text [format [t br_help_gui] $::cfg_lbl_toc] \
     -bg $bg_bar -fg $fg_bar -font $font_sm -anchor w -padx 4 -pady $bar_pady
 label .br.bar.cnt -textvariable ::br_status \
     -bg $bg_bar -fg $fg_bar -font $font_sm -anchor e -padx 8 -pady $bar_pady
@@ -1580,7 +1588,8 @@ proc br-backup {} {
     set e [br-selected]
     if {![llength $e]} return
     lassign $e _ dir name
-    info-dialog [t br_backed_up [do-backup $dir $name]]
+    set dst [do-backup $dir $name]
+    info-dialog [t br_backed_up $name [string map [list $::HOME_DIR ~] [file dirname $dst]]]
 }
 
 proc br-toggle-favorite {} {
@@ -2498,7 +2507,64 @@ proc toc-jump {w headings} {
 }
 
 bind .ed.t <$::cfg_key_toc>          { toc-show;   break }
+bind .br.mid.lst <$::cfg_key_toc>   { br-toc-show; break }
 bind .ed.t <$::cfg_key_line_numbers> { ln-toggle;  break }
+
+proc br-toc-show {} {
+    set sections {}
+    for {set i 0} {$i < [llength $::br_entries]} {incr i} {
+        lassign [lindex $::br_entries $i] type dir name
+        if {$type eq "header"} {
+            set lbl [expr {$name ne "" ? $name : [string map [list $::HOME_DIR ~] $dir]}]
+            lappend sections [list $i $lbl]
+        }
+    }
+    if {![llength $sections]} { set-msg [t br_toc_empty]; return }
+
+    set w .brtoc
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [t br_toc_title]
+    wm resizable $w 1 0
+    wm transient $w .
+
+    set h [expr {min([llength $sections], 12)}]
+    listbox $w.lst \
+        -font $::font -bg $::bg -fg $::fg_bar \
+        -selectbackground $::bg_sel -selectforeground $::fg \
+        -activestyle none -borderwidth 0 -highlightthickness 0 \
+        -width 40 -height $h
+    pack $w.lst -fill both -expand 1 -padx 2 -pady 2
+
+    foreach sec $sections {
+        lassign $sec idx lbl
+        $w.lst insert end "  $lbl"
+    }
+    $w.lst selection set 0
+    $w.lst activate 0
+    $w.lst see 0
+
+    bind $w.lst <Return>          [list br-toc-jump $w $sections]
+    bind $w.lst <Double-1>        [list br-toc-jump $w $sections]
+    bind $w.lst <ButtonRelease-1> "[list br-toc-jump $w $sections]; break"
+    bind $w     <Escape>          [list destroy $w]
+    bind $w     <Control-q>       [list destroy $w]
+    bind $w.lst <Control-q>       [list destroy $w]
+    bind $w     <$::cfg_key_toc>  [list destroy $w]
+    bind $w     <Destroy>  { after idle { catch { focus .br.mid.lst } } }
+    focus $w.lst
+}
+
+proc br-toc-jump {w sections} {
+    set sel [$w.lst curselection]
+    if {![llength $sel]} return
+    lassign [lindex $sections [lindex $sel 0]] idx lbl
+    destroy $w
+    .br.mid.lst selection clear 0 end
+    .br.mid.lst selection set $idx
+    .br.mid.lst see $idx
+    focus .br.mid.lst
+}
 
 # ─── taille de police dynamique ───────────────────────────────────────────────
 proc apply-line-spacing {} {
@@ -2601,6 +2667,7 @@ proc help-dialog {} {
             "i"                                 "Show full path" \
             "d"                                 "Delete" \
             "r"                                 "Rename" \
+            [key-label $::cfg_key_toc]          "Browser sections" \
             [key-label $::cfg_key_fullscreen]   "Fullscreen" \
             [key-label $::cfg_key_open]         "Open file" \
             "h / [key-label $::cfg_key_help]"   "Help" \
@@ -3168,6 +3235,7 @@ proc tui-help-dialog {rows cols wc cc {sel_wc -1} {sel_cc -1}} {
         [list [format $fb "i"              "Show full path"]           0] \
         [list [format $fb "d"              "Delete"]                   0] \
         [list [format $fb "r"              "Rename"]                   0] \
+        [list [format $fb $lbl_toc         "Browser sections"]         0] \
         [list [format $fb $lbl_open        "Open any file"]            0] \
         [list [format $fb "h / $lbl_help"  "Help"]                     0] \
         [list [format $fb "q / Ctrl+Q"     "Quit"]                     0] \
@@ -3672,7 +3740,7 @@ proc tui-browser {} {
             while {$row < $rows-2} { tui-move $row 0; puts -nonewline "\033\[K"; incr row }
         }
         set plu [expr {$fcount != 1 ? "s" : ""}]
-        if {$::cfg_help_bar ne ""} { tui-help [expr {$rows-2}] [t br_help_tui $::cfg_lbl_help] $cols }
+        if {$::cfg_help_bar ne ""} { tui-help [expr {$rows-2}] [format [t br_help_tui] $::cfg_lbl_help $::cfg_lbl_toc] $cols }
         set clk [expr {[status-zone-of clock] ne "" ? "  [clock format [clock seconds] -format {%H:%M}]" : ""}]
         if {$msg ne ""} { tui-bar [expr {$rows-1}] " $msg" "${clk} " $cols; set msg ""
         } else { tui-bar [expr {$rows-1}] " [string map [list $::HOME_DIR ~] $::DOCS_DIR_DEFAULT]" \
@@ -3767,7 +3835,8 @@ proc tui-browser {} {
             b {
                 if {$cfi >= 0} {
                     lassign [lindex $entries $cfi] _ dir name
-                    set msg [t br_backed_up [do-backup $dir $name]]
+                    set dst [do-backup $dir $name]
+                    set msg [t br_backed_up $name [string map [list $::HOME_DIR ~] [file dirname $dst]]]
                 }
             }
             d {
@@ -3801,6 +3870,55 @@ proc tui-browser {} {
         }
         if {$key eq $::cfg_tui_help && $key ne "h"} {
             tui-help-dialog $rows $cols 0 0
+        }
+        if {$key eq $::cfg_tui_toc} {
+            set _secs {}
+            for {set _i 0} {$_i < [llength $entries]} {incr _i} {
+                lassign [lindex $entries $_i] _t _d _n
+                if {$_t eq "header"} {
+                    set _lbl [expr {$_n ne "" ? $_n : [string map [list $::HOME_DIR ~] $_d]}]
+                    lappend _secs [list $_i $_lbl]
+                }
+            }
+            if {[llength $_secs] > 0} {
+                set _ns [llength $_secs]; set _sel 0; set _scroll 0
+                set _usable [expr {$rows-3}]
+                while 1 {
+                    if {$_sel < $_scroll}             { set _scroll $_sel }
+                    if {$_sel >= $_scroll + $_usable} { set _scroll [expr {$_sel - $_usable + 1}] }
+                    tui-attr bold; tui-fill 0 " [t br_toc_title]" $cols; tui-attr off
+                    for {set _i 0} {$_i < $_usable} {incr _i} {
+                        set _idx [expr {$_scroll+$_i}]
+                        if {$_idx >= $_ns} {
+                            tui-move [expr {$_i+1}] 0; puts -nonewline "\033\[K"
+                            continue
+                        }
+                        set _line [format "  %s" [lindex [lindex $_secs $_idx] 1]]
+                        if {$_idx == $_sel} { tui-attr reverse }
+                        tui-fill [expr {$_i+1}] [string range $_line 0 [expr {$cols-1}]] $cols
+                        if {$_idx == $_sel} { tui-attr off }
+                    }
+                    tui-help [expr {$rows-2}] [t br_toc_bar] $cols
+                    tui-bar  [expr {$rows-1}] "" "" $cols
+                    flush stdout
+                    set _key [tui-getch]
+                    switch -- $_key {
+                        ESC - "\x11" - q { break }
+                        UP - k   { if {$_sel > 0}      { incr _sel -1 } }
+                        DOWN - j { if {$_sel < $_ns-1} { incr _sel  1 } }
+                        HOME     { set _sel 0 }
+                        END      { set _sel [expr {$_ns-1}] }
+                        ENTER {
+                            set _hi [lindex [lindex $_secs $_sel] 0]
+                            for {set _j 0} {$_j < [llength $fidx]} {incr _j} {
+                                if {[lindex $fidx $_j] > $_hi} { set sel $_j; break }
+                            }
+                            break
+                        }
+                    }
+                }
+                puts -nonewline "\033\[2J"
+            }
         }
         if {$key eq $::cfg_tui_open} {
             set _dir [expr {$cfi >= 0 ? [lindex [lindex $entries $cfi] 1] : $::DOCS_DIR_DEFAULT}]

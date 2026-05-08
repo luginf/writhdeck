@@ -108,6 +108,10 @@ br_ma_cle    "Ma chaîne"    # dans le bloc fr {}
 - **Font bold** : `font_weight` non exposé dans l'INI (retiré, ne fonctionnait pas de façon fiable). Utiliser le nom complet de la famille si la variante bold est enregistrée séparément.
 - **TUI Windows** : mode TUI bloqué explicitement (`stty` absent).
 
+## Déjà implémenté (suite)
+
+- **Navigation sections browser (F11)** : `br-toc-show` / `br-toc-jump` (GUI) — popup listbox des en-têtes de section du browser (dossiers + Favoris + Récents) ; TUI — overlay numéroté, touche 1–9 pour sauter à la section. Binding : `bind .br.mid.lst <$::cfg_key_toc>`. `br_help_gui` utilise maintenant `%s` pour `cfg_lbl_toc` → formater avec `[format [t br_help_gui] $::cfg_lbl_toc]`.
+
 ## Idées non implémentées
 
 - **Filtre browser** : taper des lettres filtre les fichiers en temps réel (~20 lignes)
