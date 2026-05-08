@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260508e"
+set ::version          "v20260508f"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -828,6 +828,7 @@ set ::i18n {
         br_stats_title     "Writing stats"
         br_stats_no_data   "No writing stats yet for this file."
         br_stats_today     "Today"
+        br_stats_total     "Total"
         br_stats_clear     "Clear stats"
         br_stats_clear_confirm "Clear all writing stats for \"%s\"?"
         br_fav_added       "★ added to favorites: %s"
@@ -893,6 +894,7 @@ set ::i18n {
         br_stats_title     "Statistiques d'écriture"
         br_stats_no_data   "Aucune statistique d'écriture pour ce fichier."
         br_stats_today     "Aujourd'hui"
+        br_stats_total     "Total"
         br_stats_clear     "Effacer les stats"
         br_stats_clear_confirm "Effacer toutes les statistiques de \"%s\" ?"
         br_fav_added       "★ ajouté aux favoris : %s"
@@ -1625,16 +1627,20 @@ proc br-stats {} {
     grab $w
     text $w.t -font $::font_sm -state normal -bg $::bg -fg $::fg \
         -borderwidth 0 -padx 16 -pady 12 -width 36 \
-        -height [expr {$nrows + 5}] -cursor arrow
+        -height [expr {$nrows + 7}] -cursor arrow
     $w.t tag configure heading -foreground $::fg_bar -font [concat $::font_sm bold]
     $w.t insert end "\n  [file tail $path]\n" heading
     $w.t insert end [format "\n  %-14s %s\n" "Date" "Words"] heading
     set today [clock format [clock seconds] -format "%Y-%m-%d"]
+    set grand_total 0
     foreach date [lsort -decreasing [dict keys $fdata]] {
         set n [dict get $fdata $date]
+        incr grand_total $n
         set lbl [expr {$date eq $today ? "$date  ← [t br_stats_today]" : $date}]
         $w.t insert end [format "  %-26s %d\n" $lbl $n]
     }
+    $w.t insert end "\n"
+    $w.t insert end [format "  %-26s %d\n" [t br_stats_total] $grand_total] heading
     $w.t configure -state disabled
     frame $w.btns
     button $w.btns.ok    -text "Close"           -font $::font_sm \
@@ -3807,11 +3813,15 @@ proc tui-browser {} {
                         set _today [clock format [clock seconds] -format "%Y-%m-%d"]
                         set _lines [list [list "  [t br_stats_title] — $name" 1] [list "" 0] \
                             [list [format "  %-14s %s" "Date" "Words"] 1]]
+                        set _grand_total 0
                         foreach _date [lsort -decreasing [dict keys $_fdata]] {
                             set _n [dict get $_fdata $_date]
+                            incr _grand_total $_n
                             set _lbl [expr {$_date eq $_today ? "$_date  ← [t br_stats_today]" : $_date}]
                             lappend _lines [list [format "  %-28s %d" $_lbl $_n] 0]
                         }
+                        lappend _lines [list "" 0]
+                        lappend _lines [list [format "  %-28s %d" [t br_stats_total] $_grand_total] 1]
                         lappend _lines [list "" 0]
                         set _h [llength $_lines]; set _w 46
                         set _left [expr {max(0,($cols-$_w)/2)}]
