@@ -47,6 +47,8 @@ Affichée dans l'aide GUI (section DATE & TIME) et l'aide TUI (en-tête en inver
 - Procs stats : `daily-open`, `daily-today`, `daily-update`, `daily-cleanup`
 - Format `daily` : tableau de strings `"filepath\tdate\tN"` (tab comme séparateur)
 
+> **Règle — chemins absolus** : tous les chemins stockés dans `.writhdeck.json` doivent être absolus. Appeler `file normalize $path` en tête de chaque proc qui lit ou écrit un chemin (`cursor-get/put`, `recent-push/remove/rename`, `toggle-favorite`, `daily-open`, `daily-clear`). `state-load` normalise également à la lecture pour corriger les données existantes.
+
 ## Stats d'écriture journalières
 
 - `::session_file` + `::session_baseline` + `::session_max_today` — état de la session courante

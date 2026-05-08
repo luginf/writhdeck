@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260508f"
+set ::version          "v20260508g"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -175,12 +175,16 @@ proc state-load {} {
             }
         }
     }
-    set ::favorites_list [state-parse-array $raw "favorites"]
-    set ::recent_list    [state-parse-array $raw "recent"]
+    foreach p [state-parse-array $raw "favorites"] { lappend ::favorites_list [file normalize $p] }
+    foreach p [state-parse-array $raw "recent"]    { lappend ::recent_list    [file normalize $p] }
+    set new_cache {}
+    dict for {k v} $::cursor_cache { dict set new_cache [file normalize $k] $v }
+    set ::cursor_cache $new_cache
     foreach item [state-parse-array $raw "daily"] {
         set parts [split $item "\t"]
         if {[llength $parts] == 3} {
             lassign $parts fp date cnt
+            set fp [file normalize $fp]
             if {![dict exists $::daily_data $fp]} { dict set ::daily_data $fp {} }
             dict set ::daily_data $fp $date [expr {int($cnt)}]
         }
@@ -211,6 +215,7 @@ proc state-save {} {
 
 proc cursor-get {filepath} {
     if {!$::cfg_cursor_restore} { return {1 0} }
+    set filepath [file normalize $filepath]
     if {!$::state_cache_valid} { state-load }
     if {[dict exists $::cursor_cache $filepath]} {
         lassign [dict get $::cursor_cache $filepath] cy cx
@@ -221,12 +226,14 @@ proc cursor-get {filepath} {
 
 proc cursor-put {filepath cy cx} {
     if {!$::cfg_cursor_restore} return
+    set filepath [file normalize $filepath]
     if {!$::state_cache_valid} { state-load }
     dict set ::cursor_cache $filepath [list [expr {$cy - 1}] $cx]
     state-save
 }
 
 proc recent-push {path} {
+    set path [file normalize $path]
     if {!$::state_cache_valid} { state-load }
     set ::recent_list [lsearch -all -inline -not -exact $::recent_list $path]
     set ::recent_list [linsert $::recent_list 0 $path]
@@ -235,12 +242,15 @@ proc recent-push {path} {
 }
 
 proc recent-remove {path} {
+    set path [file normalize $path]
     if {!$::state_cache_valid} { state-load }
     set ::recent_list [lsearch -all -inline -not -exact $::recent_list $path]
     state-save
 }
 
 proc recent-rename {old new} {
+    set old [file normalize $old]
+    set new [file normalize $new]
     if {!$::state_cache_valid} { state-load }
     set changed 0
     set idx [lsearch -exact $::recent_list $old]
@@ -252,6 +262,7 @@ proc recent-rename {old new} {
 
 # ─── daily writing stats ──────────────────────────────────────────────────────
 proc daily-open {filepath wc} {
+    set filepath [file normalize $filepath]
     set ::session_file $filepath
     set today [clock format [clock seconds] -format "%Y-%m-%d"]
     if {!$::state_cache_valid} { state-load }
@@ -296,6 +307,7 @@ proc daily-cleanup {} {
 }
 
 proc daily-clear {filepath} {
+    set filepath [file normalize $filepath]
     if {[dict exists $::daily_data $filepath]} {
         dict unset ::daily_data $filepath
     }
@@ -1195,6 +1207,7 @@ proc do-backup {dir name} {
 }
 
 proc toggle-favorite {path} {
+    set path [file normalize $path]
     if {!$::state_cache_valid} { state-load }
     set idx [lsearch -exact $::favorites_list $path]
     if {$idx >= 0} {
