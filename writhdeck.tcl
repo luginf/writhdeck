@@ -191,7 +191,7 @@ proc state-load {} {
     dict for {k v} $::cursor_cache { dict set new_cache [file normalize $k] $v }
     set ::cursor_cache $new_cache
     foreach item [state-parse-array $raw "daily"] {
-        set item [string map [list {\\t} "\t"] $item]
+        set item [string map [list {\t} "\t"] $item]
         set parts [split $item "\t"]
         if {[llength $parts] >= 3} {
             set fp [file normalize [lindex $parts 0]]
@@ -226,7 +226,28 @@ proc state-save {} {
         lappend dp "\"${entry}\""
     }
     set fh [open $::STATE_FILE w]; chan configure $fh -encoding utf-8
-    puts $fh "\{\"cursors\":\{[join $cp ,]\},\"favorites\":\[[join $fp ,]\],\"recent\":\[[join $rp ,]\],\"daily\":\[[join $dp ,]\]\}"
+    puts $fh "\{"
+    if {[llength $cp]} {
+        puts $fh "\"cursors\":\{\n[join $cp ",\n"]\n\},"
+    } else {
+        puts $fh "\"cursors\":\{\},"
+    }
+    if {[llength $fp]} {
+        puts $fh "\"favorites\":\[\n[join $fp ",\n"]\n\],"
+    } else {
+        puts $fh "\"favorites\":\[\],"
+    }
+    if {[llength $rp]} {
+        puts $fh "\"recent\":\[\n[join $rp ",\n"]\n\],"
+    } else {
+        puts $fh "\"recent\":\[\],"
+    }
+    if {[llength $dp]} {
+        puts $fh "\"daily\":\[\n[join $dp ",\n"]\n\]"
+    } else {
+        puts $fh "\"daily\":\[\]"
+    }
+    puts $fh "\}"
     close $fh
 }
 

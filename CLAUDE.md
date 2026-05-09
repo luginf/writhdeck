@@ -78,7 +78,7 @@ Hand-rolled JSON (no external parser):
 ```
 - One `daily` entry per file; all its dates packed as `\t`-separated pairs after the path.
 - `\t` is written as the two-char JSON escape sequence `\t`, not a literal tab (which is invalid JSON).
-- `state-parse-array` uses regex `(?:[^"\\]|\\.)*` to handle escape sequences; `state-load` then calls `string map [list {\\t} "\t"]` before `split`.
+- `state-parse-array` uses regex `(?:[^"\\]|\\.)*` to handle escape sequences; `state-load` then calls `string map [list {\t} "\t"]` before `split`. Note: `{\t}` in Tcl braces is 2 chars (backslash + t), not 1 — do not write `{\\t}` (3 chars) by mistake.
 - `state-load` / `state-save` rewrite the whole file each time.
 - `state-load` has a guard (`$::state_cache_valid`) — call `set ::state_cache_valid 0` to force reload.
 - Daily stats use a high-water mark: word deletions never reduce the count.
