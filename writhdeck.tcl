@@ -6,7 +6,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 #     writhdeck.tcl 
 #     
-#  ~  Tcl/Tk (console/GUI) text editor for writerdecks ~
+#  ~  Tcl/Tk 8.6 (console/GUI) text editor for writerdecks ~
 #
 #     Usage: tclsh writhdeck.tcl [--no-gui] [filename]
 # 
@@ -16,8 +16,8 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #    
 #    BSD Zero Clause License
 #
-#    Permission to use, copy, modify, and/or distribute this software for any purpose 
-#    with or without fee is hereby granted.
+#    Permission to use, copy, modify, and/or distribute this software 
+#    for any purpose with or without fee is hereby granted.
 #
 #    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES 
 #    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES 
@@ -105,6 +105,16 @@ if {!$::no_gui} {
 
 set ::HOME_DIR [expr {[info exists ::env(HOME)] ? $::env(HOME) : \
     ([info exists ::env(USERPROFILE)] ? $::env(USERPROFILE) : [file normalize ~])}]
+
+# Tcl 9 no longer expands ~ in file normalize; this proc handles it explicitly.
+proc tilde-expand {path} {
+    if {[string index $path 0] ne "~"} { return $path }
+    if {$path eq "~" || [string index $path 1] eq "/"} {
+        return $::HOME_DIR[string range $path 1 end]
+    }
+    return $path
+}
+
 set ::DOCS_DIR_DEFAULT [file join $::HOME_DIR Documents writhdeck]
   # set ::DOCS_DIR_DEFAULT "C:/Temp/writhdeck"       ;# Windows custom                                              
   # set ::DOCS_DIR_DEFAULT "/tmp/writhdeck"         ;# Linux custom 
@@ -158,7 +168,7 @@ proc state-load {} {
     set ::recent_list    {}
     set ::daily_data     {}
     if {![file exists $::STATE_FILE]} { set ::state_cache_valid 1; return }
-    set fh [open $::STATE_FILE r]; fconfigure $fh -encoding utf-8
+    set fh [open $::STATE_FILE r]; chan configure $fh -encoding utf-8
     set raw [read $fh]; close $fh
     set ci [string first "\"cursors\"" $raw]
     if {$ci >= 0} {
@@ -208,7 +218,7 @@ proc state-save {} {
         set fpe [string map {\\ \\\\ \" \\\"} $fpath]
         dict for {date cnt} $fdata { lappend dp "\"${fpe}\t${date}\t${cnt}\"" }
     }
-    set fh [open $::STATE_FILE w]; fconfigure $fh -encoding utf-8
+    set fh [open $::STATE_FILE w]; chan configure $fh -encoding utf-8
     puts $fh "\{\"cursors\":\{[join $cp ,]\},\"favorites\":\[[join $fp ,]\],\"recent\":\[[join $rp ,]\],\"daily\":\[[join $dp ,]\]\}"
     close $fh
 }
@@ -459,7 +469,7 @@ proc scheme-apply {name} {
 proc ini-load {} {
     if {![file exists $::INI_FILE]} { ini-save; return }
     set fh [open $::INI_FILE r]
-    fconfigure $fh -encoding utf-8
+    chan configure $fh -encoding utf-8
     set section     ""
     set cur_scheme  ""
     set cur_profile ""
@@ -595,7 +605,7 @@ proc ini-load {} {
 
 proc ini-save {} {
     set fh [open $::INI_FILE w]
-    fconfigure $fh -encoding utf-8
+    chan configure $fh -encoding utf-8
     puts $fh "# WrithDeck - configuration"
     puts $fh "# https://github.com/luginf/writhdeck"
     puts $fh ""
@@ -820,7 +830,7 @@ proc keys-init {} {
 keys-init
 
 if {$::cfg_docs_dir ne ""} {
-    set ::DOCS_DIR [file normalize $::cfg_docs_dir]
+    set ::DOCS_DIR [file normalize [tilde-expand $::cfg_docs_dir]]
     if {$::DOCS_DIR eq $::DOCS_DIR_DEFAULT} { set ::DOCS_DIR $::DOCS_DIR_DEFAULT }
     file mkdir $::DOCS_DIR
 }
@@ -2061,7 +2071,7 @@ proc load-file {path} {
     .ed.t delete 1.0 end
     if {[file exists $path] && [file size $path] > 0} {
         set fh [open $path r]
-        fconfigure $fh -encoding utf-8
+        chan configure $fh -encoding utf-8
         .ed.t insert 1.0 [read $fh]
         close $fh
 }
@@ -2100,7 +2110,7 @@ proc load-file {path} {
 proc save-file {} {
     if {$::filename eq ""} { if {$::scratchpad} { save-as }; return }
     set fh [open $::filename w]
-    fconfigure $fh -encoding utf-8
+    chan configure $fh -encoding utf-8
     puts -nonewline $fh [.ed.t get 1.0 {end - 1 chars}]
     close $fh
     set ::dirty 0
@@ -3041,8 +3051,8 @@ proc tui-reverse-video {on} {
 proc tui-init {} {
     catch { set ::tui_stty [exec stty -g <@stdin] }
     catch { exec stty raw -echo <@stdin }
-    fconfigure stdin  -blocking 1 -translation binary -buffering none
-    fconfigure stdout -encoding utf-8 -buffering full
+    chan configure stdin  -blocking 1 -translation binary -buffering none
+    chan configure stdout -encoding utf-8 -buffering full
     puts -nonewline "\033\[?25l\033\[2J\033\[?2004h"
     set _cq [expr {$::cfg_block_cursor_console \
         ? ($::cfg_blink_cursor ? 1 : 2) \
@@ -3305,19 +3315,19 @@ proc tui-getch {} {
     if {$b == 27} {
         # Read escape sequence byte by byte
         set seq ""
-        fconfigure stdin -blocking 0; set ch [read stdin 1]; fconfigure stdin -blocking 1
+        chan configure stdin -blocking 0; set ch [read stdin 1]; chan configure stdin -blocking 1
         if {$ch eq ""} { return ESC }
         append seq $ch
         switch -- $ch {
             O {
                 # SS3 sequence (xterm F1-F4): read one more byte
-                fconfigure stdin -blocking 0; set ch2 [read stdin 1]; fconfigure stdin -blocking 1
+                chan configure stdin -blocking 0; set ch2 [read stdin 1]; chan configure stdin -blocking 1
                 if {$ch2 ne ""} { append seq $ch2 }
             }
             {[} {
                 # CSI sequence: read until letter or ~
                 while {[string length $seq] < 20} {
-                    fconfigure stdin -blocking 0; set ch [read stdin 1]; fconfigure stdin -blocking 1
+                    chan configure stdin -blocking 0; set ch [read stdin 1]; chan configure stdin -blocking 1
                     if {$ch eq ""} break
                     append seq $ch
                     if {[regexp {[A-Za-z~]} $ch]} break
@@ -4023,7 +4033,7 @@ proc tui-toc {lines rows cols {cy 1} {filepath ""}} {
 }
 
 proc tui-save-file {filepath lines} {
-    set fh [open $filepath w]; fconfigure $fh -encoding utf-8
+    set fh [open $filepath w]; chan configure $fh -encoding utf-8
     puts -nonewline $fh "[join $lines \n]\n"; close $fh
 }
 
@@ -4048,7 +4058,7 @@ proc tui-editor {filepath} {
     # ── load ──────────────────────────────────────────────────────────────────
     set lines {}
     if {$filepath ne "" && [file exists $filepath] && [file size $filepath] > 0} {
-        set fh [open $filepath r]; fconfigure $fh -encoding utf-8
+        set fh [open $filepath r]; chan configure $fh -encoding utf-8
         set content [read $fh]; close $fh
         foreach line [split $content "\n"] { lappend lines $line }
         if {[llength $lines] > 1 && [lindex $lines end] eq ""} {
@@ -4276,7 +4286,7 @@ proc tui-editor {filepath} {
                 if {[tui-confirm [t $_wkey [file tail $filepath]] $rows $cols]} {
                     set lines {}
                     if {[file size $filepath] > 0} {
-                        set fh [open $filepath r]; fconfigure $fh -encoding utf-8
+                        set fh [open $filepath r]; chan configure $fh -encoding utf-8
                         foreach line [split [read $fh] "\n"] { lappend lines $line }
                         close $fh
                         if {[llength $lines] > 1 && [lindex $lines end] eq ""} {
