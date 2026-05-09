@@ -142,7 +142,7 @@ set ::session_baseline    -1
 set ::session_max_today   0
 set ::state_cache_valid   0
 
-# ─── state persistence (.writhdeck.json) ──────────────────────────────────────
+# --- state persistence (.writhdeck.json) --------------------------------------
 # Format: {"cursors":{"path":[cy,cx],...},"favorites":[...],"recent":[...],"daily":["path\tdate\tN",...]}
 proc state-parse-array {raw key} {
     set ri [string first "\"$key\"" $raw]
@@ -270,7 +270,7 @@ proc recent-rename {old new} {
     if {$changed} { state-save }
 }
 
-# ─── daily writing stats ──────────────────────────────────────────────────────
+# --- daily writing stats ------------------------------------------------------
 proc daily-open {filepath wc} {
     set filepath [file normalize $filepath]
     set ::session_file $filepath
@@ -324,7 +324,7 @@ proc daily-clear {filepath} {
     state-save
 }
 
-# ─── ini ──────────────────────────────────────────────────────────────────────
+# --- ini ----------------------------------------------------------------------
 set ::cfg_scheme   "default"
 set ::cfg_schemes  {}
 set ::cfg_profile  "default"
@@ -835,7 +835,7 @@ if {$::cfg_docs_dir ne ""} {
     file mkdir $::DOCS_DIR
 }
 
-# ─── i18n ────────────────────────────────────────────────────────────────────
+# --- i18n --------------------------------------------------------------------
 set ::i18n {
     en {
         toc_title          "Table of contents"
@@ -977,7 +977,7 @@ proc t {key args} {
     return $s
 }
 
-# ─── theme helpers ────────────────────────────────────────────────────────────
+# --- theme helpers ------------------------------------------------------------
 proc theme-colors {} {
     if {$::cfg_dark_mode} {
         return [list $::cfg_bg $::cfg_fg $::cfg_bg_bar $::cfg_fg_bar \
@@ -993,7 +993,7 @@ proc toggle-dark-mode {} {
     if {!$::no_gui} { apply-theme }
 }
 
-# ─── config ───────────────────────────────────────────────────────────────────
+# --- config -------------------------------------------------------------------
 # validate font family (font families is a Tk command - skip in TUI)
 if {!$::no_gui && $::cfg_font_family ne "Mono"} {
     if {[lsearch -exact [font families] $::cfg_font_family] < 0} {
@@ -1024,7 +1024,7 @@ set ::bg_bar $bg_bar
 set ::fg_bar $fg_bar
 set ::bg_sel $bg_sel
 
-# ─── utils ────────────────────────────────────────────────────────────────────
+# --- utils --------------------------------------------------------------------
 proc list-docs {dir} {
     set pairs {}
     foreach f [glob -nocomplain -directory $dir -tails *] {
@@ -1343,7 +1343,7 @@ bind Button <FocusIn>  { %W configure -state active }
 bind Button <FocusOut> { %W configure -state normal }
 bind Button <Return>   { %W invoke }
 
-# ─── browser frame ────────────────────────────────────────────────────────────
+# --- browser frame ------------------------------------------------------------
 frame .br -bg $bg
 
 label .br.title \
@@ -1460,7 +1460,7 @@ proc br-open {} {
     show-editor [file join [lindex $e 1] [lindex $e 2]]
 }
 
-# ─── browser dialogs ──────────────────────────────────────────────────────────
+# --- browser dialogs ----------------------------------------------------------
 proc input-dialog {title prompt} {
     set w .dlg
     catch {destroy $w}
@@ -1714,7 +1714,7 @@ bind .br.mid.lst <Down> {
     break
 }
 
-# ─── editor frame ─────────────────────────────────────────────────────────────
+# --- editor frame -------------------------------------------------------------
 frame .ed -bg $bg
 
 text .ed.t \
@@ -1807,7 +1807,7 @@ if {$::cfg_line_numbers} {
 pack .ed.t   -fill both   -expand 1
 after idle cursor-setup
 
-# ─── search bar (hidden until Ctrl+F) ────────────────────────────────────────
+# --- search bar (hidden until Ctrl+F) ----------------------------------------
 set ::search_term  ""
 set ::search_count ""
 set ::search_ed    ".ed.t"
@@ -1836,7 +1836,7 @@ pack .ed.sf.r.e   -side left -padx 4
 pack .ed.sf.r.one -side left
 pack .ed.sf.r.all -side left
 
-# ─── editor status ────────────────────────────────────────────────────────────
+# --- editor status ------------------------------------------------------------
 set ::wc_after_id ""
 set ::gui_wc 0
 set ::gui_cc 0
@@ -1932,7 +1932,7 @@ proc clock-tick {} {
 }
 if {[status-zone-of clock] ne ""} { clock-tick }
 
-# ─── block cursor (inverted, terminal-style) ──────────────────────────────────
+# --- block cursor (inverted, terminal-style) ----------------------------------
 set ::cursor_blink_id      ""
 set ::cursor_blink_visible 1
 set ::cursor_prev_pos      ""
@@ -2062,7 +2062,7 @@ proc ln-toggle {} {
     }
 }
 
-# ─── file I/O ─────────────────────────────────────────────────────────────────
+# --- file I/O -----------------------------------------------------------------
 proc load-file {path} {
     set ::filename $path
     wm title . "Writhdeck - [file tail $path]"
@@ -2341,7 +2341,7 @@ proc quit-app {} {
 
 wm protocol . WM_DELETE_WINDOW quit-app
 
-# ─── editor bindings ──────────────────────────────────────────────────────────
+# --- editor bindings ----------------------------------------------------------
 
 proc ed-paste {} {
     # On X11, Tk's default <<Paste>> does not replace the selection.
@@ -2420,7 +2420,7 @@ bind .br.mid.lst    <$::cfg_key_fullscreen> { toggle-fullscreen }
 bind .ed.t          <$::cfg_key_split>       { split-toggle; break }
 bind .ed.t          <$::cfg_key_split_focus> { split-cycle-focus; break }
 
-# ─── headings & TOC ───────────────────────────────────────────────────────────
+# --- headings & TOC -----------------------------------------------------------
 proc highlight-headings {} {
     set last [lindex [split [.ed.t index end] .] 0]
     set full [expr {$last != $::hl_last_count}]
@@ -2601,7 +2601,7 @@ proc br-toc-jump {w sections} {
     focus .br.mid.lst
 }
 
-# ─── taille de police dynamique ───────────────────────────────────────────────
+# --- taille de police dynamique -----------------------------------------------
 proc apply-line-spacing {} {
     set lh [font metrics [.ed.t cget -font] -linespace]
     set extra [expr {int($lh * ($::cfg_line_spacing - 100) / 100.0)}]
@@ -2817,7 +2817,7 @@ proc goto-dialog {} {
     }
 }
 
-# ─── split view ───────────────────────────────────────────────────────────────
+# --- split view ---------------------------------------------------------------
 set ::split_ln_was_on 0
 
 proc primary-ed {} {
@@ -2944,7 +2944,7 @@ proc split-cycle-focus {} {
     }
 }
 
-# ─── frame switching ──────────────────────────────────────────────────────────
+# --- frame switching ----------------------------------------------------------
 proc watch-file {} {
     set ::watch_after_id ""
     if {$::cfg_watch_file && $::filename ne "" && !$::scratchpad \
@@ -3039,7 +3039,7 @@ proc show-editor {path} {
 
 } ;# end if {!$::no_gui}
 
-# ─── TUI mode ─────────────────────────────────────────────────────────────────
+# --- TUI mode -----------------------------------------------------------------
 
 set ::tui_stty ""
 
@@ -3407,7 +3407,7 @@ proc tui-getch {} {
     return [format %c $b]
 }
 
-# ── Word wrap ─────────────────────────────────────────────────────────────────
+# -- Word wrap -----------------------------------------------------------------
 
 proc tui-wrap-line {line width} {
     set len [string length $line]
@@ -3524,7 +3524,7 @@ proc tui-v2l {vrows vi scx} {
     return [list $li [expr {$scol + max(0, min($scx, $ecol-$scol))}]]
 }
 
-# ── TUI helpers ───────────────────────────────────────────────────────────────
+# -- TUI helpers ---------------------------------------------------------------
 
 proc tui-prompt {label rows cols} {
     set buf ""
@@ -3598,7 +3598,7 @@ proc tui-active-dir {entries cfi} {
     return $::DOCS_DIR_DEFAULT
 }
 
-# ── Clipboard ────────────────────────────────────────────────────────────────
+# -- Clipboard ----------------------------------------------------------------
 
 set ::tui_clipboard ""
 
@@ -3624,7 +3624,7 @@ proc tui-paste {} {
     return $::tui_clipboard
 }
 
-# ── Selection helpers ─────────────────────────────────────────────────────────
+# -- Selection helpers ---------------------------------------------------------
 
 proc tui-sel-range {anchor cy cx} {
     if {$anchor eq ""} { return {} }
@@ -3665,7 +3665,7 @@ proc tui-sel-delete {lines anchor cy cx} {
     return [list $new $sly $scx]
 }
 
-# ── TUI Browser ───────────────────────────────────────────────────────────────
+# -- TUI Browser ---------------------------------------------------------------
 
 proc tui-push-undo {} {
     upvar 1 undo_stack undo_stack redo_stack redo_stack lines lines cy cy cx cx
@@ -3973,7 +3973,7 @@ proc tui-browser {} {
     }
 }
 
-# ── TUI TOC ───────────────────────────────────────────────────────────────────
+# -- TUI TOC -------------------------------------------------------------------
 
 proc tui-toc {lines rows cols {cy 1} {filepath ""}} {
     set headings {}; set ln 1
@@ -4037,7 +4037,7 @@ proc tui-save-file {filepath lines} {
     puts -nonewline $fh "[join $lines \n]\n"; close $fh
 }
 
-# ── TUI Editor ────────────────────────────────────────────────────────────────
+# -- TUI Editor ----------------------------------------------------------------
 
 proc tui-scratchpad-save {rows cols linesVar filepathVar dirtyVar} {
     upvar 1 $linesVar lines $filepathVar filepath $dirtyVar dirty
@@ -4055,7 +4055,7 @@ proc tui-scratchpad-save {rows cols linesVar filepathVar dirtyVar} {
 }
 
 proc tui-editor {filepath} {
-    # ── load ──────────────────────────────────────────────────────────────────
+    # -- load ------------------------------------------------------------------
     set lines {}
     if {$filepath ne "" && [file exists $filepath] && [file size $filepath] > 0} {
         set fh [open $filepath r]; chan configure $fh -encoding utf-8
@@ -4072,7 +4072,7 @@ proc tui-editor {filepath} {
         daily-open $filepath $_wc
     }
 
-    # ── cursor restore ────────────────────────────────────────────────────────
+    # -- cursor restore --------------------------------------------------------
     if {$filepath eq ""} { set cy 1; set cx 0 } else { lassign [cursor-get $filepath] cy cx }
     if {[dict exists $::session_headings $filepath]} {
         set hidx [dict get $::session_headings $filepath]
@@ -4116,7 +4116,7 @@ proc tui-editor {filepath} {
             set wrap_dirty 1
         }
 
-        # ── layout ────────────────────────────────────────────────────────────
+        # -- layout ------------------------------------------------------------
         set _hm   [expr {$::typewriter_mode && $::cfg_hemingway_mode ? 2 : 1}]
         set roff  [expr {$::cfg_console_margin_rows * $_hm}]
         set marg  [expr {$::cfg_console_margin_cols * $_hm}]
@@ -4148,7 +4148,7 @@ proc tui-editor {filepath} {
         }
         set scroll_y [expr {max(0, min($scroll_y, max(0, [llength $vrows] - $th)))}]
 
-        # ── draw ──────────────────────────────────────────────────────────────
+        # -- draw --------------------------------------------------------------
         set sel_r [tui-sel-range $sel_anchor $cy $cx]
         if {$sel_r ne {}} { lassign $sel_r _sly _scx_s _ely _ecx_s }
 
@@ -4226,7 +4226,7 @@ proc tui-editor {filepath} {
             puts -nonewline [string repeat { } [expr {$tw - $seg_len + $marg + 1}]]
         }
 
-        # ── scroll indicator ──────────────────────────────────────────────────
+        # -- scroll indicator --------------------------------------------------
         set nvrows [llength $vrows]
         if {$nvrows > $th} {
             set bar_h [expr {max(1, int(double($th) * $th / $nvrows))}]
@@ -4241,7 +4241,7 @@ proc tui-editor {filepath} {
             }
         }
 
-        # ── bars ──────────────────────────────────────────────────────────────
+        # -- bars --------------------------------------------------------------
         if {$_hm_bar} {
             tui-move [expr {$rows-2}] 0; puts -nonewline "\033\[K"
             tui-move [expr {$rows-1}] 0; puts -nonewline "\033\[K"
@@ -4277,7 +4277,7 @@ proc tui-editor {filepath} {
         set rst       1
         set clear_sel 1
 
-        # ── external modification check ───────────────────────────────────────
+        # -- external modification check ---------------------------------------
         if {$::cfg_watch_file && $filepath ne "" && [file exists $filepath]} {
             set _mtime [file mtime $filepath]
             if {$_mtime != $file_mtime_known} {
@@ -4682,7 +4682,7 @@ proc tui-main {} {
     if {$ok} { puts stderr $err }
 }
 
-# ─── start ────────────────────────────────────────────────────────────────────
+# --- start --------------------------------------------------------------------
 if {$::no_gui && $::tcl_platform(platform) eq "windows"} {
     # On Windows without Tk, show a helpful message in a console or dialog
     catch {
