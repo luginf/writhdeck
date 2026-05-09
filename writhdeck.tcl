@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260508g"
+set ::version          "v20260509"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -152,7 +152,7 @@ proc state-parse-array {raw key} {
     if {$ai < 0 || $ae < 0} { return {} }
     set sub [string range $raw [expr {$ai + 1}] [expr {$ae - 1}]]
     set result {}
-    set re {"([^"\\]*)"}
+    set re {"((?:[^"\\]|\\.)*)"}
     set start 0
     while {[regexp -start $start $re $sub -> item]} {
         lappend result $item
@@ -191,12 +191,16 @@ proc state-load {} {
     dict for {k v} $::cursor_cache { dict set new_cache [file normalize $k] $v }
     set ::cursor_cache $new_cache
     foreach item [state-parse-array $raw "daily"] {
+        set item [string map [list {\\t} "\t"] $item]
         set parts [split $item "\t"]
-        if {[llength $parts] == 3} {
-            lassign $parts fp date cnt
-            set fp [file normalize $fp]
+        if {[llength $parts] >= 3} {
+            set fp [file normalize [lindex $parts 0]]
             if {![dict exists $::daily_data $fp]} { dict set ::daily_data $fp {} }
-            dict set ::daily_data $fp $date [expr {int($cnt)}]
+            for {set i 1} {$i + 1 < [llength $parts]} {incr i 2} {
+                set date [lindex $parts $i]
+                set cnt  [lindex $parts [expr {$i + 1}]]
+                dict set ::daily_data $fp $date [expr {int($cnt)}]
+            }
         }
     }
     set ::state_cache_valid 1
@@ -215,8 +219,11 @@ proc state-save {} {
     foreach p $::recent_list    { lappend rp "\"[string map {\\ \\\\ \" \\\"} $p]\"" }
     set dp {}
     dict for {fpath fdata} $::daily_data {
-        set fpe [string map {\\ \\\\ \" \\\"} $fpath]
-        dict for {date cnt} $fdata { lappend dp "\"${fpe}\t${date}\t${cnt}\"" }
+        set entry [string map {\\ \\\\ \" \\\"} $fpath]
+        dict for {date cnt} $fdata {
+            append entry "\\t${date}\\t${cnt}"
+        }
+        lappend dp "\"${entry}\""
     }
     set fh [open $::STATE_FILE w]; chan configure $fh -encoding utf-8
     puts $fh "\{\"cursors\":\{[join $cp ,]\},\"favorites\":\[[join $fp ,]\],\"recent\":\[[join $rp ,]\],\"daily\":\[[join $dp ,]\]\}"

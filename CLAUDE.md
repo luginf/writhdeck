@@ -18,7 +18,7 @@ No build step. The entire application is `writhdeck.tcl` (single file, ~4700 lin
 
 Format `vYYYYMMDD` (e.g. `v20260508`), defined near line 32:
 ```tcl
-set ::version "v20260508g"
+set ::version "v20260509"
 ```
 Update it on every functional change.
 
@@ -53,6 +53,8 @@ The GUI block is a single `if {!$::no_gui} { ... } ;# end if {!$::no_gui}` spann
 
 **`chan configure` not `fconfigure`.** The codebase uses `chan configure` throughout (Tcl 8.5+ compatible, not deprecated in Tcl 9).
 
+**No Unicode symbols or em-dashes in user-visible strings.** Use ASCII equivalents: `->` not `→`, `-` not `—`, `[+]`/`[-]` not `★`/`☆`, `|` not `·`, etc. French accented characters (é, à, è, ê, É…) are the only intentional non-ASCII. This applies to i18n strings, help text, status bar, and all TUI output.
+
 ## Adding a new browser key
 
 6 places to update:
@@ -71,12 +73,15 @@ Hand-rolled JSON (no external parser):
   "cursors":   {"path": [cy, cx]},
   "favorites": ["path"],
   "recent":    ["path"],
-  "daily":     ["path\tYYYY-MM-DD\tN"]
+  "daily":     ["path\tYYYY-MM-DD\tN\tYYYY-MM-DD\tN..."]
 }
 ```
-- `state-load` / `state-save` rewrite the whole file each time
-- `state-load` has a guard (`$::state_cache_valid`) — call `set ::state_cache_valid 0` to force reload
-- Daily stats use a high-water mark: word deletions never reduce the count
+- One `daily` entry per file; all its dates packed as `\t`-separated pairs after the path.
+- `\t` is written as the two-char JSON escape sequence `\t`, not a literal tab (which is invalid JSON).
+- `state-parse-array` uses regex `(?:[^"\\]|\\.)*` to handle escape sequences; `state-load` then calls `string map [list {\\t} "\t"]` before `split`.
+- `state-load` / `state-save` rewrite the whole file each time.
+- `state-load` has a guard (`$::state_cache_valid`) — call `set ::state_cache_valid 0` to force reload.
+- Daily stats use a high-water mark: word deletions never reduce the count.
 
 ## Browser entry types (`::br_entries`)
 
