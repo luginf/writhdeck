@@ -1320,6 +1320,28 @@ text .br.bar.help -height 1 -width 80 -bg $bg_bar -fg $fg_bar -font $font_sm \
     -border 0 -highlightthickness 0 -state disabled -wrap none
 .br.bar.help tag configure bold -font [list [lindex $font_sm 0] [lindex $font_sm 1] bold]
 
+set shortcut_map {
+    h {help-dialog}
+    n {br-new}
+    t {open-scratchpad}
+    f {br-toggle-favorite}
+    s {br-stats}
+    b {br-backup}
+    d {br-delete}
+    r {br-rename}
+    i {br-info-shortcut}
+    c {profile-config-dialog}
+    q {exit}
+    z {br-reload}
+}
+
+foreach {key cmd} $shortcut_map {
+    .br.bar.help tag configure key_$key -foreground $fg_bar
+    .br.bar.help tag bind key_$key <Button-1> $cmd
+    .br.bar.help tag bind key_$key <Enter> {.br.bar.help config -cursor hand2}
+    .br.bar.help tag bind key_$key <Leave> {.br.bar.help config -cursor arrow}
+}
+
 set help_text [format [t br_help_gui] $::cfg_lbl_toc]
 .br.bar.help configure -state normal
 .br.bar.help delete 1.0 end
@@ -1330,10 +1352,12 @@ while {$i < [string length $help_text]} {
     if {$char eq "("} {
         incr i
         set shortcut [string index $help_text $i]
-        .br.bar.help insert end $shortcut bold
+        set key_tag "key_$shortcut"
+        .br.bar.help insert end $shortcut [list bold $key_tag]
         incr i 2
     } elseif {[string index $help_text [expr {$i+1}]] eq ":"} {
-        .br.bar.help insert end $char bold
+        set key_tag "key_[string tolower $char]"
+        .br.bar.help insert end $char [list bold $key_tag]
         .br.bar.help insert end ":"
         incr i 2
     } else {
@@ -1433,6 +1457,13 @@ proc br-open {} {
     set e [br-selected]
     if {![llength $e]} return
     show-editor [file join [lindex $e 1] [lindex $e 2]]
+}
+
+proc br-info-shortcut {} {
+    set e [br-selected]
+    if {[llength $e]} {
+        info-dialog [file join [lindex $e 1] [lindex $e 2]]
+    }
 }
 
 # --- browser dialogs ----------------------------------------------------------
