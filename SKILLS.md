@@ -8,7 +8,7 @@ set ::version "v20260508"
 ```
 Affichée dans l'aide GUI (section DATE & TIME) et l'aide TUI (en-tête en inversé + ligne dessous).
 
-> **Règle** : mettre à jour la version (`set ::version "vYYYYMMDD"`) à chaque modification fonctionnelle.
+> **Règle** : mettre à jour la version (`set ::version "vYYYYMMDD"`) à chaque modification fonctionnelle, avec la date du jour.
 
 ## Structure du code (`writhdeck.tcl`, ~4 300 lignes)
 
@@ -129,7 +129,7 @@ br_ma_cle    "Ma chaîne"    # dans le bloc fr {}
 - **Export HTML** : conversion headings + marqueurs inline → HTML
 - **Mouse support TUI** : `\033[?1000h` pour clic-positionnement
 - **Presse-papiers interne** : historique des N derniers copier-coller
-- **Statistiques de session** : temps d'écriture, mots ajoutés depuis l'ouverture
+- **Statistiques de session** : temps d'écriture, mots ajoutés depuis l'ouverture 
 
 ## Déjà implémenté (à ne pas re-suggérer)
 

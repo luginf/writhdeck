@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260512"
+set ::version          "v20260511"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -154,10 +154,11 @@ proc state-parse-array {raw key} {
     set result {}
     set re {"((?:[^"\\]|\\.)*)"}
     set start 0
-    while {[regexp -start $start $re $sub -> item]} {
-        lappend result $item
-        set idx [string first "\"$item\"" $sub $start]
-        set start [expr {$idx + [string length $item] + 2}]
+    while {[regexp -start $start -indices $re $sub match item]} {
+        set item_text [string range $sub {*}$item]
+        lappend result $item_text
+        set end [lindex $match 1]
+        set start [expr {$end + 1}]
     }
     return $result
 }
@@ -889,7 +890,7 @@ set ::i18n {
         br_renamed         "renamed -> '%s'"
         br_delete          "Delete \"%s\"?"
         br_files           "%d file%s"
-        br_recent          "Recent"
+        br_recent          "Recents"
         ed_saved           "saved"
         ed_watch_reload       "\"%s\" was modified externally. Reload?"
         ed_watch_reload_dirty "\"%s\" was modified externally and you have unsaved changes. Reload?"
@@ -934,7 +935,7 @@ set ::i18n {
         profile_config_title   "Configuration"
         profile_config_default_profile "Default profile:"
         profile_config_default_scheme  "Default color scheme:"
-        profile_config_profile "Active profile:"
+        profile_config_edit_profile "Edit profile:"
         profile_config_font    "Font family:"
         profile_config_size    "Font size:"
         profile_config_margin_w "Margin width:"
@@ -1010,7 +1011,7 @@ set ::i18n {
         profile_config_title   "Configuration"
         profile_config_default_profile "Profil par défaut :"
         profile_config_default_scheme  "Schéma de couleurs par défaut :"
-        profile_config_profile "Profil actif :"
+        profile_config_edit_profile "Éditer le profil :"
         profile_config_font    "Police :"
         profile_config_size    "Taille :"
         profile_config_margin_w "Largeur marge :"
@@ -1246,7 +1247,7 @@ proc build-extra-entries {shown} {
         foreach p $vfav { lappend result [list favorite [file dirname $p] [file tail $p]] }
     }
     set vrec {}
-    foreach p $::recent_list { if {[file isfile $p] && $p ni $shown && $p ni $vfav} { lappend vrec $p } }
+    foreach p $::recent_list { if {[file isfile $p]} { lappend vrec $p } }
     if {[llength $vrec]} {
         lappend result [list header "" [t br_recent]]
         foreach p $vrec { lappend result [list recent [file dirname $p] [file tail $p]] }
@@ -1339,6 +1340,7 @@ proc br-refresh {} {
         if {$type in {file recent favorite}} { set prev "$dir|$name" }
     }
 
+    set ::state_cache_valid 0
     set ::br_entries {}
     set total 0
     set shown {}
@@ -2662,16 +2664,20 @@ proc profile-config-dialog {} {
     frame $w.profile -relief ridge -borderwidth 2
     pack $w.profile -fill both -expand 1 -padx 8 -pady 8
 
-    label $w.profile.title -text [t profile_config_profile] -font $::font_sm -fg $::fg_bar -bg $::bg
+    label $w.profile.title -text "Profile Settings" -font $::font_sm -fg $::fg_bar -bg $::bg
     pack $w.profile.title -anchor w -padx 8 -pady {4 2}
 
     # Profile selector row
     frame $w.profile.fprof
     pack $w.profile.fprof -fill x -padx 12 -pady {0 6}
-    label $w.profile.fprof.lbl -text [t profile_config_profile] -font $::font_sm -width 15 -anchor w
+    label $w.profile.fprof.lbl -text [t profile_config_edit_profile] -font $::font_sm -width 15 -anchor w
     tk_optionMenu $w.profile.fprof.om ::profile_config_profile {*}$profiles
     $w.profile.fprof.om configure -bg $::bg_bar -fg $::fg_bar -highlightthickness 0
-    set ::profile_config_profile [lindex $profiles 0]
+    if {[lsearch -exact $profiles $::cfg_profile] >= 0} {
+        set ::profile_config_profile $::cfg_profile
+    } else {
+        set ::profile_config_profile [lindex $profiles 0]
+    }
     pack $w.profile.fprof.lbl -side left
     pack $w.profile.fprof.om -side left -fill x -expand 1
 
@@ -2692,22 +2698,53 @@ proc profile-config-dialog {} {
     }
     pack $w.profile.fonts -fill both -expand 1 -padx 12 -pady 2
 
+    # Font size row (create BEFORE bindings)
+    frame $w.fsize
+    pack $w.fsize -fill x -padx 12 -pady 4
+    label $w.fsize.lbl -text [t profile_config_size] -font $::font_sm -width 15 -anchor w
+    spinbox $w.fsize.spin -from 6 -to 72 -width 5 -font $::font_sm -command {
+        set font [.profile_config.profile.ffont.entry get]
+        set size [.profile_config.fsize.spin get]
+        if {$font ne "" && $size ne ""} {
+            catch {.profile_config.profile.preview configure -font [list $font $size] -text "Sample Text - $font"}
+        }
+    }
+    pack $w.fsize.lbl -side left
+    pack $w.fsize.spin -side left
+
+    # Font preview
+    label $w.profile.preview -text "Preview" -font $::font_sm -bg $::bg
+    pack $w.profile.preview -fill x -padx 12 -pady {8 2}
+
+    # Bind to update preview on font/size change (AFTER all widgets created)
     bind $w.profile.fonts <<ListboxSelect>> {
         set sel [%W curselection]
         if {[llength $sel] > 0} {
             set font_var [%W get [lindex $sel 0]]
             .profile_config.profile.ffont.entry delete 0 end
             .profile_config.profile.ffont.entry insert 0 $font_var
+            set size [.profile_config.fsize.spin get]
+            if {$size ne ""} {
+                .profile_config.profile.preview configure -font [list $font_var $size] -text "Sample Text - $font_var"
+            }
         }
     }
 
-    # Font size row
-    frame $w.fsize
-    pack $w.fsize -fill x -padx 12 -pady 4
-    label $w.fsize.lbl -text [t profile_config_size] -font $::font_sm -width 15 -anchor w
-    spinbox $w.fsize.spin -from 6 -to 72 -width 5 -font $::font_sm
-    pack $w.fsize.lbl -side left
-    pack $w.fsize.spin -side left
+    bind $w.profile.ffont.entry <KeyRelease> {
+        set font [.profile_config.profile.ffont.entry get]
+        set size [.profile_config.fsize.spin get]
+        if {$font ne "" && $size ne ""} {
+            catch {.profile_config.profile.preview configure -font [list $font $size] -text "Sample Text - $font"}
+        }
+    }
+
+    bind $w.fsize.spin <KeyRelease> {
+        set font [.profile_config.profile.ffont.entry get]
+        set size [.profile_config.fsize.spin get]
+        if {$font ne "" && $size ne ""} {
+            catch {.profile_config.profile.preview configure -font [list $font $size] -text "Sample Text - $font"}
+        }
+    }
 
     # Margin width row
     frame $w.fmarginw
@@ -2774,6 +2811,7 @@ proc profile-config-dialog {} {
             }
 
             destroy .profile_config
+            br-reload
         }
     pack $w.btns.apply -side left -padx 4
 

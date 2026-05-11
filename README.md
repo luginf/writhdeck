@@ -4,7 +4,7 @@
 ![WrithDeck Logo](media/writhdeck_logo.png)
 
 [🇫🇷](README.fr.md) — [📖 Manual](writhdeck_MANUAL.md)
-
+ 
 WrithDeck is a distraction-free text editor designed for writers using a dedicated writerdeck — a DIY prototype or a computer configured specifically for writing. It runs as a graphical application or directly in a terminal/TTY, all from a single file with no installation required.
 
 Inline syntax highlighting, file browser, split view, table of contents, fully themeable interface — around 4,700 lines of Tcl/Tk.
