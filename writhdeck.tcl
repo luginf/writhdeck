@@ -1324,18 +1324,18 @@ text .br.bar.help -height 1 -width 80 -bg $bg_bar -fg $fg_bar -font $font_sm \
 .br.bar.help delete 1.0 end
 
 foreach {char cmd label} {
-    h help-dialog "help"
-    n br-new "new"
-    t open-scratchpad "scratchpad"
-    f br-toggle-favorite "fav"
-    s br-stats "stats"
-    b br-backup "backup"
-    d br-delete "delete"
-    r br-rename "rename"
-    i br-info-shortcut "info"
-    c profile-config-dialog "config"
-    z br-reload "reload"
-    q exit "quit"
+    h help-dialog help
+    n br-new new
+    t open-scratchpad scratchpad
+    f br-toggle-favorite fav
+    s br-stats stats
+    b br-backup backup
+    d br-delete delete
+    r br-rename rename
+    i br-info-shortcut info
+    c profile-config-dialog config
+    z br-reload reload
+    q exit quit
 } {
     .br.bar.help tag configure key_$char -foreground $fg_bar
     .br.bar.help tag bind key_$char <Button-1> $cmd
