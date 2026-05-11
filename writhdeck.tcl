@@ -873,7 +873,7 @@ set ::i18n {
         toc_jump_bar       "Enter jump  esc/ctrl+q cancel"
         toc_headings       "%d heading%s"
         br_no_docs         "No documents yet. Press n to create one."
-        br_help_gui        "(h)elp (n)ew scra(t)chpad (f)av (s)tats (b)ackup  (d)elete (r)ename (i)nfo (c)onfig z:reload %s sections (q)uit"
+        br_help_gui        "h:help  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  c:config  z:reload  %s:sections  q:quit"
         br_help_tui        "%s help (n)ew scra(t)chpad (f)av (s)tats (b)ackup  (d)elete (r)ename (i)nfo %s sections (q)uit"
         br_backed_up       "backup %s -> %s"
         br_favorites       "Favorites"
@@ -949,7 +949,7 @@ set ::i18n {
         toc_jump_bar       "Enter aller  esc/ctrl+q annuler"
         toc_headings       "%d titre%s"
         br_no_docs         "Aucun document. Appuyez sur n pour en créer un."
-        br_help_gui        " h:aide (n)ouveau  t:bloc-notes  (f)av  (s)tats  (b)ackup  d:supprimer  (r)enommer  (i)nfos  (c)onfig  z:recharger  %s sections  (q)uitter"
+        br_help_gui        "h:aide  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  c:config  z:recharger  %s:sections  q:quitter"
         br_help_tui        "%s aide (n)ouveau bloc-no(t)es  (f)av  (s)tats  (b)ackup  d:supprimer  (r)enommer  (i)nfos  %s sections  (q)uitter"
         br_backed_up       "sauvegarde %s -> %s"
         br_favorites       "Favoris"
@@ -1349,13 +1349,10 @@ set help_text [format [t br_help_gui] $::cfg_lbl_toc]
 set i 0
 while {$i < [string length $help_text]} {
     set char [string index $help_text $i]
-    if {$char eq "("} {
-        incr i
-        set shortcut [string index $help_text $i]
-        set key_tag "key_$shortcut"
-        .br.bar.help insert end $shortcut [list bold $key_tag]
-        incr i 2
-    } elseif {[string index $help_text [expr {$i+1}]] eq ":"} {
+    set prev_char [expr {$i > 0 ? [string index $help_text [expr {$i-1}]] : " "}]
+    if {$i + 1 < [string length $help_text] && [string index $help_text [expr {$i+1}]] eq ":" && \
+        ($char >= "a" && $char <= "z" || $char >= "A" && $char <= "Z") && \
+        $prev_char eq " "} {
         set key_tag "key_[string tolower $char]"
         .br.bar.help insert end $char [list bold $key_tag]
         .br.bar.help insert end ":"
