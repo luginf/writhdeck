@@ -1316,7 +1316,7 @@ pack .br.mid.lst -fill both  -expand 1
 pack .br.mid     -fill both  -expand 1
 
 frame .br.bar -bg $bg_bar
-text .br.bar.help -height 1 -width 80 -bg $bg_bar -fg $fg_bar -font $font_sm \
+text .br.bar.help -height 1 -width 130 -bg $bg_bar -fg $fg_bar -font $font_sm \
     -border 0 -highlightthickness 0 -state disabled -wrap none
 .br.bar.help tag configure bold -font [list [lindex $font_sm 0] [lindex $font_sm 1] bold]
 
