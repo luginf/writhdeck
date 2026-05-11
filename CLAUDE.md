@@ -32,14 +32,14 @@ The file has two major runtime branches controlled by `$::no_gui`:
 | State persistence | 126–272 | `.writhdeck.json`, cursors, favorites, recents, daily stats |
 | INI / config | 273–835 | `ini-load`, `ini-save`, profiles, schemes, keys, i18n |
 | Shared utils | 836–1345 | `list-docs`, `br-dirs`, `do-backup`, `build-extra-entries`, inline parsers |
-| **GUI block** (`if {!$::no_gui}`) | 1346–3040 | Browser frame, editor frame, dialogs, TOC, split view, typewriter |
-| TUI core | 3042–3527 | `tui-init`, `tui-getch`, `tui-bar`, word-wrap, layout |
-| TUI helpers | 3528–3668 | Prompt, clipboard, selection |
-| TUI browser | 3669–3976 | `tui-browser` |
-| TUI editor | 3977–4684 | `tui-toc`, `tui-editor`, `tui-main` |
-| Entry point | 4685–end | Dispatch GUI / TUI |
+| **GUI block** (`if {!$::no_gui}`) | 1346–3100+ | Browser frame, editor frame, dialogs (help, config, info, backup, etc.), TOC, split view, typewriter |
+| TUI core | 3100+–3600+ | `tui-init`, `tui-getch`, `tui-bar`, word-wrap, layout |
+| TUI helpers | 3600+–3750+ | Prompt, clipboard, selection |
+| TUI browser | 3750+–4050+ | `tui-browser` |
+| TUI editor | 4050+–4700+ | `tui-toc`, `tui-editor`, `tui-main` |
+| Entry point | 4700+–end | Dispatch GUI / TUI |
 
-The GUI block is a single `if {!$::no_gui} { ... } ;# end if {!$::no_gui}` spanning lines 1346–3040.
+The GUI block is a single `if {!$::no_gui} { ... } ;# end if {!$::no_gui}` spanning most of the GUI-related code.
 
 ## Key rules
 
@@ -55,15 +55,42 @@ The GUI block is a single `if {!$::no_gui} { ... } ;# end if {!$::no_gui}` spann
 
 **No Unicode symbols or em-dashes in user-visible strings.** Use ASCII equivalents: `->` not `→`, `-` not `—`, `[+]`/`[-]` not `★`/`☆`, `|` not `·`, etc. French accented characters (é, à, è, ê, É…) are the only intentional non-ASCII. This applies to i18n strings, help text, status bar, and all TUI output.
 
+## Browser shortcuts and status bar
+
+The browser status bar displays shortcuts with bold formatting on the first character:
+- `h:help`, `n:new`, `t:scratchpad`, etc. — letter is bold, colon and label follow
+- Built using a hardcoded foreach loop inserting pairs of bold key + label text
+- Click handler uses `.br.bar.help tag bind` for each shortcut to invoke the command
+- Cursor changes to hand2 on hover (Enter/Leave bindings)
+
+Current browser keys (12 total): h (help), n (new), t (scratchpad), f (favorite), s (stats), b (backup), d (delete), r (rename), i (info), c (config), z (reload), q (quit).
+
 ## Adding a new browser key
 
 6 places to update:
 1. `br_help_gui` i18n (EN + FR)
 2. `br_help_tui` i18n (EN + FR)
-3. `bind .br.mid.lst <x>` in the GUI block
-4. `switch -- $key` in `tui-browser`
-5. BROWSER section of `help-dialog`
-6. Browser shortcut tables in `README.md` and `README.fr.md`
+3. Add to the status bar foreach loop in browser frame init (`.br.bar.help`)
+4. `bind .br.mid.lst <x>` in the GUI block (for keyboard binding)
+5. `switch -- $key` in `tui-browser`
+6. BROWSER section of `help-dialog`
+7. Browser shortcut tables in `README.md` and `README.fr.md`
+
+## Profile configuration dialog
+
+Accessible via `c` key in browser. Invoked by `profile-config-dialog` proc:
+- **Global settings frame**: Dropdown to select active profile + dropdown to select color scheme
+- **Profile settings frame**: Controls for font family (listbox), font size (spinbox), margin width (spinbox), margin height (spinbox)
+- **Font preview**: Real-time Text widget showing sample text in selected font
+- **Apply button**: Saves settings to `$::cfg_profiles[$profile]` dict, applies to editor if active, and triggers browser reload
+
+Per-profile configuration stored in `::cfg_profiles` dict with keys: `font_family`, `font_size`, `margin_width`, `margin_height`. Values persist across sessions via `.writhdeck.json` (loaded by `ini-load`).
+
+Key implementation details:
+- Uses `-command` option on spinbox to trigger preview updates on button clicks (not just keyboard entry)
+- `profile-apply-fonts` helper saves to dict and applies to editor frame
+- `br-refresh` called after apply to reload browser with fresh configuration
+- Dialog created inside a toplevel window with grid layout, destroyed after user closes
 
 ## State persistence (`.writhdeck.json`)
 
@@ -78,7 +105,7 @@ Hand-rolled JSON (no external parser):
 ```
 - One `daily` entry per file; all its dates packed as `\t`-separated pairs after the path.
 - `\t` is written as the two-char JSON escape sequence `\t`, not a literal tab (which is invalid JSON).
-- `state-parse-array` uses regex `(?:[^"\\]|\\.)*` to handle escape sequences; `state-load` then calls `string map [list {\t} "\t"]` before `split`. Note: `{\t}` in Tcl braces is 2 chars (backslash + t), not 1 — do not write `{\\t}` (3 chars) by mistake.
+- `state-parse-array` uses `regexp -indices` to find quoted strings in raw JSON, extracts them using `string range`, then `state-load` calls `string map [list {\t} "\t"]` before `split`. This correctly handles escape sequences without attempting to match unescaped content. Note: `{\t}` in Tcl braces is 2 chars (backslash + t), not 1 — do not write `{\\t}` (3 chars) by mistake.
 - `state-load` / `state-save` rewrite the whole file each time.
 - `state-load` has a guard (`$::state_cache_valid`) — call `set ::state_cache_valid 0` to force reload.
 - Daily stats use a high-water mark: word deletions never reduce the count.
