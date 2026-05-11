@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260511"
+set ::version          "v20260512"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -467,6 +467,7 @@ proc profile-apply {name} {
     } {
         if {[dict exists $d $key]} { set $var [string is true [dict get $d $key]] }
     }
+    set ::cfg_profile $name
 }
 
 proc scheme-apply {name} {
@@ -871,7 +872,7 @@ set ::i18n {
         toc_jump_bar       "Enter jump  esc/ctrl+q cancel"
         toc_headings       "%d heading%s"
         br_no_docs         "No documents yet. Press n to create one."
-        br_help_gui        "(h)elp (n)ew scra(t)chpad (f)av (s)tats (b)ackup  (d)elete (r)ename (i)nfo z:reload %s sections (q)uit"
+        br_help_gui        "(h)elp (n)ew scra(t)chpad (f)av (s)tats (b)ackup  (d)elete (r)ename (i)nfo (c)onfig z:reload %s sections (q)uit"
         br_help_tui        "%s help (n)ew scra(t)chpad (f)av (s)tats (b)ackup  (d)elete (r)ename (i)nfo %s sections (q)uit"
         br_backed_up       "backup %s -> %s"
         br_favorites       "Favorites"
@@ -930,6 +931,12 @@ set ::i18n {
         dlg_cancel         "Cancel"
         goto_title         "Go to line"
         goto_prompt        "Line:"
+        profile_config_title   "Profile Font Settings"
+        profile_config_profile "Profile:"
+        profile_config_font    "Font:"
+        profile_config_size    "Size:"
+        profile_config_apply   "Apply"
+        profile_config_cancel  "Cancel"
     }
     fr {
         toc_title          "Table des matières"
@@ -937,7 +944,7 @@ set ::i18n {
         toc_jump_bar       "Enter aller  esc/ctrl+q annuler"
         toc_headings       "%d titre%s"
         br_no_docs         "Aucun document. Appuyez sur n pour en créer un."
-        br_help_gui        " h:aide (n)ouveau  t:bloc-notes  (f)av  (s)tats  (b)ackup  d:supprimer  (r)enommer  (i)nfos  z:recharger  %s sections  (q)uitter"
+        br_help_gui        " h:aide (n)ouveau  t:bloc-notes  (f)av  (s)tats  (b)ackup  d:supprimer  (r)enommer  (i)nfos  (c)onfig  z:recharger  %s sections  (q)uitter"
         br_help_tui        "%s aide (n)ouveau bloc-no(t)es  (f)av  (s)tats  (b)ackup  d:supprimer  (r)enommer  (i)nfos  %s sections  (q)uitter"
         br_backed_up       "sauvegarde %s -> %s"
         br_favorites       "Favoris"
@@ -996,6 +1003,12 @@ set ::i18n {
         dlg_cancel         "Annuler"
         goto_title         "Aller à la ligne"
         goto_prompt        "Ligne :"
+        profile_config_title   "Paramètres de police des profils"
+        profile_config_profile "Profil :"
+        profile_config_font    "Police :"
+        profile_config_size    "Taille :"
+        profile_config_apply   "Appliquer"
+        profile_config_cancel  "Annuler"
     }
 }
 proc t {key args} {
@@ -1623,6 +1636,7 @@ bind .br.mid.lst <b>           { br-backup }
 bind .br.mid.lst <d>           { br-delete }
 bind .br.mid.lst <r>           { br-rename }
 bind .br.mid.lst <i>           { set e [br-selected]; if {[llength $e]} { info-dialog [file join [lindex $e 1] [lindex $e 2]] } }
+bind .br.mid.lst <c>           { profile-config-dialog }
 bind .br.mid.lst <q>           { exit }
 bind .br.mid.lst <z>           { br-reload }
 
@@ -2556,6 +2570,131 @@ bind .ed.t <Control-KP_Add>  { font-resize  1; break }
 bind .ed.t <Control-minus>   { font-resize -1; break }
 bind .ed.t <Control-KP_Subtract> { font-resize -1; break }
 
+proc profile-apply-fonts {profile font size} {
+    dict set ::cfg_profiles $profile font_family $font
+    dict set ::cfg_profiles $profile font_size $size
+    ini-save
+    if {$profile eq $::cfg_profile} {
+        profile-apply $profile
+        if {[info exists ::editor_open]} {
+            set f [list $::cfg_font_family $::cfg_font_size]
+            set ::font $f
+            catch {.ed.t configure -font $f}
+            foreach side {l r} {
+                catch {.ed.pw.${side}.t configure -font $f}
+            }
+            .ed.t tag configure heading -font [list $::cfg_font_family $::cfg_font_size bold]
+            apply-line-spacing
+        }
+    }
+}
+
+proc profile-config-dialog {} {
+    set w .profile_config
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [t profile_config_title]
+    wm resizable $w 0 0
+    wm transient $w .
+    grab $w
+
+    set profiles [lsort [dict keys $::cfg_profiles]]
+    if {[llength $profiles] == 0} {
+        label $w.msg -text "No profiles defined" -font $::font_sm -fg $::fg_bar -bg $::bg -padx 16 -pady 12
+        button $w.close -text [t profile_config_cancel] -font $::font_sm \
+            -command "destroy $w" -bg $::bg_bar -fg $::fg_bar
+        pack $w.msg -fill x
+        pack $w.close -pady 8
+        focus $w.close
+        return
+    }
+
+    set cur_profile_idx 0
+    if {[set idx [lsearch -exact $profiles $::cfg_profile]] >= 0} {
+        set cur_profile_idx $idx
+    }
+    set cur_profile [lindex $profiles $cur_profile_idx]
+
+    label $w.lbl_profile -text [t profile_config_profile] -font $::font_sm -fg $::fg -bg $::bg
+    pack $w.lbl_profile -anchor w -padx 12 -pady {8 2}
+
+    frame $w.fprofile
+    pack $w.fprofile -fill x -padx 12 -pady {0 8}
+    tk_optionMenu $w.fprofile.om ::profile_config_var {*}$profiles
+    $w.fprofile.om configure -bg $::bg_bar -fg $::fg_bar -highlightthickness 0
+    set ::profile_config_var [lindex $profiles $cur_profile_idx]
+    pack $w.fprofile.om -anchor w
+
+    label $w.lbl_font -text [t profile_config_font] -font $::font_sm -fg $::fg -bg $::bg
+    pack $w.lbl_font -anchor w -padx 12 -pady {8 2}
+
+    entry $w.font -width 35 -font $::font_sm
+    set cur_font $::cfg_font_family
+    if {[dict exists $::cfg_profiles $cur_profile font_family]} {
+        set cur_font [dict get $::cfg_profiles $cur_profile font_family]
+    }
+    $w.font insert 0 $cur_font
+    pack $w.font -fill x -padx 12 -pady {0 2}
+
+    label $w.lbl_fonts -text "Available fonts:" -font $::font_sm -fg $::fg -bg $::bg
+    pack $w.lbl_fonts -anchor w -padx 12
+
+    listbox $w.fonts -height 6 -width 40 -font $::font_sm -selectmode single
+    foreach f [lsort [font families]] {
+        $w.fonts insert end $f
+    }
+    if {$cur_font ne ""} {
+        set idx [lsearch -exact [lsort [font families]] $cur_font]
+        if {$idx >= 0} { $w.fonts selection set $idx; $w.fonts see $idx }
+    }
+    pack $w.fonts -fill both -expand 1 -padx 12 -pady 2
+
+    bind $w.fonts <<ListboxSelect>> {
+        set sel [%W curselection]
+        if {[llength $sel] > 0} {
+            set font_var [%W get [lindex $sel 0]]
+            .profile_config.font delete 0 end
+            .profile_config.font insert 0 $font_var
+        }
+    }
+
+    label $w.lbl_size -text [t profile_config_size] -font $::font_sm -fg $::fg -bg $::bg
+    pack $w.lbl_size -anchor w -padx 12 -pady {8 2}
+
+    frame $w.fsize
+    pack $w.fsize -fill x -padx 12 -pady {0 8}
+    spinbox $w.fsize.spin -from 6 -to 72 -width 5 -font $::font_sm
+    set cur_size $::cfg_font_size
+    if {[dict exists $::cfg_profiles $cur_profile font_size]} {
+        set cur_size [dict get $::cfg_profiles $cur_profile font_size]
+    }
+    $w.fsize.spin set $cur_size
+    pack $w.fsize.spin -anchor w
+
+    # Button frame
+    frame $w.btns
+    pack $w.btns -fill x -padx 12 -pady 8
+
+    button $w.btns.apply -text [t profile_config_apply] -font $::font_sm \
+        -bg $::bg_bar -fg $::fg_bar \
+        -command {
+            set font [.profile_config.font get]
+            set size [.profile_config.fsize.spin get]
+            set profile $::profile_config_var
+            if {$font eq "" || $size eq ""} return
+            profile-apply-fonts $profile $font $size
+            destroy .profile_config
+        }
+    pack $w.btns.apply -side left -padx 4
+
+    button $w.btns.cancel -text [t profile_config_cancel] -font $::font_sm \
+        -bg $::bg_bar -fg $::fg_bar -command [list destroy $w]
+    pack $w.btns.cancel -side left -padx 4
+
+    bind $w <Escape> [list destroy $w]
+    focus $w.font
+}
+
 proc help-dialog {} {
     set w .help
     catch {destroy $w}
@@ -2630,6 +2769,7 @@ proc help-dialog {} {
             "i"                                 "Show full path" \
             "d"                                 "Delete" \
             "r"                                 "Rename" \
+            "c"                                 "Font settings by profile" \
             [key-label $::cfg_key_toc]          "Browser sections" \
             [key-label $::cfg_key_fullscreen]   "Fullscreen" \
             [key-label $::cfg_key_open]         "Open file" \

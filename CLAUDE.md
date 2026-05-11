@@ -111,6 +111,10 @@ Section order: `DOCS_DIR_DEFAULT` → `DOCS_DIR` (if custom) → Favorites → R
 - Split view GUI only (TUI adaptation not planned yet)
 - `font_weight` not exposed in INI (removed, unreliable across fonts)
 
+## Git & commits
+
+**Never commit on behalf of the user.** Always let the user decide when and how to commit. Prepare changes but wait for explicit instruction before running `git commit`.
+
 ## SKILLS.md
 
 `SKILLS.md` in the repo root is the developer reference in French. It contains detailed rules, patterns, and a list of ideas not yet implemented — consult it before adding features.
