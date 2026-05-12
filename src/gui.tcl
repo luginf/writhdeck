@@ -1571,6 +1571,16 @@ proc profile-config-dialog {} {
     set ::profile_config_default_scheme $::cfg_scheme
     pack $w.global.fscheme.om -anchor w
 
+    label $w.global.lbl_lang -text [t profile_config_language] -font $::font_sm
+    pack $w.global.lbl_lang -anchor w -padx 12 -pady {4 2}
+    frame $w.global.flang
+    pack $w.global.flang -fill x -padx 12 -pady {0 6}
+    set langs [lsort [dict keys $::i18n]]
+    tk_optionMenu $w.global.flang.om ::profile_config_language {*}$langs
+    $w.global.flang.om configure -bg $::bg_bar -fg $::fg_bar -highlightthickness 0
+    set ::profile_config_language $::cfg_lang
+    pack $w.global.flang.om -anchor w
+
     # --- Profile-specific settings frame ---
     frame $w.profile -relief ridge -borderwidth 2
     pack $w.profile -fill both -expand 1 -padx 8 -pady 8
@@ -1695,6 +1705,7 @@ proc profile-config-dialog {} {
             set mh [.profile_config.fmarginh.spin get]
             set def_prof $::profile_config_default_prof
             set def_scheme $::profile_config_default_scheme
+            set def_lang $::profile_config_language
 
             if {$font eq "" || $size eq "" || $mw eq "" || $mh eq ""} return
 
@@ -1708,6 +1719,7 @@ proc profile-config-dialog {} {
 
             set ::cfg_profile $def_prof
             set ::cfg_scheme $def_scheme
+            set ::cfg_lang $def_lang
 
             ini-save
 

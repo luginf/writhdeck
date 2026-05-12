@@ -66,6 +66,7 @@ dict set ::i18n fr {
     profile_config_title   "Configuration"
     profile_config_default_profile "Profil par défaut :"
     profile_config_default_scheme  "Schéma de couleurs par défaut :"
+    profile_config_language        "Langue :"
     profile_config_edit_profile "Éditer le profil :"
     profile_config_font    "Police :"
     profile_config_size    "Taille :"
