@@ -35,15 +35,15 @@ Update it on every functional change.
 
 After `make`, the generated `writhdeck.tcl` contains these sections (concatenated from source modules):
 
-| Section | Source module | Lines | Content |
-|---|---|---|---|
-| Bootstrap | `src/boot.tcl` | 1–80 | Polyglot sh/Tcl, args, Tk detection, `::HOME_DIR`, `tilde-expand` |
-| State | `src/state.tcl` | 81–228 | `.writhdeck.json` persistence, cursors, favorites, recents, daily stats |
-| Config | `src/config.tcl` | 229–1033 | INI loading/saving, profiles, schemes, keys, i18n system, theme init |
-| Common | `src/common.tcl` | 1034–1238 | `list-docs`, `br-dirs`, `do-backup`, `build-extra-entries`, inline parsers |
-| **GUI** | `src/gui.tcl` | 1239–3240 | Wrapped in `if {!$::no_gui}` — browser, editor, dialogs, TOC, split view |
-| **TUI** | `src/tui.tcl` | 3241–4885 | Terminal UI — `tui-init`, `tui-browser`, `tui-editor`, `tui-main`, helpers |
-| Entry point | `src/main.tcl` | 4886–4917 | Dispatch: `if {$::no_gui}` → TUI, else → GUI |
+| Section     | Source module    | Lines     | Content                                                                    |
+| ----------- | ---------------- | --------- | -------------------------------------------------------------------------- |
+| Bootstrap   | `src/boot.tcl`   | 1–80      | Polyglot sh/Tcl, args, Tk detection, `::HOME_DIR`, `tilde-expand`          |
+| State       | `src/state.tcl`  | 81–228    | `.writhdeck.json` persistence, cursors, favorites, recents, daily stats    |
+| Config      | `src/config.tcl` | 229–1033  | INI loading/saving, profiles, schemes, keys, i18n system, theme init       |
+| Common      | `src/common.tcl` | 1034–1238 | `list-docs`, `br-dirs`, `do-backup`, `build-extra-entries`, inline parsers |
+| **GUI**     | `src/gui.tcl`    | 1239–3240 | Wrapped in `if {!$::no_gui}` — browser, editor, dialogs, TOC, split view   |
+| **TUI**     | `src/tui.tcl`    | 3241–4885 | Terminal UI — `tui-init`, `tui-browser`, `tui-editor`, `tui-main`, helpers |
+| Entry point | `src/main.tcl`   | 4886–4917 | Dispatch: `if {$::no_gui}` → TUI, else → GUI                               |
 
 The GUI block (`src/gui.tcl`) is wrapped in `if {!$::no_gui} { ... }` at build time, so CLI builds exclude it entirely.
 
@@ -69,7 +69,7 @@ These markers help navigate the ~5000-line file during development.
 
 **`chan configure` not `fconfigure`.** The codebase uses `chan configure` throughout (Tcl 8.5+ compatible, not deprecated in Tcl 9).
 
-**No Unicode symbols or em-dashes in user-visible strings.** Use ASCII equivalents: `->` not `→`, `-` not `—`, `[+]`/`[-]` not `★`/`☆`, `|` not `·`, etc. French accented characters (é, à, è, ê, É…) are the only intentional non-ASCII. This applies to i18n strings, help text, status bar, and all TUI output.
+| **No Unicode symbols or em-dashes in user-visible strings.** Use ASCII equivalents: `->` not `→`, `-` not `—`, `[+]`/`[-]` not `★`/`☆`, ` | ` not `·`, etc. French accented characters (é, à, è, ê, É…) are the only intentional non-ASCII. This applies to i18n strings, help text, status bar, and all TUI output. |
 
 ## Browser shortcuts and status bar
 
@@ -128,12 +128,12 @@ Hand-rolled JSON (no external parser):
 
 ## Browser entry types (`::br_entries`)
 
-| Type | Notes |
-|---|---|
-| `header` | Section separator. `dir=""` → label = `name` field (Favorites, Recents). `dir≠""` → abbreviated path |
-| `file` | File in a watched folder |
-| `favorite` | Pinned file (any folder) |
-| `recent` | Recent file outside watched folders (deduplicated) |
+| Type       | Notes                                                                                                |
+| ---------- | ---------------------------------------------------------------------------------------------------- |
+| `header`   | Section separator. `dir=""` → label = `name` field (Favorites, Recents). `dir≠""` → abbreviated path |
+| `file`     | File in a watched folder                                                                             |
+| `favorite` | Pinned file (any folder)                                                                             |
+| `recent`   | Recent file outside watched folders (deduplicated)                                                   |
 
 Section order: `DOCS_DIR_DEFAULT` → `DOCS_DIR` (if custom) → Favorites → Recents.
 `br-active-dir` walks up to the nearest `header`; if `dir=""` returns `DOCS_DIR_DEFAULT`.
@@ -142,7 +142,7 @@ Section order: `DOCS_DIR_DEFAULT` → `DOCS_DIR` (if custom) → Favorites → R
 
 **Help dialog close** — use `after idle [list destroy $w]; break` on keyboard bindings inside the Text widget; plain `destroy` triggers `<<TkTextBackspace>>` on the already-destroyed widget.
 
-**`quit-app`** — only prompts to save if `$::filename ne "" || $::scratchpad`.
+| **`quit-app`** — only prompts to save if `$::filename ne "" |  | $::scratchpad`. |
 
 **`open-file-dialog`** — uses `[file dirname $::filename]` as `initialdir` when a file is open, otherwise `DOCS_DIR_DEFAULT`.
 
@@ -168,17 +168,17 @@ Section order: `DOCS_DIR_DEFAULT` → `DOCS_DIR` (if custom) → Favorites → R
 
 The codebase is organized in `src/` directory and built via `Makefile`:
 
-| Module | Lines | Content |
-|---|---|---|
-| `src/boot.tcl` | ~80 | Polyglot sh/Tcl, args parsing, Tk detection, HOME_DIR setup |
-| `src/boot-cli.tcl` | ~80 | CLI variant: no Tk loading, forces `::no_gui 1` |
-| `src/state.tcl` | ~147 | JSON state persistence, cursors, favorites, recents, daily stats |
-| `src/config.tcl` | ~804 | INI loading/saving, profiles, color schemes, keys, i18n, theme init |
-| `src/common.tcl` | ~204 | Docs listing, backup, inline parsers, browser entry building |
-| `src/gui.tcl` | ~2001 | Full GUI (Tk) block — wrapped in `if {!$::no_gui}` |
-| `src/tui.tcl` | ~1644 | TUI mode code — terminal UI, browser, editor |
-| `src/main.tcl` | ~31 | Entry point dispatch (GUI or TUI based on `$::no_gui`) |
-| `src/main-cli.tcl` | ~2 | CLI entry point (always calls `tui-main`) |
+| Module             | Lines | Content                                                             |
+| ------------------ | ----- | ------------------------------------------------------------------- |
+| `src/boot.tcl`     | ~80   | Polyglot sh/Tcl, args parsing, Tk detection, HOME_DIR setup         |
+| `src/boot-cli.tcl` | ~80   | CLI variant: no Tk loading, forces `::no_gui 1`                     |
+| `src/state.tcl`    | ~147  | JSON state persistence, cursors, favorites, recents, daily stats    |
+| `src/config.tcl`   | ~804  | INI loading/saving, profiles, color schemes, keys, i18n, theme init |
+| `src/common.tcl`   | ~204  | Docs listing, backup, inline parsers, browser entry building        |
+| `src/gui.tcl`      | ~2001 | Full GUI (Tk) block — wrapped in `if {!$::no_gui}`                  |
+| `src/tui.tcl`      | ~1644 | TUI mode code — terminal UI, browser, editor                        |
+| `src/main.tcl`     | ~31   | Entry point dispatch (GUI or TUI based on `$::no_gui`)              |
+| `src/main-cli.tcl` | ~2    | CLI entry point (always calls `tui-main`)                           |
 
 **Build targets** (via `make`):
 - `make` or `make all` — generate both files with all available languages

@@ -25,12 +25,12 @@ Que vous écriviez sur un Raspberry Pi Zero avec un écran E-ink, sur une tablet
 
 Tcl/Tk 8.6+ doit être installé sur votre système :
 
-| Plateforme | Commande |
-|---|---|
-| Debian/Ubuntu | `apt install tk` |
-| Mac OS | `brew install tcl-tk` |
-| Windows | [tcl-lang.org/software/tcltk/bindist.html](https://www.tcl-lang.org/software/tcltk/bindist.html) |
-| Haiku OS | `pkgman install tcl tk` |
+| Plateforme    | Commande                                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------ |
+| Debian/Ubuntu | `apt install tk`                                                                                 |
+| Mac OS        | `brew install tcl-tk`                                                                            |
+| Windows       | [tcl-lang.org/software/tcltk/bindist.html](https://www.tcl-lang.org/software/tcltk/bindist.html) |
+| Haiku OS      | `pkgman install tcl tk`                                                                          |
 
 ## Démarrage rapide
 

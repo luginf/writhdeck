@@ -81,7 +81,7 @@ clean:
 	rm -f writhdeck.tcl writhdeck-cli.tcl
 	@echo "Cleaned build artifacts"
 
-.PHONY: test-gui test-cli test test-i18n test-syntax test-langs
+.PHONY: test-gui test-cli test test-i18n test-syntax test-langs lint-doc
 
 test-gui: writhdeck.tcl
 	@echo "Testing writhdeck.tcl (GUI mode)..."
@@ -108,3 +108,11 @@ test-langs:
 test: test-i18n test-syntax test-gui test-cli test-langs
 	@echo ""
 	@echo "✓ All regression tests passed"
+
+lint-doc:
+	@echo "Aligning markdown table pipes..."
+	@tclsh tools/align-tables.tcl writhdeck_MANUAL.md --inplace
+	@tclsh tools/align-tables.tcl README.md --inplace
+	@tclsh tools/align-tables.tcl README.fr.md --inplace
+	@tclsh tools/align-tables.tcl CLAUDE.md --inplace
+	@echo "✓ Documentation tables aligned"

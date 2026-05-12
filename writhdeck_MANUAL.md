@@ -11,13 +11,13 @@
 
 Requires Tcl/Tk on your system.
 
-| Platform        | Command / Source                                      |
-|-----------------|-------------------------------------------------------|
-| Debian/Ubuntu   | `apt install tk`                                      |
-| Other Linux/BSD | refer to your package manager (`tk` or `tcl-tk`)      |
-| Mac OS          | `brew install tcl-tk`                                 |
-| Windows         | https://www.tcl-lang.org/software/tcltk/bindist.html  |
-| Haiku OS        | `pkgman install tcl tk`                               |
+| Platform          | Command / Source                                        |
+| ----------------- | ------------------------------------------------------- |
+| Debian/Ubuntu     | `apt install tk`                                        |
+| Other Linux/BSD   | refer to your package manager (`tk` or `tcl-tk`)        |
+| Mac OS            | `brew install tcl-tk`                                   |
+| Windows           | https://www.tcl-lang.org/software/tcltk/bindist.html    |
+| Haiku OS          | `pkgman install tcl tk`                                 |
 
 Run WrithDeck:
 
@@ -37,13 +37,13 @@ cp writhdeck-cli.tcl /usr/local/bin/writhdeck-cli  # TUI-only, no Tk required
 
 ## Command-line options
 
-| Option           | Description                                         |
-|------------------|-----------------------------------------------------|
-| `--help`, `-h`   | Show help and exit                                  |
-| `--gui`          | Force GUI (Tk) mode — skip display server detection |
-| `--tui`          | Force TUI (terminal) mode                           |
-| `--cli`          | Alias for `--tui`                                   |
-| `--no-gui`, `--ng` | Aliases for `--tui`                               |
+| Option             | Description                                           |
+| ------------------ | ----------------------------------------------------- |
+| `--help`, `-h`     | Show help and exit                                    |
+| `--gui`            | Force GUI (Tk) mode — skip display server detection   |
+| `--tui`            | Force TUI (terminal) mode                             |
+| `--cli`            | Alias for `--tui`                                     |
+| `--no-gui`, `--ng` | Aliases for `--tui`                                   |
 
 When both `--gui` and `--tui`/`--no-gui` are given, TUI takes precedence.
 
@@ -80,37 +80,37 @@ All keyboard shortcuts are configurable via the `[keys]` section.
 
 ### `[editor]`
 
-| Key                     | Default     | Description                                                           |
-|-------------------------|-------------|-----------------------------------------------------------------------|
-| `profile`               | `default`   | Active profile — must match a `[name]` block in `[profiles]`          |
-| `scheme`                | `default`   | Active color scheme — must match a `[name]` block in `[schemes]`      |
-| `docs_dir`              | —           | Optional second documents folder (shown as a second section)          |
-| `console_margin_cols`   | `6`         | Horizontal margin in columns (TUI only)                               |
-| `console_margin_rows`   | `4`         | Vertical margin in lines (TUI only)                                   |
-| `heading_marker`        | `=`         | Heading delimiter (`= title =`)                                       |
-| `comment_marker`        | `%`         | Line comment prefix; set to `0` or leave empty to disable             |
-| `bold_marker`           | `**`        | Bold inline marker; set to `0` or leave empty to disable              |
-| `italic_marker`         | `//`        | Italic inline marker; set to `0` or leave empty to disable            |
-| `underline_marker`      | `__`        | Underline inline marker; set to `0` or leave empty to disable         |
-| `strikethrough_marker`  | `--`        | Strikethrough inline marker; set to `0` or leave empty to disable     |
+| Key                       | Default       | Description                                                             |
+| ------------------------- | ------------- | ----------------------------------------------------------------------- |
+| `profile`                 | `default`     | Active profile — must match a `[name]` block in `[profiles]`            |
+| `scheme`                  | `default`     | Active color scheme — must match a `[name]` block in `[schemes]`        |
+| `docs_dir`                | —             | Optional second documents folder (shown as a second section)            |
+| `console_margin_cols`     | `6`           | Horizontal margin in columns (TUI only)                                 |
+| `console_margin_rows`     | `4`           | Vertical margin in lines (TUI only)                                     |
+| `heading_marker`          | `=`           | Heading delimiter (`= title =`)                                         |
+| `comment_marker`          | `%`           | Line comment prefix; set to `0` or leave empty to disable               |
+| `bold_marker`             | `**`          | Bold inline marker; set to `0` or leave empty to disable                |
+| `italic_marker`           | `//`          | Italic inline marker; set to `0` or leave empty to disable              |
+| `underline_marker`        | `__`          | Underline inline marker; set to `0` or leave empty to disable           |
+| `strikethrough_marker`    | `--`          | Strikethrough inline marker; set to `0` or leave empty to disable       |
 
 ### `[behaviour]`
 
-| Key                     | Default | Description                                                                                       |
-|-------------------------|---------|---------------------------------------------------------------------------------------------------|
-| `browser`               | `1`     | Return to file browser after closing a file                                                       |
-| `watch_file`            | `1`     | Detect external file modifications and prompt to reload; `0` to disable                           |
-| `split_shrink_margin`   | `1`     | Halve `margin_width` in split view (GUI); `0` to keep the full margin                            |
-| `hemingway_mode`        | `0`     | When typewriter mode is active: block arrows, backspace and undo; hide status bar; double margins |
-| `console_center_alert`  | `1`     | Center confirm dialogs (TUI); `0` = bottom bar                                                    |
-| `block_cursor_gui`      | `1`     | Block cursor in GUI mode                                                                          |
-| `block_cursor_console`  | `1`     | Block cursor in TUI mode                                                                          |
-| `blink_cursor`          | `0`     | Blinking cursor                                                                                   |
-| `line_numbers`          | `0`     | Show line numbers                                                                                 |
-| `cursor_restore`        | `1`     | Restore cursor position on reopen                                                                 |
-| `lang`                  | `en`    | Interface language: `en`, `fr`, `de`, `es`, `ko`, `no`; also selectable in config dialog (c key) |
-| `dark_mode`             | `1`     | Dark theme; `0` = light                                                                           |
-| `word_goal`             | `500`   | Daily word goal shown by the `goal` status token; `0` to disable                                 |
+| Key                       | Default   | Description                                                                                         |
+| ------------------------- | --------- | --------------------------------------------------------------------------------------------------- |
+| `browser`                 | `1`       | Return to file browser after closing a file                                                         |
+| `watch_file`              | `1`       | Detect external file modifications and prompt to reload; `0` to disable                             |
+| `split_shrink_margin`     | `1`       | Halve `margin_width` in split view (GUI); `0` to keep the full margin                               |
+| `hemingway_mode`          | `0`       | When typewriter mode is active: block arrows, backspace and undo; hide status bar; double margins   |
+| `console_center_alert`    | `1`       | Center confirm dialogs (TUI); `0` = bottom bar                                                      |
+| `block_cursor_gui`        | `1`       | Block cursor in GUI mode                                                                            |
+| `block_cursor_console`    | `1`       | Block cursor in TUI mode                                                                            |
+| `blink_cursor`            | `0`       | Blinking cursor                                                                                     |
+| `line_numbers`            | `0`       | Show line numbers                                                                                   |
+| `cursor_restore`          | `1`       | Restore cursor position on reopen                                                                   |
+| `lang`                    | `en`      | Interface language: `en`, `fr`, `de`, `es`, `ko`, `no`; also selectable in config dialog (c key)    |
+| `dark_mode`               | `1`       | Dark theme; `0` = light                                                                             |
+| `word_goal`               | `500`     | Daily word goal shown by the `goal` status token; `0` to disable                                    |
 
 ### `[keys]`
 
@@ -122,19 +122,19 @@ All actions are rebindable. Use Tk key names (`Control-s`, `Alt-Return`, `F11`, 
 
 Named presets for display and behaviour. Each `[name]` block can override margins, fonts, and most behaviour options. Select the active profile with `profile = name` in `[editor]`. The `[default]` profile is always written by WrithDeck.
 
-| Key                        | Default  | Description                                                          |
-|----------------------------|----------|----------------------------------------------------------------------|
-| `margin_width`             | `60`     | Horizontal padding in pixels (GUI)                                   |
-| `margin_height`            | `40`     | Vertical padding in pixels (GUI)                                     |
-| `font_size`                | `13`     | Font size (GUI)                                                      |
-| `font_family`              | `Mono`   | Font family; Tk resolves `Mono` to the best available monospace      |
-| `bar_font_family`          | `Mono`   | Font family for the status bar (GUI)                                 |
-| `line_spacing`             | `100`    | Line spacing in % (GUI)                                              |
-| `bar_height`               | `18`     | Status bar height in pixels (GUI)                                    |
-| `word_goal`                | `500`    | Daily word goal for this profile                                     |
-| `dark_mode`                | —        | Override dark/light theme per profile                                |
-| `lang`                     | —        | Override interface language per profile                              |
-| `status_left/center/right` | —        | Override status bar layout per profile                               |
+| Key                          | Default    | Description                                                            |
+| ---------------------------- | ---------- | ---------------------------------------------------------------------- |
+| `margin_width`               | `60`       | Horizontal padding in pixels (GUI)                                     |
+| `margin_height`              | `40`       | Vertical padding in pixels (GUI)                                       |
+| `font_size`                  | `13`       | Font size (GUI)                                                        |
+| `font_family`                | `Mono`     | Font family; Tk resolves `Mono` to the best available monospace        |
+| `bar_font_family`            | `Mono`     | Font family for the status bar (GUI)                                   |
+| `line_spacing`               | `100`      | Line spacing in % (GUI)                                                |
+| `bar_height`                 | `18`       | Status bar height in pixels (GUI)                                      |
+| `word_goal`                  | `500`      | Daily word goal for this profile                                       |
+| `dark_mode`                  | —          | Override dark/light theme per profile                                  |
+| `lang`                       | —          | Override interface language per profile                                |
+| `status_left/center/right`   | —          | Override status bar layout per profile                                 |
 
 Example:
 
@@ -158,16 +158,16 @@ word_goal       = 1000
 
 Color scheme definitions. Each `[name]` block defines dark and light colors. Select with `scheme = name` in `[editor]`. The `[default]` scheme is always written by WrithDeck.
 
-| Key                                   | Description                           |
-|---------------------------------------|---------------------------------------|
-| `color_bg` / `color_bg_alt`           | Editor background (dark / light)      |
-| `color_fg` / `color_fg_alt`           | Editor text (dark / light)            |
-| `color_bg_bar` / `color_bg_bar_alt`   | Status bar background (dark / light)  |
-| `color_fg_bar` / `color_fg_bar_alt`   | Status bar text (dark / light)        |
-| `color_bg_sel` / `color_bg_sel_alt`   | Selection background (dark / light)   |
-| `color_heading` / `color_heading_alt` | Heading color (dark / light)          |
-| `color_comment` / `color_comment_alt` | Comment / dimmed line (dark / light)  |
-| `color_markup` / `color_markup_alt`   | Inline markup color (dark / light)    |
+| Key                                     | Description                             |
+| --------------------------------------- | --------------------------------------- |
+| `color_bg` / `color_bg_alt`             | Editor background (dark / light)        |
+| `color_fg` / `color_fg_alt`             | Editor text (dark / light)              |
+| `color_bg_bar` / `color_bg_bar_alt`     | Status bar background (dark / light)    |
+| `color_fg_bar` / `color_fg_bar_alt`     | Status bar text (dark / light)          |
+| `color_bg_sel` / `color_bg_sel_alt`     | Selection background (dark / light)     |
+| `color_heading` / `color_heading_alt`   | Heading color (dark / light)            |
+| `color_comment` / `color_comment_alt`   | Comment / dimmed line (dark / light)    |
+| `color_markup` / `color_markup_alt`     | Inline markup color (dark / light)      |
 
 Toggle between dark and light with `Ctrl+D` (configurable via `key_dark_toggle`).
 
@@ -201,50 +201,50 @@ Default mode, requires Tk.
 
 ### Shortcuts — Editor
 
-| Key                      | Action                                                                |
-|--------------------------|-----------------------------------------------------------------------|
-| Ctrl+S                   | Save                                                                  |
-| Ctrl+Shift+S             | Save as… (with overwrite confirmation)                                |
-| Ctrl+Q                   | Close file, return to browser                                         |
-| Ctrl+F                   | Find (inline bar, live highlighting, counter)                         |
-| Ctrl+R                   | Find & Replace (Enter: replace one, Ctrl+Enter: all)                  |
-| Ctrl+Z                   | Undo                                                                  |
-| Ctrl+Y                   | Redo                                                                  |
-| Ctrl+T                   | Typewriter / focus mode (toggle)                                      |
-| Ctrl+O                   | Open any file (system dialog)                                         |
-| Ctrl+G                   | Go to line                                                            |
-| Ctrl+H                   | Help dialog (date/time, file stats, selection stats if text selected) |
-| Ctrl+L                   | Show/hide line numbers                                                |
-| Ctrl+D                   | Toggle dark/light theme                                               |
-| Ctrl+Up / Ctrl+Down      | Jump to previous / next paragraph                                     |
-| Ctrl+Left / Ctrl+Right   | Jump to previous / next word                                          |
-| F11                      | Table of contents                                                     |
-| F3                       | Toggle split view                                                     |
-| F4                       | Split view — cycle focus between panes                                |
-| Alt+Enter                | Fullscreen toggle                                                     |
-| Tab                      | Insert literal tab character                                          |
-| Shift+Up/Down/Left/Right | Extend selection                                                      |
+| Key                        | Action                                                                  |
+| -------------------------- | ----------------------------------------------------------------------- |
+| Ctrl+S                     | Save                                                                    |
+| Ctrl+Shift+S               | Save as… (with overwrite confirmation)                                  |
+| Ctrl+Q                     | Close file, return to browser                                           |
+| Ctrl+F                     | Find (inline bar, live highlighting, counter)                           |
+| Ctrl+R                     | Find & Replace (Enter: replace one, Ctrl+Enter: all)                    |
+| Ctrl+Z                     | Undo                                                                    |
+| Ctrl+Y                     | Redo                                                                    |
+| Ctrl+T                     | Typewriter / focus mode (toggle)                                        |
+| Ctrl+O                     | Open any file (system dialog)                                           |
+| Ctrl+G                     | Go to line                                                              |
+| Ctrl+H                     | Help dialog (date/time, file stats, selection stats if text selected)   |
+| Ctrl+L                     | Show/hide line numbers                                                  |
+| Ctrl+D                     | Toggle dark/light theme                                                 |
+| Ctrl+Up / Ctrl+Down        | Jump to previous / next paragraph                                       |
+| Ctrl+Left / Ctrl+Right     | Jump to previous / next word                                            |
+| F11                        | Table of contents                                                       |
+| F3                         | Toggle split view                                                       |
+| F4                         | Split view — cycle focus between panes                                  |
+| Alt+Enter                  | Fullscreen toggle                                                       |
+| Tab                        | Insert literal tab character                                            |
+| Shift+Up/Down/Left/Right   | Extend selection                                                        |
 
 ### Shortcuts — Browser
 
-| Key                  | Action                                                              |
-|----------------------|---------------------------------------------------------------------|
-| Enter / double-click | Open file                                                           |
-| n                    | New file                                                            |
-| t                    | Scratchpad (in-memory buffer; Ctrl+S prompts for a name to save)    |
-| f                    | Toggle favorite                                                     |
-| s                    | Writing stats — daily word counts                                   |
-| b                    | Backup — copies to `backups/` with a `name_YYYY-MM-DDTHHhMM` stamp  |
-| d                    | Delete file                                                         |
-| r                    | Rename file                                                         |
-| i                    | Show full path                                                      |
-| c                    | Configuration — profiles, fonts, margins, color scheme, language    |
-| z                    | Reload — relaunch WrithDeck (returns to browser)                    |
-| h / Ctrl+H           | Help                                                                |
-| Ctrl+O               | Open any file (system dialog)                                       |
-| Ctrl+D               | Toggle dark/light theme                                             |
-| Alt+Enter            | Fullscreen toggle                                                   |
-| q                    | Quit                                                                |
+| Key                    | Action                                                                |
+| ---------------------- | --------------------------------------------------------------------- |
+| Enter / double-click   | Open file                                                             |
+| n                      | New file                                                              |
+| t                      | Scratchpad (in-memory buffer; Ctrl+S prompts for a name to save)      |
+| f                      | Toggle favorite                                                       |
+| s                      | Writing stats — daily word counts                                     |
+| b                      | Backup — copies to `backups/` with a `name_YYYY-MM-DDTHHhMM` stamp    |
+| d                      | Delete file                                                           |
+| r                      | Rename file                                                           |
+| i                      | Show full path                                                        |
+| c                      | Configuration — profiles, fonts, margins, color scheme, language      |
+| z                      | Reload — relaunch WrithDeck (returns to browser)                      |
+| h / Ctrl+H             | Help                                                                  |
+| Ctrl+O                 | Open any file (system dialog)                                         |
+| Ctrl+D                 | Toggle dark/light theme                                               |
+| Alt+Enter              | Fullscreen toggle                                                     |
+| q                      | Quit                                                                  |
 
 ### Split view notes
 
@@ -271,47 +271,47 @@ Activated via `--no-gui` / `--tui` / `--ng`, or when no windowing system is avai
 
 ### Shortcuts — Editor
 
-| Key                               | Action                                                     |
-|-----------------------------------|------------------------------------------------------------|
-| Ctrl+S                            | Save (scratchpad: prompts for filename first)              |
-| Ctrl+Q / Esc                      | Close file, return to browser                              |
-| Ctrl+F                            | Find (prompt; repeat to find next)                         |
-| Ctrl+R                            | Find & Replace (global, with replacement counter)          |
-| Ctrl+Z                            | Undo (100-state stack)                                     |
-| Ctrl+Y                            | Redo                                                       |
-| Ctrl+T                            | Typewriter / focus mode (toggle)                           |
-| Ctrl+O                            | Save and return to browser                                 |
-| Ctrl+G                            | Go to line                                                 |
-| Ctrl+H                            | Help                                                       |
-| Ctrl+L                            | Show/hide line numbers                                     |
-| Ctrl+D                            | Toggle dark/light theme (reverse video)                    |
-| Ctrl+Up / Ctrl+Down               | Jump to previous / next paragraph (terminal emulator only) |
-| Ctrl+Left / Ctrl+Right or Alt+B / Alt+F | Jump to previous / next word                         |
-| F11                               | Table of contents (Esc / Ctrl+Q to close, Enter to jump)   |
-| Ctrl+A                            | Select all                                                 |
-| Ctrl+K                            | Toggle sticky selection (first: anchor; second: cancel)    |
-| Shift+Up/Down/Left/Right          | Extend selection                                           |
-| Ctrl+C                            | Copy (via xclip / xsel / wl-copy)                          |
-| Ctrl+X                            | Cut                                                        |
-| Ctrl+V                            | Paste (multi-line supported)                               |
-| Tab                               | Insert 4 spaces                                            |
+| Key                                     | Action                                                       |
+| --------------------------------------- | ------------------------------------------------------------ |
+| Ctrl+S                                  | Save (scratchpad: prompts for filename first)                |
+| Ctrl+Q / Esc                            | Close file, return to browser                                |
+| Ctrl+F                                  | Find (prompt; repeat to find next)                           |
+| Ctrl+R                                  | Find & Replace (global, with replacement counter)            |
+| Ctrl+Z                                  | Undo (100-state stack)                                       |
+| Ctrl+Y                                  | Redo                                                         |
+| Ctrl+T                                  | Typewriter / focus mode (toggle)                             |
+| Ctrl+O                                  | Save and return to browser                                   |
+| Ctrl+G                                  | Go to line                                                   |
+| Ctrl+H                                  | Help                                                         |
+| Ctrl+L                                  | Show/hide line numbers                                       |
+| Ctrl+D                                  | Toggle dark/light theme (reverse video)                      |
+| Ctrl+Up / Ctrl+Down                     | Jump to previous / next paragraph (terminal emulator only)   |
+| Ctrl+Left / Ctrl+Right or Alt+B / Alt+F | Jump to previous / next word                                 |
+| F11                                     | Table of contents (Esc / Ctrl+Q to close, Enter to jump)     |
+| Ctrl+A                                  | Select all                                                   |
+| Ctrl+K                                  | Toggle sticky selection (first: anchor; second: cancel)      |
+| Shift+Up/Down/Left/Right                | Extend selection                                             |
+| Ctrl+C                                  | Copy (via xclip / xsel / wl-copy)                            |
+| Ctrl+X                                  | Cut                                                          |
+| Ctrl+V                                  | Paste (multi-line supported)                                 |
+| Tab                                     | Insert 4 spaces                                              |
 
 ### Shortcuts — Browser
 
-| Key          | Action                                                              |
-|--------------|---------------------------------------------------------------------|
-| Enter        | Open file                                                           |
-| n            | New file                                                            |
-| t            | Scratchpad (in-memory buffer; Ctrl+S prompts for a name to save)    |
-| f            | Toggle favorite                                                     |
-| s            | Writing stats — daily word counts                                   |
-| b            | Backup — copies to `backups/` with a `name_YYYY-MM-DDTHHhMM` stamp  |
-| d            | Delete file                                                         |
-| r            | Rename file                                                         |
-| i            | Show full path                                                      |
-| z            | Reload — relaunch WrithDeck (returns to browser)                    |
-| h / Ctrl+H   | Help                                                                |
-| q / Ctrl+Q   | Quit                                                                |
+| Key            | Action                                                                |
+| -------------- | --------------------------------------------------------------------- |
+| Enter          | Open file                                                             |
+| n              | New file                                                              |
+| t              | Scratchpad (in-memory buffer; Ctrl+S prompts for a name to save)      |
+| f              | Toggle favorite                                                       |
+| s              | Writing stats — daily word counts                                     |
+| b              | Backup — copies to `backups/` with a `name_YYYY-MM-DDTHHhMM` stamp    |
+| d              | Delete file                                                           |
+| r              | Rename file                                                           |
+| i              | Show full path                                                        |
+| z              | Reload — relaunch WrithDeck (returns to browser)                      |
+| h / Ctrl+H     | Help                                                                  |
+| q / Ctrl+Q     | Quit                                                                  |
 
 ---
 
@@ -334,13 +334,13 @@ Activated via `--no-gui` / `--tui` / `--ng`, or when no windowing system is avai
 
 Tcl/Tk doit être installé sur votre système.
 
-| Plateforme       | Commande / Source                                     |
-|------------------|-------------------------------------------------------|
-| Debian/Ubuntu    | `apt install tk`                                      |
-| Autre Linux/BSD  | selon le gestionnaire de paquets (`tk` ou `tcl-tk`)   |
-| Mac OS           | `brew install tcl-tk`                                 |
-| Windows          | https://www.tcl-lang.org/software/tcltk/bindist.html  |
-| Haiku OS         | `pkgman install tcl tk`                               |
+| Plateforme         | Commande / Source                                       |
+| ------------------ | ------------------------------------------------------- |
+| Debian/Ubuntu      | `apt install tk`                                        |
+| Autre Linux/BSD    | selon le gestionnaire de paquets (`tk` ou `tcl-tk`)     |
+| Mac OS             | `brew install tcl-tk`                                   |
+| Windows            | https://www.tcl-lang.org/software/tcltk/bindist.html    |
+| Haiku OS           | `pkgman install tcl tk`                                 |
 
 Lancer WrithDeck :
 
@@ -358,12 +358,12 @@ cp writhdeck.tcl /usr/local/bin/writhdeck
 
 ## Options de ligne de commande
 
-| Option           | Description                                                    |
-|------------------|----------------------------------------------------------------|
-| `--help`, `-h`   | Afficher l'aide et quitter                                     |
-| `--gui`          | Forcer le mode GUI (Tk) — ignorer la détection de l'affichage  |
-| `--no-gui`       | Forcer le mode TUI (terminal)                                  |
-| `--tui`, `--ng`  | Alias de `--no-gui`                                            |
+| Option             | Description                                                      |
+| ------------------ | ---------------------------------------------------------------- |
+| `--help`, `-h`     | Afficher l'aide et quitter                                       |
+| `--gui`            | Forcer le mode GUI (Tk) — ignorer la détection de l'affichage    |
+| `--no-gui`         | Forcer le mode TUI (terminal)                                    |
+| `--tui`, `--ng`    | Alias de `--no-gui`                                              |
 
 Si `--gui` et `--no-gui` sont tous les deux présents, `--no-gui` a la priorité.
 
@@ -400,37 +400,37 @@ Tous les raccourcis clavier sont configurables via la section `[keys]`.
 
 ### `[editor]`
 
-| Clé                     | Défaut      | Description                                                              |
-|-------------------------|-------------|--------------------------------------------------------------------------|
-| `profile`               | `default`   | Profil actif — doit correspondre à un bloc `[nom]` dans `[profiles]`     |
-| `scheme`                | `default`   | Schéma de couleurs actif — doit correspondre à un bloc dans `[schemes]`  |
-| `docs_dir`              | —           | Deuxième dossier de documents optionnel (deuxième section du navigateur) |
-| `console_margin_cols`   | `6`         | Marge horizontale en colonnes (TUI uniquement)                           |
-| `console_margin_rows`   | `4`         | Marge verticale en lignes (TUI uniquement)                               |
-| `heading_marker`        | `=`         | Délimiteur de titre (`= titre =`)                                        |
-| `comment_marker`        | `%`         | Préfixe de commentaire ; mettre `0` ou laisser vide pour désactiver      |
-| `bold_marker`           | `**`        | Marqueur gras inline ; mettre `0` ou laisser vide pour désactiver        |
-| `italic_marker`         | `//`        | Marqueur italique inline ; mettre `0` ou laisser vide pour désactiver    |
-| `underline_marker`      | `__`        | Marqueur souligné inline ; mettre `0` ou laisser vide pour désactiver    |
-| `strikethrough_marker`  | `--`        | Marqueur barré inline ; mettre `0` ou laisser vide pour désactiver       |
+| Clé                       | Défaut        | Description                                                                |
+| ------------------------- | ------------- | -------------------------------------------------------------------------- |
+| `profile`                 | `default`     | Profil actif — doit correspondre à un bloc `[nom]` dans `[profiles]`       |
+| `scheme`                  | `default`     | Schéma de couleurs actif — doit correspondre à un bloc dans `[schemes]`    |
+| `docs_dir`                | —             | Deuxième dossier de documents optionnel (deuxième section du navigateur)   |
+| `console_margin_cols`     | `6`           | Marge horizontale en colonnes (TUI uniquement)                             |
+| `console_margin_rows`     | `4`           | Marge verticale en lignes (TUI uniquement)                                 |
+| `heading_marker`          | `=`           | Délimiteur de titre (`= titre =`)                                          |
+| `comment_marker`          | `%`           | Préfixe de commentaire ; mettre `0` ou laisser vide pour désactiver        |
+| `bold_marker`             | `**`          | Marqueur gras inline ; mettre `0` ou laisser vide pour désactiver          |
+| `italic_marker`           | `//`          | Marqueur italique inline ; mettre `0` ou laisser vide pour désactiver      |
+| `underline_marker`        | `__`          | Marqueur souligné inline ; mettre `0` ou laisser vide pour désactiver      |
+| `strikethrough_marker`    | `--`          | Marqueur barré inline ; mettre `0` ou laisser vide pour désactiver         |
 
 ### `[behaviour]`
 
-| Clé                     | Défaut | Description                                                                                          |
-|-------------------------|--------|------------------------------------------------------------------------------------------------------|
-| `browser`               | `1`    | Retourner au navigateur après la fermeture d'un fichier                                              |
-| `watch_file`            | `1`    | Détecter les modifications externes et proposer de recharger ; `0` pour désactiver                   |
-| `split_shrink_margin`   | `1`    | Diviser `margin_width` par deux en vue fractionnée (GUI) ; `0` pour conserver la marge complète      |
-| `hemingway_mode`        | `0`    | Quand le mode machine à écrire est actif : bloquer les flèches, la suppression et l'annulation       |
-| `console_center_alert`  | `1`    | Centrer les dialogues de confirmation (TUI) ; `0` = barre du bas                                     |
-| `block_cursor_gui`      | `1`    | Curseur bloc en mode GUI                                                                             |
-| `block_cursor_console`  | `1`    | Curseur bloc en mode TUI                                                                             |
-| `blink_cursor`          | `0`    | Curseur clignotant                                                                                   |
-| `line_numbers`          | `0`    | Afficher les numéros de ligne                                                                        |
-| `cursor_restore`        | `1`    | Restaurer la position du curseur à la réouverture                                                    |
-| `lang`                  | `en`   | Langue de l'interface : `en`, `fr`, `de`, `es`, `ko`, `no` ; aussi sélectionnable dans le dialogue config (touche c) |
-| `dark_mode`             | `1`    | Thème sombre ; `0` = clair                                                                           |
-| `word_goal`             | `500`  | Objectif de mots journalier affiché par le jeton `goal` ; `0` pour désactiver                        |
+| Clé                       | Défaut   | Description                                                                                                          |
+| ------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `browser`                 | `1`      | Retourner au navigateur après la fermeture d'un fichier                                                              |
+| `watch_file`              | `1`      | Détecter les modifications externes et proposer de recharger ; `0` pour désactiver                                   |
+| `split_shrink_margin`     | `1`      | Diviser `margin_width` par deux en vue fractionnée (GUI) ; `0` pour conserver la marge complète                      |
+| `hemingway_mode`          | `0`      | Quand le mode machine à écrire est actif : bloquer les flèches, la suppression et l'annulation                       |
+| `console_center_alert`    | `1`      | Centrer les dialogues de confirmation (TUI) ; `0` = barre du bas                                                     |
+| `block_cursor_gui`        | `1`      | Curseur bloc en mode GUI                                                                                             |
+| `block_cursor_console`    | `1`      | Curseur bloc en mode TUI                                                                                             |
+| `blink_cursor`            | `0`      | Curseur clignotant                                                                                                   |
+| `line_numbers`            | `0`      | Afficher les numéros de ligne                                                                                        |
+| `cursor_restore`          | `1`      | Restaurer la position du curseur à la réouverture                                                                    |
+| `lang`                    | `en`     | Langue de l'interface : `en`, `fr`, `de`, `es`, `ko`, `no` ; aussi sélectionnable dans le dialogue config (touche c) |
+| `dark_mode`               | `1`      | Thème sombre ; `0` = clair                                                                                           |
+| `word_goal`               | `500`    | Objectif de mots journalier affiché par le jeton `goal` ; `0` pour désactiver                                        |
 
 ### `[keys]`
 
@@ -442,19 +442,19 @@ Toutes les actions sont reconfigurables. Utiliser les noms de touches Tk (`Contr
 
 Préréglages nommés pour l'affichage et le comportement. Chaque bloc `[nom]` peut surcharger les marges, les polices et la plupart des options. Sélectionner le profil actif avec `profile = nom` dans `[editor]`. Le profil `[default]` est toujours écrit par WrithDeck.
 
-| Clé                        | Défaut  | Description                                                        |
-|----------------------------|---------|--------------------------------------------------------------------|
-| `margin_width`             | `60`    | Marge horizontale en pixels (GUI)                                  |
-| `margin_height`            | `40`    | Marge verticale en pixels (GUI)                                    |
-| `font_size`                | `13`    | Taille de police (GUI)                                             |
-| `font_family`              | `Mono`  | Famille de police ; Tk résout `Mono` vers la meilleure monospace   |
-| `bar_font_family`          | `Mono`  | Famille de police pour la barre de statut (GUI)                    |
-| `line_spacing`             | `100`   | Interligne en % (GUI)                                              |
-| `bar_height`               | `18`    | Hauteur de la barre de statut en pixels (GUI)                      |
-| `word_goal`                | `500`   | Objectif de mots journalier pour ce profil                         |
-| `dark_mode`                | —       | Surcharger thème sombre/clair par profil                           |
-| `lang`                     | —       | Surcharger la langue de l'interface par profil                     |
-| `status_left/center/right` | —       | Surcharger la disposition de la barre de statut par profil         |
+| Clé                          | Défaut    | Description                                                          |
+| ---------------------------- | --------- | -------------------------------------------------------------------- |
+| `margin_width`               | `60`      | Marge horizontale en pixels (GUI)                                    |
+| `margin_height`              | `40`      | Marge verticale en pixels (GUI)                                      |
+| `font_size`                  | `13`      | Taille de police (GUI)                                               |
+| `font_family`                | `Mono`    | Famille de police ; Tk résout `Mono` vers la meilleure monospace     |
+| `bar_font_family`            | `Mono`    | Famille de police pour la barre de statut (GUI)                      |
+| `line_spacing`               | `100`     | Interligne en % (GUI)                                                |
+| `bar_height`                 | `18`      | Hauteur de la barre de statut en pixels (GUI)                        |
+| `word_goal`                  | `500`     | Objectif de mots journalier pour ce profil                           |
+| `dark_mode`                  | —         | Surcharger thème sombre/clair par profil                             |
+| `lang`                       | —         | Surcharger la langue de l'interface par profil                       |
+| `status_left/center/right`   | —         | Surcharger la disposition de la barre de statut par profil           |
 
 Exemple :
 
@@ -478,16 +478,16 @@ word_goal       = 1000
 
 Définitions de schémas de couleurs. Chaque bloc `[nom]` définit des couleurs pour le mode sombre et le mode clair. Sélectionner avec `scheme = nom` dans `[editor]`. Le schéma `[default]` est toujours écrit par WrithDeck.
 
-| Clé                                   | Description                                    |
-|---------------------------------------|------------------------------------------------|
-| `color_bg` / `color_bg_alt`           | Fond de l'éditeur (sombre / clair)             |
-| `color_fg` / `color_fg_alt`           | Texte de l'éditeur (sombre / clair)            |
-| `color_bg_bar` / `color_bg_bar_alt`   | Fond de la barre de statut (sombre / clair)    |
-| `color_fg_bar` / `color_fg_bar_alt`   | Texte de la barre de statut (sombre / clair)   |
-| `color_bg_sel` / `color_bg_sel_alt`   | Fond de la sélection (sombre / clair)          |
-| `color_heading` / `color_heading_alt` | Couleur des titres (sombre / clair)            |
-| `color_comment` / `color_comment_alt` | Commentaires / lignes estompées (sombre / clair) |
-| `color_markup` / `color_markup_alt`   | Couleur du balisage inline (sombre / clair)    |
+| Clé                                     | Description                                      |
+| --------------------------------------- | ------------------------------------------------ |
+| `color_bg` / `color_bg_alt`             | Fond de l'éditeur (sombre / clair)               |
+| `color_fg` / `color_fg_alt`             | Texte de l'éditeur (sombre / clair)              |
+| `color_bg_bar` / `color_bg_bar_alt`     | Fond de la barre de statut (sombre / clair)      |
+| `color_fg_bar` / `color_fg_bar_alt`     | Texte de la barre de statut (sombre / clair)     |
+| `color_bg_sel` / `color_bg_sel_alt`     | Fond de la sélection (sombre / clair)            |
+| `color_heading` / `color_heading_alt`   | Couleur des titres (sombre / clair)              |
+| `color_comment` / `color_comment_alt`   | Commentaires / lignes estompées (sombre / clair) |
+| `color_markup` / `color_markup_alt`     | Couleur du balisage inline (sombre / clair)      |
 
 Basculer entre sombre et clair avec `Ctrl+D` (configurable via `key_dark_toggle`).
 
@@ -521,50 +521,50 @@ Mode par défaut, nécessite Tk.
 
 ### Raccourcis — Éditeur
 
-| Touche                   | Action                                                                        |
-|--------------------------|-------------------------------------------------------------------------------|
-| Ctrl+S                   | Enregistrer                                                                   |
-| Ctrl+Shift+S             | Enregistrer sous… (avec confirmation d'écrasement)                            |
-| Ctrl+Q                   | Fermer le fichier, retour au navigateur                                       |
-| Ctrl+F                   | Rechercher (barre inline, surbrillance en direct, compteur)                   |
-| Ctrl+R                   | Rechercher & Remplacer (Entrée : remplacer un, Ctrl+Entrée : tous)            |
-| Ctrl+Z                   | Annuler                                                                       |
-| Ctrl+Y                   | Rétablir                                                                      |
-| Ctrl+T                   | Mode machine à écrire / focus (bascule)                                       |
-| Ctrl+O                   | Ouvrir un fichier quelconque (dialogue système)                               |
-| Ctrl+G                   | Aller à la ligne                                                              |
-| Ctrl+H                   | Dialogue d'aide (date/heure, stats du fichier, stats de sélection si texte)   |
-| Ctrl+L                   | Afficher/masquer les numéros de ligne                                         |
-| Ctrl+D                   | Basculer thème sombre/clair                                                   |
-| Ctrl+Up / Ctrl+Down       | Sauter au paragraphe précédent / suivant                                     |
-| Ctrl+Left / Ctrl+Right    | Sauter au mot précédent / suivant                                            |
-| F11                      | Table des matières                                                            |
-| F3                       | Basculer la vue fractionnée                                                   |
-| F4                       | Vue fractionnée — cycle du focus entre les volets                             |
-| Alt+Entrée               | Basculer le plein écran                                                       |
-| Tab                      | Insérer 4 espaces                                                             |
-| Shift+Up/Down/Left/Right  | Étendre la sélection                                                         |
+| Touche                     | Action                                                                          |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| Ctrl+S                     | Enregistrer                                                                     |
+| Ctrl+Shift+S               | Enregistrer sous… (avec confirmation d'écrasement)                              |
+| Ctrl+Q                     | Fermer le fichier, retour au navigateur                                         |
+| Ctrl+F                     | Rechercher (barre inline, surbrillance en direct, compteur)                     |
+| Ctrl+R                     | Rechercher & Remplacer (Entrée : remplacer un, Ctrl+Entrée : tous)              |
+| Ctrl+Z                     | Annuler                                                                         |
+| Ctrl+Y                     | Rétablir                                                                        |
+| Ctrl+T                     | Mode machine à écrire / focus (bascule)                                         |
+| Ctrl+O                     | Ouvrir un fichier quelconque (dialogue système)                                 |
+| Ctrl+G                     | Aller à la ligne                                                                |
+| Ctrl+H                     | Dialogue d'aide (date/heure, stats du fichier, stats de sélection si texte)     |
+| Ctrl+L                     | Afficher/masquer les numéros de ligne                                           |
+| Ctrl+D                     | Basculer thème sombre/clair                                                     |
+| Ctrl+Up / Ctrl+Down        | Sauter au paragraphe précédent / suivant                                        |
+| Ctrl+Left / Ctrl+Right     | Sauter au mot précédent / suivant                                               |
+| F11                        | Table des matières                                                              |
+| F3                         | Basculer la vue fractionnée                                                     |
+| F4                         | Vue fractionnée — cycle du focus entre les volets                               |
+| Alt+Entrée                 | Basculer le plein écran                                                         |
+| Tab                        | Insérer 4 espaces                                                               |
+| Shift+Up/Down/Left/Right   | Étendre la sélection                                                            |
 
 ### Raccourcis — Navigateur
 
-| Touche               | Action                                                                  |
-|----------------------|-------------------------------------------------------------------------|
-| Entrée / double-clic | Ouvrir le fichier                                                       |
-| n                    | Nouveau fichier                                                         |
-| t                    | Bloc-notes (tampon en mémoire ; Ctrl+S demande un nom pour enregistrer) |
-| f                    | Basculer favori                                                         |
-| s                    | Stats d'écriture — comptages journaliers                                |
-| b                    | Sauvegarder — copie dans `backups/` avec horodatage `nom_YYYY-MM-DDTHHhMM` |
-| d                    | Supprimer le fichier                                                    |
-| r                    | Renommer le fichier                                                     |
-| i                    | Afficher le chemin complet                                              |
-| c                    | Configuration — profils, polices, marges, couleurs, langue              |
-| z                    | Recharger — relancer WrithDeck (retour au browser)                      |
-| h / Ctrl+H           | Aide                                                                    |
-| Ctrl+O               | Ouvrir un fichier quelconque (dialogue système)                         |
-| Ctrl+D               | Basculer thème sombre/clair                                             |
-| Alt+Entrée           | Basculer le plein écran                                                 |
-| q                    | Quitter                                                                 |
+| Touche                 | Action                                                                     |
+| ---------------------- | -------------------------------------------------------------------------- |
+| Entrée / double-clic   | Ouvrir le fichier                                                          |
+| n                      | Nouveau fichier                                                            |
+| t                      | Bloc-notes (tampon en mémoire ; Ctrl+S demande un nom pour enregistrer)    |
+| f                      | Basculer favori                                                            |
+| s                      | Stats d'écriture — comptages journaliers                                   |
+| b                      | Sauvegarder — copie dans `backups/` avec horodatage `nom_YYYY-MM-DDTHHhMM` |
+| d                      | Supprimer le fichier                                                       |
+| r                      | Renommer le fichier                                                        |
+| i                      | Afficher le chemin complet                                                 |
+| c                      | Configuration — profils, polices, marges, couleurs, langue                 |
+| z                      | Recharger — relancer WrithDeck (retour au browser)                         |
+| h / Ctrl+H             | Aide                                                                       |
+| Ctrl+O                 | Ouvrir un fichier quelconque (dialogue système)                            |
+| Ctrl+D                 | Basculer thème sombre/clair                                                |
+| Alt+Entrée             | Basculer le plein écran                                                    |
+| q                      | Quitter                                                                    |
 
 ### Notes sur la vue fractionnée
 
@@ -591,48 +591,48 @@ Activé via `--no-gui` / `--tui` / `--ng`, ou si aucun système de fenêtrage n'
 
 ### Raccourcis — Éditeur
 
-| Touche                              | Action                                                            |
-|-------------------------------------|-------------------------------------------------------------------|
-| Ctrl+S                              | Enregistrer (bloc-notes : demande un nom de fichier d'abord)      |
-| Ctrl+Q / Échap                      | Fermer le fichier, retour au navigateur                           |
-| Ctrl+F                              | Rechercher (invite ; répéter pour trouver le suivant)             |
-| Ctrl+R                              | Rechercher & Remplacer (global, avec compteur de remplacements)   |
-| Ctrl+Z                              | Annuler (pile de 100 états)                                       |
-| Ctrl+Y                              | Rétablir                                                          |
-| Ctrl+T                              | Mode machine à écrire / focus (bascule)                           |
-| Ctrl+O                              | Enregistrer et retourner au navigateur                            |
-| Ctrl+G                              | Aller à la ligne                                                  |
-| Ctrl+H                              | Aide                                                              |
-| Ctrl+L                              | Afficher/masquer les numéros de ligne                             |
-| Ctrl+D                              | Basculer thème sombre/clair (vidéo inverse)                       |
-| Ctrl+Up / Ctrl+Down                  | Sauter au paragraphe précédent / suivant (émulateur uniquement)  |
-| Ctrl+Left / Ctrl+Right ou Alt+B / Alt+F | Sauter au mot précédent / suivant                             |
-| F11                                 | Table des matières (Échap / Ctrl+Q pour fermer, Entrée pour sauter) |
-| Ctrl+A                              | Tout sélectionner                                                 |
-| Ctrl+K                              | Sélection collante (1er appui : ancre ; 2e appui : annuler)       |
-| Shift+Up/Down/Left/Right             | Étendre la sélection                                             |
-| Ctrl+C                              | Copier (via xclip / xsel / wl-copy)                               |
-| Ctrl+X                              | Couper                                                            |
-| Ctrl+V                              | Coller (multiligne supporté)                                      |
-| Tab                                 | Insérer tabulation littérale                                      |
+| Touche                                  | Action                                                              |
+| --------------------------------------- | ------------------------------------------------------------------- |
+| Ctrl+S                                  | Enregistrer (bloc-notes : demande un nom de fichier d'abord)        |
+| Ctrl+Q / Échap                          | Fermer le fichier, retour au navigateur                             |
+| Ctrl+F                                  | Rechercher (invite ; répéter pour trouver le suivant)               |
+| Ctrl+R                                  | Rechercher & Remplacer (global, avec compteur de remplacements)     |
+| Ctrl+Z                                  | Annuler (pile de 100 états)                                         |
+| Ctrl+Y                                  | Rétablir                                                            |
+| Ctrl+T                                  | Mode machine à écrire / focus (bascule)                             |
+| Ctrl+O                                  | Enregistrer et retourner au navigateur                              |
+| Ctrl+G                                  | Aller à la ligne                                                    |
+| Ctrl+H                                  | Aide                                                                |
+| Ctrl+L                                  | Afficher/masquer les numéros de ligne                               |
+| Ctrl+D                                  | Basculer thème sombre/clair (vidéo inverse)                         |
+| Ctrl+Up / Ctrl+Down                     | Sauter au paragraphe précédent / suivant (émulateur uniquement)     |
+| Ctrl+Left / Ctrl+Right ou Alt+B / Alt+F | Sauter au mot précédent / suivant                                   |
+| F11                                     | Table des matières (Échap / Ctrl+Q pour fermer, Entrée pour sauter) |
+| Ctrl+A                                  | Tout sélectionner                                                   |
+| Ctrl+K                                  | Sélection collante (1er appui : ancre ; 2e appui : annuler)         |
+| Shift+Up/Down/Left/Right                | Étendre la sélection                                                |
+| Ctrl+C                                  | Copier (via xclip / xsel / wl-copy)                                 |
+| Ctrl+X                                  | Couper                                                              |
+| Ctrl+V                                  | Coller (multiligne supporté)                                        |
+| Tab                                     | Insérer tabulation littérale                                        |
 
 ### Raccourcis — Navigateur
 
-| Touche       | Action                                                                  |
-|--------------|-------------------------------------------------------------------------|
-| Entrée       | Ouvrir le fichier                                                       |
-| n            | Nouveau fichier                                                         |
-| t            | Bloc-notes (tampon en mémoire ; Ctrl+S demande un nom pour enregistrer) |
-| f            | Basculer favori                                                         |
-| s            | Stats d'écriture — comptages journaliers                                |
-| b            | Sauvegarder — copie dans `backups/` avec horodatage `nom_YYYY-MM-DDTHHhMM` |
-| d            | Supprimer le fichier                                                    |
-| r            | Renommer le fichier                                                     |
-| i            | Afficher le chemin complet                                              |
-| c            | Configuration — profils, polices, marges, couleurs, langue              |
-| z            | Recharger — relancer WrithDeck (retour au browser)                      |
-| h / Ctrl+H   | Aide                                                                    |
-| q / Ctrl+Q   | Quitter                                                                 |
+| Touche         | Action                                                                     |
+| -------------- | -------------------------------------------------------------------------- |
+| Entrée         | Ouvrir le fichier                                                          |
+| n              | Nouveau fichier                                                            |
+| t              | Bloc-notes (tampon en mémoire ; Ctrl+S demande un nom pour enregistrer)    |
+| f              | Basculer favori                                                            |
+| s              | Stats d'écriture — comptages journaliers                                   |
+| b              | Sauvegarder — copie dans `backups/` avec horodatage `nom_YYYY-MM-DDTHHhMM` |
+| d              | Supprimer le fichier                                                       |
+| r              | Renommer le fichier                                                        |
+| i              | Afficher le chemin complet                                                 |
+| c              | Configuration — profils, polices, marges, couleurs, langue                 |
+| z              | Recharger — relancer WrithDeck (retour au browser)                         |
+| h / Ctrl+H     | Aide                                                                       |
+| q / Ctrl+Q     | Quitter                                                                    |
 
 ---
 

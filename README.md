@@ -25,12 +25,12 @@ Whether you're writing on a Raspberry Pi Zero with an E-ink screen, on an Androi
 
 Requires Tcl/Tk 8.6+ on your system:
 
-| Platform | Command |
-|---|---|
-| Debian/Ubuntu | `apt install tk` |
-| Mac OS | `brew install tcl-tk` |
-| Windows | [tcl-lang.org/software/tcltk/bindist.html](https://www.tcl-lang.org/software/tcltk/bindist.html) |
-| Haiku OS | `pkgman install tcl tk` |
+| Platform      | Command                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------ |
+| Debian/Ubuntu | `apt install tk`                                                                                 |
+| Mac OS        | `brew install tcl-tk`                                                                            |
+| Windows       | [tcl-lang.org/software/tcltk/bindist.html](https://www.tcl-lang.org/software/tcltk/bindist.html) |
+| Haiku OS      | `pkgman install tcl tk`                                                                          |
 
 ## Quick Start
 

@@ -28,9 +28,11 @@ text .br.mid.lst \
     -bg $bg -fg $fg -font $font \
     -borderwidth 0 -highlightthickness 0 \
     -yscrollcommand {.br.mid.sb set} -wrap none -state disabled
-.br.mid.lst tag configure header -foreground $fg_bar
+lassign [theme-colors] _ _ _ _ _ _ c_comment _
+set header_font [list [lindex $::font 0] [lindex $::font 1] bold]
+.br.mid.lst tag configure header -foreground $c_comment -font $header_font
 .br.mid.lst tag configure file -foreground $fg
-.br.mid.lst tag configure selected -background $bg_sel
+.br.mid.lst tag configure selected -background $bg_sel -foreground $fg
 
 # Tabstops will be configured dynamically in br-refresh based on actual file names
 
@@ -158,15 +160,28 @@ proc br-refresh {} {
     .br.mid.lst delete 1.0 end
     set new_sel -1
     set first_file -1
+    set prev_type ""
+    array unset ::br_line_to_entry
+    set current_line 1
     for {set i 0} {$i < [llength $::br_entries]} {incr i} {
         lassign [lindex $::br_entries $i] type dir name
-        set line_num [expr {$i + 1}]
         if {$type eq "header"} {
+            # Add blank line before header (except first)
+            if {$prev_type ne ""} {
+                .br.mid.lst insert end "\n"
+                incr current_line
+            }
             set label [expr {$name ne "" ? $name : [string map [list $::HOME_DIR ~] $dir]}]
             .br.mid.lst insert end " $label\n" header
+            set ::br_line_to_entry($current_line) $i
+            incr current_line
+            set prev_type "header"
         } else {
             set meta [fmt-meta [file join $dir $name]]
             .br.mid.lst insert end "  $name\t$meta\n" file
+            set ::br_line_to_entry($current_line) $i
+            incr current_line
+            set prev_type "file"
             if {$first_file < 0} { set first_file $i }
             if {"$dir|$name" eq $prev} { set new_sel $i }
         }
@@ -178,10 +193,19 @@ proc br-refresh {} {
 
     if {$new_sel < 0} { set new_sel $first_file }
     if {$new_sel >= 0} {
-        set line_num [expr {$new_sel + 1}]
-        .br.mid.lst tag remove selected 1.0 end
-        .br.mid.lst tag add selected ${line_num}.0 ${line_num}.end
-        .br.mid.lst see ${line_num}.0
+        # Find the text line corresponding to this br_entries index
+        set text_line ""
+        foreach line [array names ::br_line_to_entry] {
+            if {$::br_line_to_entry($line) == $new_sel} {
+                set text_line $line
+                break
+            }
+        }
+        if {$text_line ne ""} {
+            .br.mid.lst tag remove selected 1.0 end
+            .br.mid.lst tag add selected ${text_line}.0 ${text_line}.end
+            .br.mid.lst see ${text_line}.0
+        }
     }
 }
 
@@ -191,8 +215,11 @@ proc br-selected {} {
     if {![llength $tags]} { return {} }
     set idx [lindex $tags 0]
     set line [expr {int($idx)}]
-    if {$line < 1 || $line > [llength $::br_entries]} { return {} }
-    set e [lindex $::br_entries [expr {$line - 1}]]
+    # Use the mapping from text line to br_entries index
+    if {![info exists ::br_line_to_entry($line)]} { return {} }
+    set entry_idx $::br_line_to_entry($line)
+    if {$entry_idx < 0 || $entry_idx >= [llength $::br_entries]} { return {} }
+    set e [lindex $::br_entries $entry_idx]
     if {[lindex $e 0] ni {file recent favorite}} { return {} }
     return $e
 }
@@ -200,8 +227,13 @@ proc br-selected {} {
 # returns the dir of the section containing the current selection
 proc br-active-dir {} {
     set tags [.br.mid.lst tag ranges selected]
-    set idx [expr {[llength $tags] ? int([lindex $tags 0]) : 1}]
-    set i [expr {$idx - 1}]
+    set line [expr {[llength $tags] ? int([lindex $tags 0]) : 1}]
+    # Use the mapping to get the correct entry index
+    if {![info exists ::br_line_to_entry($line)]} {
+        set i 0
+    } else {
+        set i $::br_line_to_entry($line)
+    }
     while {$i >= 0} {
         lassign [lindex $::br_entries $i] type dir
         if {$type eq "header"} { return [expr {$dir ne "" ? $dir : $::DOCS_DIR_DEFAULT}] }
@@ -613,13 +645,21 @@ proc br-select-line {line_offset} {
     set tags [.br.mid.lst tag ranges selected]
     set current_line [expr {[llength $tags] ? int([lindex $tags 0]) : 1}]
     set new_line [expr {$current_line + $line_offset}]
-    set last_line [expr {[llength $::br_entries]}]
+    set text_lines [expr {int([.br.mid.lst index end])}]
 
-    while {$new_line > 0 && $new_line <= $last_line && [lindex [lindex $::br_entries [expr {$new_line - 1}]] 0] eq "header"} {
-        incr new_line $line_offset
+    # Skip headers and empty lines
+    while {$new_line > 0 && $new_line < $text_lines} {
+        set line_content [string trim [.br.mid.lst get ${new_line}.0 ${new_line}.end]]
+        set line_tags [.br.mid.lst tag names ${new_line}.0]
+        # Check if line is empty or is a header
+        if {$line_content eq "" || "header" in $line_tags} {
+            incr new_line $line_offset
+        } else {
+            break
+        }
     }
 
-    if {$new_line > 0 && $new_line <= $last_line} {
+    if {$new_line > 0 && $new_line < $text_lines} {
         .br.mid.lst tag remove selected 1.0 end
         .br.mid.lst tag add selected ${new_line}.0 ${new_line}.end
         .br.mid.lst see ${new_line}.0
@@ -635,9 +675,26 @@ bind .br.mid.lst <Down> {
     break
 }
 
+bind .br.mid.lst <Motion> {
+    set line [expr {int([.br.mid.lst index @%x,%y])}]
+    set line_content [string trim [.br.mid.lst get ${line}.0 ${line}.end]]
+    set line_tags [.br.mid.lst tag names ${line}.0]
+    # Show hand cursor for files, normal arrow for headers/empty
+    if {$line_content ne "" && "header" ni $line_tags} {
+        .br.mid.lst configure -cursor hand2
+    } else {
+        .br.mid.lst configure -cursor arrow
+    }
+}
+
 bind .br.mid.lst <Button-1> {
     set line [expr {int([.br.mid.lst index @%x,%y])}]
-    if {$line > 0 && $line <= [llength $::br_entries]} {
+    if {[info exists ::br_line_to_entry($line)]} {
+        set entry_idx $::br_line_to_entry($line)
+        set e [lindex $::br_entries $entry_idx]
+        if {[lindex $e 0] ni {file recent favorite}} {
+            break
+        }
         .br.mid.lst tag remove selected 1.0 end
         .br.mid.lst tag add selected ${line}.0 ${line}.end
         focus .br.mid.lst
@@ -1209,8 +1266,11 @@ proc apply-theme {} {
     catch { .br.title configure -bg $bg -fg $fg }
     catch { .br.bar configure -bg $bg_bar }
     catch { .br.bar.help tag configure link_hover -background $c_comment }
-    catch { .br.mid.lst configure -bg $bg -fg $fg \
-                -selectbackground $bg_sel -selectforeground $fg }
+    catch { .br.mid.lst configure -bg $bg -fg $fg }
+    set header_font [list [lindex $::font 0] [lindex $::font 1] bold]
+    catch { .br.mid.lst tag configure header -foreground $c_comment -font $header_font }
+    catch { .br.mid.lst tag configure file -foreground $fg }
+    catch { .br.mid.lst tag configure selected -background $bg_sel -foreground $fg }
     catch { .br.mid.sb configure -bg $bg_bar -troughcolor $bg }
     # editor
     catch { .ed configure -bg $bg }
@@ -1641,29 +1701,29 @@ proc profile-config-dialog {} {
 
     label $w.global.lbl_defprof -text [t profile_config_default_profile] -font $::font_sm -bg $::bg -fg $::fg
     pack $w.global.lbl_defprof -anchor w -padx 12 -pady {4 2}
-    frame $w.global.fprof
+    frame $w.global.fprof -bg $::bg
     pack $w.global.fprof -fill x -padx 12 -pady {0 6}
     tk_optionMenu $w.global.fprof.om ::profile_config_default_prof {*}$profiles
-    $w.global.fprof.om configure -bg $::bg_bar -fg $::fg_bar -highlightthickness 0
+    $w.global.fprof.om configure -bg $::bg_bar -fg $::fg_bar -activebackground $::bg_sel -activeforeground $::fg -borderwidth 1 -highlightthickness 0
     set ::profile_config_default_prof $::cfg_profile
     pack $w.global.fprof.om -anchor w
 
     label $w.global.lbl_scheme -text [t profile_config_default_scheme] -font $::font_sm -bg $::bg -fg $::fg
     pack $w.global.lbl_scheme -anchor w -padx 12 -pady {4 2}
-    frame $w.global.fscheme
+    frame $w.global.fscheme -bg $::bg
     pack $w.global.fscheme -fill x -padx 12 -pady {0 6}
     tk_optionMenu $w.global.fscheme.om ::profile_config_default_scheme {*}$schemes
-    $w.global.fscheme.om configure -bg $::bg_bar -fg $::fg_bar -highlightthickness 0
+    $w.global.fscheme.om configure -bg $::bg_bar -fg $::fg_bar -activebackground $::bg_sel -activeforeground $::fg -borderwidth 1 -highlightthickness 0
     set ::profile_config_default_scheme $::cfg_scheme
     pack $w.global.fscheme.om -anchor w
 
-    label $w.global.lbl_lang -text [t profile_config_language] -font $::font_sm
+    label $w.global.lbl_lang -text [t profile_config_language] -font $::font_sm -bg $::bg -fg $::fg
     pack $w.global.lbl_lang -anchor w -padx 12 -pady {4 2}
-    frame $w.global.flang
+    frame $w.global.flang -bg $::bg
     pack $w.global.flang -fill x -padx 12 -pady {0 6}
     set langs [lsort [dict keys $::i18n]]
     tk_optionMenu $w.global.flang.om ::profile_config_language {*}$langs
-    $w.global.flang.om configure -bg $::bg_bar -fg $::fg_bar -highlightthickness 0
+    $w.global.flang.om configure -bg $::bg_bar -fg $::fg_bar -activebackground $::bg_sel -activeforeground $::fg -borderwidth 1 -highlightthickness 0
     set ::profile_config_language $::cfg_lang
     pack $w.global.flang.om -anchor w
 
@@ -1677,47 +1737,47 @@ proc profile-config-dialog {} {
     # Profile selector row
     frame $w.profile.fprof -bg $::bg
     pack $w.profile.fprof -fill x -padx 12 -pady {0 6}
-    label $w.profile.fprof.lbl -text [t profile_config_edit_profile] -font $::font_sm -width 18 -anchor w -bg $::bg -fg $::fg
+    label $w.profile.fprof.lbl -text [t profile_config_edit_profile] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
     tk_optionMenu $w.profile.fprof.om ::profile_config_profile {*}$profiles
-    $w.profile.fprof.om configure -bg $::bg_bar -fg $::fg_bar -highlightthickness 0
+    $w.profile.fprof.om configure -bg $::bg_bar -fg $::fg_bar -activebackground $::bg_sel -activeforeground $::fg -borderwidth 1 -highlightthickness 0
     if {[lsearch -exact $profiles $::cfg_profile] >= 0} {
         set ::profile_config_profile $::cfg_profile
     } else {
         set ::profile_config_profile [lindex $profiles 0]
     }
     pack $w.profile.fprof.lbl -side left -padx {0 8}
-    pack $w.profile.fprof.om -side left -fill x -expand 1
+    pack $w.profile.fprof.om -side left -fill x -expand 1 -padx {8 0}
 
     # Font family row
     frame $w.profile.ffont -bg $::bg
     pack $w.profile.ffont -fill x -padx 12 -pady 4
-    label $w.profile.ffont.lbl -text [t profile_config_font] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    label $w.profile.ffont.lbl -text [t profile_config_font] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
     entry $w.profile.ffont.entry -width 30 -font $::font_sm -bg $::bg_bar -fg $::fg
     pack $w.profile.ffont.lbl -side left
-    pack $w.profile.ffont.entry -side left -fill x -expand 1
+    pack $w.profile.ffont.entry -side left -fill x -expand 1 -padx {8 0}
 
     # Available fonts listbox with scrollbar
     label $w.profile.lbl_fonts -text "Available fonts:" -font $::font_sm -bg $::bg -fg $::fg
     pack $w.profile.lbl_fonts -anchor w -padx 12 -pady {4 2}
     frame $w.profile.fonts_frame -bg $::bg
-    pack $w.profile.fonts_frame -fill x -padx 12 -pady 2
+    pack $w.profile.fonts_frame -fill both -expand 1 -padx 12 -pady 2
     listbox $w.profile.fonts -height 5 -width 40 -font $::font_sm -selectmode single \
         -yscrollcommand [list $w.profile.fonts_scroll set] -bg $::bg_bar -fg $::fg
     scrollbar $w.profile.fonts_scroll -command [list $w.profile.fonts yview] -bg $::bg_bar
     foreach f [lsort [font families]] {
         $w.profile.fonts insert end $f
     }
-    pack $w.profile.fonts -side left -fill x
-    pack $w.profile.fonts_scroll -side left -fill y
+    pack $w.profile.fonts -side left -fill both -expand 1 -in $w.profile.fonts_frame
+    pack $w.profile.fonts_scroll -side left -fill y -in $w.profile.fonts_frame
 
-    # Font preview (right after listbox)
+    # Font preview (below listbox)
     label $w.profile.preview -text "Preview" -font $::font_sm -bg $::bg -fg $::fg
     pack $w.profile.preview -fill x -padx 12 -pady {8 2}
 
     # Font size row (create BEFORE bindings)
     frame $w.fsize -bg $::bg
     pack $w.fsize -fill x -padx 12 -pady 4
-    label $w.fsize.lbl -text [t profile_config_size] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    label $w.fsize.lbl -text [t profile_config_size] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
     spinbox $w.fsize.spin -from 6 -to 72 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg -command {
         set font [.profile_config.profile.ffont.entry get]
         set size [.profile_config.fsize.spin get]
@@ -1726,7 +1786,7 @@ proc profile-config-dialog {} {
         }
     }
     pack $w.fsize.lbl -side left
-    pack $w.fsize.spin -side left
+    pack $w.fsize.spin -side left -padx {8 0}
 
     # Bind to update preview on font/size change (AFTER all widgets created)
     bind $w.profile.fonts <<ListboxSelect>> {
@@ -1761,36 +1821,38 @@ proc profile-config-dialog {} {
     # Margin width row
     frame $w.fmarginw -bg $::bg
     pack $w.fmarginw -fill x -padx 12 -pady 4
-    label $w.fmarginw.lbl -text [t profile_config_margin_w] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    label $w.fmarginw.lbl -text [t profile_config_margin_w] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
     spinbox $w.fmarginw.spin -from 0 -to 200 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
     pack $w.fmarginw.lbl -side left
-    pack $w.fmarginw.spin -side left
+    pack $w.fmarginw.spin -side left -padx {8 0}
 
     # Margin height row
     frame $w.fmarginh -bg $::bg
     pack $w.fmarginh -fill x -padx 12 -pady 4
-    label $w.fmarginh.lbl -text [t profile_config_margin_h] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    label $w.fmarginh.lbl -text [t profile_config_margin_h] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
     spinbox $w.fmarginh.spin -from 0 -to 200 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
     pack $w.fmarginh.lbl -side left
-    pack $w.fmarginh.spin -side left
+    pack $w.fmarginh.spin -side left -padx {8 0}
 
     # Word goal row
     frame $w.fwordgoal -bg $::bg
     pack $w.fwordgoal -fill x -padx 12 -pady 4
-    label $w.fwordgoal.lbl -text [t profile_config_word_goal] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    label $w.fwordgoal.lbl -text [t profile_config_word_goal] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
     spinbox $w.fwordgoal.spin -from 0 -to 10000 -width 8 -font $::font_sm -bg $::bg_bar -fg $::fg
     label $w.fwordgoal.hint -text "(words/day, 0=disabled)" -font $::font_sm -fg $::fg_bar -bg $::bg
     pack $w.fwordgoal.lbl -side left
-    pack $w.fwordgoal.spin -side left -padx {0 4}
+    pack $w.fwordgoal.spin -side left -padx {8 4}
     pack $w.fwordgoal.hint -side left
 
     # Dark mode row
     frame $w.fdarkmode -bg $::bg
     pack $w.fdarkmode -fill x -padx 12 -pady 4
-    label $w.fdarkmode.lbl -text [t profile_config_dark_mode] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
-    checkbutton $w.fdarkmode.check -variable profile_config_dark_mode -font $::font_sm -bg $::bg -fg $::fg
+    label $w.fdarkmode.lbl -text [t profile_config_dark_mode] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.fdarkmode.check -variable profile_config_dark_mode -font $::font_sm -bg $::bg -fg $::fg \
+        -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
+        -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
     pack $w.fdarkmode.lbl -side left
-    pack $w.fdarkmode.check -side left
+    pack $w.fdarkmode.check -side left -padx {8 2}
 
     # Update profile display when changed via trace
     trace add variable ::profile_config_profile write [list apply {{name1 name2 op} {
