@@ -1537,6 +1537,18 @@ proc profile-config-update-profile {w} {
     }
     $w.fmarginh.spin set $cur_mh
 
+    set cur_goal $::cfg_word_goal
+    if {[dict exists $::cfg_profiles $profile word_goal]} {
+        set cur_goal [dict get $::cfg_profiles $profile word_goal]
+    }
+    $w.fwordgoal.spin set $cur_goal
+
+    set cur_dark $::cfg_dark_mode
+    if {[dict exists $::cfg_profiles $profile dark_mode]} {
+        set cur_dark [dict get $::cfg_profiles $profile dark_mode]
+    }
+    set ::profile_config_dark_mode $cur_dark
+
     set idx [lsearch -exact [lsort [font families]] $cur_font]
     $w.profile.fonts selection clear 0 end
     if {$idx >= 0} { $w.profile.fonts selection set $idx; $w.profile.fonts see $idx }
@@ -1549,6 +1561,7 @@ proc profile-config-dialog {} {
     toplevel $w
     wm title $w [t profile_config_title]
     wm transient $w .
+    $w configure -bg $::bg
     grab $w
 
     set profiles [lsort [dict keys $::cfg_profiles]]
@@ -1567,13 +1580,13 @@ proc profile-config-dialog {} {
     }
 
     # --- Global settings frame ---
-    frame $w.global -relief ridge -borderwidth 2
+    frame $w.global -relief ridge -borderwidth 2 -bg $::bg
     pack $w.global -fill x -padx 8 -pady 8
 
     label $w.global.title -text "Global Settings" -font $::font_sm -fg $::fg_bar -bg $::bg
     pack $w.global.title -anchor w -padx 8 -pady {4 2}
 
-    label $w.global.lbl_defprof -text [t profile_config_default_profile] -font $::font_sm
+    label $w.global.lbl_defprof -text [t profile_config_default_profile] -font $::font_sm -bg $::bg -fg $::fg
     pack $w.global.lbl_defprof -anchor w -padx 12 -pady {4 2}
     frame $w.global.fprof
     pack $w.global.fprof -fill x -padx 12 -pady {0 6}
@@ -1582,7 +1595,7 @@ proc profile-config-dialog {} {
     set ::profile_config_default_prof $::cfg_profile
     pack $w.global.fprof.om -anchor w
 
-    label $w.global.lbl_scheme -text [t profile_config_default_scheme] -font $::font_sm
+    label $w.global.lbl_scheme -text [t profile_config_default_scheme] -font $::font_sm -bg $::bg -fg $::fg
     pack $w.global.lbl_scheme -anchor w -padx 12 -pady {4 2}
     frame $w.global.fscheme
     pack $w.global.fscheme -fill x -padx 12 -pady {0 6}
@@ -1602,16 +1615,16 @@ proc profile-config-dialog {} {
     pack $w.global.flang.om -anchor w
 
     # --- Profile-specific settings frame ---
-    frame $w.profile -relief ridge -borderwidth 2
-    pack $w.profile -fill both -expand 1 -padx 8 -pady 8
+    frame $w.profile -relief ridge -borderwidth 2 -bg $::bg
+    pack $w.profile -fill x -padx 8 -pady 8
 
     label $w.profile.title -text "Profile Settings" -font $::font_sm -fg $::fg_bar -bg $::bg
     pack $w.profile.title -anchor w -padx 8 -pady {4 2}
 
     # Profile selector row
-    frame $w.profile.fprof
+    frame $w.profile.fprof -bg $::bg
     pack $w.profile.fprof -fill x -padx 12 -pady {0 6}
-    label $w.profile.fprof.lbl -text [t profile_config_edit_profile] -font $::font_sm -width 15 -anchor w
+    label $w.profile.fprof.lbl -text [t profile_config_edit_profile] -font $::font_sm -width 18 -anchor w -bg $::bg -fg $::fg
     tk_optionMenu $w.profile.fprof.om ::profile_config_profile {*}$profiles
     $w.profile.fprof.om configure -bg $::bg_bar -fg $::fg_bar -highlightthickness 0
     if {[lsearch -exact $profiles $::cfg_profile] >= 0} {
@@ -1619,31 +1632,40 @@ proc profile-config-dialog {} {
     } else {
         set ::profile_config_profile [lindex $profiles 0]
     }
-    pack $w.profile.fprof.lbl -side left
+    pack $w.profile.fprof.lbl -side left -padx {0 8}
     pack $w.profile.fprof.om -side left -fill x -expand 1
 
     # Font family row
-    frame $w.profile.ffont
+    frame $w.profile.ffont -bg $::bg
     pack $w.profile.ffont -fill x -padx 12 -pady 4
-    label $w.profile.ffont.lbl -text [t profile_config_font] -font $::font_sm -width 15 -anchor w
-    entry $w.profile.ffont.entry -width 30 -font $::font_sm
+    label $w.profile.ffont.lbl -text [t profile_config_font] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    entry $w.profile.ffont.entry -width 30 -font $::font_sm -bg $::bg_bar -fg $::fg
     pack $w.profile.ffont.lbl -side left
     pack $w.profile.ffont.entry -side left -fill x -expand 1
 
-    # Available fonts listbox
-    label $w.profile.lbl_fonts -text "Available fonts:" -font $::font_sm
+    # Available fonts listbox with scrollbar
+    label $w.profile.lbl_fonts -text "Available fonts:" -font $::font_sm -bg $::bg -fg $::fg
     pack $w.profile.lbl_fonts -anchor w -padx 12 -pady {4 2}
-    listbox $w.profile.fonts -height 5 -width 40 -font $::font_sm -selectmode single
+    frame $w.profile.fonts_frame -bg $::bg
+    pack $w.profile.fonts_frame -fill x -padx 12 -pady 2
+    listbox $w.profile.fonts -height 5 -width 40 -font $::font_sm -selectmode single \
+        -yscrollcommand [list $w.profile.fonts_scroll set] -bg $::bg_bar -fg $::fg
+    scrollbar $w.profile.fonts_scroll -command [list $w.profile.fonts yview] -bg $::bg_bar
     foreach f [lsort [font families]] {
         $w.profile.fonts insert end $f
     }
-    pack $w.profile.fonts -fill both -expand 1 -padx 12 -pady 2
+    pack $w.profile.fonts -side left -fill x
+    pack $w.profile.fonts_scroll -side left -fill y
+
+    # Font preview (right after listbox)
+    label $w.profile.preview -text "Preview" -font $::font_sm -bg $::bg -fg $::fg
+    pack $w.profile.preview -fill x -padx 12 -pady {8 2}
 
     # Font size row (create BEFORE bindings)
-    frame $w.fsize
+    frame $w.fsize -bg $::bg
     pack $w.fsize -fill x -padx 12 -pady 4
-    label $w.fsize.lbl -text [t profile_config_size] -font $::font_sm -width 15 -anchor w
-    spinbox $w.fsize.spin -from 6 -to 72 -width 5 -font $::font_sm -command {
+    label $w.fsize.lbl -text [t profile_config_size] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.fsize.spin -from 6 -to 72 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg -command {
         set font [.profile_config.profile.ffont.entry get]
         set size [.profile_config.fsize.spin get]
         if {$font ne "" && $size ne ""} {
@@ -1652,10 +1674,6 @@ proc profile-config-dialog {} {
     }
     pack $w.fsize.lbl -side left
     pack $w.fsize.spin -side left
-
-    # Font preview
-    label $w.profile.preview -text "Preview" -font $::font_sm -bg $::bg -fg $::fg
-    pack $w.profile.preview -fill x -padx 12 -pady {8 2}
 
     # Bind to update preview on font/size change (AFTER all widgets created)
     bind $w.profile.fonts <<ListboxSelect>> {
@@ -1688,20 +1706,38 @@ proc profile-config-dialog {} {
     }
 
     # Margin width row
-    frame $w.fmarginw
+    frame $w.fmarginw -bg $::bg
     pack $w.fmarginw -fill x -padx 12 -pady 4
-    label $w.fmarginw.lbl -text [t profile_config_margin_w] -font $::font_sm -width 15 -anchor w
-    spinbox $w.fmarginw.spin -from 0 -to 200 -width 5 -font $::font_sm
+    label $w.fmarginw.lbl -text [t profile_config_margin_w] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.fmarginw.spin -from 0 -to 200 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
     pack $w.fmarginw.lbl -side left
     pack $w.fmarginw.spin -side left
 
     # Margin height row
-    frame $w.fmarginh
+    frame $w.fmarginh -bg $::bg
     pack $w.fmarginh -fill x -padx 12 -pady 4
-    label $w.fmarginh.lbl -text [t profile_config_margin_h] -font $::font_sm -width 15 -anchor w
-    spinbox $w.fmarginh.spin -from 0 -to 200 -width 5 -font $::font_sm
+    label $w.fmarginh.lbl -text [t profile_config_margin_h] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.fmarginh.spin -from 0 -to 200 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
     pack $w.fmarginh.lbl -side left
     pack $w.fmarginh.spin -side left
+
+    # Word goal row
+    frame $w.fwordgoal -bg $::bg
+    pack $w.fwordgoal -fill x -padx 12 -pady 4
+    label $w.fwordgoal.lbl -text [t profile_config_word_goal] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.fwordgoal.spin -from 0 -to 10000 -width 8 -font $::font_sm -bg $::bg_bar -fg $::fg
+    label $w.fwordgoal.hint -text "(words/day, 0=disabled)" -font $::font_sm -fg $::fg_bar -bg $::bg
+    pack $w.fwordgoal.lbl -side left
+    pack $w.fwordgoal.spin -side left -padx {0 4}
+    pack $w.fwordgoal.hint -side left
+
+    # Dark mode row
+    frame $w.fdarkmode -bg $::bg
+    pack $w.fdarkmode -fill x -padx 12 -pady 4
+    label $w.fdarkmode.lbl -text [t profile_config_dark_mode] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.fdarkmode.check -variable profile_config_dark_mode -font $::font_sm -bg $::bg -fg $::fg
+    pack $w.fdarkmode.lbl -side left
+    pack $w.fdarkmode.check -side left
 
     # Update profile display when changed via trace
     trace add variable ::profile_config_profile write [list apply {{name1 name2 op} {
@@ -1712,17 +1748,19 @@ proc profile-config-dialog {} {
     profile-config-update-profile $w
 
     # Button frame
-    frame $w.btns
+    frame $w.btns -bg $::bg
     pack $w.btns -fill x -padx 8 -pady 8
 
     button $w.btns.apply -text [t profile_config_apply] -font $::font_sm \
-        -bg $::bg_bar -fg $::fg_bar \
+        -bg $::bg_bar -fg $::fg_bar -width 12 \
         -command {
             set profile $::profile_config_profile
             set font [.profile_config.profile.ffont.entry get]
             set size [.profile_config.fsize.spin get]
             set mw [.profile_config.fmarginw.spin get]
             set mh [.profile_config.fmarginh.spin get]
+            set goal [.profile_config.fwordgoal.spin get]
+            set dark $::profile_config_dark_mode
             set def_prof $::profile_config_default_prof
             set def_scheme $::profile_config_default_scheme
             set def_lang $::profile_config_language
@@ -1733,6 +1771,8 @@ proc profile-config-dialog {} {
             dict set ::cfg_profiles $profile font_size $size
             dict set ::cfg_profiles $profile margin_width $mw
             dict set ::cfg_profiles $profile margin_height $mh
+            dict set ::cfg_profiles $profile word_goal $goal
+            dict set ::cfg_profiles $profile dark_mode $dark
 
             # Check if the profile being edited is currently active BEFORE changing ::cfg_profile
             set is_current_profile [expr {$profile eq $::cfg_profile}]
@@ -1742,6 +1782,15 @@ proc profile-config-dialog {} {
             set ::cfg_lang $def_lang
 
             ini-save
+
+            # Apply the selected scheme to update color variables
+            scheme-apply $def_scheme
+            lassign [theme-colors] bg fg bg_bar fg_bar bg_sel
+            set ::bg $bg
+            set ::fg $fg
+            set ::bg_bar $bg_bar
+            set ::fg_bar $fg_bar
+            set ::bg_sel $bg_sel
 
             # Apply profile if it was the currently active one
             if {$is_current_profile} {
@@ -1758,6 +1807,9 @@ proc profile-config-dialog {} {
                 }
             }
 
+            # Apply theme to update all GUI colors
+            apply-theme
+
             catch {trace remove variable ::profile_config_profile write}
             destroy .profile_config
             br-reload
@@ -1765,13 +1817,17 @@ proc profile-config-dialog {} {
     pack $w.btns.apply -side left -padx 4
 
     button $w.btns.cancel -text [t profile_config_cancel] -font $::font_sm \
-        -bg $::bg_bar -fg $::fg_bar -command {
+        -bg $::bg_bar -fg $::fg_bar -width 12 -command {
             catch {trace remove variable ::profile_config_profile write}
             destroy .profile_config
         }
     pack $w.btns.cancel -side left -padx 4
 
     update
+    set geom [wm geometry $w]
+    set width [string range $geom 0 [string first x $geom]-1]
+    if {$width < 550} {set width 550}
+    wm geometry $w ${width}x[expr {[winfo height $w] + 20}]
     grab $w
     bind $w <Escape> {
         catch {trace remove variable ::profile_config_profile write}

@@ -81,6 +81,9 @@ proc daily-clear {filepath} {
     state-save
 }
 
+# --- schemes (loaded from src/schemes/*.tcl) --------------------------------
+set ::scheme_defs  {}
+
 # --- ini ----------------------------------------------------------------------
 set ::cfg_scheme   "default"
 set ::cfg_schemes  {}
@@ -436,6 +439,19 @@ proc ini-save {} {
     puts $fh {# Select the active profile with:  profile = <name>  in [editor]}
     puts $fh ""
 
+    # Add "roman" example profile if not already defined
+    if {![dict exists $::cfg_profiles roman]} {
+        puts $fh "\[roman\]"
+        puts $fh "margin_width    = 180"
+        puts $fh "margin_height   = 80"
+        puts $fh "font_size       = 18"
+        puts $fh "font_family     = Noto Serif"
+        puts $fh "line_spacing    = 110"
+        puts $fh "bar_height      = 20"
+        puts $fh "word_goal       = 1000"
+        puts $fh ""
+    }
+
     # Write all profiles including "default" from the dictionary
     foreach pname [dict keys $::cfg_profiles] {
         puts $fh "\[$pname\]"
@@ -509,7 +525,12 @@ proc ini-save {} {
     flush stderr
 }
 
-ini-load
+proc schemes-init {} {
+    foreach scheme_name [dict keys $::scheme_defs] {
+        set scheme_data [dict get $::scheme_defs $scheme_name]
+        dict set ::cfg_schemes $scheme_name $scheme_data
+    }
+}
 
 # Map Tk key name -> string returned by tui-getch
 proc tk-key-to-tui {key} {
@@ -639,20 +660,5 @@ if {!$::no_gui && $::cfg_bar_font_family ne "Mono"} {
         set ::cfg_bar_font_family "Mono"
     }
 }
-set font    [list $::cfg_font_family $::cfg_font_size]
-set bar_pady [expr {$::cfg_bar_height > 0 \
-    ? min(2, max(0, ($::cfg_bar_height - 6) / 2)) : 0}]
-set font_sm  [expr {$::cfg_bar_height > 0 \
-    ? [list $::cfg_bar_font_family [expr {-max(6, $::cfg_bar_height - 2*$bar_pady)}]] \
-    : [list $::cfg_bar_font_family 10]}]
-set ::font_sm $font_sm
-lassign [theme-colors] bg fg bg_bar fg_bar bg_sel
-set fg_dim  "#676767"
-# expose as globals for use in procs
-set ::bg     $bg
 set ::typewriter_mode 0
-set ::fg     $fg
-set ::bg_bar $bg_bar
-set ::fg_bar $fg_bar
-set ::bg_sel $bg_sel
 

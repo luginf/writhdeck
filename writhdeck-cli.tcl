@@ -314,6 +314,9 @@ proc daily-clear {filepath} {
     state-save
 }
 
+# --- schemes (loaded from src/schemes/*.tcl) --------------------------------
+set ::scheme_defs  {}
+
 # --- ini ----------------------------------------------------------------------
 set ::cfg_scheme   "default"
 set ::cfg_schemes  {}
@@ -669,6 +672,19 @@ proc ini-save {} {
     puts $fh {# Select the active profile with:  profile = <name>  in [editor]}
     puts $fh ""
 
+    # Add "roman" example profile if not already defined
+    if {![dict exists $::cfg_profiles roman]} {
+        puts $fh "\[roman\]"
+        puts $fh "margin_width    = 180"
+        puts $fh "margin_height   = 80"
+        puts $fh "font_size       = 18"
+        puts $fh "font_family     = Noto Serif"
+        puts $fh "line_spacing    = 110"
+        puts $fh "bar_height      = 20"
+        puts $fh "word_goal       = 1000"
+        puts $fh ""
+    }
+
     # Write all profiles including "default" from the dictionary
     foreach pname [dict keys $::cfg_profiles] {
         puts $fh "\[$pname\]"
@@ -742,7 +758,12 @@ proc ini-save {} {
     flush stderr
 }
 
-ini-load
+proc schemes-init {} {
+    foreach scheme_name [dict keys $::scheme_defs] {
+        set scheme_data [dict get $::scheme_defs $scheme_name]
+        dict set ::cfg_schemes $scheme_name $scheme_data
+    }
+}
 
 # Map Tk key name -> string returned by tui-getch
 proc tk-key-to-tui {key} {
@@ -872,23 +893,52 @@ if {!$::no_gui && $::cfg_bar_font_family ne "Mono"} {
         set ::cfg_bar_font_family "Mono"
     }
 }
-set font    [list $::cfg_font_family $::cfg_font_size]
-set bar_pady [expr {$::cfg_bar_height > 0 \
-    ? min(2, max(0, ($::cfg_bar_height - 6) / 2)) : 0}]
-set font_sm  [expr {$::cfg_bar_height > 0 \
-    ? [list $::cfg_bar_font_family [expr {-max(6, $::cfg_bar_height - 2*$bar_pady)}]] \
-    : [list $::cfg_bar_font_family 10]}]
-set ::font_sm $font_sm
-lassign [theme-colors] bg fg bg_bar fg_bar bg_sel
-set fg_dim  "#676767"
-# expose as globals for use in procs
-set ::bg     $bg
 set ::typewriter_mode 0
-set ::fg     $fg
-set ::bg_bar $bg_bar
-set ::fg_bar $fg_bar
-set ::bg_sel $bg_sel
 
+
+# ===========================================================================
+# schemes (default alt01)
+# ===========================================================================
+# Default color scheme - dark and light variants
+
+dict set ::scheme_defs default {
+    color_bg       "#1a1a1a"
+    color_fg       "#e8e8e8"
+    color_bg_bar   "#2a2a2a"
+    color_fg_bar   "#aaaaaa"
+    color_bg_sel   "#3a5a8a"
+    color_heading  "#c8a060"
+    color_comment  "#606060"
+    color_markup   "#6aa9d4"
+    color_bg_alt   "#fdf6e3"
+    color_fg_alt   "#657b83"
+    color_bg_bar_alt "#eee8d5"
+    color_fg_bar_alt "#93a1a1"
+    color_bg_sel_alt "#e6ddb9"
+    color_heading_alt "#b58900"
+    color_comment_alt "#aaaaaa"
+    color_markup_alt "#2a7090"
+}
+# Alt01 - Warm, muted color scheme
+
+dict set ::scheme_defs alt01 {
+    color_bg       "#2a2520"
+    color_fg       "#d4c4b0"
+    color_bg_bar   "#3d3531"
+    color_fg_bar   "#c4b4a0"
+    color_bg_sel   "#4a4035"
+    color_heading  "#e8a87c"
+    color_comment  "#6a5a50"
+    color_markup   "#c49070"
+    color_bg_alt   "#f5f0eb"
+    color_fg_alt   "#3a2a20"
+    color_bg_bar_alt "#e8e0d8"
+    color_fg_bar_alt "#3a2a20"
+    color_bg_sel_alt "#e0d4c8"
+    color_heading_alt "#a65d2b"
+    color_comment_alt "#a89080"
+    color_markup_alt "#8b5a3c"
+}
 
 # ===========================================================================
 # i18n (en fr)
@@ -967,6 +1017,8 @@ dict set ::i18n en {
     profile_config_size    "Font size:"
     profile_config_margin_w "Margin width:"
     profile_config_margin_h "Margin height:"
+    profile_config_word_goal "Daily word goal:"
+    profile_config_dark_mode "Dark mode:"
     profile_config_apply   "Apply"
     profile_config_cancel  "Cancel"
     br_key_help            "help"
@@ -1092,6 +1144,8 @@ dict set ::i18n fr {
     profile_config_size    "Taille :"
     profile_config_margin_w "Largeur marge :"
     profile_config_margin_h "Hauteur marge :"
+    profile_config_word_goal "Objectif quotidien :"
+    profile_config_dark_mode "Mode sombre :"
     profile_config_apply   "Appliquer"
     profile_config_cancel  "Annuler"
     br_key_help            "aide"
@@ -1147,6 +1201,27 @@ dict set ::i18n fr {
 # ===========================================================================
 # common.tcl
 # ===========================================================================
+# --- initialization (run after schemes and i18n are loaded) -----------
+schemes-init
+ini-load
+
+# Initialize fonts and theme colors (must be after ini-load to use selected scheme/profile)
+set font    [list $::cfg_font_family $::cfg_font_size]
+set bar_pady [expr {$::cfg_bar_height > 0 \
+    ? min(2, max(0, ($::cfg_bar_height - 6) / 2)) : 0}]
+set font_sm  [expr {$::cfg_bar_height > 0 \
+    ? [list $::cfg_bar_font_family [expr {-max(6, $::cfg_bar_height - 2*$bar_pady)}]] \
+    : [list $::cfg_bar_font_family 10]}]
+set ::font_sm $font_sm
+lassign [theme-colors] bg fg bg_bar fg_bar bg_sel
+set fg_dim  "#676767"
+# expose as globals for use in procs
+set ::bg     $bg
+set ::fg     $fg
+set ::bg_bar $bg_bar
+set ::fg_bar $fg_bar
+set ::bg_sel $bg_sel
+
 # --- utils --------------------------------------------------------------------
 proc list-docs {dir} {
     set pairs {}

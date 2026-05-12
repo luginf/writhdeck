@@ -1,3 +1,24 @@
+# --- initialization (run after schemes and i18n are loaded) -----------
+schemes-init
+ini-load
+
+# Initialize fonts and theme colors (must be after ini-load to use selected scheme/profile)
+set font    [list $::cfg_font_family $::cfg_font_size]
+set bar_pady [expr {$::cfg_bar_height > 0 \
+    ? min(2, max(0, ($::cfg_bar_height - 6) / 2)) : 0}]
+set font_sm  [expr {$::cfg_bar_height > 0 \
+    ? [list $::cfg_bar_font_family [expr {-max(6, $::cfg_bar_height - 2*$bar_pady)}]] \
+    : [list $::cfg_bar_font_family 10]}]
+set ::font_sm $font_sm
+lassign [theme-colors] bg fg bg_bar fg_bar bg_sel
+set fg_dim  "#676767"
+# expose as globals for use in procs
+set ::bg     $bg
+set ::fg     $fg
+set ::bg_bar $bg_bar
+set ::fg_bar $fg_bar
+set ::bg_sel $bg_sel
+
 # --- utils --------------------------------------------------------------------
 proc list-docs {dir} {
     set pairs {}

@@ -72,6 +72,8 @@ dict set ::i18n de {
     profile_config_size    "Schriftgroesse:"
     profile_config_margin_w "Randbreite:"
     profile_config_margin_h "Randhoehe:"
+    profile_config_word_goal "Tägliches Ziel:"
+    profile_config_dark_mode "Dunkler Modus:"
     profile_config_apply   "Anwenden"
     profile_config_cancel  "Abbrechen"
     br_key_help            "hilfe"

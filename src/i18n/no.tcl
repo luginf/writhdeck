@@ -72,6 +72,8 @@ dict set ::i18n no {
     profile_config_size    "Skriftstørrelse:"
     profile_config_margin_w "Marginebredde:"
     profile_config_margin_h "Marginehøyde:"
+    profile_config_word_goal "Daglig mål:"
+    profile_config_dark_mode "Mørk modus:"
     profile_config_apply   "Bruk"
     profile_config_cancel  "Avbryt"
     br_key_help            "hjelp"

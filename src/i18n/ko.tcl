@@ -72,6 +72,8 @@ dict set ::i18n ko {
     profile_config_size    "글꼴 크기:"
     profile_config_margin_w "여백 너비:"
     profile_config_margin_h "여백 높이:"
+    profile_config_word_goal "일일 목표:"
+    profile_config_dark_mode "어두운 모드:"
     profile_config_apply   "적용"
     profile_config_cancel  "취소"
     br_key_help            "도움말"

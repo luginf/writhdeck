@@ -72,6 +72,8 @@ dict set ::i18n fr {
     profile_config_size    "Taille :"
     profile_config_margin_w "Largeur marge :"
     profile_config_margin_h "Hauteur marge :"
+    profile_config_word_goal "Objectif quotidien :"
+    profile_config_dark_mode "Mode sombre :"
     profile_config_apply   "Appliquer"
     profile_config_cancel  "Annuler"
     br_key_help            "aide"

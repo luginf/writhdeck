@@ -361,6 +361,9 @@ proc daily-clear {filepath} {
     state-save
 }
 
+# --- schemes (loaded from src/schemes/*.tcl) --------------------------------
+set ::scheme_defs  {}
+
 # --- ini ----------------------------------------------------------------------
 set ::cfg_scheme   "default"
 set ::cfg_schemes  {}
@@ -716,6 +719,19 @@ proc ini-save {} {
     puts $fh {# Select the active profile with:  profile = <name>  in [editor]}
     puts $fh ""
 
+    # Add "roman" example profile if not already defined
+    if {![dict exists $::cfg_profiles roman]} {
+        puts $fh "\[roman\]"
+        puts $fh "margin_width    = 180"
+        puts $fh "margin_height   = 80"
+        puts $fh "font_size       = 18"
+        puts $fh "font_family     = Noto Serif"
+        puts $fh "line_spacing    = 110"
+        puts $fh "bar_height      = 20"
+        puts $fh "word_goal       = 1000"
+        puts $fh ""
+    }
+
     # Write all profiles including "default" from the dictionary
     foreach pname [dict keys $::cfg_profiles] {
         puts $fh "\[$pname\]"
@@ -789,7 +805,12 @@ proc ini-save {} {
     flush stderr
 }
 
-ini-load
+proc schemes-init {} {
+    foreach scheme_name [dict keys $::scheme_defs] {
+        set scheme_data [dict get $::scheme_defs $scheme_name]
+        dict set ::cfg_schemes $scheme_name $scheme_data
+    }
+}
 
 # Map Tk key name -> string returned by tui-getch
 proc tk-key-to-tui {key} {
@@ -919,23 +940,136 @@ if {!$::no_gui && $::cfg_bar_font_family ne "Mono"} {
         set ::cfg_bar_font_family "Mono"
     }
 }
-set font    [list $::cfg_font_family $::cfg_font_size]
-set bar_pady [expr {$::cfg_bar_height > 0 \
-    ? min(2, max(0, ($::cfg_bar_height - 6) / 2)) : 0}]
-set font_sm  [expr {$::cfg_bar_height > 0 \
-    ? [list $::cfg_bar_font_family [expr {-max(6, $::cfg_bar_height - 2*$bar_pady)}]] \
-    : [list $::cfg_bar_font_family 10]}]
-set ::font_sm $font_sm
-lassign [theme-colors] bg fg bg_bar fg_bar bg_sel
-set fg_dim  "#676767"
-# expose as globals for use in procs
-set ::bg     $bg
 set ::typewriter_mode 0
-set ::fg     $fg
-set ::bg_bar $bg_bar
-set ::fg_bar $fg_bar
-set ::bg_sel $bg_sel
 
+
+# ===========================================================================
+# schemes (alt01 default everforest gruvbox nord solarized)
+# ===========================================================================
+# Alt01 - Warm, muted color scheme
+
+dict set ::scheme_defs alt01 {
+    color_bg       "#2a2520"
+    color_fg       "#d4c4b0"
+    color_bg_bar   "#3d3531"
+    color_fg_bar   "#c4b4a0"
+    color_bg_sel   "#4a4035"
+    color_heading  "#e8a87c"
+    color_comment  "#6a5a50"
+    color_markup   "#c49070"
+    color_bg_alt   "#f5f0eb"
+    color_fg_alt   "#3a2a20"
+    color_bg_bar_alt "#e8e0d8"
+    color_fg_bar_alt "#3a2a20"
+    color_bg_sel_alt "#e0d4c8"
+    color_heading_alt "#a65d2b"
+    color_comment_alt "#a89080"
+    color_markup_alt "#8b5a3c"
+}
+# Default color scheme - dark and light variants
+
+dict set ::scheme_defs default {
+    color_bg       "#1a1a1a"
+    color_fg       "#e8e8e8"
+    color_bg_bar   "#2a2a2a"
+    color_fg_bar   "#aaaaaa"
+    color_bg_sel   "#3a5a8a"
+    color_heading  "#c8a060"
+    color_comment  "#606060"
+    color_markup   "#6aa9d4"
+    color_bg_alt   "#fdf6e3"
+    color_fg_alt   "#657b83"
+    color_bg_bar_alt "#eee8d5"
+    color_fg_bar_alt "#93a1a1"
+    color_bg_sel_alt "#e6ddb9"
+    color_heading_alt "#b58900"
+    color_comment_alt "#aaaaaa"
+    color_markup_alt "#2a7090"
+}
+# Everforest color scheme - Sainnhepark
+# https://github.com/sainnhepark/everforest
+
+dict set ::scheme_defs everforest {
+    color_bg       "#272e33"
+    color_fg       "#d3c6aa"
+    color_bg_bar   "#323d43"
+    color_fg_bar   "#9da9a0"
+    color_bg_sel   "#3f4a52"
+    color_heading  "#dfa000"
+    color_comment  "#859289"
+    color_markup   "#7cb342"
+    color_bg_alt   "#fffbf0"
+    color_fg_alt   "#5a6a64"
+    color_bg_bar_alt "#f3ead3"
+    color_fg_bar_alt "#93a97c"
+    color_bg_sel_alt "#e7dcc8"
+    color_heading_alt "#bc5c00"
+    color_comment_alt "#a8b8a0"
+    color_markup_alt "#6d8f3d"
+}
+# Gruvbox color scheme - Morhetz
+# https://github.com/morhetz/gruvbox
+
+dict set ::scheme_defs gruvbox {
+    color_bg       "#282828"
+    color_fg       "#ebdbb2"
+    color_bg_bar   "#3c3836"
+    color_fg_bar   "#bdae93"
+    color_bg_sel   "#504945"
+    color_heading  "#fabd2f"
+    color_comment  "#928374"
+    color_markup   "#83a598"
+    color_bg_alt   "#fbf1c7"
+    color_fg_alt   "#3c3836"
+    color_bg_bar_alt "#f3f1e8"
+    color_fg_bar_alt "#7c6f64"
+    color_bg_sel_alt "#e8dcc8"
+    color_heading_alt "#d65d0e"
+    color_comment_alt "#a89984"
+    color_markup_alt "#458588"
+}
+# Nord color scheme - Arctic, north-bluish color palette
+# https://www.nordtheme.com/
+
+dict set ::scheme_defs nord {
+    color_bg       "#2e3440"
+    color_fg       "#eceff4"
+    color_bg_bar   "#3b4252"
+    color_fg_bar   "#d8dee9"
+    color_bg_sel   "#434c5e"
+    color_heading  "#ebcb8b"
+    color_comment  "#4c566a"
+    color_markup   "#88c0d0"
+    color_bg_alt   "#eceff4"
+    color_fg_alt   "#2e3440"
+    color_bg_bar_alt "#d8dee9"
+    color_fg_bar_alt "#434c5e"
+    color_bg_sel_alt "#d8dee9"
+    color_heading_alt "#d08770"
+    color_comment_alt "#81a1c1"
+    color_markup_alt "#5e81ac"
+}
+# Solarized color scheme - Ethan Schoonover
+# https://ethanschoonover.com/solarized/
+
+dict set ::scheme_defs solarized {
+    color_bg       "#002b36"
+    color_fg       "#839496"
+    color_bg_bar   "#073642"
+    color_fg_bar   "#586e75"
+    color_bg_sel   "#004555"
+    color_heading  "#b58900"
+    color_comment  "#586e75"
+    color_markup   "#268bd2"
+    color_bg_alt   "#fdf6e3"
+    color_fg_alt   "#657b83"
+    color_bg_bar_alt "#eee8d5"
+    color_fg_bar_alt "#93a1a1"
+    color_bg_sel_alt "#e6ddb9"
+    color_heading_alt "#b58900"
+    color_comment_alt "#93a1a1"
+    color_markup_alt "#268bd2"
+}
 
 # ===========================================================================
 # i18n (de en es fr ko no)
@@ -1014,6 +1148,8 @@ dict set ::i18n en {
     profile_config_size    "Font size:"
     profile_config_margin_w "Margin width:"
     profile_config_margin_h "Margin height:"
+    profile_config_word_goal "Daily word goal:"
+    profile_config_dark_mode "Dark mode:"
     profile_config_apply   "Apply"
     profile_config_cancel  "Cancel"
     br_key_help            "help"
@@ -1139,6 +1275,8 @@ dict set ::i18n de {
     profile_config_size    "Schriftgroesse:"
     profile_config_margin_w "Randbreite:"
     profile_config_margin_h "Randhoehe:"
+    profile_config_word_goal "Tägliches Ziel:"
+    profile_config_dark_mode "Dunkler Modus:"
     profile_config_apply   "Anwenden"
     profile_config_cancel  "Abbrechen"
     br_key_help            "hilfe"
@@ -1264,6 +1402,8 @@ dict set ::i18n es {
     profile_config_size    "Tamano de fuente:"
     profile_config_margin_w "Ancho de margen:"
     profile_config_margin_h "Alto de margen:"
+    profile_config_word_goal "Objetivo diario:"
+    profile_config_dark_mode "Modo oscuro:"
     profile_config_apply   "Aplicar"
     profile_config_cancel  "Cancelar"
     br_key_help            "ayuda"
@@ -1389,6 +1529,8 @@ dict set ::i18n fr {
     profile_config_size    "Taille :"
     profile_config_margin_w "Largeur marge :"
     profile_config_margin_h "Hauteur marge :"
+    profile_config_word_goal "Objectif quotidien :"
+    profile_config_dark_mode "Mode sombre :"
     profile_config_apply   "Appliquer"
     profile_config_cancel  "Annuler"
     br_key_help            "aide"
@@ -1514,6 +1656,8 @@ dict set ::i18n ko {
     profile_config_size    "글꼴 크기:"
     profile_config_margin_w "여백 너비:"
     profile_config_margin_h "여백 높이:"
+    profile_config_word_goal "일일 목표:"
+    profile_config_dark_mode "어두운 모드:"
     profile_config_apply   "적용"
     profile_config_cancel  "취소"
     br_key_help            "도움말"
@@ -1639,6 +1783,8 @@ dict set ::i18n no {
     profile_config_size    "Skriftstørrelse:"
     profile_config_margin_w "Marginebredde:"
     profile_config_margin_h "Marginehøyde:"
+    profile_config_word_goal "Daglig mål:"
+    profile_config_dark_mode "Mørk modus:"
     profile_config_apply   "Bruk"
     profile_config_cancel  "Avbryt"
     br_key_help            "hjelp"
@@ -1694,6 +1840,27 @@ dict set ::i18n no {
 # ===========================================================================
 # common.tcl
 # ===========================================================================
+# --- initialization (run after schemes and i18n are loaded) -----------
+schemes-init
+ini-load
+
+# Initialize fonts and theme colors (must be after ini-load to use selected scheme/profile)
+set font    [list $::cfg_font_family $::cfg_font_size]
+set bar_pady [expr {$::cfg_bar_height > 0 \
+    ? min(2, max(0, ($::cfg_bar_height - 6) / 2)) : 0}]
+set font_sm  [expr {$::cfg_bar_height > 0 \
+    ? [list $::cfg_bar_font_family [expr {-max(6, $::cfg_bar_height - 2*$bar_pady)}]] \
+    : [list $::cfg_bar_font_family 10]}]
+set ::font_sm $font_sm
+lassign [theme-colors] bg fg bg_bar fg_bar bg_sel
+set fg_dim  "#676767"
+# expose as globals for use in procs
+set ::bg     $bg
+set ::fg     $fg
+set ::bg_bar $bg_bar
+set ::fg_bar $fg_bar
+set ::bg_sel $bg_sel
+
 # --- utils --------------------------------------------------------------------
 proc list-docs {dir} {
     set pairs {}
@@ -3463,6 +3630,18 @@ proc profile-config-update-profile {w} {
     }
     $w.fmarginh.spin set $cur_mh
 
+    set cur_goal $::cfg_word_goal
+    if {[dict exists $::cfg_profiles $profile word_goal]} {
+        set cur_goal [dict get $::cfg_profiles $profile word_goal]
+    }
+    $w.fwordgoal.spin set $cur_goal
+
+    set cur_dark $::cfg_dark_mode
+    if {[dict exists $::cfg_profiles $profile dark_mode]} {
+        set cur_dark [dict get $::cfg_profiles $profile dark_mode]
+    }
+    set ::profile_config_dark_mode $cur_dark
+
     set idx [lsearch -exact [lsort [font families]] $cur_font]
     $w.profile.fonts selection clear 0 end
     if {$idx >= 0} { $w.profile.fonts selection set $idx; $w.profile.fonts see $idx }
@@ -3475,6 +3654,7 @@ proc profile-config-dialog {} {
     toplevel $w
     wm title $w [t profile_config_title]
     wm transient $w .
+    $w configure -bg $::bg
     grab $w
 
     set profiles [lsort [dict keys $::cfg_profiles]]
@@ -3493,13 +3673,13 @@ proc profile-config-dialog {} {
     }
 
     # --- Global settings frame ---
-    frame $w.global -relief ridge -borderwidth 2
+    frame $w.global -relief ridge -borderwidth 2 -bg $::bg
     pack $w.global -fill x -padx 8 -pady 8
 
     label $w.global.title -text "Global Settings" -font $::font_sm -fg $::fg_bar -bg $::bg
     pack $w.global.title -anchor w -padx 8 -pady {4 2}
 
-    label $w.global.lbl_defprof -text [t profile_config_default_profile] -font $::font_sm
+    label $w.global.lbl_defprof -text [t profile_config_default_profile] -font $::font_sm -bg $::bg -fg $::fg
     pack $w.global.lbl_defprof -anchor w -padx 12 -pady {4 2}
     frame $w.global.fprof
     pack $w.global.fprof -fill x -padx 12 -pady {0 6}
@@ -3508,7 +3688,7 @@ proc profile-config-dialog {} {
     set ::profile_config_default_prof $::cfg_profile
     pack $w.global.fprof.om -anchor w
 
-    label $w.global.lbl_scheme -text [t profile_config_default_scheme] -font $::font_sm
+    label $w.global.lbl_scheme -text [t profile_config_default_scheme] -font $::font_sm -bg $::bg -fg $::fg
     pack $w.global.lbl_scheme -anchor w -padx 12 -pady {4 2}
     frame $w.global.fscheme
     pack $w.global.fscheme -fill x -padx 12 -pady {0 6}
@@ -3528,16 +3708,16 @@ proc profile-config-dialog {} {
     pack $w.global.flang.om -anchor w
 
     # --- Profile-specific settings frame ---
-    frame $w.profile -relief ridge -borderwidth 2
-    pack $w.profile -fill both -expand 1 -padx 8 -pady 8
+    frame $w.profile -relief ridge -borderwidth 2 -bg $::bg
+    pack $w.profile -fill x -padx 8 -pady 8
 
     label $w.profile.title -text "Profile Settings" -font $::font_sm -fg $::fg_bar -bg $::bg
     pack $w.profile.title -anchor w -padx 8 -pady {4 2}
 
     # Profile selector row
-    frame $w.profile.fprof
+    frame $w.profile.fprof -bg $::bg
     pack $w.profile.fprof -fill x -padx 12 -pady {0 6}
-    label $w.profile.fprof.lbl -text [t profile_config_edit_profile] -font $::font_sm -width 15 -anchor w
+    label $w.profile.fprof.lbl -text [t profile_config_edit_profile] -font $::font_sm -width 18 -anchor w -bg $::bg -fg $::fg
     tk_optionMenu $w.profile.fprof.om ::profile_config_profile {*}$profiles
     $w.profile.fprof.om configure -bg $::bg_bar -fg $::fg_bar -highlightthickness 0
     if {[lsearch -exact $profiles $::cfg_profile] >= 0} {
@@ -3545,31 +3725,40 @@ proc profile-config-dialog {} {
     } else {
         set ::profile_config_profile [lindex $profiles 0]
     }
-    pack $w.profile.fprof.lbl -side left
+    pack $w.profile.fprof.lbl -side left -padx {0 8}
     pack $w.profile.fprof.om -side left -fill x -expand 1
 
     # Font family row
-    frame $w.profile.ffont
+    frame $w.profile.ffont -bg $::bg
     pack $w.profile.ffont -fill x -padx 12 -pady 4
-    label $w.profile.ffont.lbl -text [t profile_config_font] -font $::font_sm -width 15 -anchor w
-    entry $w.profile.ffont.entry -width 30 -font $::font_sm
+    label $w.profile.ffont.lbl -text [t profile_config_font] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    entry $w.profile.ffont.entry -width 30 -font $::font_sm -bg $::bg_bar -fg $::fg
     pack $w.profile.ffont.lbl -side left
     pack $w.profile.ffont.entry -side left -fill x -expand 1
 
-    # Available fonts listbox
-    label $w.profile.lbl_fonts -text "Available fonts:" -font $::font_sm
+    # Available fonts listbox with scrollbar
+    label $w.profile.lbl_fonts -text "Available fonts:" -font $::font_sm -bg $::bg -fg $::fg
     pack $w.profile.lbl_fonts -anchor w -padx 12 -pady {4 2}
-    listbox $w.profile.fonts -height 5 -width 40 -font $::font_sm -selectmode single
+    frame $w.profile.fonts_frame -bg $::bg
+    pack $w.profile.fonts_frame -fill x -padx 12 -pady 2
+    listbox $w.profile.fonts -height 5 -width 40 -font $::font_sm -selectmode single \
+        -yscrollcommand [list $w.profile.fonts_scroll set] -bg $::bg_bar -fg $::fg
+    scrollbar $w.profile.fonts_scroll -command [list $w.profile.fonts yview] -bg $::bg_bar
     foreach f [lsort [font families]] {
         $w.profile.fonts insert end $f
     }
-    pack $w.profile.fonts -fill both -expand 1 -padx 12 -pady 2
+    pack $w.profile.fonts -side left -fill x
+    pack $w.profile.fonts_scroll -side left -fill y
+
+    # Font preview (right after listbox)
+    label $w.profile.preview -text "Preview" -font $::font_sm -bg $::bg -fg $::fg
+    pack $w.profile.preview -fill x -padx 12 -pady {8 2}
 
     # Font size row (create BEFORE bindings)
-    frame $w.fsize
+    frame $w.fsize -bg $::bg
     pack $w.fsize -fill x -padx 12 -pady 4
-    label $w.fsize.lbl -text [t profile_config_size] -font $::font_sm -width 15 -anchor w
-    spinbox $w.fsize.spin -from 6 -to 72 -width 5 -font $::font_sm -command {
+    label $w.fsize.lbl -text [t profile_config_size] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.fsize.spin -from 6 -to 72 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg -command {
         set font [.profile_config.profile.ffont.entry get]
         set size [.profile_config.fsize.spin get]
         if {$font ne "" && $size ne ""} {
@@ -3578,10 +3767,6 @@ proc profile-config-dialog {} {
     }
     pack $w.fsize.lbl -side left
     pack $w.fsize.spin -side left
-
-    # Font preview
-    label $w.profile.preview -text "Preview" -font $::font_sm -bg $::bg -fg $::fg
-    pack $w.profile.preview -fill x -padx 12 -pady {8 2}
 
     # Bind to update preview on font/size change (AFTER all widgets created)
     bind $w.profile.fonts <<ListboxSelect>> {
@@ -3614,20 +3799,38 @@ proc profile-config-dialog {} {
     }
 
     # Margin width row
-    frame $w.fmarginw
+    frame $w.fmarginw -bg $::bg
     pack $w.fmarginw -fill x -padx 12 -pady 4
-    label $w.fmarginw.lbl -text [t profile_config_margin_w] -font $::font_sm -width 15 -anchor w
-    spinbox $w.fmarginw.spin -from 0 -to 200 -width 5 -font $::font_sm
+    label $w.fmarginw.lbl -text [t profile_config_margin_w] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.fmarginw.spin -from 0 -to 200 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
     pack $w.fmarginw.lbl -side left
     pack $w.fmarginw.spin -side left
 
     # Margin height row
-    frame $w.fmarginh
+    frame $w.fmarginh -bg $::bg
     pack $w.fmarginh -fill x -padx 12 -pady 4
-    label $w.fmarginh.lbl -text [t profile_config_margin_h] -font $::font_sm -width 15 -anchor w
-    spinbox $w.fmarginh.spin -from 0 -to 200 -width 5 -font $::font_sm
+    label $w.fmarginh.lbl -text [t profile_config_margin_h] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.fmarginh.spin -from 0 -to 200 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
     pack $w.fmarginh.lbl -side left
     pack $w.fmarginh.spin -side left
+
+    # Word goal row
+    frame $w.fwordgoal -bg $::bg
+    pack $w.fwordgoal -fill x -padx 12 -pady 4
+    label $w.fwordgoal.lbl -text [t profile_config_word_goal] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.fwordgoal.spin -from 0 -to 10000 -width 8 -font $::font_sm -bg $::bg_bar -fg $::fg
+    label $w.fwordgoal.hint -text "(words/day, 0=disabled)" -font $::font_sm -fg $::fg_bar -bg $::bg
+    pack $w.fwordgoal.lbl -side left
+    pack $w.fwordgoal.spin -side left -padx {0 4}
+    pack $w.fwordgoal.hint -side left
+
+    # Dark mode row
+    frame $w.fdarkmode -bg $::bg
+    pack $w.fdarkmode -fill x -padx 12 -pady 4
+    label $w.fdarkmode.lbl -text [t profile_config_dark_mode] -font $::font_sm -width 15 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.fdarkmode.check -variable profile_config_dark_mode -font $::font_sm -bg $::bg -fg $::fg
+    pack $w.fdarkmode.lbl -side left
+    pack $w.fdarkmode.check -side left
 
     # Update profile display when changed via trace
     trace add variable ::profile_config_profile write [list apply {{name1 name2 op} {
@@ -3638,17 +3841,19 @@ proc profile-config-dialog {} {
     profile-config-update-profile $w
 
     # Button frame
-    frame $w.btns
+    frame $w.btns -bg $::bg
     pack $w.btns -fill x -padx 8 -pady 8
 
     button $w.btns.apply -text [t profile_config_apply] -font $::font_sm \
-        -bg $::bg_bar -fg $::fg_bar \
+        -bg $::bg_bar -fg $::fg_bar -width 12 \
         -command {
             set profile $::profile_config_profile
             set font [.profile_config.profile.ffont.entry get]
             set size [.profile_config.fsize.spin get]
             set mw [.profile_config.fmarginw.spin get]
             set mh [.profile_config.fmarginh.spin get]
+            set goal [.profile_config.fwordgoal.spin get]
+            set dark $::profile_config_dark_mode
             set def_prof $::profile_config_default_prof
             set def_scheme $::profile_config_default_scheme
             set def_lang $::profile_config_language
@@ -3659,6 +3864,8 @@ proc profile-config-dialog {} {
             dict set ::cfg_profiles $profile font_size $size
             dict set ::cfg_profiles $profile margin_width $mw
             dict set ::cfg_profiles $profile margin_height $mh
+            dict set ::cfg_profiles $profile word_goal $goal
+            dict set ::cfg_profiles $profile dark_mode $dark
 
             # Check if the profile being edited is currently active BEFORE changing ::cfg_profile
             set is_current_profile [expr {$profile eq $::cfg_profile}]
@@ -3668,6 +3875,15 @@ proc profile-config-dialog {} {
             set ::cfg_lang $def_lang
 
             ini-save
+
+            # Apply the selected scheme to update color variables
+            scheme-apply $def_scheme
+            lassign [theme-colors] bg fg bg_bar fg_bar bg_sel
+            set ::bg $bg
+            set ::fg $fg
+            set ::bg_bar $bg_bar
+            set ::fg_bar $fg_bar
+            set ::bg_sel $bg_sel
 
             # Apply profile if it was the currently active one
             if {$is_current_profile} {
@@ -3684,6 +3900,9 @@ proc profile-config-dialog {} {
                 }
             }
 
+            # Apply theme to update all GUI colors
+            apply-theme
+
             catch {trace remove variable ::profile_config_profile write}
             destroy .profile_config
             br-reload
@@ -3691,13 +3910,17 @@ proc profile-config-dialog {} {
     pack $w.btns.apply -side left -padx 4
 
     button $w.btns.cancel -text [t profile_config_cancel] -font $::font_sm \
-        -bg $::bg_bar -fg $::fg_bar -command {
+        -bg $::bg_bar -fg $::fg_bar -width 12 -command {
             catch {trace remove variable ::profile_config_profile write}
             destroy .profile_config
         }
     pack $w.btns.cancel -side left -padx 4
 
     update
+    set geom [wm geometry $w]
+    set width [string range $geom 0 [string first x $geom]-1]
+    if {$width < 550} {set width 550}
+    wm geometry $w ${width}x[expr {[winfo height $w] + 20}]
     grab $w
     bind $w <Escape> {
         catch {trace remove variable ::profile_config_profile write}
