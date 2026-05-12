@@ -1983,7 +1983,7 @@ proc fmt-meta {path} {
     set sz [file size $path]
     set sz_str [expr {$sz < 1024 ? "${sz}B" : "[expr {$sz/1024}]K"}]
     set mt [clock format [file mtime $path] -format "%d %b %H:%M"]
-    return [format "%6s  %s" $sz_str $mt]
+    return "$sz_str\t$mt"
 }
 
 proc status-zone-of {tok} {
@@ -2117,11 +2117,16 @@ label .br.title \
 pack .br.title -fill x
 
 frame .br.mid -bg $bg
-listbox .br.mid.lst \
+text .br.mid.lst \
     -bg $bg -fg $fg -font $font \
-    -selectbackground $bg_sel -selectforeground $fg \
-    -activestyle none -borderwidth 0 -highlightthickness 0 \
-    -yscrollcommand {.br.mid.sb set}
+    -borderwidth 0 -highlightthickness 0 \
+    -yscrollcommand {.br.mid.sb set} -wrap none -state disabled
+.br.mid.lst tag configure header -foreground $fg_bar
+.br.mid.lst tag configure file -foreground $fg
+.br.mid.lst tag configure selected -background $bg_sel
+
+# Tabstops will be configured dynamically in br-refresh based on actual file names
+
 scrollbar .br.mid.sb -orient vertical -command {.br.mid.lst yview} \
     -bg $bg_bar -troughcolor $bg
 pack .br.mid.sb  -side right -fill y
@@ -2200,10 +2205,15 @@ set ::br_entries {}
 
 proc br-refresh {} {
     set prev ""
-    set sel [.br.mid.lst curselection]
-    if {[llength $sel]} {
-        lassign [lindex $::br_entries [lindex $sel 0]] type dir name
-        if {$type in {file recent favorite}} { set prev "$dir|$name" }
+    # Get current selection from text widget
+    set tags [.br.mid.lst tag ranges selected]
+    if {[llength $tags]} {
+        set idx [lindex $tags 0]
+        set line [expr {int($idx)}]
+        if {$line > 0 && $line <= [llength $::br_entries]} {
+            lassign [lindex $::br_entries [expr {$line - 1}]] type dir name
+            if {$type in {file recent favorite}} { set prev "$dir|$name" }
+        }
     }
 
     set ::state_cache_valid 0
@@ -2222,47 +2232,69 @@ proc br-refresh {} {
         }
     }
 
-    .br.mid.lst delete 0 end
+    # Calculate tab positions based on longest filename
+    set max_name_len 0
+    foreach e $::br_entries {
+        lassign $e type dir name
+        if {$type ni {file recent favorite}} continue
+        set name_len [string length $name]
+        if {$name_len > $max_name_len} { set max_name_len $name_len }
+    }
+
+    # Calculate tabstops: 2 spaces indent + max filename length + 2 spaces gap
+    set char_width [font measure $::font "W"]
+    set tab1 [expr {int((2 + $max_name_len + 2) * $char_width)}]
+    set tab2 [expr {int($tab1 + 10 * $char_width)}]
+    .br.mid.lst configure -tabs [list $tab1 $tab2] -tabstyle wordprocessor
+
+    .br.mid.lst configure -state normal
+    .br.mid.lst delete 1.0 end
     set new_sel -1
     set first_file -1
     for {set i 0} {$i < [llength $::br_entries]} {incr i} {
         lassign [lindex $::br_entries $i] type dir name
+        set line_num [expr {$i + 1}]
         if {$type eq "header"} {
             set label [expr {$name ne "" ? $name : [string map [list $::HOME_DIR ~] $dir]}]
-            .br.mid.lst insert end " $label"
-            .br.mid.lst itemconfigure $i -foreground $::fg_bar \
-                -selectforeground $::fg_bar -selectbackground $::bg_bar
+            .br.mid.lst insert end " $label\n" header
         } else {
             set meta [fmt-meta [file join $dir $name]]
-            .br.mid.lst insert end [format "  %-36s %s" $name $meta]
+            .br.mid.lst insert end "  $name\t$meta\n" file
             if {$first_file < 0} { set first_file $i }
             if {"$dir|$name" eq $prev} { set new_sel $i }
         }
     }
+    .br.mid.lst configure -state disabled
 
     set s [expr {$total != 1 ? "s" : ""}]
     set ::br_status " [t br_files $total $s] "
 
     if {$new_sel < 0} { set new_sel $first_file }
     if {$new_sel >= 0} {
-        .br.mid.lst selection set $new_sel
-        if {$prev eq ""} { .br.mid.lst yview 0 } else { .br.mid.lst see $new_sel }
+        set line_num [expr {$new_sel + 1}]
+        .br.mid.lst tag remove selected 1.0 end
+        .br.mid.lst tag add selected ${line_num}.0 ${line_num}.end
+        .br.mid.lst see ${line_num}.0
     }
 }
 
 # returns {type dir name} of selected entry, or {} if none/header
 proc br-selected {} {
-    set sel [.br.mid.lst curselection]
-    if {![llength $sel]} { return {} }
-    set e [lindex $::br_entries [lindex $sel 0]]
+    set tags [.br.mid.lst tag ranges selected]
+    if {![llength $tags]} { return {} }
+    set idx [lindex $tags 0]
+    set line [expr {int($idx)}]
+    if {$line < 1 || $line > [llength $::br_entries]} { return {} }
+    set e [lindex $::br_entries [expr {$line - 1}]]
     if {[lindex $e 0] ni {file recent favorite}} { return {} }
     return $e
 }
 
 # returns the dir of the section containing the current selection
 proc br-active-dir {} {
-    set sel [.br.mid.lst curselection]
-    set i [expr {[llength $sel] ? [lindex $sel 0] : 0}]
+    set tags [.br.mid.lst tag ranges selected]
+    set idx [expr {[llength $tags] ? int([lindex $tags 0]) : 1}]
+    set i [expr {$idx - 1}]
     while {$i >= 0} {
         lassign [lindex $::br_entries $i] type dir
         if {$type eq "header"} { return [expr {$dir ne "" ? $dir : $::DOCS_DIR_DEFAULT}] }
@@ -2670,19 +2702,39 @@ bind .br.mid.lst <c>           { profile-config-dialog }
 bind .br.mid.lst <q>           { exit }
 bind .br.mid.lst <z>           { br-reload }
 
+proc br-select-line {line_offset} {
+    set tags [.br.mid.lst tag ranges selected]
+    set current_line [expr {[llength $tags] ? int([lindex $tags 0]) : 1}]
+    set new_line [expr {$current_line + $line_offset}]
+    set last_line [expr {[llength $::br_entries]}]
+
+    while {$new_line > 0 && $new_line <= $last_line && [lindex [lindex $::br_entries [expr {$new_line - 1}]] 0] eq "header"} {
+        incr new_line $line_offset
+    }
+
+    if {$new_line > 0 && $new_line <= $last_line} {
+        .br.mid.lst tag remove selected 1.0 end
+        .br.mid.lst tag add selected ${new_line}.0 ${new_line}.end
+        .br.mid.lst see ${new_line}.0
+    }
+}
+
 bind .br.mid.lst <Up> {
-    set i [lindex [concat [.br.mid.lst curselection] 1] 0]
-    incr i -1
-    while {$i >= 0 && [lindex [lindex $::br_entries $i] 0] eq "header"} { incr i -1 }
-    if {$i >= 0} { .br.mid.lst selection clear 0 end; .br.mid.lst selection set $i; .br.mid.lst see $i }
+    br-select-line -1
     break
 }
 bind .br.mid.lst <Down> {
-    set last [expr {[.br.mid.lst size] - 1}]
-    set i [lindex [concat [.br.mid.lst curselection] -1] 0]
-    incr i
-    while {$i <= $last && [lindex [lindex $::br_entries $i] 0] eq "header"} { incr i }
-    if {$i <= $last} { .br.mid.lst selection clear 0 end; .br.mid.lst selection set $i; .br.mid.lst see $i }
+    br-select-line 1
+    break
+}
+
+bind .br.mid.lst <Button-1> {
+    set line [expr {int([.br.mid.lst index @%x,%y])}]
+    if {$line > 0 && $line <= [llength $::br_entries]} {
+        .br.mid.lst tag remove selected 1.0 end
+        .br.mid.lst tag add selected ${line}.0 ${line}.end
+        focus .br.mid.lst
+    }
     break
 }
 
@@ -3568,9 +3620,10 @@ proc br-toc-jump {w sections} {
     if {![llength $sel]} return
     lassign [lindex $sections [lindex $sel 0]] idx lbl
     destroy $w
-    .br.mid.lst selection clear 0 end
-    .br.mid.lst selection set $idx
-    .br.mid.lst see $idx
+    set line_num [expr {$idx + 1}]
+    .br.mid.lst tag remove selected 1.0 end
+    .br.mid.lst tag add selected ${line_num}.0 ${line_num}.end
+    .br.mid.lst see ${line_num}.0
     focus .br.mid.lst
 }
 

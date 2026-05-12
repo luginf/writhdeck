@@ -141,7 +141,7 @@ proc fmt-meta {path} {
     set sz [file size $path]
     set sz_str [expr {$sz < 1024 ? "${sz}B" : "[expr {$sz/1024}]K"}]
     set mt [clock format [file mtime $path] -format "%d %b %H:%M"]
-    return [format "%6s  %s" $sz_str $mt]
+    return "$sz_str\t$mt"
 }
 
 proc status-zone-of {tok} {
