@@ -151,6 +151,34 @@ br_ma_cle    "Ma chaîne"    # dans le bloc fr {}
 - **Dialogue de configuration des profils (c)** : Accès complet aux paramètres de police par profil (famille, taille, marges), sélection du profil par défaut, sélection du scheme de couleurs, preview en temps réel. Stockage persistent dans `.writhdeck.json` via le dict `::cfg_profiles`.
 - **Raccourcis browser en gras (status bar GUI)** : Affichage des 12 touches avec la première lettre en gras et cliquable (h:help, n:new, t:scratchpad, f:favorite, s:stats, b:backup, d:delete, r:rename, i:info, c:config, z:reload, q:quit).
 
+## Modularisation et construction
+
+Le code est organisé en modules dans le dossier `src/` et construit via un `Makefile` :
+
+| Module | Lignes | Contenu |
+|---|---|---|
+| `src/boot.tcl` | ~80 | Polyglot sh/Tcl, parsing args, détection Tk, setup HOME_DIR |
+| `src/boot-cli.tcl` | ~80 | Variante CLI : sans chargement Tk, force `::no_gui 1` |
+| `src/state.tcl` | ~147 | Persistance JSON, curseurs, favoris, récents, stats quotidiennes |
+| `src/config.tcl` | ~804 | Chargement INI, profils, thèmes, clés, i18n, init thème |
+| `src/common.tcl` | ~204 | Listing docs, backup, parseurs inline, construction entrées browser |
+| `src/gui.tcl` | ~2001 | Bloc GUI (Tk) complet — enveloppé dans `if {!$::no_gui}` |
+| `src/tui.tcl` | ~1644 | Code mode TUI — interface terminal, browser, éditeur |
+| `src/main.tcl` | ~31 | Point d'entrée dispatch (GUI ou TUI selon `$::no_gui`) |
+| `src/main-cli.tcl` | ~2 | Point d'entrée CLI (appelle toujours `tui-main`) |
+
+**Cibles de construction** (via `make`) :
+- `writhdeck.tcl` — version complète (GUI+TUI, ~4979 lignes avec marqueurs de section)
+- `writhdeck-cli.tcl` — TUI seul (~2899 lignes, sans chargement Tk)
+- `make clean` — supprime les fichiers générés
+
+Les deux fichiers générés sont exécutables, trackés dans git, et ont des marqueurs de section (`# === state.tcl ===`) pour la lisibilité.
+
+**Ajustement après modularisation** :
+- Les deux fichiers générés **remplacent** l'ancien `writhdeck.tcl` monolithique
+- `src/` est la source of truth ; les fichiers générés sont des artefacts de build trackés
+- Toute modification fonctionnelle se fait dans `src/` puis `make` régénère les exécutables
+
 ## Idées non implémentées
 
 - **Filtre browser** : taper des lettres filtre les fichiers en temps réel (~20 lignes)

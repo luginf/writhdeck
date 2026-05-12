@@ -123,6 +123,10 @@ set ::INI_FILE         [file join $::DOCS_DIR_DEFAULT "writhdeck.ini"]
 set ::FILE_EXT ".txt"
 set ::filename        ""
 set ::dirty           0
+
+# ===========================================================================
+# state.tcl
+# ===========================================================================
 set ::msg             ""
 set ::ed_msg          ""
 set ::msg_after_id    ""
@@ -270,6 +274,10 @@ proc cursor-put {filepath cy cx} {
     dict set ::cursor_cache $filepath [list [expr {$cy - 1}] $cx]
     state-save
 }
+
+# ===========================================================================
+# config.tcl
+# ===========================================================================
 
 proc recent-push {path} {
     set path [file normalize $path]
@@ -1074,6 +1082,10 @@ set ::bg_bar $bg_bar
 set ::fg_bar $fg_bar
 set ::bg_sel $bg_sel
 
+
+# ===========================================================================
+# common.tcl
+# ===========================================================================
 # --- utils --------------------------------------------------------------------
 proc list-docs {dir} {
     set pairs {}
@@ -1278,6 +1290,10 @@ proc toggle-favorite {path} {
     state-save
 }
 
+
+# ===========================================================================
+# gui.tcl
+# ===========================================================================
 if {!$::no_gui} {
 wm title . "Writhdeck"
 
@@ -3280,6 +3296,10 @@ proc show-editor {path} {
 
 } ;# end if {!$::no_gui}
 
+# ===========================================================================
+# tui.tcl
+# ===========================================================================
+
 # --- TUI mode -----------------------------------------------------------------
 
 set ::tui_stty ""
@@ -4921,6 +4941,22 @@ proc tui-main {} {
     } err info]
     tui-cleanup
     if {$ok} { puts stderr $err }
+}
+
+
+# ===========================================================================
+# main.tcl
+# ===========================================================================
+# --- Development mode: auto-load modules if run directly from src/ ---
+if {![info exists ::version]} {
+    set srcdir [file dirname [info script]]
+    foreach m {boot state config common tui} {
+        source [file join $srcdir $m.tcl]
+    }
+    # Load GUI module only if not in TUI mode
+    if {!$::no_gui} {
+        source [file join $srcdir gui.tcl]
+    }
 }
 
 # --- start --------------------------------------------------------------------

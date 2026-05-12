@@ -1,0 +1,2001 @@
+if {!$::no_gui} {
+wm title . "Writhdeck"
+
+# wm iconphoto . -default [image create photo -file [file join [file dirname [info script]] writhdeck.png]]
+set ::_icon_b64 {iVBORw0KGgoAAAANSUhEUgAAAGAAAABgAQMAAADYVuV7AAAAwXpUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjabVBbDsMgDPvnFDsCJDyS49C1k3aDHX+mSauyzhKOgyUTErbP+xUeA5RyyKVJ1VojkDUrdQiJhr5zinnnHdUt9NN9OA3CFaOyteJGOu7TGWClQ5VLkDzdWGZDs+fLTxBZ4THR0KsHqQcxmZE8oHf/ikq7fmHZ4gyxEwZlmce+9Q3bWwveYaKNE0cwc7UBeJwauEMUcGKsA1qhybl5GBbyb08Hwhfm3FkghSRy6AAAAYVpQ0NQSUNDIHByb2ZpbGUAAHicfZG/S8NAHMVfU2tFKw52EHHIUJ3solIcaxWKUKHUCq06mFz6C5o0JCkujoJrwcEfi1UHF2ddHVwFQfAHiH+AOCm6SInfSwotYjw47sO7e4+7d4DQrDLV7IkDqmYZmWRCzOVXxeArAhhAEL2ISczU59LpFDzH1z18fL2L8izvc3+OQaVgMsAnEseZbljEG8SxTUvnvE8cZmVJIT4nnjTogsSPXJddfuNccljgmWEjm5knDhOLpS6Wu5iVDZV4hjiiqBrlCzmXFc5bnNVqnbXvyV8YKmgry1ynOYYkFrGENETIqKOCKixEadVIMZGh/YSHf9Txp8klk6sCRo4F1KBCcvzgf/C7W7M4PeUmhRJA4MW2P8aB4C7Qatj297Ftt04A/zNwpXX8tSYw+0l6o6NFjoChbeDiuqPJe8DlDjDypEuG5Eh+mkKxCLyf0TflgeFboH/N7a29j9MHIEtdpW6Ag0NgokTZ6x7v7uvu7d8z7f5+AHHScqZUIDF8AAANeGlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNC40LjAtRXhpdjIiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iCiAgICB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIgogICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICAgeG1sbnM6R0lNUD0iaHR0cDovL3d3dy5naW1wLm9yZy94bXAvIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgIHhtcE1NOkRvY3VtZW50SUQ9ImdpbXA6ZG9jaWQ6Z2ltcDplZjBhMzc3Yi0wZDI4LTQwZWEtOTBkMi1kZmZhNDQ2NzdjYmUiCiAgIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6YThmNzI2MjItMDY1Yy00NTM2LTlkMTctOTU3ZDZmMWJiODE1IgogICB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6NDY4NjQzNWItMWY0MS00MmQ4LWI2ZDgtZjYyZTEwODhiZDcwIgogICBkYzpGb3JtYXQ9ImltYWdlL3BuZyIKICAgR0lNUDpBUEk9IjIuMCIKICAgR0lNUDpQbGF0Zm9ybT0iTGludXgiCiAgIEdJTVA6VGltZVN0YW1wPSIxNzc4NDg0NTY3NTM1MjEwIgogICBHSU1QOlZlcnNpb249IjIuMTAuMzYiCiAgIHRpZmY6T3JpZW50YXRpb249IjEiCiAgIHhtcDpDcmVhdG9yVG9vbD0iR0lNUCAyLjEwIgogICB4bXA6TWV0YWRhdGFEYXRlPSIyMDI2OjA1OjExVDA5OjI5OjI3KzAyOjAwIgogICB4bXA6TW9kaWZ5RGF0ZT0iMjAyNjowNToxMVQwOToyOToyNyswMjowMCI+CiAgIDx4bXBNTTpIaXN0b3J5PgogICAgPHJkZjpTZXE+CiAgICAgPHJkZjpsaQogICAgICBzdEV2dDphY3Rpb249InNhdmVkIgogICAgICBzdEV2dDpjaGFuZ2VkPSIvIgogICAgICBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjE0Yjc3ZjU1LTBhOTQtNDY1OC1iZDZjLWY0ODVkZjNhOGY0ZSIKICAgICAgc3RFdnQ6c29mdHdhcmVBZ2VudD0iR2ltcCAyLjEwIChMaW51eCkiCiAgICAgIHN0RXZ0OndoZW49IjIwMjYtMDUtMTFUMDk6Mjk6MjcrMDI6MDAiLz4KICAgIDwvcmRmOlNlcT4KICAgPC94bXBNTTpIaXN0b3J5PgogIDwvcmRmOkRlc2NyaXB0aW9uPgogPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+jCyuRQAAAAZQTFRFAAAA////pdmf3QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB+oFCwcdGxSsKUAAAAJDSURBVDjLrdSxjtNAEADQ8eXEXRGRSCAhROEUSJTUCMHmToDo+Ag6PoAO1jkKBMWZks7iDyipcOAQKZ0/cCIXoYsDInHO6x1mZmNua0QKy0/ZnZ3dnTGg94P/AwguMFMY/8UB4raFUfTQO8z9AK99hB5kSovKX3TuY+LepiFDFkcLPYYLZkARrAv2AzTBaME44AAusn034GErQdWPeNgvwWpP5iwc9mWOW3PWV4w40ukIR4MOI5ljusDhUBCuUC1xGB0wVInh0hzDpkGwqrJhZh5QngRd2V5eHUJoEYw2L+O86nPuYNC8iJPZgNbUgkk6HdJ2NGzR3tshZdydqHFEeQpuFPoI+DSBdnCl0HtwGTFnXJvZfejscFCaLmXmEJeUgKAgbKs+p7YE2nW2LQe0jEPOwBZYDlW6Ax0nJ+CBnguHN1IiO5zwcbSQ9xZB4OErhN4wTqDFNxnm1rE3fTyOHTZ87ady/RlvDpsMPTzBqOP9U5S87ZpQJ1hQbSR0iGg6GguqGsFinWNB9ZRAg/j+eSZQdCX4sXub0CNYxE+HS0JsBdlZItBAdT+l3RCMQJ3eElBRpCbvXWdUjOZ+eJVDbwl5/Vm9ZawIy7qERwRVMM4Rv2vKbUHYEB7qwlBJAtZrtB/0LKA2AGzWiEeadiqN8RNxRLdjuciR5jwlGC1Iz0+0NBhD/z7mMhfU6tklwpmgiaDrupVbs4Q7FCxsm3bhupXxxVDhlLt2tnw7r7zPhu21oBYqVYtKmeDigzKW2/6nL9IfSdCzoS69vcYAAAAASUVORK5CYII=}
+catch {
+    wm iconphoto . -default [image create photo -data $::_icon_b64]
+}
+
+wm minsize . 500 400
+
+bind Button <FocusIn>  { %W configure -state active }
+bind Button <FocusOut> { %W configure -state normal }
+bind Button <Return>   { %W invoke }
+
+# --- browser frame ------------------------------------------------------------
+frame .br -bg $bg
+
+label .br.title \
+    -text " Writhdeck" \
+    -bg $bg -fg $fg \
+    -font [list [lindex $font 0] 15 bold] \
+    -anchor w -pady 10 -padx 4
+pack .br.title -fill x
+
+frame .br.mid -bg $bg
+listbox .br.mid.lst \
+    -bg $bg -fg $fg -font $font \
+    -selectbackground $bg_sel -selectforeground $fg \
+    -activestyle none -borderwidth 0 -highlightthickness 0 \
+    -yscrollcommand {.br.mid.sb set}
+scrollbar .br.mid.sb -orient vertical -command {.br.mid.lst yview} \
+    -bg $bg_bar -troughcolor $bg
+pack .br.mid.sb  -side right -fill y
+pack .br.mid.lst -fill both  -expand 1
+pack .br.mid     -fill both  -expand 1
+
+frame .br.bar -bg $bg_bar
+text .br.bar.help -height 1 -width 130 -bg $bg_bar -fg $fg_bar -font $font_sm \
+    -border 0 -highlightthickness 0 -state disabled -wrap none
+.br.bar.help tag configure bold -font [list [lindex $font_sm 0] [lindex $font_sm 1] bold]
+
+.br.bar.help configure -state normal
+.br.bar.help delete 1.0 end
+
+foreach {char cmd label} {
+    h help-dialog help
+    n br-new new
+    t open-scratchpad scratchpad
+    f br-toggle-favorite fav
+    s br-stats stats
+    b br-backup backup
+    d br-delete delete
+    r br-rename rename
+    i br-info-shortcut info
+    c profile-config-dialog config
+    z br-reload reload
+    q exit quit
+} {
+    .br.bar.help tag configure key_$char -foreground $fg_bar
+    .br.bar.help tag bind key_$char <Button-1> $cmd
+    .br.bar.help tag bind key_$char <Enter> {.br.bar.help config -cursor hand2}
+    .br.bar.help tag bind key_$char <Leave> {.br.bar.help config -cursor arrow}
+    .br.bar.help insert end $char [list bold key_$char]
+    .br.bar.help insert end ":$label  "
+}
+.br.bar.help insert end [format " %s:sections  " $::cfg_lbl_toc]
+.br.bar.help configure -state disabled
+
+label .br.bar.cnt -textvariable ::br_status \
+    -bg $bg_bar -fg $fg_bar -font $font_sm -anchor e -padx 8 -pady $bar_pady
+pack .br.bar.help -side left
+pack .br.bar.cnt  -side right
+pack .br.bar -side bottom -fill x
+if {$::cfg_bar_height > 0} {
+    .br.bar configure -height $::cfg_bar_height
+    pack propagate .br.bar 0
+}
+
+# browser state - each entry: {type dir name}  (type = header | file | favorite | recent)
+set ::br_entries {}
+
+proc br-refresh {} {
+    set prev ""
+    set sel [.br.mid.lst curselection]
+    if {[llength $sel]} {
+        lassign [lindex $::br_entries [lindex $sel 0]] type dir name
+        if {$type in {file recent favorite}} { set prev "$dir|$name" }
+    }
+
+    set ::state_cache_valid 0
+    set ::br_entries {}
+    set total 0
+    set shown {}
+    foreach dir [br-dirs] {
+        foreach f [list-docs $dir] { lappend shown [file join $dir $f] }
+    }
+    foreach e [build-extra-entries $shown] { lappend ::br_entries $e }
+    foreach dir [br-dirs] {
+        lappend ::br_entries [list header $dir ""]
+        foreach f [list-docs $dir] {
+            lappend ::br_entries [list file $dir $f]
+            incr total
+        }
+    }
+
+    .br.mid.lst delete 0 end
+    set new_sel -1
+    set first_file -1
+    for {set i 0} {$i < [llength $::br_entries]} {incr i} {
+        lassign [lindex $::br_entries $i] type dir name
+        if {$type eq "header"} {
+            set label [expr {$name ne "" ? $name : [string map [list $::HOME_DIR ~] $dir]}]
+            .br.mid.lst insert end " $label"
+            .br.mid.lst itemconfigure $i -foreground $::fg_bar \
+                -selectforeground $::fg_bar -selectbackground $::bg_bar
+        } else {
+            set meta [fmt-meta [file join $dir $name]]
+            .br.mid.lst insert end [format "  %-36s %s" $name $meta]
+            if {$first_file < 0} { set first_file $i }
+            if {"$dir|$name" eq $prev} { set new_sel $i }
+        }
+    }
+
+    set s [expr {$total != 1 ? "s" : ""}]
+    set ::br_status " [t br_files $total $s] "
+
+    if {$new_sel < 0} { set new_sel $first_file }
+    if {$new_sel >= 0} {
+        .br.mid.lst selection set $new_sel
+        if {$prev eq ""} { .br.mid.lst yview 0 } else { .br.mid.lst see $new_sel }
+    }
+}
+
+# returns {type dir name} of selected entry, or {} if none/header
+proc br-selected {} {
+    set sel [.br.mid.lst curselection]
+    if {![llength $sel]} { return {} }
+    set e [lindex $::br_entries [lindex $sel 0]]
+    if {[lindex $e 0] ni {file recent favorite}} { return {} }
+    return $e
+}
+
+# returns the dir of the section containing the current selection
+proc br-active-dir {} {
+    set sel [.br.mid.lst curselection]
+    set i [expr {[llength $sel] ? [lindex $sel 0] : 0}]
+    while {$i >= 0} {
+        lassign [lindex $::br_entries $i] type dir
+        if {$type eq "header"} { return [expr {$dir ne "" ? $dir : $::DOCS_DIR_DEFAULT}] }
+        incr i -1
+    }
+    return $::DOCS_DIR_DEFAULT
+}
+
+proc br-open {} {
+    set e [br-selected]
+    if {![llength $e]} return
+    show-editor [file join [lindex $e 1] [lindex $e 2]]
+}
+
+proc br-info-shortcut {} {
+    set e [br-selected]
+    if {[llength $e]} {
+        info-dialog [file join [lindex $e 1] [lindex $e 2]]
+    }
+}
+
+# --- browser dialogs ----------------------------------------------------------
+proc input-dialog {title prompt} {
+    set w .dlg
+    catch {destroy $w}
+    toplevel $w
+    wm title $w $title
+    wm resizable $w 0 0
+    wm transient $w .
+
+    label  $w.l   -text $prompt -font $::font_sm -padx 12 -pady 8 -anchor w
+    entry  $w.e   -width 28    -font $::font_sm
+    frame  $w.f
+    button $w.f.ok -text "OK"           -font $::font_sm -command {set ::dlg_val [.dlg.e get]; destroy .dlg}
+    button $w.f.cn -text [t dlg_cancel] -font $::font_sm -command {set ::dlg_val ""; destroy .dlg}
+    pack $w.f.ok $w.f.cn -side left -padx 4 -pady 6
+
+    pack $w.l -fill x
+    pack $w.e -fill x -padx 12
+    pack $w.f
+    update
+    grab $w
+
+    bind $w.e <Return> {set ::dlg_val [.dlg.e get]; destroy .dlg}
+    bind $w    <Escape> {set ::dlg_val ""; destroy .dlg}
+    focus $w.e
+
+    set ::dlg_val ""
+    tkwait window $w
+    return $::dlg_val
+}
+
+proc info-dialog {msg} {
+    set w .idlg
+    catch {destroy $w}
+    toplevel $w
+    wm title $w "Writhdeck"
+    wm resizable $w 0 0
+    wm transient $w .
+    label  $w.l -text $msg -font $::font_sm -padx 16 -pady 12 -anchor w -wraplength 340
+    button $w.b -text "OK" -font $::font_sm -command [list destroy $w]
+    pack $w.l -fill x
+    pack $w.b -anchor e -padx 8 -pady 6
+    bind $w <Return> [list destroy $w]
+    bind $w <Escape> [list destroy $w]
+    update
+    grab $w
+    focus $w.b
+    tkwait window $w
+}
+
+proc confirm-dialog {msg {default yes}} {
+    set w .cdlg
+    catch {destroy $w}
+    toplevel $w
+    wm title $w "Writhdeck"
+    wm resizable $w 0 0
+    wm transient $w .
+    label  $w.l   -text $msg -font $::font_sm -padx 16 -pady 12 -anchor w -wraplength 340
+    frame  $w.f
+    button $w.f.y -text [t dlg_yes] -font $::font_sm \
+        -command {set ::dlg_val yes; destroy .cdlg}
+    button $w.f.n -text [t dlg_no]  -font $::font_sm \
+        -command {set ::dlg_val no;  destroy .cdlg}
+    pack $w.f.y $w.f.n -side left -padx 4 -pady 6
+    pack $w.l -fill x
+    pack $w.f -anchor e -padx 8
+    bind $w <Return> { catch { [focus] invoke } }
+    bind $w <Escape> { set ::dlg_val no; destroy .cdlg }
+    bind $w y        { set ::dlg_val yes; destroy .cdlg }
+    bind $w n        { set ::dlg_val no;  destroy .cdlg }
+    update
+    grab $w
+    if {$default eq "yes"} { focus $w.f.y } else { focus $w.f.n }
+    set ::dlg_val no
+    tkwait window $w
+    return $::dlg_val
+}
+
+proc yesnocancel-dialog {msg} {
+    set w .yncdlg
+    catch {destroy $w}
+    toplevel $w
+    wm title $w "Writhdeck"
+    wm resizable $w 0 0
+    wm transient $w .
+    label  $w.l   -text $msg -font $::font_sm -padx 16 -pady 12 -anchor w -wraplength 340
+    frame  $w.f
+    button $w.f.y -text [t dlg_yes]    -font $::font_sm \
+        -command {set ::dlg_val yes;    destroy .yncdlg}
+    button $w.f.n -text [t dlg_no]     -font $::font_sm \
+        -command {set ::dlg_val no;     destroy .yncdlg}
+    button $w.f.c -text [t dlg_cancel] -font $::font_sm \
+        -command {set ::dlg_val cancel; destroy .yncdlg}
+    pack $w.f.y $w.f.n $w.f.c -side left -padx 4 -pady 6
+    pack $w.l -fill x
+    pack $w.f -anchor e -padx 8
+    bind $w <Return> { catch { [focus] invoke } }
+    bind $w <Escape> { set ::dlg_val cancel; destroy .yncdlg }
+    update
+    grab $w
+    bind $w y        { set ::dlg_val yes;    destroy .yncdlg }
+    bind $w n        { set ::dlg_val no;     destroy .yncdlg }
+    after idle [list focus $w.f.y]
+    set ::dlg_val cancel
+    tkwait window $w
+    return $::dlg_val
+}
+
+proc br-new {} {
+    set dir  [br-active-dir]
+    set name [input-dialog "New file" "File name:"]
+    set name [string trim $name]
+    if {$name eq ""} return
+    if {[file extension $name] eq ""} { append name $::FILE_EXT }
+    set full [file join $dir $name]
+    if {[file exists $full]} {
+        info-dialog [t br_exists $name]
+        return
+    }
+    close [open $full w]
+    show-editor $full
+}
+
+proc br-delete {} {
+    set e [br-selected]
+    if {![llength $e]} return
+    lassign $e _ dir name
+    if {[confirm-dialog [t br_delete $name]] eq "yes"} {
+        set full [file join $dir $name]
+        file delete $full
+        recent-remove $full
+        br-refresh
+    }
+}
+
+proc br-rename {} {
+    set e [br-selected]
+    if {![llength $e]} return
+    lassign $e _ dir name
+    set new [input-dialog "Rename" "Rename \"$name\" to:"]
+    set new [string trim $new]
+    if {$new eq ""} return
+    if {[file extension $new] eq ""} { append new $::FILE_EXT }
+    set new_path [file join $dir $new]
+    if {[file exists $new_path]} {
+        info-dialog [t br_exists $new]
+        return
+    }
+    set old_path [file join $dir $name]
+    file rename $old_path $new_path
+    recent-rename $old_path $new_path
+    br-refresh
+}
+
+proc br-reload {} {
+    exec [info nameofexecutable] $::argv0 {*}$::argv &
+    exit
+}
+
+proc br-backup {} {
+    set e [br-selected]
+    if {![llength $e]} return
+    lassign $e _ dir name
+    set dst [do-backup $dir $name]
+    info-dialog [t br_backed_up $name [string map [list $::HOME_DIR ~] [file dirname $dst]]]
+}
+
+proc br-toggle-favorite {} {
+    set e [br-selected]
+    if {![llength $e]} return
+    toggle-favorite [file join [lindex $e 1] [lindex $e 2]]
+    br-refresh
+}
+
+proc br-stats {} {
+    set e [br-selected]
+    if {![llength $e]} return
+    set path [file join [lindex $e 1] [lindex $e 2]]
+    if {!$::state_cache_valid} { state-load }
+    if {![dict exists $::daily_data $path] || [dict size [dict get $::daily_data $path]] == 0} {
+        info-dialog [t br_stats_no_data]
+        return
+    }
+    set fdata [dict get $::daily_data $path]
+    set nrows [dict size $fdata]
+    set w .stats
+    catch {destroy $w}
+    toplevel $w
+    wm title $w "[t br_stats_title] - [file tail $path]"
+    wm resizable $w 0 0
+    wm transient $w .
+    text $w.t -font $::font_sm -state normal -bg $::bg -fg $::fg \
+        -borderwidth 0 -padx 16 -pady 12 -width 36 \
+        -height [expr {$nrows + 7}] -cursor arrow
+    $w.t tag configure heading -foreground $::fg_bar -font [concat $::font_sm bold]
+    $w.t insert end "\n  [file tail $path]\n" heading
+    $w.t insert end [format "\n  %-14s %s\n" "Date" "Words"] heading
+    set today [clock format [clock seconds] -format "%Y-%m-%d"]
+    set grand_total 0
+    foreach date [lsort -decreasing [dict keys $fdata]] {
+        set n [dict get $fdata $date]
+        incr grand_total $n
+        set lbl [expr {$date eq $today ? "$date  <- [t br_stats_today]" : $date}]
+        $w.t insert end [format "  %-26s %d\n" $lbl $n]
+    }
+    $w.t insert end "\n"
+    $w.t insert end [format "  %-26s %d\n" [t br_stats_total] $grand_total] heading
+    $w.t configure -state disabled
+    frame $w.btns
+    button $w.btns.ok    -text "Close"           -font $::font_sm \
+        -command [list after idle [list destroy $w]]
+    button $w.btns.clear -text [t br_stats_clear] -font $::font_sm \
+        -command [list apply {{w path} {
+            if {[confirm-dialog [t br_stats_clear_confirm [file tail $path]]] eq "yes"} {
+                daily-clear $path
+                after idle [list destroy $w]
+            }
+        }} $w $path]
+    pack $w.btns.clear -side left  -padx 8 -pady 8
+    pack $w.btns.ok    -side right -padx 8 -pady 8
+    pack $w.t    -fill both -expand 1
+    pack $w.btns -fill x
+    update
+    grab $w
+    bind $w.t <KeyPress-q> "[list after idle [list destroy $w]]; break"
+    bind $w.t <Control-h>  "[list after idle [list destroy $w]]; break"
+    bind $w   <Control-h>  [list after idle [list destroy $w]]
+    focus $w.t
+}
+
+bind .br.mid.lst <Return>      { br-open }
+bind .br.mid.lst <Double-1>    { br-open }
+bind .br.mid.lst <n>           { br-new }
+bind .br.mid.lst <t>           { open-scratchpad }
+bind .br.mid.lst <f>           { br-toggle-favorite }
+bind .br.mid.lst <s>           { br-stats }
+bind .br.mid.lst <b>           { br-backup }
+bind .br.mid.lst <d>           { br-delete }
+bind .br.mid.lst <r>           { br-rename }
+bind .br.mid.lst <i>           { set e [br-selected]; if {[llength $e]} { info-dialog [file join [lindex $e 1] [lindex $e 2]] } }
+bind .br.mid.lst <c>           { profile-config-dialog }
+bind .br.mid.lst <q>           { exit }
+bind .br.mid.lst <z>           { br-reload }
+
+bind .br.mid.lst <Up> {
+    set i [lindex [concat [.br.mid.lst curselection] 1] 0]
+    incr i -1
+    while {$i >= 0 && [lindex [lindex $::br_entries $i] 0] eq "header"} { incr i -1 }
+    if {$i >= 0} { .br.mid.lst selection clear 0 end; .br.mid.lst selection set $i; .br.mid.lst see $i }
+    break
+}
+bind .br.mid.lst <Down> {
+    set last [expr {[.br.mid.lst size] - 1}]
+    set i [lindex [concat [.br.mid.lst curselection] -1] 0]
+    incr i
+    while {$i <= $last && [lindex [lindex $::br_entries $i] 0] eq "header"} { incr i }
+    if {$i <= $last} { .br.mid.lst selection clear 0 end; .br.mid.lst selection set $i; .br.mid.lst see $i }
+    break
+}
+
+# --- editor frame -------------------------------------------------------------
+frame .ed -bg $bg
+
+text .ed.t \
+    -wrap word -font $font \
+    -bg $bg -fg $fg \
+    -insertbackground $fg \
+    -selectbackground $bg_sel \
+    -blockcursor 0 \
+    -insertwidth [expr {$::cfg_block_cursor_gui ? 0 : 2}] \
+    -insertofftime [expr {$::cfg_block_cursor_gui ? 0 : ($::cfg_blink_cursor ? 300 : 0)}] \
+    -borderwidth 0 -padx $::cfg_margin_width -pady $::cfg_margin_height \
+    -undo 1
+
+scrollbar .ed.sb -orient vertical -command {.ed.t yview} \
+    -bg $bg_bar -troughcolor $bg
+
+proc ed-yscroll {first last} {
+    .ed.sb set $first $last
+    catch { .ed.ln yview moveto $first }
+}
+.ed.t configure -yscrollcommand ed-yscroll
+after idle apply-line-spacing
+.ed.t tag configure heading \
+    -foreground $::cfg_color_heading \
+    -font [list $::cfg_font_family $::cfg_font_size bold]
+.ed.t tag configure comment \
+    -foreground $::cfg_color_comment
+.ed.t tag configure bold \
+    -foreground $::cfg_color_markup \
+    -font [list $::cfg_font_family $::cfg_font_size bold]
+.ed.t tag configure italic \
+    -foreground $::cfg_color_markup \
+    -font [list $::cfg_font_family $::cfg_font_size italic]
+.ed.t tag configure underline \
+    -foreground $::cfg_color_markup \
+    -underline 1
+.ed.t tag configure strikethrough \
+    -foreground $::cfg_color_comment \
+    -overstrike 0
+.ed.t tag configure marker \
+    -foreground $::cfg_color_comment
+.ed.t tag raise marker
+
+frame .ed.bar -bg $bg_bar
+label .ed.bar.left   -textvariable ::ed_bar_left \
+    -bg $bg_bar -fg $fg_bar -font $font_sm -anchor w -padx 8 -pady $bar_pady
+label .ed.bar.msg    -textvariable ::ed_msg \
+    -bg $bg_bar -fg $fg_bar -font $font_sm -anchor center -width 10 -pady $bar_pady
+label .ed.bar.center -textvariable ::ed_bar_center \
+    -bg $bg_bar -fg $fg_bar -font $font_sm -anchor center -pady $bar_pady
+label .ed.bar.right  -textvariable ::ed_bar_right \
+    -bg $bg_bar -fg $fg_bar -font $font_sm -anchor e -padx 8 -pady $bar_pady
+set _helpzone [status-zone-of help_bar]
+if {$::cfg_help_bar ne "" && $_helpzone ne ""} {
+    set _ha [expr {$_helpzone eq "right" ? "e" : ($_helpzone eq "center" ? "center" : "w")}]
+    label .ed.bar.help -text $::cfg_help_bar \
+        -bg $bg_bar -fg $fg_bar -font $font_sm -anchor $_ha -padx 8 -pady $bar_pady
+    unset _ha
+}
+pack .ed.bar.left  -side left
+if {[winfo exists .ed.bar.help] && [status-zone-of help_bar] eq "left"} {
+    pack .ed.bar.help -side left
+}
+pack .ed.bar.right -side right
+if {[winfo exists .ed.bar.help] && [status-zone-of help_bar] eq "right"} {
+    pack .ed.bar.help -side right
+}
+pack .ed.bar.msg   -side right
+if {[winfo exists .ed.bar.help] && [status-zone-of help_bar] eq "center"} {
+    pack .ed.bar.help -fill x -expand 1
+}
+pack .ed.bar.center -fill x -expand 1
+pack .ed.bar -side bottom -fill x
+if {$::cfg_bar_height > 0} {
+    .ed.bar configure -height $::cfg_bar_height
+    pack propagate .ed.bar 0
+}
+unset _helpzone
+pack .ed.sb  -side right  -fill y
+if {$::cfg_line_numbers} {
+    text .ed.ln \
+        -width 4 -font $font \
+        -bg $bg_bar -fg $fg_dim \
+        -state disabled -borderwidth 0 \
+        -padx 4 -pady $::cfg_margin_height \
+        -highlightthickness 0 -wrap none \
+        -cursor arrow
+    pack .ed.ln -side left -fill y
+}
+pack .ed.t   -fill both   -expand 1
+after idle cursor-setup
+
+# --- search bar (hidden until Ctrl+F) ----------------------------------------
+set ::search_term  ""
+set ::search_count ""
+set ::search_ed    ".ed.t"
+set ::toc_ed       ".ed.t"
+
+frame .ed.sf -bg $bg_bar
+label .ed.sf.lbl -text " Find: " -bg $bg_bar -fg $fg_bar -font $font_sm
+entry .ed.sf.e   -bg $bg -fg $fg -font $font_sm -insertbackground $fg \
+    -relief flat -bd 1 -width 32 -highlightthickness 0
+label .ed.sf.cnt -textvariable ::search_count \
+    -bg $bg_bar -fg $fg_bar -font $font_sm -width 14 -anchor w
+pack .ed.sf.lbl -side left
+pack .ed.sf.e   -side left -padx 4
+pack .ed.sf.cnt -side left
+
+frame .ed.sf.r -bg $bg_bar
+label  .ed.sf.r.lbl -text " Replace: " -bg $bg_bar -fg $fg_bar -font $font_sm
+entry  .ed.sf.r.e   -bg $bg -fg $fg -font $font_sm -insertbackground $fg \
+    -relief flat -bd 1 -width 32 -highlightthickness 0
+button .ed.sf.r.one -text " Replace " -bg $bg_bar -fg $fg_bar -font $font_sm \
+    -relief flat -command replace-one -padx 2
+button .ed.sf.r.all -text " All " -bg $bg_bar -fg $fg_bar -font $font_sm \
+    -relief flat -command replace-all -padx 2
+pack .ed.sf.r.lbl -side left
+pack .ed.sf.r.e   -side left -padx 4
+pack .ed.sf.r.one -side left
+pack .ed.sf.r.all -side left
+
+# --- editor status ------------------------------------------------------------
+set ::wc_after_id ""
+set ::gui_wc 0
+set ::gui_cc 0
+set ::gui_wc_line_cache  {}
+set ::gui_wc_last_nlines 0
+set ::ed_bar_left   ""
+set ::ed_bar_center ""
+set ::ed_bar_right  ""
+set ::status_update_pending 0
+set ::hl_after_id ""
+set ::ln_last_count 0
+
+proc gui-status-state {} {
+    set t [active-ed]
+    set fn    [expr {$::scratchpad ? "** scratchpad **" : \
+                    ($::filename eq "" ? "\[new\]" : [file tail $::filename])}]
+    lassign [split [$t index insert] .] ln col
+    set total [expr {[lindex [split [$t index end] .] 0] - 1}]
+    set words $::gui_wc
+    set chars $::gui_cc
+    set clk   [clock format [clock seconds] -format "%H:%M"]
+    return [dict create fn $fn dirty $::dirty sel 0 ln $ln total $total \
+                col [expr {$col+1}] words $words chars $chars clock $clk]
+}
+
+proc gui-status-update {} {
+    set state [gui-status-state]
+    set ::ed_bar_left   " [status-build $::cfg_status_left   $state]"
+    set ::ed_bar_center [status-build $::cfg_status_center $state]
+    set ::ed_bar_right  "[status-build $::cfg_status_right  $state] "
+}
+
+proc wc-flush {} {
+    if {$::wc_after_id ne ""} { after cancel $::wc_after_id }
+    set ::wc_after_id ""
+    set t [active-ed]
+    set nlines [expr {[lindex [split [$t index end] .] 0] - 1}]
+    set ::gui_cc [expr {[$t count -chars 1.0 end] - 1}]
+    if {$nlines != $::gui_wc_last_nlines || $::gui_wc_line_cache eq {}} {
+        set text [$t get 1.0 end-1c]
+        set ::gui_wc 0
+        set ::gui_wc_line_cache {}
+        set lnum 1
+        foreach ln_text [split $text \n] {
+            set wc [llength [regexp -all -inline {\S+} $ln_text]]
+            dict set ::gui_wc_line_cache $lnum $wc
+            incr ::gui_wc $wc
+            incr lnum
+        }
+        set ::gui_wc_last_nlines $nlines
+    } else {
+        lassign [split [$t index insert] .] cy _
+        set ln_text [$t get $cy.0 "$cy.0 lineend"]
+        set new_wc [llength [regexp -all -inline {\S+} $ln_text]]
+        set old_wc [expr {[dict exists $::gui_wc_line_cache $cy] \
+                          ? [dict get $::gui_wc_line_cache $cy] : 0}]
+        incr ::gui_wc [expr {$new_wc - $old_wc}]
+        dict set ::gui_wc_line_cache $cy $new_wc
+    }
+    gui-status-update
+}
+
+proc ed-status {} {
+    if {[status-zone-of words] ne "" || [status-zone-of chars] ne "" || [status-zone-of goal] ne ""} {
+        if {$::wc_after_id ne ""} { after cancel $::wc_after_id }
+        set ::wc_after_id [after 400 wc-flush]
+    }
+    cursor-update
+    if {!$::status_update_pending} {
+        set ::status_update_pending 1
+        after idle {
+            set ::status_update_pending 0
+            gui-status-update
+        }
+    }
+}
+
+proc set-msg {text} {
+    if {$::msg_after_id ne ""} { after cancel $::msg_after_id }
+    set ::msg $text
+    set ::ed_msg $text
+    set ::msg_after_id [after 2000 {
+        set ::msg_after_id ""
+        set ::msg ""
+        set ::ed_msg ""
+        ed-status
+    }]
+}
+
+proc clock-tick {} {
+    catch { gui-status-update }
+    after 30000 clock-tick
+}
+if {[status-zone-of clock] ne ""} { clock-tick }
+
+# --- block cursor (inverted, terminal-style) ----------------------------------
+set ::cursor_blink_id      ""
+set ::cursor_blink_visible 1
+set ::cursor_prev_pos      ""
+set ::cursor_mode          ""   ;# "tag" | "block" | ""
+
+proc cursor-update {} {
+    if {!$::cfg_block_cursor_gui} return
+    if {$::cursor_blink_id ne ""} { after cancel $::cursor_blink_id; set ::cursor_blink_id "" }
+    set ::cursor_blink_visible 1
+    catch {
+        set pos [.ed.t index insert]
+        set ch  [.ed.t get $pos "$pos +1c"]
+        if {$ch ne "\n" && $ch ne ""} {
+            if {$::cursor_mode ne "tag"} {
+                .ed.t configure -blockcursor 0 -insertwidth 0 -insertofftime 0
+                set ::cursor_mode "tag"
+            }
+            if {$::cursor_prev_pos ne ""} {
+                .ed.t tag remove cur $::cursor_prev_pos "$::cursor_prev_pos +1c"
+            }
+            .ed.t tag add cur $pos "$pos +1c"
+            set ::cursor_prev_pos $pos
+        } else {
+            if {$::cursor_prev_pos ne ""} {
+                .ed.t tag remove cur $::cursor_prev_pos "$::cursor_prev_pos +1c"
+                set ::cursor_prev_pos ""
+            }
+            if {$::cursor_mode ne "block"} {
+                .ed.t configure -blockcursor 1 -insertwidth 0 \
+                    -insertofftime 0 -insertbackground $::fg
+                set ::cursor_mode "block"
+            }
+        }
+    }
+    if {$::cfg_blink_cursor} { set ::cursor_blink_id [after 600 cursor-blink-tick] }
+}
+
+proc cursor-blink-tick {} {
+    set ::cursor_blink_id ""
+    if {!$::cfg_block_cursor_gui || !$::cfg_blink_cursor} return
+    set ::cursor_blink_visible [expr {!$::cursor_blink_visible}]
+    catch {
+        set ch [.ed.t get insert "insert +1c"]
+        if {$ch ne "\n" && $ch ne ""} {
+            if {$::cursor_blink_visible} {
+                .ed.t tag configure cur -background $::fg -foreground $::bg
+            } else {
+                .ed.t tag configure cur -background {} -foreground {}
+            }
+        }
+    }
+    set ::cursor_blink_id [after 500 cursor-blink-tick]
+}
+
+proc cursor-setup {} {
+    if {$::cursor_blink_id ne ""} { after cancel $::cursor_blink_id; set ::cursor_blink_id "" }
+    set ::cursor_mode ""; set ::cursor_prev_pos ""
+    catch {
+        if {$::cfg_block_cursor_gui} {
+            .ed.t configure -blockcursor 0 -insertwidth 0 -insertofftime 0 \
+                -insertbackground $::fg
+            .ed.t tag configure cur -background $::fg -foreground $::bg
+            .ed.t tag raise cur
+            cursor-update
+        } else {
+            .ed.t tag remove cur 1.0 end
+            .ed.t configure -blockcursor 0 -insertwidth 2 \
+                -insertofftime [expr {$::cfg_blink_cursor ? 300 : 0}]
+        }
+    }
+}
+
+bind .ed.t <KeyRelease>    { ed-status }
+bind .ed.t <ButtonRelease> { ed-status }
+bind .ed.t <<Modified>> {
+    if {[.ed.t edit modified]} { set ::dirty 1; .ed.t edit modified false }
+    ed-status
+    if {$::hl_after_id ne ""} { after cancel $::hl_after_id }
+    set ::hl_after_id [after 300 {
+        set ::hl_after_id ""
+        highlight-headings
+        ln-update
+    }]
+}
+
+proc ln-update {} {
+    if {![winfo exists .ed.ln]} return
+    set last [lindex [split [.ed.t index end] .] 0]
+    if {$last != $::ln_last_count} {
+        set ::ln_last_count $last
+        set digits [string length [expr {$last - 1}]]
+        .ed.ln configure -state normal -width [expr {$digits + 1}]
+        .ed.ln delete 1.0 end
+        set fmt "%${digits}d\n"
+        for {set i 1} {$i < $last} {incr i} {
+            .ed.ln insert end [format $fmt $i]
+        }
+        .ed.ln configure -state disabled
+    }
+    catch { .ed.ln yview moveto [lindex [.ed.t yview] 0] }
+}
+
+proc ln-toggle {} {
+    if {[winfo exists .ed.ln]} {
+        destroy .ed.ln
+        set ::cfg_line_numbers 0
+        set ::ln_last_count 0
+    set ::gui_wc_line_cache {}
+    set ::gui_wc_last_nlines 0
+    } else {
+        set bg_bar [.ed.bar cget -bg]
+        set fg_dim [lindex [.ed.bar.left cget -fg] 0]
+        text .ed.ln \
+            -width 4 -font [.ed.t cget -font] \
+            -bg $bg_bar -fg $fg_dim \
+            -state disabled -borderwidth 0 \
+            -padx 4 -pady [.ed.t cget -pady] \
+            -highlightthickness 0 -wrap none \
+            -cursor arrow
+        if {$::split_mode} {
+            # in split mode, defer line numbers until split is closed
+        } else {
+            pack .ed.ln -side left -fill y -before .ed.t
+        }
+        set ::cfg_line_numbers 1
+        ln-update
+    }
+}
+
+# --- file I/O -----------------------------------------------------------------
+proc load-file {path} {
+    set ::filename $path
+    wm title . "Writhdeck - [file tail $path]"
+    .ed.t configure -undo 0
+
+    .ed.t delete 1.0 end
+    if {[file exists $path] && [file size $path] > 0} {
+        set fh [open $path r]
+        chan configure $fh -encoding utf-8
+        .ed.t insert 1.0 [read $fh]
+        close $fh
+}
+
+    .ed.t edit reset
+    .ed.t edit modified false
+    catch { .ed.pw.r.t edit reset; .ed.pw.r.t edit modified false }
+
+    .ed.t configure -undo 1
+    .ed.t edit separator
+
+    set ::dirty 0
+    set ::ln_last_count 0
+    set ::gui_wc_line_cache {}
+    set ::gui_wc_last_nlines 0
+    set ::file_mtime_known [expr {[file exists $path] ? [file mtime $path] : 0}]
+    if {$::watch_after_id ne ""} { after cancel $::watch_after_id }
+    set ::watch_after_id [after 2000 watch-file]
+    highlight-headings
+    lassign [cursor-get $path] cy cx
+    if {[dict exists $::session_headings $path]} {
+        set hs [toc-collect]
+        set hidx [dict get $::session_headings $path]
+        if {$hidx < [llength $hs]} {
+            set cy [lindex [lindex $hs $hidx] 0]; set cx 0
+        }
+    }
+    .ed.t mark set insert ${cy}.${cx}
+    .ed.t see insert
+    catch { .ed.pw.l.t mark set insert ${cy}.${cx}; .ed.pw.l.t see insert }
+    ed-status
+    if {[status-zone-of words] ne "" || [status-zone-of chars] ne "" || [status-zone-of goal] ne ""} { wc-flush }
+    ln-update
+}
+
+proc save-file {} {
+    if {$::filename eq ""} { if {$::scratchpad} { save-as }; return }
+    set fh [open $::filename w]
+    chan configure $fh -encoding utf-8
+    puts -nonewline $fh [.ed.t get 1.0 {end - 1 chars}]
+    close $fh
+    set ::dirty 0
+    .ed.t edit modified false
+    set ::file_mtime_known [file mtime $::filename]
+    lassign [split [[primary-ed] index insert] .] cy cx
+    cursor-put $::filename $cy $cx
+    daily-update [llength [regexp -all -inline {\S+} [[primary-ed] get 1.0 end-1c]]]
+    set-msg [t ed_saved]
+}
+
+proc save-as {} {
+    set dir [expr {$::filename ne "" ? [file dirname $::filename] : $::DOCS_DIR_DEFAULT}]
+    set name [input-dialog "Save as" "Save as:"]
+    set name [string trim $name]
+    if {$name eq ""} return
+    if {[file extension $name] eq ""} { append name $::FILE_EXT }
+    set new_path [file join $dir $name]
+    if {[file exists $new_path] && $new_path ne $::filename} {
+        if {[confirm-dialog "\"$name\" already exists. Overwrite?"] ne "yes"} return
+    }
+    set ::filename $new_path
+    set ::scratchpad 0
+    wm title . "Writhdeck - [file tail $new_path]"
+    save-file
+}
+
+proc search-open {} {
+    set ::search_ed [active-ed]
+    if {![winfo ismapped .ed.sf]} {
+        pack .ed.sf -before .ed.bar -side bottom -fill x
+    }
+    catch { pack forget .ed.sf.r }
+    .ed.sf.e delete 0 end
+    if {$::search_term ne ""} { .ed.sf.e insert 0 $::search_term }
+    .ed.sf.e selection range 0 end
+    focus .ed.sf.e
+}
+
+proc replace-open {} {
+    set ::search_ed [active-ed]
+    if {![winfo ismapped .ed.sf]} {
+        pack .ed.sf -before .ed.bar -side bottom -fill x
+    }
+    pack .ed.sf.r -fill x
+    .ed.sf.e delete 0 end
+    if {$::search_term ne ""} { .ed.sf.e insert 0 $::search_term }
+    .ed.sf.e selection range 0 end
+    focus .ed.sf.e
+}
+
+proc replace-one {} {
+    if {$::search_term eq ""} return
+    set t $::search_ed
+    set repl [.ed.sf.r.e get]
+    set slen [string length $::search_term]
+    set pos [.ed.t search -nocase -exact -- $::search_term [$t index insert] end]
+    if {$pos eq ""} { set pos [.ed.t search -nocase -exact -- $::search_term 1.0 end] }
+    if {$pos ne ""} {
+        .ed.t delete $pos "$pos + ${slen} chars"
+        .ed.t insert $pos $repl
+        $t mark set insert "$pos + [string length $repl] chars"
+        $t see insert
+        search-update
+    }
+}
+
+proc replace-all {} {
+    if {$::search_term eq ""} return
+    set repl [.ed.sf.r.e get]
+    set count 0; set pos 1.0
+    while 1 {
+        set pos [.ed.t search -nocase -exact -count len -- $::search_term $pos end]
+        if {$pos eq ""} break
+        .ed.t delete $pos "$pos + $len chars"
+        .ed.t insert $pos $repl
+        set pos "$pos + [string length $repl] chars"
+        incr count
+    }
+    set-msg "replaced $count occurrence[expr {$count!=1?{s}:{}}]"
+    search-update
+}
+
+proc search-close {} {
+    .ed.t tag remove found 1.0 end
+    catch { pack forget .ed.sf }
+    catch { focus $::search_ed }
+    set ::search_count ""
+}
+
+proc search-update {} {
+    set t $::search_ed
+    set term [.ed.sf.e get]
+    .ed.t tag remove found 1.0 end
+    set ::search_count ""
+    if {$term eq ""} return
+    set ::search_term $term
+    set count 0; set pos 1.0
+    while 1 {
+        set pos [.ed.t search -nocase -forwards -count len -- $term $pos end]
+        if {$pos eq ""} break
+        .ed.t tag add found $pos "$pos + $len chars"
+        incr count; set pos "$pos + $len chars"
+    }
+    .ed.t tag configure found -background "#5a3a00" -foreground "#ffdd88"
+    set plural [expr {$count != 1 ? "s" : ""}]
+    set ::search_count " $count match${plural}"
+    set pos [.ed.t search -nocase -forwards -- $term [$t index insert] end]
+    if {$pos eq ""} { set pos [.ed.t search -nocase -forwards -- $term 1.0 end] }
+    if {$pos ne ""} { $t mark set insert $pos; $t see insert }
+}
+
+proc search-next {} {
+    if {$::search_term eq ""} return
+    set t $::search_ed
+    set pos [.ed.t search -nocase -forwards -- $::search_term "[$t index insert] + 1 chars" end]
+    if {$pos eq ""} { set pos [.ed.t search -nocase -forwards -- $::search_term 1.0 end] }
+    if {$pos ne ""} { $t mark set insert $pos; $t see insert }
+}
+
+proc search-prev {} {
+    if {$::search_term eq ""} return
+    set t $::search_ed
+    set pos [.ed.t search -nocase -backwards -- $::search_term [$t index insert] 1.0]
+    if {$pos eq ""} { set pos [.ed.t search -nocase -backwards -- $::search_term end 1.0] }
+    if {$pos ne ""} { $t mark set insert $pos; $t see insert }
+}
+
+proc close-editor {} {
+    if {$::dirty} {
+        set _label [expr {$::scratchpad ? "scratchpad" : [file tail $::filename]}]
+        set r [yesnocancel-dialog [t ed_save_before $_label]]
+        if {$r eq "cancel"} return
+        if {$r eq "yes"}    save-file
+    }
+    if {$::filename ne ""} {
+        daily-update [llength [regexp -all -inline {\S+} [[primary-ed] get 1.0 end-1c]]]
+        lassign [split [[primary-ed] index insert] .] cy cx
+        cursor-put $::filename $cy $cx
+    }
+    set ::session_file ""
+    if {$::watch_after_id ne ""} { after cancel $::watch_after_id; set ::watch_after_id "" }
+    split-close
+    set ::filename   ""
+    set ::scratchpad 0
+    set ::file_mtime_known 0
+    set ::dirty     0
+    set ::msg       ""
+    set ::ed_msg    ""
+    wm title . "Writhdeck"
+    .ed.t delete 1.0 end
+    search-close
+    if {$::cfg_browser} { show-browser } else { exit }
+}
+
+proc apply-theme {} {
+    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel c_heading c_comment c_markup
+    set ::bg $bg; set ::fg $fg; set ::bg_bar $bg_bar
+    set ::fg_bar $fg_bar; set ::bg_sel $bg_sel
+    # browser
+    foreach w {.br .br.mid} { catch { $w configure -bg $bg } }
+    foreach w {.br.title .br.bar.help .br.bar.cnt} {
+        catch { $w configure -bg $bg_bar -fg $fg_bar }
+    }
+    catch { .br.title configure -bg $bg -fg $fg }
+    catch { .br.bar configure -bg $bg_bar }
+    catch { .br.mid.lst configure -bg $bg -fg $fg \
+                -selectbackground $bg_sel -selectforeground $fg }
+    catch { .br.mid.sb configure -bg $bg_bar -troughcolor $bg }
+    # editor
+    catch { .ed configure -bg $bg }
+    catch { .ed.t configure -bg $bg -fg $fg \
+                -insertbackground $fg -selectbackground $bg_sel \
+                -blockcursor 0 \
+                -insertwidth [expr {$::cfg_block_cursor_gui ? 0 : 2}] \
+                -insertofftime [expr {$::cfg_block_cursor_gui ? 0 : ($::cfg_blink_cursor ? 300 : 0)}] }
+    catch { cursor-setup }
+    catch { .ed.t tag configure heading       -foreground $c_heading }
+    catch { .ed.t tag configure comment       -foreground $c_comment }
+    catch { .ed.t tag configure bold          -foreground $c_markup }
+    catch { .ed.t tag configure italic        -foreground $c_markup }
+    catch { .ed.t tag configure underline     -foreground $c_markup }
+    catch { .ed.t tag configure strikethrough -foreground $c_comment }
+    catch { .ed.t tag configure marker        -foreground $c_comment }
+    catch { .ed.sb configure -bg $bg_bar -troughcolor $bg }
+    catch { .ed.bar configure -bg $bg_bar }
+    foreach w {.ed.bar.left .ed.bar.center .ed.bar.right .ed.bar.msg .ed.bar.help} {
+        catch { $w configure -bg $bg_bar -fg $fg_bar }
+    }
+    catch { .ed.ln configure -bg $bg_bar -fg $fg_bar }
+    # search bar
+    catch { .ed.sf configure -bg $bg_bar }
+    catch { .ed.sf.lbl configure -bg $bg_bar -fg $fg_bar }
+    catch { .ed.sf.e configure -bg $bg -fg $fg -insertbackground $fg }
+    catch { .ed.sf.cnt configure -bg $bg_bar -fg $fg_bar }
+    catch { .ed.sf.r configure -bg $bg_bar }
+    catch { .ed.sf.r.lbl configure -bg $bg_bar -fg $fg_bar }
+    catch { .ed.sf.r.e configure -bg $bg -fg $fg -insertbackground $fg }
+    catch { .ed.sf.r.one configure -bg $bg_bar -fg $fg_bar }
+    catch { .ed.sf.r.all configure -bg $bg_bar -fg $fg_bar }
+    # split-view peers
+    catch { .ed.pw configure -bg $bg_bar }
+    foreach side {l r} {
+        catch { .ed.pw.$side configure -bg $bg }
+        catch { .ed.pw.${side}.t configure -bg $bg -fg $fg \
+                    -insertbackground $fg -selectbackground $bg_sel \
+                    -highlightbackground $bg -highlightcolor $fg }
+        catch { .ed.pw.${side}.sb configure -bg $bg_bar -troughcolor $bg }
+        catch { .ed.pw.${side}.t tag configure focus_dim -foreground $c_comment }
+    }
+    catch { .ed.t tag configure focus_dim -foreground $c_comment }
+}
+
+proc quit-app {} {
+    if {$::dirty && ($::filename ne "" || $::scratchpad)} {
+        set _label [expr {$::scratchpad ? "scratchpad" : [file tail $::filename]}]
+        set r [yesnocancel-dialog [t ed_save_before $_label]]
+        if {$r eq "cancel"} return
+        if {$r eq "yes"} save-file
+    }
+    if {$::filename ne ""} {
+        daily-update [llength [regexp -all -inline {\S+} [[primary-ed] get 1.0 end-1c]]]
+        lassign [split [[primary-ed] index insert] .] cy cx
+        cursor-put $::filename $cy $cx
+    }
+    exit
+}
+
+wm protocol . WM_DELETE_WINDOW quit-app
+
+# --- editor bindings ----------------------------------------------------------
+
+proc ed-paste {} {
+    # On X11, Tk's default <<Paste>> does not replace the selection.
+    # We delete it manually so paste behaves consistently across platforms.
+    set t [active-ed]
+    if {![catch {::tk::GetSelection $t CLIPBOARD} clip]} {
+        $t configure -autoseparators 0
+        $t edit separator
+        catch { $t delete sel.first sel.last }
+        $t insert insert $clip
+        $t edit separator
+        $t configure -autoseparators 1
+    }
+}
+
+bind .ed.t <$::cfg_key_save>    { save-file;         break }
+bind .ed.t <$::cfg_key_save_as> { save-as;           break }
+bind .ed.t <$::cfg_key_close>   { close-editor;      break }
+bind .ed.t <$::cfg_key_paste>        { ed-paste;          break }
+bind .ed.t <$::cfg_key_select_all>  { .ed.t tag add sel 1.0 end; break }
+bind .ed.t <$::cfg_key_dark_toggle> { toggle-dark-mode;  break }
+bind .br.mid.lst <$::cfg_key_dark_toggle> { toggle-dark-mode }
+
+bind .ed.t <$::cfg_key_sticky_sel> { break }
+bind .ed.t <Tab>                { .ed.t insert insert "    "; break }
+bind .ed.t <$::cfg_key_goto>       { goto-dialog;    break }
+bind .ed.t <$::cfg_key_help>       { help-dialog;    break }
+bind .ed.t <$::cfg_key_redo>        { catch {.ed.t edit redo}; ed-status; break }
+bind .ed.t <$::cfg_key_typewriter>  { typewriter-toggle; break }
+bind .ed.t <KeyRelease>            {+ if {$::typewriter_mode} { typewriter-tick .ed.t } }
+bind .ed.t <ButtonRelease>         {+ if {$::typewriter_mode} { typewriter-tick .ed.t } }
+foreach _k {Left Right Up Down BackSpace Delete} {
+    bind .ed.t <$_k> "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break"
+}
+bind .ed.t <$::cfg_key_undo> "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break"
+bind .ed.t <$::cfg_key_replace> { replace-open;      break }
+bind .ed.t <$::cfg_key_find>    { search-open;       break }
+bind .ed.t <$::cfg_key_open>    { open-file-dialog;  break }
+
+bind .ed.sf.e <KeyRelease>   { search-update }
+bind .ed.sf.e <Return>       { search-next }
+bind .ed.sf.e <Shift-Return> { search-prev }
+bind .ed.sf.e <Escape>       { search-close }
+bind .ed.sf.e <Control-f>    { search-next; break }
+bind .ed.sf.e <Tab>          { focus .ed.sf.r.e; break }
+
+bind .ed.sf.r.e <Return>        { replace-one }
+bind .ed.sf.r.e <Control-Return> { replace-all }
+bind .ed.sf.r.e <Escape>        { search-close }
+bind .ed.sf.r.e <Tab>           { focus .ed.sf.e; break }
+bind .br.mid.lst <h>                  { help-dialog }
+bind .br.mid.lst <$::cfg_key_help>   { help-dialog }
+
+proc open-file-dialog {{initialdir ""}} {
+    if {$initialdir eq ""} {
+        set initialdir [expr {$::filename ne "" ? [file dirname $::filename] : $::DOCS_DIR_DEFAULT}]
+    }
+    set path [tk_getOpenFile \
+        -initialdir $initialdir \
+        -filetypes {{"Text files" {.txt}} {"All files" *}}]
+    if {$path ne ""} { show-editor $path }
+}
+
+bind .br.mid.lst <Control-o> {
+    set _e [br-selected]
+    open-file-dialog [expr {[llength $_e] ? [lindex $_e 1] : $::DOCS_DIR_DEFAULT}]
+}
+
+proc toggle-fullscreen {} {
+    set ::fullscreen [expr {!$::fullscreen}]
+    wm attributes . -fullscreen $::fullscreen
+}
+
+bind .ed.t          <$::cfg_key_fullscreen> { toggle-fullscreen; break }
+bind .br.mid.lst    <$::cfg_key_fullscreen> { toggle-fullscreen }
+bind .ed.t          <$::cfg_key_split>       { split-toggle; break }
+bind .ed.t          <$::cfg_key_split_focus> { split-cycle-focus; break }
+
+# --- headings & TOC -----------------------------------------------------------
+proc highlight-headings {} {
+    set last [lindex [split [.ed.t index end] .] 0]
+    set full [expr {$last != $::hl_last_count}]
+    if {$full} {
+        set ::hl_last_count $last
+        set ::hl_line_cache {}
+        foreach t {heading comment bold italic underline strikethrough marker} {
+            .ed.t tag remove $t 1.0 end
+        }
+    }
+    for {set ln 1} {$ln < $last} {incr ln} {
+        set line [.ed.t get $ln.0 "$ln.0 lineend"]
+        if {!$full} {
+            if {[dict exists $::hl_line_cache $ln] && [dict get $::hl_line_cache $ln] eq $line} continue
+            foreach t {heading comment bold italic underline strikethrough marker} {
+                .ed.t tag remove $t $ln.0 "$ln.0 lineend"
+            }
+        }
+        dict set ::hl_line_cache $ln $line
+        if {[parse-heading $line] ne ""} {
+            .ed.t tag add heading $ln.0 "$ln.0 lineend"
+        } elseif {[parse-comment $line]} {
+            .ed.t tag add comment $ln.0 "$ln.0 lineend"
+        } else {
+            if {$::cached_bold_re ne "" && [string first $::cfg_bold_marker $line] >= 0} {
+                apply-inline $ln $line bold $::cached_bold_re $::cached_bold_mlen }
+            if {$::cached_italic_re ne "" && [string first $::cfg_italic_marker $line] >= 0} {
+                apply-inline $ln $line italic $::cached_italic_re $::cached_italic_mlen }
+            if {$::cached_underline_re ne "" && [string first $::cfg_underline_marker $line] >= 0} {
+                apply-inline $ln $line underline $::cached_underline_re $::cached_underline_mlen 1 }
+            if {$::cached_strikethrough_re ne "" && [string first $::cfg_strikethrough_marker $line] >= 0} {
+                apply-inline $ln $line strikethrough $::cached_strikethrough_re $::cached_strikethrough_mlen 1 }
+        }
+    }
+}
+
+proc toc-collect {} {
+    set result {}
+    if {$::hl_line_cache ne {}} {
+        dict for {ln line} $::hl_line_cache {
+            set hl [heading-level $line]
+            if {$hl ne ""} { lassign $hl title level; lappend result [list $ln $title $level] }
+        }
+    } else {
+        set last [lindex [split [.ed.t index end] .] 0]
+        for {set ln 1} {$ln < $last} {incr ln} {
+            set line [.ed.t get $ln.0 "$ln.0 lineend"]
+            set hl [heading-level $line]
+            if {$hl ne ""} { lassign $hl title level; lappend result [list $ln $title $level] }
+        }
+    }
+    return $result
+}
+
+proc toc-show {} {
+    set ::toc_ed [active-ed]
+    set headings [toc-collect]
+    if {![llength $headings]} { set-msg [t toc_no_headings]; return }
+
+    set w .toc
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [t toc_title]
+    wm resizable $w 1 0
+    wm transient $w .
+
+    set h [expr {min([llength $headings], 24)}]
+    listbox $w.lst \
+        -font $::font -bg $::bg -fg $::cfg_color_heading \
+        -selectbackground $::bg_sel -selectforeground $::fg \
+        -activestyle none -borderwidth 0 -highlightthickness 0 \
+        -width 48 -height $h
+    pack $w.lst -fill both -expand 1 -padx 2 -pady 2
+
+    set presel 0
+    if {[dict exists $::session_headings $::filename]} {
+        set presel [dict get $::session_headings $::filename]
+        if {$presel >= [llength $headings]} { set presel 0 }
+    } else {
+        set curline [lindex [split [.ed.t index insert] .] 0]
+        set idx 0
+        foreach item $headings {
+            if {[lindex $item 0] <= $curline} { set presel $idx }
+            incr idx
+        }
+    }
+    set lnw [string length [expr {[lindex [split [.ed.t index end] .] 0] - 1}]]
+    foreach item $headings {
+        lassign $item ln title level
+        set indent [string repeat "- " [expr {$level - 1}]]
+        $w.lst insert end [format "  %${lnw}d   %s%s" $ln $indent $title]
+    }
+    $w.lst selection set $presel
+    $w.lst activate $presel
+    $w.lst see $presel
+
+    bind $w.lst <Return>          [list toc-jump $w $headings]
+    bind $w.lst <Double-1>        [list toc-jump $w $headings]
+    bind $w.lst <ButtonRelease-1> "[list toc-jump $w $headings]; break"
+    bind $w     <Escape>          [list destroy $w]
+    bind $w     <Control-q>       [list destroy $w]
+    bind $w.lst <Control-q>       [list destroy $w]
+    bind $w     <$::cfg_key_toc>  [list destroy $w]
+    bind $w     <Destroy>  { after idle { catch { focus $::toc_ed } } }
+    focus $w.lst
+}
+
+proc toc-jump {w headings} {
+    set sel [$w.lst curselection]
+    if {![llength $sel]} return
+    set selIdx [lindex $sel 0]
+    lassign [lindex $headings $selIdx] ln title
+    dict set ::session_headings $::filename $selIdx
+    destroy $w
+    set t $::toc_ed
+    $t mark set insert $ln.0
+    $t see insert
+    focus $t
+}
+
+bind .ed.t <$::cfg_key_toc>          { toc-show;   break }
+bind .br.mid.lst <$::cfg_key_toc>   { br-toc-show; break }
+bind .ed.t <$::cfg_key_line_numbers> { ln-toggle;  break }
+
+proc br-toc-show {} {
+    set sections {}
+    for {set i 0} {$i < [llength $::br_entries]} {incr i} {
+        lassign [lindex $::br_entries $i] type dir name
+        if {$type eq "header"} {
+            set lbl [expr {$name ne "" ? $name : [string map [list $::HOME_DIR ~] $dir]}]
+            lappend sections [list $i $lbl]
+        }
+    }
+    if {![llength $sections]} { set-msg [t br_toc_empty]; return }
+
+    set w .brtoc
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [t br_toc_title]
+    wm resizable $w 1 0
+    wm transient $w .
+
+    set h [expr {min([llength $sections], 12)}]
+    listbox $w.lst \
+        -font $::font -bg $::bg -fg $::fg_bar \
+        -selectbackground $::bg_sel -selectforeground $::fg \
+        -activestyle none -borderwidth 0 -highlightthickness 0 \
+        -width 40 -height $h
+    pack $w.lst -fill both -expand 1 -padx 2 -pady 2
+
+    foreach sec $sections {
+        lassign $sec idx lbl
+        $w.lst insert end "  $lbl"
+    }
+    $w.lst selection set 0
+    $w.lst activate 0
+    $w.lst see 0
+
+    bind $w.lst <Return>          [list br-toc-jump $w $sections]
+    bind $w.lst <Double-1>        [list br-toc-jump $w $sections]
+    bind $w.lst <ButtonRelease-1> "[list br-toc-jump $w $sections]; break"
+    bind $w     <Escape>          [list destroy $w]
+    bind $w     <Control-q>       [list destroy $w]
+    bind $w.lst <Control-q>       [list destroy $w]
+    bind $w     <$::cfg_key_toc>  [list destroy $w]
+    bind $w     <Destroy>  { after idle { catch { focus .br.mid.lst } } }
+    focus $w.lst
+}
+
+proc br-toc-jump {w sections} {
+    set sel [$w.lst curselection]
+    if {![llength $sel]} return
+    lassign [lindex $sections [lindex $sel 0]] idx lbl
+    destroy $w
+    .br.mid.lst selection clear 0 end
+    .br.mid.lst selection set $idx
+    .br.mid.lst see $idx
+    focus .br.mid.lst
+}
+
+# --- taille de police dynamique -----------------------------------------------
+proc apply-line-spacing {} {
+    set lh [font metrics [.ed.t cget -font] -linespace]
+    set extra [expr {int($lh * ($::cfg_line_spacing - 100) / 100.0)}]
+    set sp [expr {max(0, $extra)}]
+    .ed.t configure -spacing1 $sp -spacing2 $sp -spacing3 0
+    foreach side {l r} {
+        catch { .ed.pw.${side}.t configure -spacing1 $sp -spacing2 $sp -spacing3 0 }
+    }
+}
+
+proc font-resize {delta} {
+    set ::cfg_font_size [expr {max(6, min(72, $::cfg_font_size + $delta))}]
+    set f [list $::cfg_font_family $::cfg_font_size]
+    set ::font $f
+    .ed.t configure -font $f
+    foreach side {l r} { catch { .ed.pw.${side}.t configure -font $f } }
+    .ed.t tag configure heading -font [list $::cfg_font_family $::cfg_font_size bold]
+    apply-line-spacing
+}
+
+bind .ed.t <Control-equal>    { font-resize  1; break }
+bind .ed.t <Control-plus>    { font-resize  1; break }
+bind .ed.t <Control-KP_Add>  { font-resize  1; break }
+bind .ed.t <Control-minus>   { font-resize -1; break }
+bind .ed.t <Control-KP_Subtract> { font-resize -1; break }
+
+proc profile-config-update-profile {w} {
+    set profile $::profile_config_profile
+    if {$profile eq ""} return
+
+    set cur_font $::cfg_font_family
+    if {[dict exists $::cfg_profiles $profile font_family]} {
+        set cur_font [dict get $::cfg_profiles $profile font_family]
+    }
+    $w.profile.ffont.entry delete 0 end
+    $w.profile.ffont.entry insert 0 $cur_font
+
+    set cur_size $::cfg_font_size
+    if {[dict exists $::cfg_profiles $profile font_size]} {
+        set cur_size [dict get $::cfg_profiles $profile font_size]
+    }
+    $w.fsize.spin set $cur_size
+
+    set cur_mw $::cfg_margin_width
+    if {[dict exists $::cfg_profiles $profile margin_width]} {
+        set cur_mw [dict get $::cfg_profiles $profile margin_width]
+    }
+    $w.fmarginw.spin set $cur_mw
+
+    set cur_mh $::cfg_margin_height
+    if {[dict exists $::cfg_profiles $profile margin_height]} {
+        set cur_mh [dict get $::cfg_profiles $profile margin_height]
+    }
+    $w.fmarginh.spin set $cur_mh
+
+    set idx [lsearch -exact [lsort [font families]] $cur_font]
+    $w.profile.fonts selection clear 0 end
+    if {$idx >= 0} { $w.profile.fonts selection set $idx; $w.profile.fonts see $idx }
+}
+
+proc profile-config-dialog {} {
+    set w .profile_config
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [t profile_config_title]
+    wm transient $w .
+    grab $w
+
+    set profiles [lsort [dict keys $::cfg_profiles]]
+    set schemes [lsort [dict keys $::cfg_schemes]]
+
+    if {[llength $profiles] == 0} {
+        label $w.msg -text "No profiles defined" -font $::font_sm -fg $::fg_bar -bg $::bg -padx 16 -pady 12
+        button $w.close -text [t profile_config_cancel] -font $::font_sm \
+            -command "destroy $w" -bg $::bg_bar -fg $::fg_bar
+        pack $w.msg -fill x
+        pack $w.close -pady 8
+        update
+        grab $w
+        focus $w.close
+        return
+    }
+
+    # --- Global settings frame ---
+    frame $w.global -relief ridge -borderwidth 2
+    pack $w.global -fill x -padx 8 -pady 8
+
+    label $w.global.title -text "Global Settings" -font $::font_sm -fg $::fg_bar -bg $::bg
+    pack $w.global.title -anchor w -padx 8 -pady {4 2}
+
+    label $w.global.lbl_defprof -text [t profile_config_default_profile] -font $::font_sm
+    pack $w.global.lbl_defprof -anchor w -padx 12 -pady {4 2}
+    frame $w.global.fprof
+    pack $w.global.fprof -fill x -padx 12 -pady {0 6}
+    tk_optionMenu $w.global.fprof.om ::profile_config_default_prof {*}$profiles
+    $w.global.fprof.om configure -bg $::bg_bar -fg $::fg_bar -highlightthickness 0
+    set ::profile_config_default_prof $::cfg_profile
+    pack $w.global.fprof.om -anchor w
+
+    label $w.global.lbl_scheme -text [t profile_config_default_scheme] -font $::font_sm
+    pack $w.global.lbl_scheme -anchor w -padx 12 -pady {4 2}
+    frame $w.global.fscheme
+    pack $w.global.fscheme -fill x -padx 12 -pady {0 6}
+    tk_optionMenu $w.global.fscheme.om ::profile_config_default_scheme {*}$schemes
+    $w.global.fscheme.om configure -bg $::bg_bar -fg $::fg_bar -highlightthickness 0
+    set ::profile_config_default_scheme $::cfg_scheme
+    pack $w.global.fscheme.om -anchor w
+
+    # --- Profile-specific settings frame ---
+    frame $w.profile -relief ridge -borderwidth 2
+    pack $w.profile -fill both -expand 1 -padx 8 -pady 8
+
+    label $w.profile.title -text "Profile Settings" -font $::font_sm -fg $::fg_bar -bg $::bg
+    pack $w.profile.title -anchor w -padx 8 -pady {4 2}
+
+    # Profile selector row
+    frame $w.profile.fprof
+    pack $w.profile.fprof -fill x -padx 12 -pady {0 6}
+    label $w.profile.fprof.lbl -text [t profile_config_edit_profile] -font $::font_sm -width 15 -anchor w
+    tk_optionMenu $w.profile.fprof.om ::profile_config_profile {*}$profiles
+    $w.profile.fprof.om configure -bg $::bg_bar -fg $::fg_bar -highlightthickness 0
+    if {[lsearch -exact $profiles $::cfg_profile] >= 0} {
+        set ::profile_config_profile $::cfg_profile
+    } else {
+        set ::profile_config_profile [lindex $profiles 0]
+    }
+    pack $w.profile.fprof.lbl -side left
+    pack $w.profile.fprof.om -side left -fill x -expand 1
+
+    # Font family row
+    frame $w.profile.ffont
+    pack $w.profile.ffont -fill x -padx 12 -pady 4
+    label $w.profile.ffont.lbl -text [t profile_config_font] -font $::font_sm -width 15 -anchor w
+    entry $w.profile.ffont.entry -width 30 -font $::font_sm
+    pack $w.profile.ffont.lbl -side left
+    pack $w.profile.ffont.entry -side left -fill x -expand 1
+
+    # Available fonts listbox
+    label $w.profile.lbl_fonts -text "Available fonts:" -font $::font_sm
+    pack $w.profile.lbl_fonts -anchor w -padx 12 -pady {4 2}
+    listbox $w.profile.fonts -height 5 -width 40 -font $::font_sm -selectmode single
+    foreach f [lsort [font families]] {
+        $w.profile.fonts insert end $f
+    }
+    pack $w.profile.fonts -fill both -expand 1 -padx 12 -pady 2
+
+    # Font size row (create BEFORE bindings)
+    frame $w.fsize
+    pack $w.fsize -fill x -padx 12 -pady 4
+    label $w.fsize.lbl -text [t profile_config_size] -font $::font_sm -width 15 -anchor w
+    spinbox $w.fsize.spin -from 6 -to 72 -width 5 -font $::font_sm -command {
+        set font [.profile_config.profile.ffont.entry get]
+        set size [.profile_config.fsize.spin get]
+        if {$font ne "" && $size ne ""} {
+            catch {.profile_config.profile.preview configure -font [list $font $size] -text "Sample Text - $font"}
+        }
+    }
+    pack $w.fsize.lbl -side left
+    pack $w.fsize.spin -side left
+
+    # Font preview
+    label $w.profile.preview -text "Preview" -font $::font_sm -bg $::bg
+    pack $w.profile.preview -fill x -padx 12 -pady {8 2}
+
+    # Bind to update preview on font/size change (AFTER all widgets created)
+    bind $w.profile.fonts <<ListboxSelect>> {
+        set sel [%W curselection]
+        if {[llength $sel] > 0} {
+            set font_var [%W get [lindex $sel 0]]
+            .profile_config.profile.ffont.entry delete 0 end
+            .profile_config.profile.ffont.entry insert 0 $font_var
+            set size [.profile_config.fsize.spin get]
+            if {$size ne ""} {
+                .profile_config.profile.preview configure -font [list $font_var $size] -text "Sample Text - $font_var"
+            }
+        }
+    }
+
+    bind $w.profile.ffont.entry <KeyRelease> {
+        set font [.profile_config.profile.ffont.entry get]
+        set size [.profile_config.fsize.spin get]
+        if {$font ne "" && $size ne ""} {
+            catch {.profile_config.profile.preview configure -font [list $font $size] -text "Sample Text - $font"}
+        }
+    }
+
+    bind $w.fsize.spin <KeyRelease> {
+        set font [.profile_config.profile.ffont.entry get]
+        set size [.profile_config.fsize.spin get]
+        if {$font ne "" && $size ne ""} {
+            catch {.profile_config.profile.preview configure -font [list $font $size] -text "Sample Text - $font"}
+        }
+    }
+
+    # Margin width row
+    frame $w.fmarginw
+    pack $w.fmarginw -fill x -padx 12 -pady 4
+    label $w.fmarginw.lbl -text [t profile_config_margin_w] -font $::font_sm -width 15 -anchor w
+    spinbox $w.fmarginw.spin -from 0 -to 200 -width 5 -font $::font_sm
+    pack $w.fmarginw.lbl -side left
+    pack $w.fmarginw.spin -side left
+
+    # Margin height row
+    frame $w.fmarginh
+    pack $w.fmarginh -fill x -padx 12 -pady 4
+    label $w.fmarginh.lbl -text [t profile_config_margin_h] -font $::font_sm -width 15 -anchor w
+    spinbox $w.fmarginh.spin -from 0 -to 200 -width 5 -font $::font_sm
+    pack $w.fmarginh.lbl -side left
+    pack $w.fmarginh.spin -side left
+
+    # Update profile display when changed via trace
+    trace add variable ::profile_config_profile write [list apply {{name1 name2 op} {
+        profile-config-update-profile .profile_config
+    }}]
+
+    # Load initial values
+    profile-config-update-profile $w
+
+    # Button frame
+    frame $w.btns
+    pack $w.btns -fill x -padx 8 -pady 8
+
+    button $w.btns.apply -text [t profile_config_apply] -font $::font_sm \
+        -bg $::bg_bar -fg $::fg_bar \
+        -command {
+            set profile $::profile_config_profile
+            set font [.profile_config.profile.ffont.entry get]
+            set size [.profile_config.fsize.spin get]
+            set mw [.profile_config.fmarginw.spin get]
+            set mh [.profile_config.fmarginh.spin get]
+            set def_prof $::profile_config_default_prof
+            set def_scheme $::profile_config_default_scheme
+
+            if {$font eq "" || $size eq "" || $mw eq "" || $mh eq ""} return
+
+            dict set ::cfg_profiles $profile font_family $font
+            dict set ::cfg_profiles $profile font_size $size
+            dict set ::cfg_profiles $profile margin_width $mw
+            dict set ::cfg_profiles $profile margin_height $mh
+            set ::cfg_profile $def_prof
+            set ::cfg_scheme $def_scheme
+
+            ini-save
+
+            if {$profile eq $::cfg_profile} {
+                profile-apply $profile
+                if {[info exists ::editor_open]} {
+                    set f [list $::cfg_font_family $::cfg_font_size]
+                    set ::font $f
+                    catch {.ed.t configure -font $f}
+                    foreach side {l r} {
+                        catch {.ed.pw.${side}.t configure -font $f}
+                    }
+                    .ed.t tag configure heading -font [list $::cfg_font_family $::cfg_font_size bold]
+                    apply-line-spacing
+                }
+            }
+
+            destroy .profile_config
+            br-reload
+        }
+    pack $w.btns.apply -side left -padx 4
+
+    button $w.btns.cancel -text [t profile_config_cancel] -font $::font_sm \
+        -bg $::bg_bar -fg $::fg_bar -command [list destroy $w]
+    pack $w.btns.cancel -side left -padx 4
+
+    update
+    grab $w
+    bind $w <Escape> [list destroy $w]
+    focus $w.profile.ffont.entry
+}
+
+proc help-dialog {} {
+    set w .help
+    catch {destroy $w}
+    toplevel $w
+    wm title $w "Help - Writhdeck"
+    wm resizable $w 0 0
+    wm transient $w .
+
+    set hm $::cfg_heading_marker
+    set sections {}
+    set height 23
+    set _ts [clock seconds]
+    lappend sections "WRITHDECK" [list \
+        "Version"       $::version \
+    ]
+    lappend sections "DATE & TIME" [list \
+        "Current time"  [clock format $_ts -format "%H:%M:%S"] \
+        "Date"          [clock format $_ts -format "%Y-%m-%d"] \
+    ]
+    incr height 5
+    set _sel_txt ""
+    catch { set _sel_txt [[active-ed] get sel.first sel.last] }
+    if {$_sel_txt ne ""} {
+        set _sel_wc [llength [regexp -all -inline {\S+} $_sel_txt]]
+        set _sel_cc [string length $_sel_txt]
+        lappend sections [t help_sel_info] [list \
+            "Words"  $_sel_wc \
+            "Chars"  $_sel_cc \
+        ]
+        incr height 4
+    }
+    if {$::filename ne ""} {
+        set txt [.ed.t get 1.0 end-1c]
+        set wc    [llength [regexp -all -inline {\S+} $txt]]
+        set chars [string length $txt]
+        set today_wc [daily-today $wc]
+        set file_entries [list "Words" $wc "Chars" $chars]
+        if {$::cfg_word_goal > 0} {
+            lappend file_entries "Today" "+$today_wc / $::cfg_word_goal"
+        } else {
+            lappend file_entries "Today" "+$today_wc"
+        }
+        lappend sections [t help_file_info] $file_entries
+        incr height 5
+    }
+    lappend sections \
+        "EDITOR" [list \
+            [key-label $::cfg_key_save]         "Save" \
+            [key-label $::cfg_key_save_as]      "Save as" \
+            [key-label $::cfg_key_close]          "Return to browser" \
+            [key-label $::cfg_key_find]         "Find (Enter: next  Shift+Enter: prev)" \
+            [key-label $::cfg_key_replace]      "Find & Replace (Enter: replace one  Ctrl+Enter: all)" \
+            [key-label $::cfg_key_open]         "Open file" \
+            [key-label $::cfg_key_goto]         "Go to line" \
+            [key-label $::cfg_key_undo]         "Undo" \
+            [key-label $::cfg_key_redo]         "Redo" \
+            [key-label $::cfg_key_typewriter]   "Typewriter / focus mode (toggle)" \
+            "Ctrl+Up/Dn / Ctrl+Lt/Rt"           "Paragraph / word navigation" \
+            [key-label $::cfg_key_toc]          "Table of contents  (${hm}title${hm})" \
+            [key-label $::cfg_key_fullscreen]   "Fullscreen" \
+            [key-label $::cfg_key_split]        "Split view (toggle)" \
+            [key-label $::cfg_key_split_focus]  "Split view - cycle focus" \
+            [key-label $::cfg_key_help]         "Help" \
+        ] \
+        "BROWSER" [list \
+            "Enter / double-click"               "Open" \
+            "n"                                 "New file" \
+            "t"                                 "Scratchpad (temp, no disk file)" \
+            "f"                                 "Toggle favorite" \
+            "b"                                 "Backup (copies to backups/ with timestamp)" \
+            "i"                                 "Show full path" \
+            "d"                                 "Delete" \
+            "r"                                 "Rename" \
+            "c"                                 "Font settings by profile" \
+            [key-label $::cfg_key_toc]          "Browser sections" \
+            [key-label $::cfg_key_fullscreen]   "Fullscreen" \
+            [key-label $::cfg_key_open]         "Open file" \
+            "h / [key-label $::cfg_key_help]"   "Help" \
+            "q"                                 "Quit" \
+        ]
+
+    text $w.t \
+        -font $::font_sm -state normal \
+        -bg $::bg -fg $::fg \
+        -borderwidth 0 -padx 16 -pady 12 \
+        -width 60 -height $height \
+        -cursor arrow
+    $w.t tag configure heading -foreground $::fg_bar -font [concat $::font_sm bold]
+    $w.t tag configure key     -foreground $::fg -font [concat $::font_sm bold]
+    $w.t tag configure desc    -foreground $::fg
+
+    foreach {section entries} $sections {
+        $w.t insert end "\n $section\n" heading
+        foreach {key desc} $entries {
+            $w.t insert end [format "  %-20s" $key] key
+            $w.t insert end "  $desc\n"             desc
+        }
+    }
+    $w.t configure -state disabled
+
+    button $w.ok -text "Close" -command [list destroy $w]
+    pack $w.t  -fill both -expand 1
+    catch {
+        label $w.logo -image [image create photo -data $::_icon_b64] \
+            -bg $::bg -pady 6
+        pack $w.logo
+    }
+    pack $w.ok -pady 8
+
+    update
+    grab $w
+    bind $w.t <Up>         {%W yview scroll -1 units; break}
+    bind $w.t <Down>       {%W yview scroll  1 units; break}
+    bind $w.t <Prior>      {%W yview scroll -5 units; break}
+    bind $w.t <Next>       {%W yview scroll  5 units; break}
+    bind $w.t <KeyPress-q> "[list after idle [list destroy $w]]; break"
+    bind $w.t <Control-h>  "[list after idle [list destroy $w]]; break"
+    bind $w   <Control-h>  [list after idle [list destroy $w]]
+    focus $w.t
+}
+
+proc active-ed {} {
+    if {$::split_mode} {
+        set f [focus]
+        if {$f eq ".ed.pw.r.t"} { return ".ed.pw.r.t" }
+        return ".ed.pw.l.t"
+    }
+    return ".ed.t"
+}
+
+proc typewriter-center {t} {
+    set bbox [$t dlineinfo insert]
+    if {$bbox eq ""} return
+    set ly    [lindex $bbox 1]
+    set lh    [lindex $bbox 3]
+    set wh    [winfo height $t]
+    set delta [expr {int($ly + $lh/2 - $wh/2)}]
+    if {abs($delta) < 2} return
+    $t yview scroll $delta pixels
+}
+
+proc focus-para-update {t} {
+    $t tag remove focus_dim 1.0 end
+    set blank_before [$t search -backwards -regexp {^\s*$} "insert linestart - 1 char" 1.0]
+    set para_start [expr {$blank_before eq "" ? "1.0" : [$t index "$blank_before + 1 line"]}]
+    set blank_after [$t search -regexp {^\s*$} "insert lineend + 1 char" end]
+    set para_end [expr {$blank_after eq "" ? "end" : [$t index "$blank_after lineend + 1 char"]}]
+    if {[$t compare 1.0 < $para_start]} { $t tag add focus_dim 1.0 $para_start }
+    if {[$t compare $para_end < end]}   { $t tag add focus_dim $para_end end }
+}
+
+proc typewriter-tick {t} {
+    if {!$::typewriter_mode} return
+    typewriter-center $t
+    focus-para-update $t
+}
+
+proc typewriter-toggle {} {
+    set ::typewriter_mode [expr {!$::typewriter_mode}]
+    set c_comment [lindex [theme-colors] 6]
+    foreach w [list .ed.t .ed.pw.l.t .ed.pw.r.t] {
+        catch { $w tag configure focus_dim -foreground $c_comment }
+        if {!$::typewriter_mode} { catch { $w tag remove focus_dim 1.0 end } }
+    }
+    if {$::cfg_hemingway_mode} {
+        set _mw [expr {$::cfg_margin_width  * ($::typewriter_mode ? 2 : 1)}]
+        set _mh [expr {$::cfg_margin_height * ($::typewriter_mode ? 2 : 1)}]
+        set _sp [expr {$::cfg_split_shrink_margin ? max(1,$::cfg_margin_width/2) : $::cfg_margin_width}]
+        set _sp [expr {$_sp * ($::typewriter_mode ? 2 : 1)}]
+        catch { .ed.t configure -padx $_mw -pady $_mh }
+        foreach side {l r} { catch { .ed.pw.${side}.t configure -padx $_sp -pady $_mh } }
+        if {$::typewriter_mode} {
+            catch { pack forget .ed.bar }
+        } else {
+            catch { pack .ed.bar -side bottom -fill x -before .ed.sb }
+        }
+    }
+    if {$::typewriter_mode} { typewriter-tick [active-ed] }
+}
+
+proc goto-dialog {} {
+    set t [active-ed]
+    set n [input-dialog [t goto_title] [t goto_prompt]]
+    if {[string is integer -strict $n] && $n >= 1} {
+        set last [lindex [split [$t index end] .] 0]
+        $t mark set insert [expr {min($n, $last - 1)}].0
+        $t see insert
+        focus $t
+    }
+}
+
+# --- split view ---------------------------------------------------------------
+set ::split_ln_was_on 0
+
+proc primary-ed {} {
+    if {$::split_mode} { return ".ed.pw.l.t" }
+    return ".ed.t"
+}
+
+proc split-peer-modified {t} {
+    if {[$t edit modified]} { set ::dirty 1; $t edit modified false }
+    ed-status
+    if {$::hl_after_id ne ""} { after cancel $::hl_after_id }
+    set ::hl_after_id [after 300 { set ::hl_after_id ""; highlight-headings; ln-update }]
+}
+
+proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2} {
+    set frame ".ed.pw.$side"
+    frame $frame -bg $bg
+    scrollbar ${frame}.sb -orient vertical -bg $bg_bar -troughcolor $bg
+    set _padx [expr {$::cfg_split_shrink_margin \
+        ? max(1, $::cfg_margin_width / 2) : $::cfg_margin_width}]
+    .ed.t peer create ${frame}.t \
+        -wrap word -font [.ed.t cget -font] \
+        -width 1 \
+        -bg $bg -fg $fg \
+        -insertbackground $fg -selectbackground $bg_sel \
+        -blockcursor 0 -insertwidth 2 -insertofftime 0 \
+        -borderwidth 0 -padx $_padx -pady $::cfg_margin_height \
+        -highlightthickness 2 -highlightbackground $bg -highlightcolor $fg \
+        -yscrollcommand "${frame}.sb set" \
+        -spacing1 $sp1 -spacing2 $sp2 -spacing3 0
+    ${frame}.sb configure -command "${frame}.t yview"
+    pack ${frame}.sb -side right -fill y
+    pack ${frame}.t  -fill both  -expand 1
+    set t ${frame}.t
+    bind $t <KeyRelease>                { ed-status }
+    bind $t <ButtonRelease>             { ed-status }
+    bind $t <<Modified>>                [list split-peer-modified $t]
+    bind $t <$::cfg_key_save>           { save-file; break }
+    bind $t <$::cfg_key_save_as>        { save-as; break }
+    bind $t <$::cfg_key_close>          { close-editor; break }
+    bind $t <$::cfg_key_paste>          { ed-paste; break }
+    bind $t <$::cfg_key_select_all>     "[list $t tag add sel 1.0 end]; break"
+    bind $t <$::cfg_key_dark_toggle>    { toggle-dark-mode; break }
+    bind $t <Tab>                       "[list $t insert insert {    }]; break"
+    bind $t <$::cfg_key_goto>           { goto-dialog; break }
+    bind $t <$::cfg_key_help>           { help-dialog; break }
+    bind $t <$::cfg_key_undo>           "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break; [list catch [list $t edit undo]]; ed-status; break"
+    bind $t <$::cfg_key_redo>           "[list catch [list $t edit redo]]; ed-status; break"
+    bind $t <$::cfg_key_find>           { search-open; break }
+    bind $t <$::cfg_key_replace>        { replace-open; break }
+    bind $t <$::cfg_key_open>           { open-file-dialog; break }
+    bind $t <$::cfg_key_typewriter>     { typewriter-toggle; break }
+    bind $t <KeyRelease>               +[list typewriter-tick $t]
+    bind $t <ButtonRelease>            +[list typewriter-tick $t]
+    foreach _k {Left Right Up Down BackSpace Delete} {
+        bind $t <$_k> "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break"
+    }
+    bind $t <$::cfg_key_toc>            { toc-show; break }
+    bind $t <$::cfg_key_line_numbers>   { ln-toggle; break }
+    bind $t <$::cfg_key_fullscreen>     { toggle-fullscreen; break }
+    bind $t <$::cfg_key_split>          { split-toggle; break }
+    bind $t <$::cfg_key_split_focus>    { split-cycle-focus; break }
+    bind $t <Control-equal>             { font-resize  1; break }
+    bind $t <Control-plus>              { font-resize  1; break }
+    bind $t <Control-KP_Add>            { font-resize  1; break }
+    bind $t <Control-minus>             { font-resize -1; break }
+    bind $t <Control-KP_Subtract>       { font-resize -1; break }
+}
+
+proc split-open {} {
+    wm geometry . [winfo width .]x[winfo height .]
+    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel
+    set sp1 [.ed.t cget -spacing1]
+    set sp2 [.ed.t cget -spacing2]
+    set cur [.ed.t index insert]
+
+    pack forget .ed.t .ed.sb
+    if {[winfo exists .ed.ln]} {
+        set ::split_ln_was_on 1
+        pack forget .ed.ln
+    } else {
+        set ::split_ln_was_on 0
+    }
+
+    panedwindow .ed.pw -orient horizontal -bg $bg_bar -sashwidth 4 -sashpad 0 -sashrelief flat
+    split-make-pane l $bg $fg $bg_bar $bg_sel $sp1 $sp2
+    split-make-pane r $bg $fg $bg_bar $bg_sel $sp1 $sp2
+    .ed.pw add .ed.pw.l -stretch always
+    .ed.pw add .ed.pw.r -stretch always
+    pack .ed.pw -fill both -expand 1 -before .ed.bar
+
+    .ed.pw.l.t mark set insert $cur
+    .ed.pw.l.t see insert
+
+    set ::split_mode 1
+    focus .ed.pw.l.t
+}
+
+proc split-close {} {
+    if {!$::split_mode} return
+    catch { .ed.t mark set insert [.ed.pw.l.t index insert] }
+    pack forget .ed.pw
+    destroy .ed.pw
+    pack .ed.sb  -side right -fill y
+    if {$::split_ln_was_on && [winfo exists .ed.ln]} {
+        pack .ed.ln -side left  -fill y
+    }
+    pack .ed.t   -fill both  -expand 1
+    .ed.t see insert
+    set ::split_mode 0
+    focus .ed.t
+}
+
+proc split-toggle {} {
+    if {$::split_mode} { split-close } else { split-open }
+}
+
+proc split-cycle-focus {} {
+    if {!$::split_mode} return
+    if {[focus] eq ".ed.pw.r.t"} {
+        focus .ed.pw.l.t
+    } else {
+        focus .ed.pw.r.t
+    }
+}
+
+# --- frame switching ----------------------------------------------------------
+proc watch-file {} {
+    set ::watch_after_id ""
+    if {$::cfg_watch_file && $::filename ne "" && !$::scratchpad \
+            && [file exists $::filename]} {
+        set mtime [file mtime $::filename]
+        if {$mtime != $::file_mtime_known} {
+            set ::file_mtime_known $mtime
+            set _key [expr {$::dirty ? "ed_watch_reload_dirty" : "ed_watch_reload"}]
+            if {[confirm-dialog [t $_key [file tail $::filename]]] eq "yes"} {
+                load-file $::filename
+            }
+        }
+    }
+    set ::watch_after_id [after 2000 watch-file]
+}
+
+proc show-browser {} {
+    pack forget .ed
+    pack .br -fill both -expand 1
+    br-refresh
+    focus .br.mid.lst
+}
+
+proc ini-reload {} {
+    ini-load
+    markers-update
+    if {$::cfg_font_family ne "Mono" && \
+            [lsearch -exact [font families] $::cfg_font_family] < 0} {
+        set ::cfg_font_family "Mono"
+    }
+    if {$::cfg_bar_font_family ne "Mono" && \
+            [lsearch -exact [font families] $::cfg_bar_font_family] < 0} {
+        set ::cfg_bar_font_family "Mono"
+    }
+    set f [list $::cfg_font_family $::cfg_font_size]
+    set ::font $f
+    set _bpad [expr {$::cfg_bar_height > 0 \
+        ? min(2, max(0, ($::cfg_bar_height - 6) / 2)) : 0}]
+    set ::font_sm [expr {$::cfg_bar_height > 0 \
+        ? [list $::cfg_bar_font_family [expr {-max(6, $::cfg_bar_height - 2*$_bpad)}]] \
+        : [list $::cfg_bar_font_family 10]}]
+    catch { .ed.t configure -font $f \
+        -padx $::cfg_margin_width -pady $::cfg_margin_height \
+        -blockcursor 0 \
+        -insertwidth [expr {$::cfg_block_cursor_gui ? 0 : 2}] \
+        -insertofftime [expr {$::cfg_block_cursor_gui ? 0 : ($::cfg_blink_cursor ? 300 : 0)}] }
+    catch { .ed.t tag configure heading -font [list $::cfg_font_family $::cfg_font_size bold] }
+    foreach side {l r} {
+        catch { .ed.pw.${side}.t configure -font $f }
+    }
+    foreach _w {.ed.bar.left .ed.bar.right .ed.bar.msg .ed.bar.center .ed.bar.help
+                .ed.sf.lbl .ed.sf.cnt .ed.sf.r.lbl .ed.sf.r.one .ed.sf.r.all
+                .br.bar.left .br.bar.right} {
+        catch { $_w configure -font $::font_sm }
+    }
+    catch { apply-theme }
+    catch { apply-line-spacing }
+}
+
+proc open-scratchpad {} {
+    pack forget .br
+    pack .ed -fill both -expand 1
+    ini-reload
+    .ed.t configure -undo 0
+    .ed.t delete 1.0 end
+    .ed.t edit reset
+    .ed.t edit modified false
+    .ed.t configure -undo 1
+    set ::filename  ""
+    set ::scratchpad 1
+    set ::dirty     0
+    set ::ln_last_count 0
+    set ::gui_wc_line_cache {}
+    set ::gui_wc_last_nlines 0
+    wm title . "Writhdeck - ** scratchpad **"
+    highlight-headings
+    ed-status
+    focus .ed.t
+}
+
+proc show-editor {path} {
+    set ::scratchpad 0
+    pack forget .br
+    pack .ed -fill both -expand 1
+    ini-reload
+    load-file $path
+    recent-push $path
+    set _wc [llength [regexp -all -inline {\S+} [[primary-ed] get 1.0 end-1c]]]
+    daily-open $path $_wc
+    focus .ed.t
+}
+
+} ;# end if {!$::no_gui}

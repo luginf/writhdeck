@@ -142,6 +142,29 @@ Section order: `DOCS_DIR_DEFAULT` → `DOCS_DIR` (if custom) → Favorites → R
 
 **Never commit on behalf of the user.** Always let the user decide when and how to commit. Prepare changes but wait for explicit instruction before running `git commit`.
 
+## Module structure and builds
+
+The codebase is organized in `src/` directory and built via `Makefile`:
+
+| Module | Lines | Content |
+|---|---|---|
+| `src/boot.tcl` | ~80 | Polyglot sh/Tcl, args parsing, Tk detection, HOME_DIR setup |
+| `src/boot-cli.tcl` | ~80 | CLI variant: no Tk loading, forces `::no_gui 1` |
+| `src/state.tcl` | ~147 | JSON state persistence, cursors, favorites, recents, daily stats |
+| `src/config.tcl` | ~804 | INI loading/saving, profiles, color schemes, keys, i18n, theme init |
+| `src/common.tcl` | ~204 | Docs listing, backup, inline parsers, browser entry building |
+| `src/gui.tcl` | ~2001 | Full GUI (Tk) block — wrapped in `if {!$::no_gui}` |
+| `src/tui.tcl` | ~1644 | TUI mode code — terminal UI, browser, editor |
+| `src/main.tcl` | ~31 | Entry point dispatch (GUI or TUI based on `$::no_gui`) |
+| `src/main-cli.tcl` | ~2 | CLI entry point (always calls `tui-main`) |
+
+**Build targets** (via `make`):
+- `writhdeck.tcl` — full version (GUI+TUI, ~4979 lines with section headers)
+- `writhdeck-cli.tcl` — CLI-only (TUI, ~2899 lines, no Tk loading)
+- `make clean` — remove generated files
+
+Both generated files are executable, tracked in git, and have section headers (`# === state.tcl ===`) for readability.
+
 ## SKILLS.md
 
 `SKILLS.md` in the repo root is the developer reference in French. It contains detailed rules, patterns, and a list of ideas not yet implemented — consult it before adding features.
