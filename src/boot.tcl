@@ -58,9 +58,9 @@ Keyboard shortcuts (defaults - configurable in writhdeck.ini):
     exit 0
 }
 
-set ::no_gui    [expr {[lsearch -regexp $::argv {^(--no-gui|--tui|--ng)$}] >= 0}]
+set ::no_gui    [expr {[lsearch -regexp $::argv {^(--no-gui|--tui|--ng|--cli)$}] >= 0}]
 set ::force_gui [expr {!$::no_gui && [lsearch $::argv "--gui"] >= 0}]
-foreach _f {--no-gui --tui --ng --gui} { set ::argv [lsearch -all -inline -not $::argv $_f] }
+foreach _f {--no-gui --tui --ng --cli --gui} { set ::argv [lsearch -all -inline -not $::argv $_f] }
 unset _f
 set ::argc [llength $::argv]
 if {!$::no_gui} {

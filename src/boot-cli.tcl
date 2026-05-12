@@ -52,7 +52,7 @@ Keyboard shortcuts (defaults - configurable in writhdeck.ini):
 
 set ::no_gui    1
 set ::force_gui 0
-foreach _f {--no-gui --tui --ng --gui} { set ::argv [lsearch -all -inline -not $::argv $_f] }
+foreach _f {--no-gui --tui --ng --cli --gui} { set ::argv [lsearch -all -inline -not $::argv $_f] }
 unset _f
 set ::argc [llength $::argv]
 

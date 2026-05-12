@@ -1412,8 +1412,8 @@ proc tui-editor {filepath} {
                 tui-push-undo
                 if {$sel_anchor ne ""} { lassign [tui-sel-delete $lines $sel_anchor $cy $cx] lines cy cx; tui-mark-dirty }
                 set l [lindex $lines [expr {$cy-1}]]
-                lset lines [expr {$cy-1}] "[string range $l 0 [expr {$cx-1}]]    [string range $l $cx end]"
-                incr cx 4; tui-mark-line-dirty
+                lset lines [expr {$cy-1}] "[string range $l 0 [expr {$cx-1}]]\t[string range $l $cx end]"
+                incr cx 1; tui-mark-line-dirty
             }
             default {
                 set c [scan $key %c]

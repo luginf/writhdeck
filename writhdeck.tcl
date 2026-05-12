@@ -58,9 +58,9 @@ Keyboard shortcuts (defaults - configurable in writhdeck.ini):
     exit 0
 }
 
-set ::no_gui    [expr {[lsearch -regexp $::argv {^(--no-gui|--tui|--ng)$}] >= 0}]
+set ::no_gui    [expr {[lsearch -regexp $::argv {^(--no-gui|--tui|--ng|--cli)$}] >= 0}]
 set ::force_gui [expr {!$::no_gui && [lsearch $::argv "--gui"] >= 0}]
-foreach _f {--no-gui --tui --ng --gui} { set ::argv [lsearch -all -inline -not $::argv $_f] }
+foreach _f {--no-gui --tui --ng --cli --gui} { set ::argv [lsearch -all -inline -not $::argv $_f] }
 unset _f
 set ::argc [llength $::argv]
 if {!$::no_gui} {
@@ -1295,7 +1295,7 @@ proc toggle-favorite {path} {
 # gui.tcl
 # ===========================================================================
 if {!$::no_gui} {
-wm title . "Writhdeck"
+wm title . "Writhdeck Browser"
 
 # wm iconphoto . -default [image create photo -file [file join [file dirname [info script]] writhdeck.png]]
 set ::_icon_b64 {iVBORw0KGgoAAAANSUhEUgAAAGAAAABgAQMAAADYVuV7AAAAwXpUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjabVBbDsMgDPvnFDsCJDyS49C1k3aDHX+mSauyzhKOgyUTErbP+xUeA5RyyKVJ1VojkDUrdQiJhr5zinnnHdUt9NN9OA3CFaOyteJGOu7TGWClQ5VLkDzdWGZDs+fLTxBZ4THR0KsHqQcxmZE8oHf/ikq7fmHZ4gyxEwZlmce+9Q3bWwveYaKNE0cwc7UBeJwauEMUcGKsA1qhybl5GBbyb08Hwhfm3FkghSRy6AAAAYVpQ0NQSUNDIHByb2ZpbGUAAHicfZG/S8NAHMVfU2tFKw52EHHIUJ3solIcaxWKUKHUCq06mFz6C5o0JCkujoJrwcEfi1UHF2ddHVwFQfAHiH+AOCm6SInfSwotYjw47sO7e4+7d4DQrDLV7IkDqmYZmWRCzOVXxeArAhhAEL2ISczU59LpFDzH1z18fL2L8izvc3+OQaVgMsAnEseZbljEG8SxTUvnvE8cZmVJIT4nnjTogsSPXJddfuNccljgmWEjm5knDhOLpS6Wu5iVDZV4hjiiqBrlCzmXFc5bnNVqnbXvyV8YKmgry1ynOYYkFrGENETIqKOCKixEadVIMZGh/YSHf9Txp8klk6sCRo4F1KBCcvzgf/C7W7M4PeUmhRJA4MW2P8aB4C7Qatj297Ftt04A/zNwpXX8tSYw+0l6o6NFjoChbeDiuqPJe8DlDjDypEuG5Eh+mkKxCLyf0TflgeFboH/N7a29j9MHIEtdpW6Ag0NgokTZ6x7v7uvu7d8z7f5+AHHScqZUIDF8AAANeGlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNC40LjAtRXhpdjIiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iCiAgICB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIgogICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICAgeG1sbnM6R0lNUD0iaHR0cDovL3d3dy5naW1wLm9yZy94bXAvIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgIHhtcE1NOkRvY3VtZW50SUQ9ImdpbXA6ZG9jaWQ6Z2ltcDplZjBhMzc3Yi0wZDI4LTQwZWEtOTBkMi1kZmZhNDQ2NzdjYmUiCiAgIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6YThmNzI2MjItMDY1Yy00NTM2LTlkMTctOTU3ZDZmMWJiODE1IgogICB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6NDY4NjQzNWItMWY0MS00MmQ4LWI2ZDgtZjYyZTEwODhiZDcwIgogICBkYzpGb3JtYXQ9ImltYWdlL3BuZyIKICAgR0lNUDpBUEk9IjIuMCIKICAgR0lNUDpQbGF0Zm9ybT0iTGludXgiCiAgIEdJTVA6VGltZVN0YW1wPSIxNzc4NDg0NTY3NTM1MjEwIgogICBHSU1QOlZlcnNpb249IjIuMTAuMzYiCiAgIHRpZmY6T3JpZW50YXRpb249IjEiCiAgIHhtcDpDcmVhdG9yVG9vbD0iR0lNUCAyLjEwIgogICB4bXA6TWV0YWRhdGFEYXRlPSIyMDI2OjA1OjExVDA5OjI5OjI3KzAyOjAwIgogICB4bXA6TW9kaWZ5RGF0ZT0iMjAyNjowNToxMVQwOToyOToyNyswMjowMCI+CiAgIDx4bXBNTTpIaXN0b3J5PgogICAgPHJkZjpTZXE+CiAgICAgPHJkZjpsaQogICAgICBzdEV2dDphY3Rpb249InNhdmVkIgogICAgICBzdEV2dDpjaGFuZ2VkPSIvIgogICAgICBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjE0Yjc3ZjU1LTBhOTQtNDY1OC1iZDZjLWY0ODVkZjNhOGY0ZSIKICAgICAgc3RFdnQ6c29mdHdhcmVBZ2VudD0iR2ltcCAyLjEwIChMaW51eCkiCiAgICAgIHN0RXZ0OndoZW49IjIwMjYtMDUtMTFUMDk6Mjk6MjcrMDI6MDAiLz4KICAgIDwvcmRmOlNlcT4KICAgPC94bXBNTTpIaXN0b3J5PgogIDwvcmRmOkRlc2NyaXB0aW9uPgogPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAo8P3hwYWNrZXQgZW5kPSJ3Ij8+jCyuRQAAAAZQTFRFAAAA////pdmf3QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB+oFCwcdGxSsKUAAAAJDSURBVDjLrdSxjtNAEADQ8eXEXRGRSCAhROEUSJTUCMHmToDo+Ag6PoAO1jkKBMWZks7iDyipcOAQKZ0/cCIXoYsDInHO6x1mZmNua0QKy0/ZnZ3dnTGg94P/AwguMFMY/8UB4raFUfTQO8z9AK99hB5kSovKX3TuY+LepiFDFkcLPYYLZkARrAv2AzTBaME44AAusn034GErQdWPeNgvwWpP5iwc9mWOW3PWV4w40ukIR4MOI5ljusDhUBCuUC1xGB0wVInh0hzDpkGwqrJhZh5QngRd2V5eHUJoEYw2L+O86nPuYNC8iJPZgNbUgkk6HdJ2NGzR3tshZdydqHFEeQpuFPoI+DSBdnCl0HtwGTFnXJvZfejscFCaLmXmEJeUgKAgbKs+p7YE2nW2LQe0jEPOwBZYDlW6Ax0nJ+CBnguHN1IiO5zwcbSQ9xZB4OErhN4wTqDFNxnm1rE3fTyOHTZ87ady/RlvDpsMPTzBqOP9U5S87ZpQJ1hQbSR0iGg6GguqGsFinWNB9ZRAg/j+eSZQdCX4sXub0CNYxE+HS0JsBdlZItBAdT+l3RCMQJ3eElBRpCbvXWdUjOZ+eJVDbwl5/Vm9ZawIy7qERwRVMM4Rv2vKbUHYEB7qwlBJAtZrtB/0LKA2AGzWiEeadiqN8RNxRLdjuciR5jwlGC1Iz0+0NBhD/z7mMhfU6tklwpmgiaDrupVbs4Q7FCxsm3bhupXxxVDhlLt2tnw7r7zPhu21oBYqVYtKmeDigzKW2/6nL9IfSdCzoS69vcYAAAAASUVORK5CYII=}
@@ -1617,7 +1617,7 @@ proc br-rename {} {
 }
 
 proc br-reload {} {
-    exec [info nameofexecutable] $::argv0 {*}$::argv &
+    exec [info nameofexecutable] $::argv0 &
     exit
 }
 
@@ -2374,7 +2374,7 @@ bind .ed.t <$::cfg_key_dark_toggle> { toggle-dark-mode;  break }
 bind .br.mid.lst <$::cfg_key_dark_toggle> { toggle-dark-mode }
 
 bind .ed.t <$::cfg_key_sticky_sel> { break }
-bind .ed.t <Tab>                { .ed.t insert insert "    "; break }
+bind .ed.t <Tab>                { .ed.t insert insert "\t"; break }
 bind .ed.t <$::cfg_key_goto>       { goto-dialog;    break }
 bind .ed.t <$::cfg_key_help>       { help-dialog;    break }
 bind .ed.t <$::cfg_key_redo>        { catch {.ed.t edit redo}; ed-status; break }
@@ -2673,6 +2673,7 @@ proc profile-config-update-profile {w} {
 proc profile-config-dialog {} {
     set w .profile_config
     catch {destroy $w}
+    catch {unset ::profile_config_profile}
     toplevel $w
     wm title $w [t profile_config_title]
     wm transient $w .
@@ -2868,18 +2869,25 @@ proc profile-config-dialog {} {
                 }
             }
 
+            catch {trace remove variable ::profile_config_profile write}
             destroy .profile_config
             br-reload
         }
     pack $w.btns.apply -side left -padx 4
 
     button $w.btns.cancel -text [t profile_config_cancel] -font $::font_sm \
-        -bg $::bg_bar -fg $::fg_bar -command [list destroy $w]
+        -bg $::bg_bar -fg $::fg_bar -command {
+            catch {trace remove variable ::profile_config_profile write}
+            destroy .profile_config
+        }
     pack $w.btns.cancel -side left -padx 4
 
     update
     grab $w
-    bind $w <Escape> [list destroy $w]
+    bind $w <Escape> {
+        catch {trace remove variable ::profile_config_profile write}
+        destroy .profile_config
+    }
     focus $w.profile.ffont.entry
 }
 
@@ -3118,7 +3126,7 @@ proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2} {
     bind $t <$::cfg_key_paste>          { ed-paste; break }
     bind $t <$::cfg_key_select_all>     "[list $t tag add sel 1.0 end]; break"
     bind $t <$::cfg_key_dark_toggle>    { toggle-dark-mode; break }
-    bind $t <Tab>                       "[list $t insert insert {    }]; break"
+    bind $t <Tab>                       "[list $t insert insert {\t}]; break"
     bind $t <$::cfg_key_goto>           { goto-dialog; break }
     bind $t <$::cfg_key_help>           { help-dialog; break }
     bind $t <$::cfg_key_undo>           "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break; [list catch [list $t edit undo]]; ed-status; break"
@@ -4713,8 +4721,8 @@ proc tui-editor {filepath} {
                 tui-push-undo
                 if {$sel_anchor ne ""} { lassign [tui-sel-delete $lines $sel_anchor $cy $cx] lines cy cx; tui-mark-dirty }
                 set l [lindex $lines [expr {$cy-1}]]
-                lset lines [expr {$cy-1}] "[string range $l 0 [expr {$cx-1}]]    [string range $l $cx end]"
-                incr cx 4; tui-mark-line-dirty
+                lset lines [expr {$cy-1}] "[string range $l 0 [expr {$cx-1}]]\t[string range $l $cx end]"
+                incr cx 1; tui-mark-line-dirty
             }
             default {
                 set c [scan $key %c]
@@ -4947,7 +4955,7 @@ proc tui-main {} {
 # ===========================================================================
 # main.tcl
 # ===========================================================================
-# --- Development mode: auto-load modules if run directly from src/ ---
+# --- Development mode: auto-load modules if run directly from src/ --- 
 if {![info exists ::version]} {
     set srcdir [file dirname [info script]]
     foreach m {boot state config common tui} {

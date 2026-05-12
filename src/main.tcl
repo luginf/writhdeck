@@ -1,4 +1,4 @@
-# --- Development mode: auto-load modules if run directly from src/ ---
+# --- Development mode: auto-load modules if run directly from src/ --- 
 if {![info exists ::version]} {
     set srcdir [file dirname [info script]]
     foreach m {boot state config common tui} {
