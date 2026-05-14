@@ -165,11 +165,106 @@ set ::cfg_key_typewriter   "Control-t"
 set ::cfg_key_fullscreen   "Alt-Return"
 set ::cfg_key_split        "F3"
 set ::cfg_key_split_focus  "F4"
+set ::cfg_key_timer        "Alt-t"
 set ::cfg_key_error        ""
+set ::cfg_timer_duration   25
+set ::cfg_timer_sound      1
+set ::cfg_timer_alert      1
+set ::cfg_chrono_show      1
+set ::cfg_timer_type       "countdown"
+set ::timer_active         0
+set ::timer_remaining      0
+set ::timer_last_tick      0
+set ::timer_schedule_id    ""
+set ::timer_alert_shown    0
 set ::fullscreen 0
 set ::split_mode 0
 
 proc marker-val {v} { expr {$v eq "0" ? "" : $v} }
+
+proc timer-alert {} {
+    if {$::timer_alert_shown} return
+    set ::timer_alert_shown 1
+    if {!$::no_gui} {
+        if {$::cfg_timer_sound} { catch { timer-alert-gui } }
+    } else {
+        if {$::cfg_timer_sound} { catch { tui-timer-alert } }
+    }
+}
+
+proc timer-tick {} {
+    if {!$::timer_active} return
+    if {$::cfg_timer_type eq "countdown" && $::timer_remaining <= 0} return
+    set now [clock seconds]
+    if {$::timer_last_tick == 0} {
+        set ::timer_last_tick $now
+        return
+    }
+    if {$now > $::timer_last_tick} {
+        if {$::cfg_timer_type eq "countdown"} {
+            incr ::timer_remaining -[expr {$now - $::timer_last_tick}]
+            if {$::timer_remaining < 0} { set ::timer_remaining 0 }
+            if {$::timer_remaining == 0 && $::cfg_timer_alert} {
+                timer-alert
+            }
+        } else {
+            incr ::timer_remaining [expr {$now - $::timer_last_tick}]
+        }
+        set ::timer_last_tick $now
+        if {!$::no_gui} { catch {ed-status} }
+    }
+}
+
+proc timer-schedule {} {
+    if {$::timer_active && $::cfg_chrono_show} {
+        set ::timer_schedule_id [after 1000 timer-schedule-tick]
+    } else {
+        if {$::timer_schedule_id ne ""} {
+            catch {after cancel $::timer_schedule_id}
+            set ::timer_schedule_id ""
+        }
+    }
+}
+
+proc timer-schedule-tick {} {
+    timer-tick
+    timer-schedule
+}
+
+proc timer-start {} {
+    if {$::cfg_timer_type eq "countdown"} {
+        set ::timer_remaining [expr {$::cfg_timer_duration * 60}]
+    } else {
+        set ::timer_remaining 0
+    }
+    set ::timer_active 1
+    set ::timer_alert_shown 0
+    set ::timer_last_tick [clock seconds]
+    timer-schedule
+}
+
+proc timer-pause {} {
+    set ::timer_active 0
+    if {$::timer_schedule_id ne ""} {
+        catch {after cancel $::timer_schedule_id}
+        set ::timer_schedule_id ""
+    }
+}
+
+proc timer-reset {} {
+    set ::timer_active 0
+    if {$::cfg_timer_type eq "countdown"} {
+        set ::timer_remaining [expr {$::cfg_timer_duration * 60}]
+    } else {
+        set ::timer_remaining 0
+    }
+    set ::timer_last_tick 0
+    if {$::timer_schedule_id ne ""} {
+        catch {after cancel $::timer_schedule_id}
+        set ::timer_schedule_id ""
+    }
+    if {!$::no_gui} { catch {ed-status} }
+}
 
 proc profile-apply {name} {
     if {![dict exists $::cfg_profiles $name]} return
@@ -353,9 +448,15 @@ proc ini-load {} {
                 key_fullscreen   { set ::cfg_key_fullscreen   $v }
                 key_split        { set ::cfg_key_split        $v }
                 key_split_focus  { set ::cfg_key_split_focus  $v }
+                key_timer        { set ::cfg_key_timer        $v }
                 toc_key          { set ::cfg_key_toc          $v }
                 ln_key           { set ::cfg_key_line_numbers $v }
                 fullscreen_key   { set ::cfg_key_fullscreen   $v }
+                timer_duration   { set ::cfg_timer_duration   $v }
+                timer_sound      { set ::cfg_timer_sound      [string is true $v] }
+                timer_alert      { set ::cfg_timer_alert      [string is true $v] }
+                timer_type       { set ::cfg_timer_type       $v }
+                chrono_show      { set ::cfg_chrono_show      [string is true $v] }
             }
         }
     }
@@ -403,11 +504,17 @@ proc ini-save {} {
     puts $fh "help_bar       = $::cfg_help_bar"
     puts $fh "# word_goal: target word count shown in status bar with 'goal' token (0 = disabled)"
     puts $fh "word_goal      = $::cfg_word_goal"
-    puts $fh "# status bar zones - tokens: filename dirty sel ln col words chars goal clock help_bar space"
+    puts $fh "# status bar zones - tokens: filename dirty sel ln col words chars goal clock timer help_bar space"
     puts $fh "status_left    = $::cfg_status_left"
     puts $fh "status_center  = $::cfg_status_center"
     puts $fh "status_right   = $::cfg_status_right"
     puts $fh "dark_mode      = $::cfg_dark_mode"
+    puts $fh "# timer and stopwatch"
+    puts $fh "timer_duration = $::cfg_timer_duration"
+    puts $fh "timer_sound    = $::cfg_timer_sound"
+    puts $fh "timer_alert    = $::cfg_timer_alert"
+    puts $fh "timer_type     = $::cfg_timer_type"
+    puts $fh "chrono_show    = $::cfg_chrono_show"
     puts $fh ""
     puts $fh "\[keys\]"
     puts $fh "# Use Tk key names: Control-s, Alt-Return, F11, etc."
@@ -432,6 +539,7 @@ proc ini-save {} {
     puts $fh "key_fullscreen   = $::cfg_key_fullscreen"
     puts $fh "key_split        = $::cfg_key_split"
     puts $fh "key_split_focus  = $::cfg_key_split_focus"
+    puts $fh "key_timer        = $::cfg_key_timer"
     puts $fh "key_dark_toggle  = $::cfg_key_dark_toggle"
     puts $fh ""
     puts $fh "\[profiles\]"
@@ -573,6 +681,7 @@ proc keys-init {} {
     set ::cfg_tui_typewriter   [tk-key-to-tui $::cfg_key_typewriter]
     set ::cfg_tui_dark_toggle  [tk-key-to-tui $::cfg_key_dark_toggle]
     set ::cfg_tui_split        [tk-key-to-tui $::cfg_key_split]
+    set ::cfg_tui_timer        [tk-key-to-tui $::cfg_key_timer]
     # labels for UI display
     set ::cfg_lbl_save       [key-label $::cfg_key_save]
     set ::cfg_lbl_close      [key-label $::cfg_key_close]

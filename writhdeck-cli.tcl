@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260511"
+set ::version          "v20260518"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -87,6 +87,8 @@ set ::scratchpad      0
 set ::file_mtime_known 0
 set ::watch_after_id  ""
 set ::session_headings {}
+set ::gui_cmd_mode    0
+set ::tui_cmd_mode    0
 
 file mkdir $::DOCS_DIR_DEFAULT
 set ::STATE_FILE        [file join $::DOCS_DIR_DEFAULT ".writhdeck.json"]
@@ -398,11 +400,106 @@ set ::cfg_key_typewriter   "Control-t"
 set ::cfg_key_fullscreen   "Alt-Return"
 set ::cfg_key_split        "F3"
 set ::cfg_key_split_focus  "F4"
+set ::cfg_key_timer        "Alt-t"
 set ::cfg_key_error        ""
+set ::cfg_timer_duration   25
+set ::cfg_timer_sound      1
+set ::cfg_timer_alert      1
+set ::cfg_chrono_show      1
+set ::cfg_timer_type       "countdown"
+set ::timer_active         0
+set ::timer_remaining      0
+set ::timer_last_tick      0
+set ::timer_schedule_id    ""
+set ::timer_alert_shown    0
 set ::fullscreen 0
 set ::split_mode 0
 
 proc marker-val {v} { expr {$v eq "0" ? "" : $v} }
+
+proc timer-alert {} {
+    if {$::timer_alert_shown} return
+    set ::timer_alert_shown 1
+    if {!$::no_gui} {
+        if {$::cfg_timer_sound} { catch { timer-alert-gui } }
+    } else {
+        if {$::cfg_timer_sound} { catch { tui-timer-alert } }
+    }
+}
+
+proc timer-tick {} {
+    if {!$::timer_active} return
+    if {$::cfg_timer_type eq "countdown" && $::timer_remaining <= 0} return
+    set now [clock seconds]
+    if {$::timer_last_tick == 0} {
+        set ::timer_last_tick $now
+        return
+    }
+    if {$now > $::timer_last_tick} {
+        if {$::cfg_timer_type eq "countdown"} {
+            incr ::timer_remaining -[expr {$now - $::timer_last_tick}]
+            if {$::timer_remaining < 0} { set ::timer_remaining 0 }
+            if {$::timer_remaining == 0 && $::cfg_timer_alert} {
+                timer-alert
+            }
+        } else {
+            incr ::timer_remaining [expr {$now - $::timer_last_tick}]
+        }
+        set ::timer_last_tick $now
+        if {!$::no_gui} { catch {ed-status} }
+    }
+}
+
+proc timer-schedule {} {
+    if {$::timer_active && $::cfg_chrono_show} {
+        set ::timer_schedule_id [after 1000 timer-schedule-tick]
+    } else {
+        if {$::timer_schedule_id ne ""} {
+            catch {after cancel $::timer_schedule_id}
+            set ::timer_schedule_id ""
+        }
+    }
+}
+
+proc timer-schedule-tick {} {
+    timer-tick
+    timer-schedule
+}
+
+proc timer-start {} {
+    if {$::cfg_timer_type eq "countdown"} {
+        set ::timer_remaining [expr {$::cfg_timer_duration * 60}]
+    } else {
+        set ::timer_remaining 0
+    }
+    set ::timer_active 1
+    set ::timer_alert_shown 0
+    set ::timer_last_tick [clock seconds]
+    timer-schedule
+}
+
+proc timer-pause {} {
+    set ::timer_active 0
+    if {$::timer_schedule_id ne ""} {
+        catch {after cancel $::timer_schedule_id}
+        set ::timer_schedule_id ""
+    }
+}
+
+proc timer-reset {} {
+    set ::timer_active 0
+    if {$::cfg_timer_type eq "countdown"} {
+        set ::timer_remaining [expr {$::cfg_timer_duration * 60}]
+    } else {
+        set ::timer_remaining 0
+    }
+    set ::timer_last_tick 0
+    if {$::timer_schedule_id ne ""} {
+        catch {after cancel $::timer_schedule_id}
+        set ::timer_schedule_id ""
+    }
+    if {!$::no_gui} { catch {ed-status} }
+}
 
 proc profile-apply {name} {
     if {![dict exists $::cfg_profiles $name]} return
@@ -586,9 +683,15 @@ proc ini-load {} {
                 key_fullscreen   { set ::cfg_key_fullscreen   $v }
                 key_split        { set ::cfg_key_split        $v }
                 key_split_focus  { set ::cfg_key_split_focus  $v }
+                key_timer        { set ::cfg_key_timer        $v }
                 toc_key          { set ::cfg_key_toc          $v }
                 ln_key           { set ::cfg_key_line_numbers $v }
                 fullscreen_key   { set ::cfg_key_fullscreen   $v }
+                timer_duration   { set ::cfg_timer_duration   $v }
+                timer_sound      { set ::cfg_timer_sound      [string is true $v] }
+                timer_alert      { set ::cfg_timer_alert      [string is true $v] }
+                timer_type       { set ::cfg_timer_type       $v }
+                chrono_show      { set ::cfg_chrono_show      [string is true $v] }
             }
         }
     }
@@ -636,11 +739,17 @@ proc ini-save {} {
     puts $fh "help_bar       = $::cfg_help_bar"
     puts $fh "# word_goal: target word count shown in status bar with 'goal' token (0 = disabled)"
     puts $fh "word_goal      = $::cfg_word_goal"
-    puts $fh "# status bar zones - tokens: filename dirty sel ln col words chars goal clock help_bar space"
+    puts $fh "# status bar zones - tokens: filename dirty sel ln col words chars goal clock timer help_bar space"
     puts $fh "status_left    = $::cfg_status_left"
     puts $fh "status_center  = $::cfg_status_center"
     puts $fh "status_right   = $::cfg_status_right"
     puts $fh "dark_mode      = $::cfg_dark_mode"
+    puts $fh "# timer and stopwatch"
+    puts $fh "timer_duration = $::cfg_timer_duration"
+    puts $fh "timer_sound    = $::cfg_timer_sound"
+    puts $fh "timer_alert    = $::cfg_timer_alert"
+    puts $fh "timer_type     = $::cfg_timer_type"
+    puts $fh "chrono_show    = $::cfg_chrono_show"
     puts $fh ""
     puts $fh "\[keys\]"
     puts $fh "# Use Tk key names: Control-s, Alt-Return, F11, etc."
@@ -665,6 +774,7 @@ proc ini-save {} {
     puts $fh "key_fullscreen   = $::cfg_key_fullscreen"
     puts $fh "key_split        = $::cfg_key_split"
     puts $fh "key_split_focus  = $::cfg_key_split_focus"
+    puts $fh "key_timer        = $::cfg_key_timer"
     puts $fh "key_dark_toggle  = $::cfg_key_dark_toggle"
     puts $fh ""
     puts $fh "\[profiles\]"
@@ -806,6 +916,7 @@ proc keys-init {} {
     set ::cfg_tui_typewriter   [tk-key-to-tui $::cfg_key_typewriter]
     set ::cfg_tui_dark_toggle  [tk-key-to-tui $::cfg_key_dark_toggle]
     set ::cfg_tui_split        [tk-key-to-tui $::cfg_key_split]
+    set ::cfg_tui_timer        [tk-key-to-tui $::cfg_key_timer]
     # labels for UI display
     set ::cfg_lbl_save       [key-label $::cfg_key_save]
     set ::cfg_lbl_close      [key-label $::cfg_key_close]
@@ -942,7 +1053,7 @@ dict set ::i18n en {
     toc_headings       "%d heading%s"
     br_no_docs         "No documents yet. Press n to create one."
     br_help_gui        "h:help  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  c:config  z:reload  %s:sections  q:quit"
-    br_help_tui        "h:%s  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  w:words  %s:sections  q:quit"
+    br_help_tui        "h:%s  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  c:config  w:words  %s:sections  q:quit"
     br_backed_up       "backup %s -> %s"
     br_favorites       "Favorites"
     br_stats_title     "Writing stats"
@@ -1060,6 +1171,16 @@ dict set ::i18n en {
     help_double_click      "Enter / double-click"
     help_key_open_text     "Open"
     help_k_fullscreen      "Fullscreen"
+    config_tab_profile     "Profile"
+    config_tab_timer       "Timer"
+    timer_section          "Settings"
+    timer_duration         "Duration (min):"
+    timer_sound            "Sound at end:"
+    timer_alert            "Alert message:"
+    timer_type             "Type:"
+    timer_type_countdown   "countdown"
+    timer_type_stopwatch   "stopwatch"
+    chrono_show            "Show in status bar:"
 }
 
 dict set ::i18n fr {
@@ -1069,7 +1190,7 @@ dict set ::i18n fr {
     toc_headings       "%d titre%s"
     br_no_docs         "Aucun document. Appuyez sur n pour en créer un."
     br_help_gui        "h:aide  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  c:config  z:recharger  %s:sections  q:quitter"
-    br_help_tui        "h:%s  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  w:mots  %s:sections  q:quitter"
+    br_help_tui        "h:%s  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  c:config  w:mots  %s:sections  q:quitter"
     br_backed_up       "sauvegarde %s -> %s"
     br_favorites       "Favoris"
     br_stats_title     "Statistiques d'écriture"
@@ -1187,6 +1308,16 @@ dict set ::i18n fr {
     help_double_click      "Entrée / double-clic"
     help_key_open_text     "Ouvrir"
     help_k_fullscreen      "Plein écran"
+    config_tab_profile     "Profil"
+    config_tab_timer       "Minuterie"
+    timer_section          "Parametres"
+    timer_duration         "Duree (min) :"
+    timer_sound            "Son a la fin :"
+    timer_alert            "Message d'alerte :"
+    timer_type             "Type :"
+    timer_type_countdown   "compte a rebours"
+    timer_type_stopwatch   "chronometre"
+    chrono_show            "Afficher dans la barre :"
 }
 
 
@@ -1363,6 +1494,7 @@ proc status-build {tokens state} {
     set words [dict get $state words]
     set chars [dict get $state chars]
     set clk   [dict get $state clock]
+    set timer [dict get $state timer]
     set result ""
     foreach tok $tokens {
         switch -- $tok {
@@ -1375,6 +1507,15 @@ proc status-build {tokens state} {
             chars    { append result "  ${chars}c" }
             goal     { if {$::cfg_word_goal > 0} { append result [format "  %d/%d" [daily-today $words] $::cfg_word_goal] } }
             clock    { append result "  $clk" }
+            timer    { if {$::cfg_chrono_show} {
+                set _m [expr {$timer / 60}]
+                set _s [expr {$timer % 60}]
+                if {$::timer_active} {
+                    append result [format " \[%d'%02d\"]" $_m $_s]
+                } else {
+                    append result [format "  %d'%02d\"" $_m $_s]
+                }
+            } }
             space    { append result " " }
             help_bar {}
         }
@@ -1726,9 +1867,24 @@ proc tui-help-dialog {rows cols wc cc {sel_wc -1} {sel_cc -1}} {
     puts -nonewline "\033\[2J"
 }
 
-proc tui-getch {} {
+proc tui-getch {{timeout -1}} {
+    if {$timeout < 0} {
+        set timeout 0
+        if {$::timer_active && $::cfg_chrono_show} { set timeout 50 }
+    }
+    chan configure stdin -blocking 0
     set raw [read stdin 1]
-    if {$raw eq ""} { return "" }
+    chan configure stdin -blocking 1
+    if {$raw eq ""} {
+        # No immediate input, wait for timeout
+        if {$timeout > 0} {
+            after $timeout
+            chan configure stdin -blocking 0
+            set raw [read stdin 1]
+            chan configure stdin -blocking 1
+        }
+        if {$raw eq ""} { return "" }
+    }
     scan $raw %c b
     if {$b == 27} {
         # Read escape sequence byte by byte
@@ -1808,6 +1964,8 @@ proc tui-getch {} {
             "\x1b\[1;3D"  { return CTRL-LEFT  }
             "\x1bb"       { return CTRL-LEFT  }
             "\x1bf"       { return CTRL-RIGHT }
+            "\x1bt"       { return ALT-t }
+            "\x1bT"       { return ALT-T }
         }
         return ESC
     }
@@ -2335,6 +2493,9 @@ proc tui-browser {} {
                     }
                 }
             }
+            c {
+                tui-config-dialog $rows $cols
+            }
         }
         if {$key eq $::cfg_tui_help && $key ne "h"} {
             tui-help-dialog $rows $cols 0 0
@@ -2680,6 +2841,11 @@ proc tui-editor {filepath} {
             if {$wc_dirty && ([status-zone-of words] ne "" || [status-zone-of chars] ne "" || [status-zone-of goal] ne "")} {
                 tui-compute-wc
             }
+            timer-tick
+            set timer_display [expr {$::cfg_timer_duration * 60}]
+            if {$::timer_active} {
+                set timer_display $::timer_remaining
+            }
             set tui_state [dict create \
                 fn    [expr {$filepath eq "" ? "** scratchpad **" : [file tail $filepath]}] \
                 dirty $dirty \
@@ -2688,12 +2854,19 @@ proc tui-editor {filepath} {
                 col   [expr {$cx+1}] \
                 words $wc_cached \
                 chars $cc_cached \
-                clock [clock format [clock seconds] -format "%H:%M"]]
-            set bar_left   " [status-build $::cfg_status_left   $tui_state]"
-            set bar_center [status-build $::cfg_status_center $tui_state]
-            set bar_right  "[status-build $::cfg_status_right  $tui_state] "
-            if {$::cfg_key_error ne "" && $message eq ""} { set message "key conflict: $::cfg_key_error"; set msg_time [clock seconds] }
-            if {$message ne "" && [clock seconds] - $msg_time < 4} { set bar_left " $message" }
+                clock [clock format [clock seconds] -format "%H:%M"] \
+                timer $timer_display]
+            if {$::tui_cmd_mode} {
+                set bar_left " $message"
+                set bar_center ""
+                set bar_right ""
+            } else {
+                set bar_left   " [status-build $::cfg_status_left   $tui_state]"
+                set bar_center [status-build $::cfg_status_center $tui_state]
+                set bar_right  "[status-build $::cfg_status_right  $tui_state] "
+                if {$::cfg_key_error ne "" && $message eq ""} { set message "key conflict: $::cfg_key_error"; set msg_time [clock seconds] }
+                if {$message ne "" && [clock seconds] - $msg_time < 4} { set bar_left " $message" }
+            }
             tui-bar [expr {$rows-1}] $bar_left $bar_right $cols $bar_center
         }
 
@@ -2898,7 +3071,131 @@ proc tui-editor {filepath} {
                         set dirty 0; set message [t ed_saved]; set msg_time [clock seconds]
                     }
                     set clear_sel 0
-                } elseif {$key eq $::cfg_tui_close || $key eq "ESC"} {
+                } elseif {$::tui_cmd_mode} {
+                    # In command mode
+                    if {$key eq "ESC"} {
+                        # Double ESC exits command mode only
+                        set ::tui_cmd_mode 0
+                        set message ""
+                        set msg_time [clock seconds]
+                        set clear_sel 0
+                    } elseif {$key eq "t"} {
+                        # Toggle timer, exit command mode
+                        if {$::timer_active} { timer-pause } else { timer-start }
+                        set ::tui_cmd_mode 0
+                        set message ""
+                        set msg_time [clock seconds]
+                        set clear_sel 0
+                    } elseif {$key eq "q"} {
+                        # Quit/close file, exit command mode first
+                        set ::tui_cmd_mode 0
+                        if {$dirty} {
+                            lassign [tui-size] rows cols
+                            set r [tui-yesnocancel [t ed_save_before_tui] $rows $cols]
+                            if {$r eq "cancel"} {
+                                set clear_sel 0
+                            } else {
+                                if {$r eq "yes"} {
+                                    if {$filepath eq ""} {
+                                        tui-scratchpad-save $rows $cols lines filepath dirty
+                                    } else {
+                                        tui-save-file $filepath $lines
+                                    }
+                                }
+                                if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                                set ::session_file ""; return
+                            }
+                        } else {
+                            if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                            set ::session_file ""; return
+                        }
+                    } elseif {$key eq "s"} {
+                        # Show statistics
+                        lassign [tui-size] rows cols
+                        if {$filepath ne ""} {
+                            puts -nonewline "\033\[2J\033\[H"
+                            if {![dict exists $::daily_data $filepath] || [dict size [dict get $::daily_data $filepath]] == 0} {
+                                tui-move 0 0
+                                puts -nonewline [t br_stats_no_data]
+                                puts -nonewline "\033\[K"
+                            } else {
+                                set fdata [dict get $::daily_data $filepath]
+                                set stat_lines [list]
+                                lappend stat_lines "[t br_stats_title] - [file tail $filepath]"
+                                lappend stat_lines ""
+                                lappend stat_lines "Date          Words"
+                                lappend stat_lines "----          -----"
+                                dict for {date count} $fdata {
+                                    lappend stat_lines [format "%-14s %5d" $date $count]
+                                }
+                                set display_lines [expr {min([llength $stat_lines], $rows - 1)}]
+                                for {set _i 0} {$_i < $display_lines} {incr _i} {
+                                    tui-move $_i 0
+                                    set line [lindex $stat_lines $_i]
+                                    puts -nonewline [string range $line 0 [expr {$cols-1}]]
+                                    puts -nonewline "\033\[K"
+                                }
+                            }
+                            tui-bar [expr {$rows-1}] "Press any key to continue (ESC: exit)" "" $cols
+                            flush stdout
+                            set _key [tui-getch 0]
+                            if {$_key eq "ESC"} {
+                                set ::tui_cmd_mode 0
+                                set message ""
+                                set msg_time [clock seconds]
+                            }
+                        }
+                        set clear_sel 0
+                    } elseif {$key eq "w"} {
+                        # Show word occurrences
+                        lassign [tui-size] rows cols
+                        if {$filepath ne ""} {
+                            puts -nonewline "\033\[2J\033\[H"
+                            set word_data [get-word-occurrences $filepath]
+                            if {[llength $word_data] == 0} {
+                                tui-move 0 0
+                                puts -nonewline "No words found"
+                                puts -nonewline "\033\[K"
+                            } else {
+                                set word_lines [list]
+                                lappend word_lines "Word Occurrences - [file tail $filepath]"
+                                lappend word_lines ""
+                                lappend word_lines [format "%-30s %s" "Word" "Count"]
+                                lappend word_lines [string repeat "-" 37]
+                                foreach pair $word_data {
+                                    lassign $pair word count
+                                    lappend word_lines [format "%-30s %6d" $word $count]
+                                }
+                                set display_lines [expr {min([llength $word_lines], $rows - 1)}]
+                                for {set _i 0} {$_i < $display_lines} {incr _i} {
+                                    tui-move $_i 0
+                                    set line [lindex $word_lines $_i]
+                                    puts -nonewline [string range $line 0 [expr {$cols-1}]]
+                                    puts -nonewline "\033\[K"
+                                }
+                            }
+                            tui-bar [expr {$rows-1}] "Press any key to continue (ESC: exit)" "" $cols
+                            flush stdout
+                            set _key [tui-getch 0]
+                            if {$_key eq "ESC"} {
+                                set ::tui_cmd_mode 0
+                                set message ""
+                                set msg_time [clock seconds]
+                            }
+                        }
+                        set clear_sel 0
+                    } else {
+                        # Any other key does nothing, stay in command mode
+                        set key ""
+                        set clear_sel 0
+                    }
+                } elseif {$key eq "ESC"} {
+                    # Enter command mode with ESC (when not already in it)
+                    set ::tui_cmd_mode 1
+                    set message "ESC: exit mode  t: timer  q: quit  s: stats  w: words  (other: back)"
+                    set msg_time [clock seconds]
+                    set clear_sel 0
+                } elseif {$key eq $::cfg_tui_close} {
                     if {$dirty} {
                         lassign [tui-size] rows cols
                         set r [tui-yesnocancel [t ed_save_before_tui] $rows $cols]
@@ -3064,6 +3361,12 @@ proc tui-editor {filepath} {
                     }
                     tui-help-dialog $rows $cols $wc_cached $cc_cached $_sel_wc $_sel_cc
                     set clear_sel 0
+                } elseif {$key eq "ALT-t"} {
+                    if {$::timer_active} { timer-pause } else { timer-start }
+                    set clear_sel 0
+                } elseif {$key eq "ALT-T"} {
+                    timer-reset
+                    set clear_sel 0
                 } elseif {[string match "F*" $key]} {                          ;# ignore unknown F-keys
                     set clear_sel 0
                 } elseif {[string length $key] >= 1 && ($c eq "" || $c >= 32)} {
@@ -3132,6 +3435,117 @@ proc tui-word-occurrences {fpath rows cols} {
                 default {
                     if {$_k eq $::cfg_tui_help} { break }
                 }
+            }
+        }
+        puts -nonewline "\033\[2J"
+    }
+}
+
+proc tui-timer-alert {} {
+    bell
+    lassign [tui-size] rows cols
+    while 1 {
+        puts -nonewline "\033\[2J"
+        set lines {}
+        set empty_lines [expr {($rows - 3) / 2}]
+        for {set i 0} {$i < $empty_lines} {incr i} { lappend lines "" }
+        lappend lines ""
+        lappend lines [string repeat " " [expr {($cols - 16) / 2}]] "TIMER FINISHED!"
+        lappend lines ""
+        for {set i 0} {$i < $empty_lines} {incr i} { lappend lines "" }
+
+        for {set _i 0} {$_i < [llength $lines]} {incr _i} {
+            tui-move $_i 0
+            puts -nonewline [string range [lindex $lines $_i] 0 [expr {$cols-1}]]
+            puts -nonewline "\033\[K"
+        }
+        tui-bar [expr {$rows-1}] "Press any key to continue" "" $cols
+        flush stdout
+
+        set key [tui-getch]
+        if {$key ne ""} break
+    }
+    puts -nonewline "\033\[2J"
+}
+
+proc tui-config-dialog {rows cols} {
+    catch {
+        set timer_dur $::cfg_timer_duration
+        set timer_snd $::cfg_timer_sound
+        set timer_alrt $::cfg_timer_alert
+        set timer_typ $::cfg_timer_type
+        set chrono_shw $::cfg_chrono_show
+        set sel 0
+        set max_fields 5
+
+        while 1 {
+            puts -nonewline "\033\[2J"
+
+            set _lines {}
+            lappend _lines "  Config - Timer / Stopwatch"
+            lappend _lines ""
+            lappend _lines "  Timer"
+            set _dur_mark [expr {$sel == 0 ? ">" : " "}]
+            lappend _lines "  $_dur_mark Duration: ${timer_dur}'00\""
+            set _type_mark [expr {$sel == 1 ? ">" : " "}]
+            lappend _lines "  $_type_mark Type: $timer_typ"
+            set _snd_mark [expr {$sel == 2 ? ">" : " "}]
+            set _snd_txt [expr {$timer_snd ? "on" : "off"}]
+            lappend _lines "  $_snd_mark Sound at end: \[$_snd_txt\]"
+            set _alrt_mark [expr {$sel == 3 ? ">" : " "}]
+            set _alrt_txt [expr {$timer_alrt ? "on" : "off"}]
+            lappend _lines "  $_alrt_mark Alert message: \[$_alrt_txt\]"
+            lappend _lines ""
+            lappend _lines "  Stopwatch"
+            set _shw_mark [expr {$sel == 4 ? ">" : " "}]
+            set _shw_txt [expr {$chrono_shw ? "yes" : "no"}]
+            lappend _lines "  $_shw_mark Show in status bar: \[$_shw_txt\]"
+            lappend _lines ""
+
+            for {set _i 0} {$_i < [llength $_lines]} {incr _i} {
+                tui-move $_i 0
+                puts -nonewline [string range [lindex $_lines $_i] 0 [expr {$cols-1}]]
+                puts -nonewline "\033\[K"
+            }
+
+            set hint "UP/DOWN nav  LEFT/RIGHT adjust/toggle  s:save  q:cancel"
+            tui-bar [expr {$rows-1}] $hint "" $cols
+            flush stdout
+
+            set key [tui-getch]
+            switch -- $key {
+                UP - k { if {$sel > 0} { incr sel -1 } }
+                DOWN - j { if {$sel < [expr {$max_fields-1}]} { incr sel 1 } }
+                LEFT {
+                    if {$sel == 0 && $timer_dur > 1} { incr timer_dur -1 }
+                    if {$sel == 1} { set timer_typ [expr {$timer_typ eq "countdown" ? "stopwatch" : "countdown"}] }
+                    if {$sel == 2} { set timer_snd [expr {!$timer_snd}] }
+                    if {$sel == 3} { set timer_alrt [expr {!$timer_alrt}] }
+                    if {$sel == 4} { set chrono_shw [expr {!$chrono_shw}] }
+                }
+                RIGHT {
+                    if {$sel == 0 && $timer_dur < 120} { incr timer_dur }
+                    if {$sel == 1} { set timer_typ [expr {$timer_typ eq "countdown" ? "stopwatch" : "countdown"}] }
+                    if {$sel == 2} { set timer_snd [expr {!$timer_snd}] }
+                    if {$sel == 3} { set timer_alrt [expr {!$timer_alrt}] }
+                    if {$sel == 4} { set chrono_shw [expr {!$chrono_shw}] }
+                }
+                " " {
+                    if {$sel == 1} { set timer_typ [expr {$timer_typ eq "countdown" ? "stopwatch" : "countdown"}] }
+                    if {$sel == 2} { set timer_snd [expr {!$timer_snd}] }
+                    if {$sel == 3} { set timer_alrt [expr {!$timer_alrt}] }
+                    if {$sel == 4} { set chrono_shw [expr {!$chrono_shw}] }
+                }
+                s {
+                    set ::cfg_timer_duration $timer_dur
+                    set ::cfg_timer_type $timer_typ
+                    set ::cfg_timer_sound $timer_snd
+                    set ::cfg_timer_alert $timer_alrt
+                    set ::cfg_chrono_show $chrono_shw
+                    ini-save
+                    break
+                }
+                q - "\x1B" { break }
             }
         }
         puts -nonewline "\033\[2J"
