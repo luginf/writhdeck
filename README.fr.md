@@ -30,7 +30,11 @@ Tcl/Tk 8.6+ doit être installé sur votre système :
 | Debian/Ubuntu | `apt install tk`                                                                                 |
 | Mac OS        | `brew install tcl-tk`                                                                            |
 | Windows       | [tcl-lang.org/software/tcltk/bindist.html](https://www.tcl-lang.org/software/tcltk/bindist.html) |
-| Haiku OS      | `pkgman install tcl tk`                                                                          |
+| Haiku OS      | `pkgman install tcl tk`  
+
+
+Vous pouvez également obtenir des binaires pour Windows, Linux et Mac OS sur https://farvardin.itch.io/writhdeck
+                                                                        |
 
 ## Démarrage rapide
 

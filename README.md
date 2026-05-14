@@ -32,6 +32,10 @@ Requires Tcl/Tk 8.6+ on your system:
 | Windows       | [tcl-lang.org/software/tcltk/bindist.html](https://www.tcl-lang.org/software/tcltk/bindist.html) |
 | Haiku OS      | `pkgman install tcl tk`                                                                          |
 
+
+You can also get bundles for Windows, Linux and Mac OS on https://farvardin.itch.io/writhdeck
+
+
 ## Quick Start
 
 ```sh
