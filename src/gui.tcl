@@ -430,6 +430,7 @@ proc file-stats-dialog {fpath} {
     }
 }
 
+
 proc confirm-dialog {msg {default yes}} {
     set w .cdlg
     catch {destroy $w}
@@ -850,7 +851,7 @@ proc gui-status-state {} {
 proc gui-status-update {} {
     if {$::gui_cmd_mode} {
         set ::ed_bar_left ""
-        set ::ed_bar_center "ESC: exit mode  t: timer  q: quit  s: stats"
+        set ::ed_bar_center "ESC: exit mode  t: timer  q: quit  s: stats  w: words"
         set ::ed_bar_right ""
         return
     }
@@ -1648,6 +1649,13 @@ proc gui-handle-keypress {key} {
             set ::gui_cmd_mode 0
             ed-status
             return 1
+        } elseif {$key eq "w" || $key eq "W"} {
+            if {$::filename ne ""} {
+                word-occurrences-dialog $::filename
+            }
+            set ::gui_cmd_mode 0
+            ed-status
+            return 1
         } elseif {$key eq "q" || $key eq "Q"} {
             set ::gui_cmd_mode 0
             ed-status
@@ -1737,6 +1745,22 @@ bind .ed.t <S> {
     if {![gui-handle-keypress S]} {
         # Normal 'S' input
         %W insert insert S
+        ed-status
+    }
+    break
+}
+bind .ed.t <w> {
+    if {![gui-handle-keypress w]} {
+        # Normal 'w' input
+        %W insert insert w
+        ed-status
+    }
+    break
+}
+bind .ed.t <W> {
+    if {![gui-handle-keypress W]} {
+        # Normal 'W' input
+        %W insert insert W
         ed-status
     }
     break
@@ -2189,6 +2213,7 @@ proc profile-config-dialog {} {
 }
 
 proc timer-alert-gui {} {
+    bell
     set w .timer_alert
     catch {destroy $w}
     toplevel $w

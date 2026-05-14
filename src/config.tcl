@@ -185,11 +185,10 @@ proc marker-val {v} { expr {$v eq "0" ? "" : $v} }
 proc timer-alert {} {
     if {$::timer_alert_shown} return
     set ::timer_alert_shown 1
-    if {$::cfg_timer_sound} { puts -nonewline "\a"; flush stdout }
     if {!$::no_gui} {
-        catch { timer-alert-gui }
+        if {$::cfg_timer_sound} { catch { timer-alert-gui } }
     } else {
-        catch { tui-timer-alert }
+        if {$::cfg_timer_sound} { catch { tui-timer-alert } }
     }
 }
 

@@ -467,11 +467,10 @@ proc marker-val {v} { expr {$v eq "0" ? "" : $v} }
 proc timer-alert {} {
     if {$::timer_alert_shown} return
     set ::timer_alert_shown 1
-    if {$::cfg_timer_sound} { puts -nonewline "\a"; flush stdout }
     if {!$::no_gui} {
-        catch { timer-alert-gui }
+        if {$::cfg_timer_sound} { catch { timer-alert-gui } }
     } else {
-        catch { tui-timer-alert }
+        if {$::cfg_timer_sound} { catch { tui-timer-alert } }
     }
 }
 
@@ -2709,6 +2708,7 @@ proc file-stats-dialog {fpath} {
     }
 }
 
+
 proc confirm-dialog {msg {default yes}} {
     set w .cdlg
     catch {destroy $w}
@@ -3129,7 +3129,7 @@ proc gui-status-state {} {
 proc gui-status-update {} {
     if {$::gui_cmd_mode} {
         set ::ed_bar_left ""
-        set ::ed_bar_center "ESC: exit mode  t: timer  q: quit  s: stats"
+        set ::ed_bar_center "ESC: exit mode  t: timer  q: quit  s: stats  w: words"
         set ::ed_bar_right ""
         return
     }
@@ -3927,6 +3927,13 @@ proc gui-handle-keypress {key} {
             set ::gui_cmd_mode 0
             ed-status
             return 1
+        } elseif {$key eq "w" || $key eq "W"} {
+            if {$::filename ne ""} {
+                word-occurrences-dialog $::filename
+            }
+            set ::gui_cmd_mode 0
+            ed-status
+            return 1
         } elseif {$key eq "q" || $key eq "Q"} {
             set ::gui_cmd_mode 0
             ed-status
@@ -4016,6 +4023,22 @@ bind .ed.t <S> {
     if {![gui-handle-keypress S]} {
         # Normal 'S' input
         %W insert insert S
+        ed-status
+    }
+    break
+}
+bind .ed.t <w> {
+    if {![gui-handle-keypress w]} {
+        # Normal 'w' input
+        %W insert insert w
+        ed-status
+    }
+    break
+}
+bind .ed.t <W> {
+    if {![gui-handle-keypress W]} {
+        # Normal 'W' input
+        %W insert insert W
         ed-status
     }
     break
@@ -4468,6 +4491,7 @@ proc profile-config-dialog {} {
 }
 
 proc timer-alert-gui {} {
+    bell
     set w .timer_alert
     catch {destroy $w}
     toplevel $w
@@ -6376,12 +6400,6 @@ proc tui-editor {filepath} {
                         set dirty 0; set message [t ed_saved]; set msg_time [clock seconds]
                     }
                     set clear_sel 0
-                } elseif {$key eq "ESC"} {
-                    # Enter command mode with ESC
-                    set ::tui_cmd_mode 1
-                    set message "ESC: exit mode  t: timer  q: quit  s: stats  (other: back)"
-                    set msg_time [clock seconds]
-                    set clear_sel 0
                 } elseif {$::tui_cmd_mode} {
                     # In command mode
                     if {$key eq "ESC"} {
@@ -6421,18 +6439,14 @@ proc tui-editor {filepath} {
                             set ::session_file ""; return
                         }
                     } elseif {$key eq "s"} {
-                        # Show statistics, exit command mode
-                        set ::tui_cmd_mode 0
+                        # Show statistics
                         lassign [tui-size] rows cols
                         if {$filepath ne ""} {
+                            puts -nonewline "\033\[2J\033\[H"
                             if {![dict exists $::daily_data $filepath] || [dict size [dict get $::daily_data $filepath]] == 0} {
-                                puts -nonewline "\033\[2J"
-                                tui-move 1 2
+                                tui-move 0 0
                                 puts -nonewline [t br_stats_no_data]
                                 puts -nonewline "\033\[K"
-                                tui-bar [expr {$rows-1}] "Press any key to continue" "" $cols
-                                flush stdout
-                                set key [tui-getch]
                             } else {
                                 set fdata [dict get $::daily_data $filepath]
                                 set stat_lines [list]
@@ -6443,27 +6457,73 @@ proc tui-editor {filepath} {
                                 dict for {date count} $fdata {
                                     lappend stat_lines [format "%-14s %5d" $date $count]
                                 }
-                                puts -nonewline "\033\[2J"
-                                set display_lines [expr {min([llength $stat_lines], $rows - 2)}]
+                                set display_lines [expr {min([llength $stat_lines], $rows - 1)}]
                                 for {set _i 0} {$_i < $display_lines} {incr _i} {
-                                    tui-move $_i 2
+                                    tui-move $_i 0
                                     set line [lindex $stat_lines $_i]
-                                    puts -nonewline [string range $line 0 [expr {$cols-5}]]
+                                    puts -nonewline [string range $line 0 [expr {$cols-1}]]
                                     puts -nonewline "\033\[K"
                                 }
-                                tui-bar [expr {$rows-1}] "Press any key to continue" "" $cols
-                                flush stdout
-                                set key [tui-getch]
+                            }
+                            tui-bar [expr {$rows-1}] "Press any key to continue (ESC: exit)" "" $cols
+                            flush stdout
+                            set _key [tui-getch 0]
+                            if {$_key eq "ESC"} {
+                                set ::tui_cmd_mode 0
+                                set message ""
+                                set msg_time [clock seconds]
                             }
                         }
-                        set message ""
-                        set msg_time [clock seconds]
+                        set clear_sel 0
+                    } elseif {$key eq "w"} {
+                        # Show word occurrences
+                        lassign [tui-size] rows cols
+                        if {$filepath ne ""} {
+                            puts -nonewline "\033\[2J\033\[H"
+                            set word_data [get-word-occurrences $filepath]
+                            if {[llength $word_data] == 0} {
+                                tui-move 0 0
+                                puts -nonewline "No words found"
+                                puts -nonewline "\033\[K"
+                            } else {
+                                set word_lines [list]
+                                lappend word_lines "Word Occurrences - [file tail $filepath]"
+                                lappend word_lines ""
+                                lappend word_lines [format "%-30s %s" "Word" "Count"]
+                                lappend word_lines [string repeat "-" 37]
+                                foreach pair $word_data {
+                                    lassign $pair word count
+                                    lappend word_lines [format "%-30s %6d" $word $count]
+                                }
+                                set display_lines [expr {min([llength $word_lines], $rows - 1)}]
+                                for {set _i 0} {$_i < $display_lines} {incr _i} {
+                                    tui-move $_i 0
+                                    set line [lindex $word_lines $_i]
+                                    puts -nonewline [string range $line 0 [expr {$cols-1}]]
+                                    puts -nonewline "\033\[K"
+                                }
+                            }
+                            tui-bar [expr {$rows-1}] "Press any key to continue (ESC: exit)" "" $cols
+                            flush stdout
+                            set _key [tui-getch 0]
+                            if {$_key eq "ESC"} {
+                                set ::tui_cmd_mode 0
+                                set message ""
+                                set msg_time [clock seconds]
+                            }
+                        }
                         set clear_sel 0
                     } else {
                         # Any other key does nothing, stay in command mode
                         set key ""
                         set clear_sel 0
                     }
+                } elseif {$key eq "ESC"} {
+                    # Enter command mode with ESC (when not already in it)
+                    set ::tui_cmd_mode 1
+                    set message "ESC: exit mode  t: timer  q: quit  s: stats  w: words  (other: back)"
+                    set msg_time [clock seconds]
+                    set clear_sel 0
                 } elseif {$key eq $::cfg_tui_close} {
                     if {$dirty} {
                         lassign [tui-size] rows cols
@@ -6711,6 +6771,7 @@ proc tui-word-occurrences {fpath rows cols} {
 }
 
 proc tui-timer-alert {} {
+    bell
     lassign [tui-size] rows cols
     while 1 {
         puts -nonewline "\033\[2J"
