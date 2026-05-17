@@ -1010,7 +1010,6 @@ proc keys-init {} {
     }
     set ::cfg_key_error [join $conflicts "  "]
 }
-keys-init
 
 # --- i18n --------------------------------------------------------------------
 set ::i18n [dict create]
@@ -2014,6 +2013,7 @@ dict set ::i18n no {
 # --- initialization (run after schemes and i18n are loaded) -----------
 schemes-init
 ini-load
+keys-init
 
 # Apply docs_dir from config (must be after ini-load)
 if {$::cfg_docs_dir ne ""} {
@@ -3507,16 +3507,18 @@ proc search-update {} {
     set ::search_count ""
     if {$term eq ""} return
     set ::search_term $term
-    set count 0; set pos 1.0
-    while 1 {
+    set count 0; set pos 1.0; set len 1
+    set cap 500
+    while {$count < $cap} {
         set pos [.ed.t search -nocase -forwards -count len -- $term $pos end]
         if {$pos eq ""} break
         .ed.t tag add found $pos "$pos + $len chars"
         incr count; set pos "$pos + $len chars"
     }
     .ed.t tag configure found -background "#5a3a00" -foreground "#ffdd88"
+    set capped [expr {$count >= $cap}]
     set plural [expr {$count != 1 ? "s" : ""}]
-    set ::search_count " $count match${plural}"
+    set ::search_count " $count match${plural}[expr {$capped ? {+} : {}}]"
     set pos [.ed.t search -nocase -forwards -- $term [$t index insert] end]
     if {$pos eq ""} { set pos [.ed.t search -nocase -forwards -- $term 1.0 end] }
     if {$pos ne ""} { $t mark set insert $pos; $t see insert }

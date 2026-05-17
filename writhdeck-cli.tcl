@@ -963,7 +963,6 @@ proc keys-init {} {
     }
     set ::cfg_key_error [join $conflicts "  "]
 }
-keys-init
 
 # --- i18n --------------------------------------------------------------------
 set ::i18n [dict create]
@@ -1335,6 +1334,7 @@ dict set ::i18n fr {
 # --- initialization (run after schemes and i18n are loaded) -----------
 schemes-init
 ini-load
+keys-init
 
 # Apply docs_dir from config (must be after ini-load)
 if {$::cfg_docs_dir ne ""} {

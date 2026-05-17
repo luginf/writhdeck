@@ -728,7 +728,6 @@ proc keys-init {} {
     }
     set ::cfg_key_error [join $conflicts "  "]
 }
-keys-init
 
 # --- i18n --------------------------------------------------------------------
 set ::i18n [dict create]

@@ -1,6 +1,7 @@
 # --- initialization (run after schemes and i18n are loaded) -----------
 schemes-init
 ini-load
+keys-init
 
 # Apply docs_dir from config (must be after ini-load)
 if {$::cfg_docs_dir ne ""} {
