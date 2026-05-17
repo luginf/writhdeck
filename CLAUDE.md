@@ -160,7 +160,7 @@ Section order: `DOCS_DIR_DEFAULT` → `DOCS_DIR` (if custom) → Favorites → R
 
 ## Timer and stopwatch
 
-Configurable countdown timer and stopwatch accessible via ESC modal mode or ALT+t keybinding:
+Configurable countdown timer and stopwatch accessible via modal command mode or ALT+t keybinding:
 
 **Configuration** (`src/config.tcl`):
 - `cfg_timer_duration` — default duration in minutes (25 default)
@@ -201,24 +201,26 @@ TUI dialogs (config, help, stats, words) must not clear the screen on each redra
 
 **Browser `i` key (TUI)** — calls `tui-info-dialog` (persistent overlay) instead of setting the `msg` variable. `msg` is cleared after one loop tick; for persistent display an overlay is required.
 
-## Modal command mode (ESC key)
+## Modal command mode
 
-Editor mode activated by pressing ESC in editor (GUI or TUI). Allows quick access to common functions without breaking focus from text.
+Editor mode activated by pressing the command-mode key (default: ESC) in the editor (GUI or TUI). Allows quick access to common functions without breaking focus from text.
+
+**Configurable key** — set `key_cmd_mode` in `[keys]` section of `~/.writhdeck.ini` (default: `Escape`). Uses the same Tk key name format as other keys (`Control-e`, `F12`, etc.). The INI value maps through `tk-key-to-tui` → `$::cfg_tui_cmd_mode` (TUI) and `<$::cfg_key_cmd_mode>` binding (GUI). Label for display: `$::cfg_lbl_cmd_mode`.
 
 **Modal mode features:**
-- **ESC** — toggle modal on/off (double ESC exits)
+- **cmd-mode key** — toggle modal on/off (press again to exit)
 - **t** — toggle timer on/off
-- **s** — show daily writing statistics — calls `tui-stats-dialog` (same overlay as browser `s`)
+- **s** — show daily writing statistics (calls `daily-update` first to include unsaved words, then `tui-stats-dialog` / `file-stats-dialog`)
 - **w** — show word occurrences — calls `tui-word-occurrences` (same overlay as browser `w`)
 - **q** — quit/close current file (with save prompt if dirty)
 - **Other keys** — exit modal, revert to normal text entry
 
 **Implementation details:**
 - State tracked by `$::gui_cmd_mode` (GUI) and `$::tui_cmd_mode` (TUI)
-- Status message displayed in `::ed_bar_center` (GUI) or message line (TUI)
-- After closing `s`/`w` overlay: `set wrap_dirty 1` forces editor redraw
-- Keybindings check modal state before processing normal input
-- ESC logic in TUI editor: first check if already in modal mode (prevents accidental re-entry)
+- Status message: `"$::cfg_lbl_cmd_mode: exit mode  t: timer  q: quit  s: stats  w: words"`
+- GUI binding: `bind .ed.t <$::cfg_key_cmd_mode>` (dynamic, uses configured key)
+- TUI: `$key eq $::cfg_tui_cmd_mode` in editor key handler
+- After closing `s`/`w` overlay: `set wrap_dirty 1` forces editor redraw (TUI)
 
 ## Known limitations
 

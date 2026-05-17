@@ -448,6 +448,7 @@ set ::cfg_key_fullscreen   "Alt-Return"
 set ::cfg_key_split        "F3"
 set ::cfg_key_split_focus  "F4"
 set ::cfg_key_timer        "Alt-t"
+set ::cfg_key_cmd_mode     "Escape"
 set ::cfg_key_error        ""
 set ::cfg_timer_duration   25
 set ::cfg_timer_sound      1
@@ -732,6 +733,7 @@ proc ini-load {} {
                 key_split        { set ::cfg_key_split        $v }
                 key_split_focus  { set ::cfg_key_split_focus  $v }
                 key_timer        { set ::cfg_key_timer        $v }
+                key_cmd_mode     { set ::cfg_key_cmd_mode     $v }
                 toc_key          { set ::cfg_key_toc          $v }
                 ln_key           { set ::cfg_key_line_numbers $v }
                 fullscreen_key   { set ::cfg_key_fullscreen   $v }
@@ -824,6 +826,7 @@ proc ini-save {} {
     puts $fh "key_split_focus  = $::cfg_key_split_focus"
     puts $fh "key_timer        = $::cfg_key_timer"
     puts $fh "key_dark_toggle  = $::cfg_key_dark_toggle"
+    puts $fh "key_cmd_mode     = $::cfg_key_cmd_mode"
     puts $fh ""
     puts $fh "\[profiles\]"
     puts $fh {# Each [name] block defines a profile (display, behaviour and status bar settings).}
@@ -929,6 +932,7 @@ proc tk-key-to-tui {key} {
         return [format %c [expr {$code - 96}]]
     }
     if {$k eq "control-space"} { return "\x00" }
+    if {$k eq "escape"}        { return "ESC" }
     if {[regexp {^f(\d+)$} $k -> n]} { return "F$n" }
     return $key
 }
@@ -938,6 +942,7 @@ proc key-label {key} {
     if {[regexp -nocase {^control-([a-z])$} $key -> l]} { return "^[string toupper $l]" }
     if {[string tolower $key] eq "control-space"}        { return "^SPC" }
     if {[string tolower $key] eq "control-shift-space"}  { return "^+SPC" }
+    if {[string tolower $key] eq "escape"}               { return "ESC" }
     if {[regexp -nocase {^f(\d+)$} $key -> n]}          { return "F$n" }
     return $key
 }
@@ -965,6 +970,7 @@ proc keys-init {} {
     set ::cfg_tui_dark_toggle  [tk-key-to-tui $::cfg_key_dark_toggle]
     set ::cfg_tui_split        [tk-key-to-tui $::cfg_key_split]
     set ::cfg_tui_timer        [tk-key-to-tui $::cfg_key_timer]
+    set ::cfg_tui_cmd_mode     [tk-key-to-tui $::cfg_key_cmd_mode]
     # labels for UI display
     set ::cfg_lbl_save       [key-label $::cfg_key_save]
     set ::cfg_lbl_close      [key-label $::cfg_key_close]
@@ -984,6 +990,7 @@ proc keys-init {} {
     set ::cfg_lbl_typewriter [key-label $::cfg_key_typewriter]
     set ::cfg_lbl_split      [key-label $::cfg_key_split]
     set ::cfg_lbl_split_focus [key-label $::cfg_key_split_focus]
+    set ::cfg_lbl_cmd_mode    [key-label $::cfg_key_cmd_mode]
     # conflict detection
     set pairs [list \
         key_save $::cfg_tui_save \
@@ -2711,8 +2718,8 @@ proc file-stats-dialog {fpath} {
         set msg "Daily writing stats for: [string map [list $::HOME_DIR ~] $path]\n\n"
         append msg "Date          Words\n"
         append msg "----          -----\n"
-        dict for {date count} $fdata {
-            append msg [format "%-14s %5d\n" $date $count]
+        foreach date [lsort -decreasing [dict keys $fdata]] {
+            append msg [format "%-14s %5d\n" $date [dict get $fdata $date]]
         }
         info-dialog $msg
     }
@@ -2861,10 +2868,12 @@ proc br-toggle-favorite {} {
     br-refresh
 }
 
-proc br-stats {} {
-    set e [br-selected]
-    if {![llength $e]} return
-    set path [file join [lindex $e 1] [lindex $e 2]]
+proc br-stats {{path ""}} {
+    if {$path eq ""} {
+        set e [br-selected]
+        if {![llength $e]} return
+        set path [file join [lindex $e 1] [lindex $e 2]]
+    }
     if {!$::state_cache_valid} { state-load }
     if {![dict exists $::daily_data $path] || [dict size [dict get $::daily_data $path]] == 0} {
         info-dialog [t br_stats_no_data]
@@ -3149,7 +3158,7 @@ proc gui-status-state {} {
 proc gui-status-update {} {
     if {$::gui_cmd_mode} {
         set ::ed_bar_left ""
-        set ::ed_bar_center "ESC: exit mode  t: timer  q: quit  s: stats  w: words"
+        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t: timer  q: quit  s: stats  w: words"
         set ::ed_bar_right ""
         return
     }
@@ -3942,7 +3951,8 @@ proc gui-handle-keypress {key} {
             return 1
         } elseif {$key eq "s" || $key eq "S"} {
             if {$::filename ne ""} {
-                file-stats-dialog $::filename
+                daily-update [llength [regexp -all -inline {\S+} [[primary-ed] get 1.0 end-1c]]]
+                br-stats $::filename
             }
             set ::gui_cmd_mode 0
             ed-status
@@ -3972,7 +3982,7 @@ proc gui-handle-keypress {key} {
     return 0
 }
 
-bind .ed.t <Escape> {
+bind .ed.t <$::cfg_key_cmd_mode> {
     gui-handle-esc
     break
 }
@@ -6380,6 +6390,8 @@ proc tui-editor {filepath} {
                         }
                     } else {
                         tui-save-file $filepath $lines
+                        if {$wc_dirty} { tui-compute-wc }
+                        daily-update $wc_cached
                         set file_mtime_known [file mtime $filepath]
                         cursor-put $filepath $cy $cx
                         set dirty 0; set message [t ed_saved]; set msg_time [clock seconds]
@@ -6387,8 +6399,7 @@ proc tui-editor {filepath} {
                     set clear_sel 0
                 } elseif {$::tui_cmd_mode} {
                     # In command mode
-                    if {$key eq "ESC"} {
-                        # Double ESC exits command mode only
+                    if {$key eq $::cfg_tui_cmd_mode} {
                         set ::tui_cmd_mode 0
                         set message ""
                         set msg_time [clock seconds]
@@ -6426,6 +6437,8 @@ proc tui-editor {filepath} {
                     } elseif {$key eq "s"} {
                         lassign [tui-size] rows cols
                         if {$filepath ne ""} {
+                            if {$wc_dirty} { tui-compute-wc }
+                            daily-update $wc_cached
                             set _r [tui-stats-dialog $filepath $rows $cols]
                             if {$_r ne ""} { set message $_r; set msg_time [clock seconds] }
                         }
@@ -6449,10 +6462,9 @@ proc tui-editor {filepath} {
                         set msg_time [clock seconds]
                         set clear_sel 0
                     }
-                } elseif {$key eq "ESC"} {
-                    # Enter command mode with ESC (when not already in it)
+                } elseif {$key eq $::cfg_tui_cmd_mode} {
                     set ::tui_cmd_mode 1
-                    set message "ESC: exit mode  t: timer  q: quit  s: stats  w: words"
+                    set message "$::cfg_lbl_cmd_mode: exit mode  t: timer  q: quit  s: stats  w: words"
                     set msg_time [clock seconds]
                     set clear_sel 0
                 } elseif {$key eq $::cfg_tui_close} {

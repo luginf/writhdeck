@@ -1433,6 +1433,8 @@ proc tui-editor {filepath} {
                         }
                     } else {
                         tui-save-file $filepath $lines
+                        if {$wc_dirty} { tui-compute-wc }
+                        daily-update $wc_cached
                         set file_mtime_known [file mtime $filepath]
                         cursor-put $filepath $cy $cx
                         set dirty 0; set message [t ed_saved]; set msg_time [clock seconds]
@@ -1440,8 +1442,7 @@ proc tui-editor {filepath} {
                     set clear_sel 0
                 } elseif {$::tui_cmd_mode} {
                     # In command mode
-                    if {$key eq "ESC"} {
-                        # Double ESC exits command mode only
+                    if {$key eq $::cfg_tui_cmd_mode} {
                         set ::tui_cmd_mode 0
                         set message ""
                         set msg_time [clock seconds]
@@ -1479,6 +1480,8 @@ proc tui-editor {filepath} {
                     } elseif {$key eq "s"} {
                         lassign [tui-size] rows cols
                         if {$filepath ne ""} {
+                            if {$wc_dirty} { tui-compute-wc }
+                            daily-update $wc_cached
                             set _r [tui-stats-dialog $filepath $rows $cols]
                             if {$_r ne ""} { set message $_r; set msg_time [clock seconds] }
                         }
@@ -1502,10 +1505,9 @@ proc tui-editor {filepath} {
                         set msg_time [clock seconds]
                         set clear_sel 0
                     }
-                } elseif {$key eq "ESC"} {
-                    # Enter command mode with ESC (when not already in it)
+                } elseif {$key eq $::cfg_tui_cmd_mode} {
                     set ::tui_cmd_mode 1
-                    set message "ESC: exit mode  t: timer  q: quit  s: stats  w: words"
+                    set message "$::cfg_lbl_cmd_mode: exit mode  t: timer  q: quit  s: stats  w: words"
                     set msg_time [clock seconds]
                     set clear_sel 0
                 } elseif {$key eq $::cfg_tui_close} {

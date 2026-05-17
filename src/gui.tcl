@@ -426,8 +426,8 @@ proc file-stats-dialog {fpath} {
         set msg "Daily writing stats for: [string map [list $::HOME_DIR ~] $path]\n\n"
         append msg "Date          Words\n"
         append msg "----          -----\n"
-        dict for {date count} $fdata {
-            append msg [format "%-14s %5d\n" $date $count]
+        foreach date [lsort -decreasing [dict keys $fdata]] {
+            append msg [format "%-14s %5d\n" $date [dict get $fdata $date]]
         }
         info-dialog $msg
     }
@@ -576,10 +576,12 @@ proc br-toggle-favorite {} {
     br-refresh
 }
 
-proc br-stats {} {
-    set e [br-selected]
-    if {![llength $e]} return
-    set path [file join [lindex $e 1] [lindex $e 2]]
+proc br-stats {{path ""}} {
+    if {$path eq ""} {
+        set e [br-selected]
+        if {![llength $e]} return
+        set path [file join [lindex $e 1] [lindex $e 2]]
+    }
     if {!$::state_cache_valid} { state-load }
     if {![dict exists $::daily_data $path] || [dict size [dict get $::daily_data $path]] == 0} {
         info-dialog [t br_stats_no_data]
@@ -864,7 +866,7 @@ proc gui-status-state {} {
 proc gui-status-update {} {
     if {$::gui_cmd_mode} {
         set ::ed_bar_left ""
-        set ::ed_bar_center "ESC: exit mode  t: timer  q: quit  s: stats  w: words"
+        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t: timer  q: quit  s: stats  w: words"
         set ::ed_bar_right ""
         return
     }
@@ -1657,7 +1659,8 @@ proc gui-handle-keypress {key} {
             return 1
         } elseif {$key eq "s" || $key eq "S"} {
             if {$::filename ne ""} {
-                file-stats-dialog $::filename
+                daily-update [llength [regexp -all -inline {\S+} [[primary-ed] get 1.0 end-1c]]]
+                br-stats $::filename
             }
             set ::gui_cmd_mode 0
             ed-status
@@ -1687,7 +1690,7 @@ proc gui-handle-keypress {key} {
     return 0
 }
 
-bind .ed.t <Escape> {
+bind .ed.t <$::cfg_key_cmd_mode> {
     gui-handle-esc
     break
 }
