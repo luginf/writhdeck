@@ -6,7 +6,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 #     writhdeck.tcl 
 #     
-#  ~  Tcl/Tk 8.6 (console/GUI) text editor for writerdecks ~
+#  ~  Tcl/Tk 8.5+ (console/GUI) text editor for writerdecks ~
 #
 #     Usage: tclsh writhdeck.tcl [--no-gui] [filename]
 # 
@@ -104,7 +104,8 @@ if {!$::no_gui} {
 }
 
 set ::HOME_DIR [expr {[info exists ::env(HOME)] ? $::env(HOME) : \
-    ([info exists ::env(USERPROFILE)] ? $::env(USERPROFILE) : [file normalize ~])}]
+    ([info exists ::env(USERPROFILE)] ? $::env(USERPROFILE) : \
+    [expr {![catch {file home} _h] ? $_h : [file normalize ~]}])}]
 
 # Tcl 9 no longer expands ~ in file normalize; this proc handles it explicitly.
 proc tilde-expand {path} {

@@ -6,7 +6,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 #     writhdeck.tcl (CLI-only build)
 #
-#  ~  Tcl/Tk 8.6 (console/TUI) text editor for writerdecks ~
+#  ~  Tcl/Tk 8.5+ (console/TUI) text editor for writerdecks ~
 #
 #     Usage: tclsh writhdeck-cli.tcl [filename]
 #
@@ -57,7 +57,8 @@ unset _f
 set ::argc [llength $::argv]
 
 set ::HOME_DIR [expr {[info exists ::env(HOME)] ? $::env(HOME) : \
-    ([info exists ::env(USERPROFILE)] ? $::env(USERPROFILE) : [file normalize ~])}]
+    ([info exists ::env(USERPROFILE)] ? $::env(USERPROFILE) : \
+    [expr {![catch {file home} _h] ? $_h : [file normalize ~]}])}]
 
 # Tcl 9 no longer expands ~ in file normalize; this proc handles it explicitly.
 proc tilde-expand {path} {
@@ -359,6 +360,8 @@ set ::cfg_bg_sel_alt         "#e6ddb9"
 set ::cfg_color_heading_alt  "#b58900"
 set ::cfg_color_comment_alt  "#aaaaaa"
 set ::cfg_color_markup_alt   "#2a7090"
+set ::cfg_bg2                "#1a1a1a"
+set ::cfg_bg2_alt            "#fdf6e3"
 # dark_mode: 0 = light (alt colors), 1 = dark (primary colors)
 set ::cfg_dark_mode          1
 set ::cfg_key_dark_toggle    "Control-d"
@@ -554,9 +557,13 @@ proc scheme-apply {name} {
         color_heading_alt ::cfg_color_heading_alt
         color_comment_alt ::cfg_color_comment_alt
         color_markup_alt  ::cfg_color_markup_alt
+        color_bg2         ::cfg_bg2
+        color_bg2_alt     ::cfg_bg2_alt
     } {
         if {[dict exists $d $key]} { set $var [dict get $d $key] }
     }
+    if {![dict exists $d color_bg2]}     { set ::cfg_bg2     $::cfg_bg }
+    if {![dict exists $d color_bg2_alt]} { set ::cfg_bg2_alt $::cfg_bg_alt }
 }
 
 proc ini-load {} {
@@ -645,6 +652,8 @@ proc ini-load {} {
                 color_dim_alt        { set ::cfg_color_comment_alt  $v }
                 color_comment_alt    { set ::cfg_color_comment_alt  $v }
                 color_markup_alt     { set ::cfg_color_markup_alt   $v }
+                color_bg2            { set ::cfg_bg2               $v }
+                color_bg2_alt        { set ::cfg_bg2_alt           $v }
                 word_goal            { set ::cfg_word_goal            $v }
                 dark_mode            { set ::cfg_dark_mode [string is true $v] }
                 key_dark_toggle      { set ::cfg_key_dark_toggle   $v }
@@ -852,6 +861,9 @@ proc ini-save {} {
     puts $fh "color_heading_alt = $::cfg_color_heading_alt"
     puts $fh "color_comment_alt = $::cfg_color_comment_alt"
     puts $fh "color_markup_alt  = $::cfg_color_markup_alt"
+    puts $fh "# outer margin background (same as color_bg/color_bg_alt by default)"
+    puts $fh "# color_bg2       = $::cfg_bg2"
+    puts $fh "# color_bg2_alt   = $::cfg_bg2_alt"
     # write any extra schemes stored in memory (user-defined)
     foreach sname [dict keys $::cfg_schemes] {
         if {$sname eq "default"} continue
@@ -861,7 +873,8 @@ proc ini-save {} {
         foreach key {color_bg color_fg color_bg_bar color_fg_bar color_bg_sel
                      color_heading color_comment color_markup
                      color_bg_alt color_fg_alt color_bg_bar_alt color_fg_bar_alt
-                     color_bg_sel_alt color_heading_alt color_comment_alt color_markup_alt} {
+                     color_bg_sel_alt color_heading_alt color_comment_alt color_markup_alt
+                     color_bg2 color_bg2_alt} {
             if {[dict exists $d $key]} {
                 puts $fh "$key = [dict get $d $key]"
             }
@@ -977,10 +990,12 @@ proc t {key args} {
 proc theme-colors {} {
     if {$::cfg_dark_mode} {
         return [list $::cfg_bg $::cfg_fg $::cfg_bg_bar $::cfg_fg_bar \
-                     $::cfg_bg_sel $::cfg_color_heading $::cfg_color_comment $::cfg_color_markup]
+                     $::cfg_bg_sel $::cfg_color_heading $::cfg_color_comment $::cfg_color_markup \
+                     $::cfg_bg2]
     } else {
         return [list $::cfg_bg_alt $::cfg_fg_alt $::cfg_bg_bar_alt $::cfg_fg_bar_alt \
-                     $::cfg_bg_sel_alt $::cfg_color_heading_alt $::cfg_color_comment_alt $::cfg_color_markup_alt]
+                     $::cfg_bg_sel_alt $::cfg_color_heading_alt $::cfg_color_comment_alt $::cfg_color_markup_alt \
+                     $::cfg_bg2_alt]
     }
 }
 
@@ -1028,26 +1043,30 @@ dict set ::scheme_defs default {
     color_heading_alt "#b58900"
     color_comment_alt "#aaaaaa"
     color_markup_alt "#2a7090"
+    color_bg2         "#1a1a1a"
+    color_bg2_alt     "#fdf6e3"
 }
-# Alt01 - Warm, muted color scheme
+# Alt01 - Dark red/bordeaux color scheme
 
 dict set ::scheme_defs alt01 {
-    color_bg       "#2a2520"
-    color_fg       "#d4c4b0"
-    color_bg_bar   "#3d3531"
-    color_fg_bar   "#c4b4a0"
-    color_bg_sel   "#4a4035"
-    color_heading  "#e8a87c"
-    color_comment  "#6a5a50"
-    color_markup   "#c49070"
-    color_bg_alt   "#f5f0eb"
-    color_fg_alt   "#3a2a20"
-    color_bg_bar_alt "#e8e0d8"
-    color_fg_bar_alt "#3a2a20"
-    color_bg_sel_alt "#e0d4c8"
-    color_heading_alt "#a65d2b"
-    color_comment_alt "#a89080"
-    color_markup_alt "#8b5a3c"
+    color_bg       "#1a1214"
+    color_fg       "#e8dcc8"
+    color_bg_bar   "#241820"
+    color_fg_bar   "#9e8878"
+    color_bg_sel   "#521828"
+    color_heading  "#e63060"
+    color_comment  "#6e5858"
+    color_markup   "#c24868"
+    color_bg_alt   "#fffde9"
+    color_fg_alt   "#363c42"
+    color_bg_bar_alt "#eee8d5"
+    color_fg_bar_alt "#93a1a1"
+    color_bg_sel_alt "#f0e7c1"
+    color_heading_alt "#c8064a"
+    color_comment_alt "#aaaaaa"
+    color_markup_alt "#7e1c3e"
+    color_bg2         "#1a1214"
+    color_bg2_alt     "#fffde9"
 }
 
 # ===========================================================================
@@ -1351,7 +1370,7 @@ set font_sm  [expr {$::cfg_bar_height > 0 \
     ? [list $::cfg_bar_font_family [expr {-max(6, $::cfg_bar_height - 2*$bar_pady)}]] \
     : [list $::cfg_bar_font_family 10]}]
 set ::font_sm $font_sm
-lassign [theme-colors] bg fg bg_bar fg_bar bg_sel
+lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ _ _ bg2
 set fg_dim  "#676767"
 # expose as globals for use in procs
 set ::bg     $bg
@@ -1359,6 +1378,7 @@ set ::fg     $fg
 set ::bg_bar $bg_bar
 set ::fg_bar $fg_bar
 set ::bg_sel $bg_sel
+set ::bg2    $bg2
 
 # --- utils --------------------------------------------------------------------
 proc list-docs {dir} {

@@ -18,4 +18,6 @@ dict set ::scheme_defs solarized {
     color_heading_alt "#b58900"
     color_comment_alt "#93a1a1"
     color_markup_alt "#268bd2"
+    color_bg2         "#002b36"
+    color_bg2_alt     "#fdf6e3"
 }

@@ -711,17 +711,19 @@ bind .br.mid.lst <Button-1> {
 }
 
 # --- editor frame -------------------------------------------------------------
-frame .ed -bg $bg
+frame .ed -bg $bg2
 
 text .ed.t \
     -wrap word -font $font \
     -bg $bg -fg $fg \
     -insertbackground $fg \
-    -selectbackground $bg_sel \
+    -selectbackground $bg_sel -selectforeground $fg \
     -blockcursor 0 \
     -insertwidth [expr {$::cfg_block_cursor_gui ? 0 : 2}] \
     -insertofftime [expr {$::cfg_block_cursor_gui ? 0 : ($::cfg_blink_cursor ? 300 : 0)}] \
-    -borderwidth 0 -padx $::cfg_margin_width -pady $::cfg_margin_height \
+    -borderwidth 0 -highlightthickness 0 \
+    -padx [expr {$::cfg_margin_width/3}] \
+    -pady [expr {$::cfg_margin_height/3}] \
     -undo 1
 
 scrollbar .ed.sb -orient vertical -command {.ed.t yview} \
@@ -800,7 +802,9 @@ if {$::cfg_line_numbers} {
         -cursor arrow
     pack .ed.ln -side left -fill y
 }
-pack .ed.t   -fill both   -expand 1
+pack .ed.t -fill both -expand 1 \
+    -padx [expr {$::cfg_margin_width - $::cfg_margin_width/3}] \
+    -pady [expr {$::cfg_margin_height - $::cfg_margin_height/3}]
 after idle cursor-setup
 
 # --- search bar (hidden until Ctrl+F) ----------------------------------------
@@ -1276,9 +1280,9 @@ proc close-editor {} {
 }
 
 proc apply-theme {} {
-    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel c_heading c_comment c_markup
+    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel c_heading c_comment c_markup bg2
     set ::bg $bg; set ::fg $fg; set ::bg_bar $bg_bar
-    set ::fg_bar $fg_bar; set ::bg_sel $bg_sel
+    set ::fg_bar $fg_bar; set ::bg_sel $bg_sel; set ::bg2 $bg2
     # browser
     foreach w {.br .br.mid} { catch { $w configure -bg $bg } }
     foreach w {.br.title .br.bar.help .br.bar.cnt} {
@@ -1294,9 +1298,9 @@ proc apply-theme {} {
     catch { .br.mid.lst tag configure selected -background $bg_sel -foreground $fg }
     catch { .br.mid.sb configure -bg $bg_bar -troughcolor $bg }
     # editor
-    catch { .ed configure -bg $bg }
+    catch { .ed configure -bg $bg2 }
     catch { .ed.t configure -bg $bg -fg $fg \
-                -insertbackground $fg -selectbackground $bg_sel \
+                -insertbackground $fg -selectbackground $bg_sel -selectforeground $fg \
                 -blockcursor 0 \
                 -insertwidth [expr {$::cfg_block_cursor_gui ? 0 : 2}] \
                 -insertofftime [expr {$::cfg_block_cursor_gui ? 0 : ($::cfg_blink_cursor ? 300 : 0)}] }
@@ -1327,9 +1331,9 @@ proc apply-theme {} {
     # split-view peers
     catch { .ed.pw configure -bg $bg_bar }
     foreach side {l r} {
-        catch { .ed.pw.$side configure -bg $bg }
+        catch { .ed.pw.$side configure -bg $bg2 }
         catch { .ed.pw.${side}.t configure -bg $bg -fg $fg \
-                    -insertbackground $fg -selectbackground $bg_sel \
+                    -insertbackground $fg -selectbackground $bg_sel -selectforeground $fg \
                     -highlightbackground $bg -highlightcolor $fg }
         catch { .ed.pw.${side}.sb configure -bg $bg_bar -troughcolor $bg }
         catch { .ed.pw.${side}.t tag configure focus_dim -foreground $c_comment }
@@ -2178,11 +2182,12 @@ proc profile-config-dialog {} {
 
             # Apply the selected scheme to update color variables
             scheme-apply $def_scheme
-            lassign [theme-colors] bg fg bg_bar fg_bar bg_sel
+            lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ _ _ bg2
             set ::bg $bg
             set ::fg $fg
             set ::bg_bar $bg_bar
             set ::fg_bar $fg_bar
+            set ::bg2 $bg2
             set ::bg_sel $bg_sel
 
             # Apply profile if it was the currently active one
@@ -2418,8 +2423,13 @@ proc typewriter-toggle {} {
         set _mh [expr {$::cfg_margin_height * ($::typewriter_mode ? 2 : 1)}]
         set _sp [expr {$::cfg_split_shrink_margin ? max(1,$::cfg_margin_width/2) : $::cfg_margin_width}]
         set _sp [expr {$_sp * ($::typewriter_mode ? 2 : 1)}]
-        catch { .ed.t configure -padx $_mw -pady $_mh }
-        foreach side {l r} { catch { .ed.pw.${side}.t configure -padx $_sp -pady $_mh } }
+        catch { .ed.t configure -padx [expr {$_mw/3}] -pady [expr {$_mh/3}] }
+        catch { pack configure .ed.t -padx [expr {$_mw - $_mw/3}] -pady [expr {$_mh - $_mh/3}] }
+        foreach side {l r} {
+            set _sp_in [expr {$_sp/3}]; set _sp_out [expr {$_sp - $_sp/3}]
+            catch { .ed.pw.${side}.t configure -padx $_sp_in -pady [expr {$_mh/3}] }
+            catch { pack configure .ed.pw.${side}.t -padx $_sp_out -pady [expr {$_mh - $_mh/3}] }
+        }
         if {$::typewriter_mode} {
             catch { pack forget .ed.bar }
         } else {
@@ -2455,25 +2465,29 @@ proc split-peer-modified {t} {
     set ::hl_after_id [after 300 { set ::hl_after_id ""; highlight-headings; ln-update }]
 }
 
-proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2} {
+proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2 bg2} {
     set frame ".ed.pw.$side"
-    frame $frame -bg $bg
+    frame $frame -bg $bg2
     scrollbar ${frame}.sb -orient vertical -bg $bg_bar -troughcolor $bg
     set _padx [expr {$::cfg_split_shrink_margin \
         ? max(1, $::cfg_margin_width / 2) : $::cfg_margin_width}]
+    set _padx_in  [expr {$_padx/3}]
+    set _padx_out [expr {$_padx - $_padx_in}]
+    set _pady_in  [expr {$::cfg_margin_height/3}]
+    set _pady_out [expr {$::cfg_margin_height - $_pady_in}]
     .ed.t peer create ${frame}.t \
         -wrap word -font [.ed.t cget -font] \
         -width 1 \
         -bg $bg -fg $fg \
-        -insertbackground $fg -selectbackground $bg_sel \
+        -insertbackground $fg -selectbackground $bg_sel -selectforeground $fg \
         -blockcursor 0 -insertwidth 2 -insertofftime 0 \
-        -borderwidth 0 -padx $_padx -pady $::cfg_margin_height \
+        -borderwidth 0 -padx $_padx_in -pady $_pady_in \
         -highlightthickness 2 -highlightbackground $bg -highlightcolor $fg \
         -yscrollcommand "${frame}.sb set" \
         -spacing1 $sp1 -spacing2 $sp2 -spacing3 0
     ${frame}.sb configure -command "${frame}.t yview"
     pack ${frame}.sb -side right -fill y
-    pack ${frame}.t  -fill both  -expand 1
+    pack ${frame}.t  -fill both  -expand 1 -padx $_padx_out -pady $_pady_out
     set t ${frame}.t
     bind $t <KeyRelease>                { ed-status }
     bind $t <ButtonRelease>             { ed-status }
@@ -2512,7 +2526,7 @@ proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2} {
 
 proc split-open {} {
     wm geometry . [winfo width .]x[winfo height .]
-    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel
+    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ _ _ bg2
     set sp1 [.ed.t cget -spacing1]
     set sp2 [.ed.t cget -spacing2]
     set cur [.ed.t index insert]
@@ -2526,8 +2540,8 @@ proc split-open {} {
     }
 
     panedwindow .ed.pw -orient horizontal -bg $bg_bar -sashwidth 4 -sashpad 0 -sashrelief flat
-    split-make-pane l $bg $fg $bg_bar $bg_sel $sp1 $sp2
-    split-make-pane r $bg $fg $bg_bar $bg_sel $sp1 $sp2
+    split-make-pane l $bg $fg $bg_bar $bg_sel $sp1 $sp2 $bg2
+    split-make-pane r $bg $fg $bg_bar $bg_sel $sp1 $sp2 $bg2
     .ed.pw add .ed.pw.l -stretch always
     .ed.pw add .ed.pw.r -stretch always
     pack .ed.pw -fill both -expand 1 -before .ed.bar
@@ -2548,7 +2562,9 @@ proc split-close {} {
     if {$::split_ln_was_on && [winfo exists .ed.ln]} {
         pack .ed.ln -side left  -fill y
     }
-    pack .ed.t   -fill both  -expand 1
+    pack .ed.t -fill both -expand 1 \
+        -padx [expr {$::cfg_margin_width - $::cfg_margin_width/3}] \
+        -pady [expr {$::cfg_margin_height - $::cfg_margin_height/3}]
     .ed.t see insert
     set ::split_mode 0
     focus .ed.t
@@ -2610,10 +2626,13 @@ proc ini-reload {} {
         ? [list $::cfg_bar_font_family [expr {-max(6, $::cfg_bar_height - 2*$_bpad)}]] \
         : [list $::cfg_bar_font_family 10]}]
     catch { .ed.t configure -font $f \
-        -padx $::cfg_margin_width -pady $::cfg_margin_height \
+        -padx [expr {$::cfg_margin_width/3}] -pady [expr {$::cfg_margin_height/3}] \
         -blockcursor 0 \
         -insertwidth [expr {$::cfg_block_cursor_gui ? 0 : 2}] \
         -insertofftime [expr {$::cfg_block_cursor_gui ? 0 : ($::cfg_blink_cursor ? 300 : 0)}] }
+    catch { pack configure .ed.t \
+        -padx [expr {$::cfg_margin_width - $::cfg_margin_width/3}] \
+        -pady [expr {$::cfg_margin_height - $::cfg_margin_height/3}] }
     catch { .ed.t tag configure heading -font [list $::cfg_font_family $::cfg_font_size bold] }
     foreach side {l r} {
         catch { .ed.pw.${side}.t configure -font $f }

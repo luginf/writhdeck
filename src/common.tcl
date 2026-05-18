@@ -18,7 +18,7 @@ set font_sm  [expr {$::cfg_bar_height > 0 \
     ? [list $::cfg_bar_font_family [expr {-max(6, $::cfg_bar_height - 2*$bar_pady)}]] \
     : [list $::cfg_bar_font_family 10]}]
 set ::font_sm $font_sm
-lassign [theme-colors] bg fg bg_bar fg_bar bg_sel
+lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ _ _ bg2
 set fg_dim  "#676767"
 # expose as globals for use in procs
 set ::bg     $bg
@@ -26,6 +26,7 @@ set ::fg     $fg
 set ::bg_bar $bg_bar
 set ::fg_bar $fg_bar
 set ::bg_sel $bg_sel
+set ::bg2    $bg2
 
 # --- utils --------------------------------------------------------------------
 proc list-docs {dir} {

@@ -17,4 +17,6 @@ dict set ::scheme_defs default {
     color_heading_alt "#b58900"
     color_comment_alt "#aaaaaa"
     color_markup_alt "#2a7090"
+    color_bg2         "#1a1a1a"
+    color_bg2_alt     "#fdf6e3"
 }

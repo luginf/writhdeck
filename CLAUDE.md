@@ -12,7 +12,7 @@ tclsh writhdeck.tcl --cli file.txt     # TUI, open file directly
 ./writhdeck.tcl --tui                  # polyglot sh/Tcl bootstrap, TUI mode
 ```
 
-Build with `make` to generate `writhdeck.tcl` and `writhdeck-cli.tcl` from source modules in `src/`. Both generated files are executable and tracked in git. Dependencies: Tcl/Tk 8.6+ (Tk only required for GUI mode).
+Build with `make` to generate `writhdeck.tcl` and `writhdeck-cli.tcl` from source modules in `src/`. Both generated files are executable and tracked in git. Dependencies: Tcl/Tk 8.5+ through 9.x (Tk only required for GUI mode).
 
 Run tests to catch regressions:
 ```sh
