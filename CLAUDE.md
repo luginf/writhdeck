@@ -222,6 +222,38 @@ Editor mode activated by pressing the command-mode key (default: ESC) in the edi
 - TUI: `$key eq $::cfg_tui_cmd_mode` in editor key handler
 - After closing `s`/`w` overlay: `set wrap_dirty 1` forces editor redraw (TUI)
 
+## Color schemes
+
+Scheme files live in `src/schemes/` — one `.tcl` file per scheme, auto-detected by the Makefile (`AVAILABLE_SCHEMES`). Each file calls `dict set ::scheme_defs NAME { ... }` with 18 color keys:
+
+| Key | Description |
+|-----|-------------|
+| `color_bg` / `color_bg_alt` | Background (dark / light) |
+| `color_fg` / `color_fg_alt` | Text foreground (dark / light) |
+| `color_bg_bar` / `color_bg_bar_alt` | Status bar background |
+| `color_fg_bar` / `color_fg_bar_alt` | Status bar foreground |
+| `color_bg_sel` / `color_bg_sel_alt` | Selection background |
+| `color_heading` / `color_heading_alt` | Heading color |
+| `color_comment` / `color_comment_alt` | Comment/dim color |
+| `color_markup` / `color_markup_alt` | Inline markup color |
+| `color_bg2` / `color_bg2_alt` | Editor frame outer background (falls back to `color_bg` if absent) |
+
+**Available schemes and their canonical references:**
+
+| Scheme | Reference | Notes |
+|--------|-----------|-------|
+| `default` | WrithDeck built-in | Defined in `src/schemes/default.tcl` and written to INI by `ini-save` |
+| `solarized` | Ethan Schoonover — ethanschoonover.com/solarized | All base colors canonical; `color_bg_sel` (#004555) is a custom choice |
+| `gruvbox` | morhetz — github.com/morhetz/gruvbox | Fully canonical |
+| `everforest` | sainnhe — github.com/sainnhepark/everforest | Dark medium variant; comment greys are reasonable approximations |
+| `nord` | Arctic Ice Studio — nordtheme.com | Fully canonical (nord0–nord10 palette) |
+| `alt01` | WrithDeck built-in | Dark red/bordeaux palette |
+| `alt02` | WrithDeck built-in | Warm brown/orange palette (derived from alt01 variant) |
+
+**RULE — never modify color values without asking the user explicitly.** Color choices are deliberate aesthetic decisions. When working on scheme files, only change what the user has explicitly approved.
+
+**Selection text color** — always pair `-selectbackground $bg_sel` with `-selectforeground $fg` on every Tk Text widget. Without `-selectforeground`, Tk inverts the text color in dark mode, making selected text unreadable. The four locations in `src/gui.tcl` are: initial widget creation (~line 720), `theme-reload` main editor (~line 1303), `theme-reload` split-view panes (~line 1336), `split-make-pane` (~line 2482).
+
 ## Known limitations
 
 - No emoji support in GUI (Tk 8.6 color font limitation)

@@ -230,6 +230,38 @@ br_ma_cle    "Ma chaîne"    # dans le bloc fr {}
 
 **Ctrl+O** — `open-file-dialog` utilise le dossier du fichier en cours (`$::filename`) si appelée sans argument, sinon `DOCS_DIR_DEFAULT`.
 
+## Schémas de couleurs (color schemes)
+
+Les fichiers de schemes se trouvent dans `src/schemes/` — un fichier `.tcl` par scheme, détecté automatiquement par le Makefile (`AVAILABLE_SCHEMES`). Chaque fichier appelle `dict set ::scheme_defs NOM { ... }` avec 18 clés de couleur :
+
+| Clé | Description |
+|-----|-------------|
+| `color_bg` / `color_bg_alt` | Fond de l'éditeur (sombre / clair) |
+| `color_fg` / `color_fg_alt` | Texte principal (sombre / clair) |
+| `color_bg_bar` / `color_bg_bar_alt` | Fond de la barre de statut |
+| `color_fg_bar` / `color_fg_bar_alt` | Texte de la barre de statut |
+| `color_bg_sel` / `color_bg_sel_alt` | Fond de la sélection |
+| `color_heading` / `color_heading_alt` | Couleur des titres |
+| `color_comment` / `color_comment_alt` | Couleur des commentaires/lignes estompées |
+| `color_markup` / `color_markup_alt` | Couleur du balisage inline |
+| `color_bg2` / `color_bg2_alt` | Fond externe du cadre éditeur (fallback sur `color_bg` si absent) |
+
+**Schemes disponibles et leurs références canoniques :**
+
+| Scheme | Référence | Notes |
+|--------|-----------|-------|
+| `default` | WrithDeck intégré | Défini dans `src/schemes/default.tcl`, écrit dans l'INI par `ini-save` |
+| `solarized` | Ethan Schoonover — ethanschoonover.com/solarized | Couleurs de base canoniques ; `color_bg_sel` (#004555) est un choix personnalisé |
+| `gruvbox` | morhetz — github.com/morhetz/gruvbox | 100% canonique |
+| `everforest` | sainnhe — github.com/sainnhepark/everforest | Variante dark medium ; les gris commentaires sont des approximations raisonnables |
+| `nord` | Arctic Ice Studio — nordtheme.com | 100% canonique (palette nord0–nord10) |
+| `alt01` | WrithDeck intégré | Palette rouge/bordeaux sombre |
+| `alt02` | WrithDeck intégré | Palette brun/orange chaud (dérivée d'une variante alt01) |
+
+> **REGLE — ne jamais modifier les valeurs de couleurs sans demander explicitement à l'utilisateur.** Les choix de couleurs sont des décisions esthétiques délibérées. Lors de tout travail sur les fichiers de schemes, ne modifier que ce que l'utilisateur a explicitement approuvé.
+
+**Couleur du texte sélectionné** — toujours associer `-selectbackground $bg_sel` avec `-selectforeground $fg` sur chaque widget Tk Text. Sans `-selectforeground`, Tk inverse la couleur du texte en mode sombre, rendant le texte sélectionné illisible. Les quatre emplacements dans `src/gui.tcl` sont : création initiale du widget (~ligne 720), `theme-reload` éditeur principal (~ligne 1303), `theme-reload` volets split-view (~ligne 1336), `split-make-pane` (~ligne 2482).
+
 ## Limites connues
 
 - **Emoji** : non supportés en GUI (limitation Tk 8.6 / rendu couleur). TUI dépend du terminal.
