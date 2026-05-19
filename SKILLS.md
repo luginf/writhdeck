@@ -260,7 +260,11 @@ Les fichiers de schemes se trouvent dans `src/schemes/` — un fichier `.tcl` pa
 
 > **REGLE — ne jamais modifier les valeurs de couleurs sans demander explicitement à l'utilisateur.** Les choix de couleurs sont des décisions esthétiques délibérées. Lors de tout travail sur les fichiers de schemes, ne modifier que ce que l'utilisateur a explicitement approuvé.
 
-**Couleur du texte sélectionné** — toujours associer `-selectbackground $bg_sel` avec `-selectforeground $fg` sur chaque widget Tk Text. Sans `-selectforeground`, Tk inverse la couleur du texte en mode sombre, rendant le texte sélectionné illisible. Les quatre emplacements dans `src/gui.tcl` sont : création initiale du widget (~ligne 720), `theme-reload` éditeur principal (~ligne 1303), `theme-reload` volets split-view (~ligne 1336), `split-make-pane` (~ligne 2482).
+**Couleur du texte sélectionné** — toujours associer `-selectbackground $bg_sel` avec `-selectforeground $fg` sur chaque widget Tk Text. Sans `-selectforeground`, Tk inverse la couleur du texte en mode sombre, rendant le texte sélectionné illisible. Tous les widgets Text dans `src/gui.tcl` doivent avoir cette paire : `.br.mid.lst`, `.br.bar.help`, `.ed.t`, `.ed.ln`, widgets de dialogs (`$w.t` dans info/stats/help), panneaux split. Également dans les appels `configure` de `theme-reload` (~lignes 1303, 1336).
+
+**Bindings split GUI** — `proc bind-cmd-mode {w}` centralise les 13 bindings du mode commande (cfg_key_cmd_mode + lettres t/T/c/C/q/Q/s/S/w/W + Alt-t + Any-KeyPress). Appelée sur `.ed.t`, dans `split-make-pane`, et dans `split-ws2-open`. `proc split-pane-padding {}` retourne `{padx_in padx_out pady_in pady_out}` — calcul partagé entre `split-make-pane` et `split-ws2-open`.
+
+**Piège binding Tab en split** — dans les scripts de binding Tk, `{\t}` entre accolades = 2 chars littéraux `\t` (backslash + t). Toujours écrire `{%W insert insert "\t"; break}` pour insérer un vrai tab (ou `"\t"` dans un script double-quoté évalué au runtime). L'erreur `[list $w insert insert {\t}]` génère un script avec `{\t}` non-interprété.
 
 ## Limites connues
 
@@ -294,7 +298,9 @@ Le code est organisé en modules dans le dossier `src/` et construit via un `Mak
 **Cibles de construction** (via `make`) :
 - `writhdeck.tcl` — version complète (GUI+TUI, ~4979 lignes avec marqueurs de section)
 - `writhdeck-cli.tcl` — TUI seul (~2899 lignes, sans chargement Tk)
-- `make clean` — supprime les fichiers générés
+- `make compact` — génère `writhdeck-compact.tcl` + `writhdeck-cli-compact.tcl` (~-20 à -25%)
+- `make compact-cli` — génère `writhdeck-cli-compact.tcl` seulement
+- `make clean` — supprime les fichiers générés (incluant variantes compact)
 
 Les deux fichiers générés sont exécutables, trackés dans git, et ont des marqueurs de section (`# === state.tcl ===`) pour la lisibilité.
 

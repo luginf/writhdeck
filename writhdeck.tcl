@@ -2428,6 +2428,7 @@ pack .br.title -fill x
 frame .br.mid -bg $bg
 text .br.mid.lst \
     -bg $bg -fg $fg -font $font \
+    -selectbackground $bg_sel -selectforeground $fg \
     -borderwidth 0 -highlightthickness 0 \
     -yscrollcommand {.br.mid.sb set} -wrap none -state disabled
 lassign [theme-colors] _ _ _ _ _ _ c_comment _
@@ -2448,6 +2449,7 @@ frame .br.bar -bg $bg_bar
 frame .br.bar.left -bg $bg_bar
 
 text .br.bar.help -height 2 -width 90 -bg $bg_bar -fg $fg_bar -font $font_sm \
+    -selectbackground $bg_sel -selectforeground $fg_bar \
     -borderwidth 0 -highlightthickness 0 -padx 2 -pady 1 -wrap none -state disabled -cursor arrow
 pack .br.bar.help -in .br.bar.left -side top -fill both -expand 0
 
@@ -2697,7 +2699,8 @@ proc info-dialog {msg} {
     wm resizable $w 0 0
     wm transient $w .
     text $w.t -font $::font_sm -padx 16 -pady 12 -wrap word -width 50 -height 3 \
-        -relief flat -bg [$w cget -bg] -fg $::fg -bd 0 -highlightthickness 0 -cursor arrow
+        -relief flat -bg [$w cget -bg] -fg $::fg -bd 0 -highlightthickness 0 -cursor arrow \
+        -selectbackground $::bg_sel -selectforeground $::fg
     $w.t insert end $msg
     $w.t configure -state disabled
     button $w.b -text "OK" -font $::font_sm -command [list destroy $w]
@@ -2998,6 +3001,7 @@ proc br-stats {{path ""}} {
     wm resizable $w 0 0
     wm transient $w .
     text $w.t -font $::font_sm -state normal -bg $::bg -fg $::fg \
+        -selectbackground $::bg_sel -selectforeground $::fg \
         -borderwidth 0 -padx 16 -pady 12 -width 36 \
         -height [expr {$nrows + 7}] -cursor arrow
     $w.t tag configure heading -foreground $::fg_bar -font [concat $::font_sm bold]
@@ -3198,6 +3202,7 @@ if {$::cfg_line_numbers} {
     text .ed.ln \
         -width 4 -font $font \
         -bg $bg_bar -fg $fg_dim \
+        -selectbackground $bg_sel -selectforeground $fg_dim \
         -state disabled -borderwidth 0 \
         -padx 4 -pady $::cfg_margin_height \
         -highlightthickness 0 -wrap none \
@@ -4181,106 +4186,22 @@ proc gui-handle-keypress {key} {
     return 0
 }
 
-bind .ed.t <$::cfg_key_cmd_mode> {
-    gui-handle-esc
-    break
+proc bind-cmd-mode {w} {
+    bind $w <$::cfg_key_cmd_mode>  { gui-handle-esc; break }
+    bind $w <t>     { if {![gui-handle-keypress t]} { %W insert insert t; ed-status }; break }
+    bind $w <T>     { if {![gui-handle-keypress T]} { %W insert insert T; ed-status }; break }
+    bind $w <c>     { if {![gui-handle-keypress c]} { %W insert insert c; ed-status }; break }
+    bind $w <C>     { if {![gui-handle-keypress C]} { %W insert insert C; ed-status }; break }
+    bind $w <q>     { if {![gui-handle-keypress q]} { %W insert insert q; ed-status }; break }
+    bind $w <Q>     { if {![gui-handle-keypress Q]} { %W insert insert Q; ed-status }; break }
+    bind $w <s>     { if {![gui-handle-keypress s]} { %W insert insert s; ed-status }; break }
+    bind $w <S>     { if {![gui-handle-keypress S]} { %W insert insert S; ed-status }; break }
+    bind $w <w>     { if {![gui-handle-keypress w]} { %W insert insert w; ed-status }; break }
+    bind $w <W>     { if {![gui-handle-keypress W]} { %W insert insert W; ed-status }; break }
+    bind $w <Alt-t> { if {!$::gui_cmd_mode} { if {$::timer_active} { timer-pause } else { timer-start }; ed-status }; break }
+    bind $w <Any-KeyPress> { if {$::gui_cmd_mode} { set k %K; if {$k ne "Escape"} break } }
 }
-bind .ed.t <t> {
-    if {![gui-handle-keypress t]} {
-        # Normal 't' input
-        %W insert insert t
-        ed-status
-    }
-    break
-}
-bind .ed.t <T> {
-    if {![gui-handle-keypress T]} {
-        # Normal 'T' input
-        %W insert insert T
-        ed-status
-    }
-    break
-}
-bind .ed.t <c> {
-    if {![gui-handle-keypress c]} {
-        # Normal 'c' input
-        %W insert insert c
-        ed-status
-    }
-    break
-}
-bind .ed.t <C> {
-    if {![gui-handle-keypress C]} {
-        # Normal 'C' input
-        %W insert insert C
-        ed-status
-    }
-    break
-}
-bind .ed.t <Alt-t> {
-    if {!$::gui_cmd_mode} {
-        if {$::timer_active} { timer-pause } else { timer-start }
-        ed-status
-    }
-    break
-}
-bind .ed.t <q> {
-    if {![gui-handle-keypress q]} {
-        # Normal 'q' input
-        %W insert insert q
-        ed-status
-    }
-    break
-}
-bind .ed.t <Q> {
-    if {![gui-handle-keypress Q]} {
-        # Normal 'Q' input
-        %W insert insert Q
-        ed-status
-    }
-    break
-}
-bind .ed.t <s> {
-    if {![gui-handle-keypress s]} {
-        # Normal 's' input
-        %W insert insert s
-        ed-status
-    }
-    break
-}
-bind .ed.t <S> {
-    if {![gui-handle-keypress S]} {
-        # Normal 'S' input
-        %W insert insert S
-        ed-status
-    }
-    break
-}
-bind .ed.t <w> {
-    if {![gui-handle-keypress w]} {
-        # Normal 'w' input
-        %W insert insert w
-        ed-status
-    }
-    break
-}
-bind .ed.t <W> {
-    if {![gui-handle-keypress W]} {
-        # Normal 'W' input
-        %W insert insert W
-        ed-status
-    }
-    break
-}
-
-bind .ed.t <Any-KeyPress> {
-    if {$::gui_cmd_mode} {
-        set k %K
-        if {$k ne "Escape"} {
-            break
-        }
-    }
-}
+bind-cmd-mode .ed.t
 
 proc profile-config-update-profile {w} {
     set profile $::profile_config_profile
@@ -4824,6 +4745,7 @@ proc help-dialog {} {
     text $w.t \
         -font $::font_sm -state normal \
         -bg $::bg -fg $::fg \
+        -selectbackground $::bg_sel -selectforeground $::fg \
         -borderwidth 0 -padx 16 -pady 12 \
         -width 60 -height $height \
         -cursor arrow
@@ -4951,16 +4873,17 @@ proc split-peer-modified {t} {
     set ::hl_after_id [after 300 { set ::hl_after_id ""; highlight-headings; ln-update }]
 }
 
+proc split-pane-padding {} {
+    set px [expr {$::cfg_split_shrink_margin ? max(1,$::cfg_margin_width/2) : $::cfg_margin_width}]
+    set py $::cfg_margin_height
+    return [list [expr {$px/3}] [expr {$px - $px/3}] [expr {$py/3}] [expr {$py - $py/3}]]
+}
+
 proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2 bg2} {
     set frame ".ed.pw.$side"
     frame $frame -bg $bg2
     scrollbar ${frame}.sb -orient vertical -bg $bg_bar -troughcolor $bg
-    set _padx [expr {$::cfg_split_shrink_margin \
-        ? max(1, $::cfg_margin_width / 2) : $::cfg_margin_width}]
-    set _padx_in  [expr {$_padx/3}]
-    set _padx_out [expr {$_padx - $_padx_in}]
-    set _pady_in  [expr {$::cfg_margin_height/3}]
-    set _pady_out [expr {$::cfg_margin_height - $_pady_in}]
+    lassign [split-pane-padding] _padx_in _padx_out _pady_in _pady_out
     .ed.t peer create ${frame}.t \
         -wrap word -font [.ed.t cget -font] \
         -width 1 \
@@ -5009,6 +4932,8 @@ proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2 bg2} {
     bind $t <Control-KP_Add>            { font-resize  1; break }
     bind $t <Control-minus>             { font-resize -1; break }
     bind $t <Control-KP_Subtract>       { font-resize -1; break }
+    bind $t <$::cfg_key_sticky_sel>     { break }
+    bind-cmd-mode $t
 }
 
 proc split-open {} {
@@ -5080,11 +5005,7 @@ proc split-ws2-open {} {
     lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ _ _ bg2
     set sp1 [.ed.t cget -spacing1]
     set sp2 [.ed.t cget -spacing2]
-    set _padx [expr {$::cfg_split_shrink_margin ? max(1,$::cfg_margin_width/2) : $::cfg_margin_width}]
-    set _padx_in  [expr {$_padx/3}]
-    set _padx_out [expr {$_padx - $_padx_in}]
-    set _pady_in  [expr {$::cfg_margin_height/3}]
-    set _pady_out [expr {$::cfg_margin_height - $_pady_in}]
+    lassign [split-pane-padding] _padx_in _padx_out _pady_in _pady_out
     catch { pack forget .ed.pw.r.sb .ed.pw.r.t }
     catch { destroy .ed.pw.r.t }
     text .ed.pw.r.t \
@@ -5148,6 +5069,8 @@ proc split-ws2-open {} {
     bind .ed.pw.r.t <Control-KP_Add>         { font-resize  1; break }
     bind .ed.pw.r.t <Control-minus>          { font-resize -1; break }
     bind .ed.pw.r.t <Control-KP_Subtract>    { font-resize -1; break }
+    bind .ed.pw.r.t <$::cfg_key_sticky_sel>  { break }
+    bind-cmd-mode .ed.pw.r.t
     set ::ws_dual_mode 1
     set ::split_ws2_mode 1
     focus .ed.pw.r.t

@@ -160,7 +160,7 @@ Section order: `DOCS_DIR_DEFAULT` → `DOCS_DIR` (if custom) → Favorites → R
 
 ## Editor behavior
 
-**Tab key** — inserts a literal tab character (`\t`), not spaces. Both GUI and TUI preserve tabs in files.
+**Tab key** — inserts a literal tab character (`\t`), not spaces. Both GUI and TUI preserve tabs in files. In split pane bindings, always use `{%W insert insert "\t"; break}` — **never** `[list $w insert insert {\t}]` which would insert the 2-char literal `\t` instead (braces prevent escape interpretation).
 
 **Reload (z key)** — closes current editor/scratchpad and returns to browser. Always relaunches the program without arguments, even if a file was open. Uses platform-specific process launching (Windows `start` command, Unix shell background execution). Configuration apply button also triggers reload.
 
@@ -224,7 +224,7 @@ Editor mode activated by pressing the command-mode key (default: ESC) in the edi
 **Implementation details:**
 - State tracked by `$::gui_cmd_mode` (GUI) and `$::tui_cmd_mode` (TUI)
 - Status message: `"$::cfg_lbl_cmd_mode: exit mode  t: timer  q: quit  s: stats  w: words"`
-- GUI binding: `bind .ed.t <$::cfg_key_cmd_mode>` (dynamic, uses configured key)
+- GUI binding: `proc bind-cmd-mode {w}` in `src/gui.tcl` — sets all command-mode bindings (cfg_key_cmd_mode, t/T/c/C/q/Q/s/S/w/W, Alt-t, Any-KeyPress) on widget `$w`. Called for `.ed.t`, `split-make-pane` peer panes, and `split-ws2-open` independent pane.
 - TUI: `$key eq $::cfg_tui_cmd_mode` in editor key handler
 - After closing `s`/`w` overlay: `set wrap_dirty 1` forces editor redraw (TUI)
 
@@ -242,6 +242,7 @@ Two independent editor workspaces accessible via `key_workspace` (default F10). 
 **GUI — key procs** (`src/gui.tcl`):
 - `workspace-toggle` — saves active workspace to ws{n}_*, loads other workspace into `.ed.t`; in split mode redirects to `split-ws2-open`/`split-cycle-focus`; sets `ws_dual_mode=1`; cancels/restarts watch-file timer with correct `file_mtime_known`
 - `ed-update-title` — shows `[1]`/`[2]` in window title when `ws_dual_mode==1`
+- `split-pane-padding` — returns `{padx_in padx_out pady_in pady_out}` for pane widgets; shared by `split-make-pane` and `split-ws2-open`
 - `split-ws2-open` — replaces the right peer pane with an independent `text` widget loaded with WS2 content; sets `split_ws2_mode=1`; has own save/open/close bindings
 - `split-ws2-save`, `split-ws2-save-as`, `split-ws2-load-file`, `split-ws2-save-state` — WS2 pane operations
 - `ws-check-inactive-dirty` — called by `quit-app`; prompts to save the inactive workspace if dirty; writes directly from `ws{n}_content`
@@ -308,7 +309,7 @@ Scheme files live in `src/schemes/` — one `.tcl` file per scheme, auto-detecte
 
 **RULE — never modify color values without asking the user explicitly.** Color choices are deliberate aesthetic decisions. When working on scheme files, only change what the user has explicitly approved.
 
-**Selection text color** — always pair `-selectbackground $bg_sel` with `-selectforeground $fg` on every Tk Text widget. Without `-selectforeground`, Tk inverts the text color in dark mode, making selected text unreadable. The four locations in `src/gui.tcl` are: initial widget creation (~line 720), `theme-reload` main editor (~line 1303), `theme-reload` split-view panes (~line 1336), `split-make-pane` (~line 2482).
+**Selection text color** — always pair `-selectbackground $bg_sel` with `-selectforeground $fg` on every Tk Text widget. Without `-selectforeground`, Tk inverts the text color in dark mode, making selected text unreadable. Required on all Text widget creations: `.br.mid.lst`, `.br.bar.help`, `.ed.t`, `.ed.ln`, dialog text widgets (`$w.t` in info/stats/help dialogs), `split-make-pane` peer widgets, `split-ws2-open` independent widget. Also needed in `theme-reload` configure calls (~lines 1303, 1336).
 
 ## Known limitations
 
