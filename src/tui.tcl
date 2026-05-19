@@ -1119,6 +1119,8 @@ proc tui-editor {filepath {init_state {}}} {
                 lassign [tui-build-layout $lines $tw layout_cache] vrows ish_cache isd_cache
                 set dirty_line -1
                 if {$split && !$split_ws2_mode} { set split_r_wrap_dirty 1 }
+            } elseif {$split && !$split_ws2_mode} {
+                set split_r_wrap_dirty 1
             }
         }
         if {$split && ($split_r_wrap_dirty || $tw_r != $split_r_prev_tw)} {
@@ -1882,7 +1884,7 @@ proc tui-editor {filepath {init_state {}}} {
                     set clear_sel 0
                 } elseif {[string match "F*" $key]} {                          ;# ignore unknown F-keys
                     set clear_sel 0
-                } elseif {[string length $key] >= 1 && ($c eq "" || $c >= 32)} {
+                } elseif {[string length $key] == 1 && ($c eq "" || $c >= 32)} {
                     tui-push-undo
                     if {$sel_anchor ne ""} { lassign [tui-sel-delete $lines $sel_anchor $cy $cx] lines cy cx; tui-mark-dirty }
                     set l [lindex $lines [expr {$cy-1}]]
@@ -1900,8 +1902,9 @@ proc tui-editor {filepath {init_state {}}} {
             foreach {_v _r} {cy split_r_cy  cx split_r_cx  vrows split_r_vrows  ish_cache split_r_ish  isd_cache split_r_isd  scroll_y split_r_scroll  layout_cache split_r_layout  tw tw_r} {
                 set _tmp [set $_v]; set $_v [set $_r]; set $_r $_tmp
             }
-            if {$_fswap == 2 && $wrap_dirty} { set split_r_wrap_dirty 1; set wrap_dirty 0 }
-            if {$_fswap == 1 && $wrap_dirty} { set split_r_wrap_dirty 1 }
+            if {$_fswap == 2 && $wrap_dirty}  { set split_r_wrap_dirty 1; set wrap_dirty 0 }
+            if {$_fswap == 2 && $dirty_line > 0} { set split_r_wrap_dirty 1; set dirty_line -1 }
+            if {$_fswap == 1 && $wrap_dirty}  { set split_r_wrap_dirty 1 }
         }
         if {$rst}       { set sticky -1 }
         if {$clear_sel} { set sel_anchor ""; set sel_sticky 0 }

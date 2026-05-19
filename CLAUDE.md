@@ -23,6 +23,12 @@ make test-gui         # Test GUI build
 make test-cli         # Test CLI build
 ```
 
+Generate compact builds (comments, blank lines, and leading whitespace stripped):
+```sh
+make compact           # writhdeck-compact.tcl + writhdeck-cli-compact.tcl (~-20 to -25%)
+make compact-cli       # writhdeck-cli-compact.tcl only
+```
+
 ## Version
 
 Format `vYYYYMMDD` (e.g. `v20260512`), defined near line 32:
@@ -336,10 +342,14 @@ The codebase is organized in `src/` directory and built via `Makefile`:
 - `make` or `make all` — generate both files with all available languages
 - `make LANGUAGES="en"` — build with English only
 - `make LANGUAGES="en fr de es ko"` — build with specific languages
-- `make clean` — remove generated files
+- `make compact` — generate `writhdeck-compact.tcl` + `writhdeck-cli-compact.tcl` (stripped, ~-20 to -25%)
+- `make compact-cli` — generate `writhdeck-cli-compact.tcl` only
+- `make clean` — remove generated files (includes compact variants)
 - `make test` — run regression tests
 - `make test-i18n` — validate translations only
 - `make test-syntax` — check Tcl syntax only
+
+`tools/tcl-compact.tcl` — compact filter script. Uses a character-level context scanner to safely strip comments, blank lines, and leading whitespace from all code lines. Preserves content inside `"..."` strings (including those nested inside `{...}` blocks) where indentation is semantically significant.
 
 The Makefile uses `AVAILABLE_LANGS` to auto-detect all `src/i18n/*.tcl` files, so new language files are automatically included in builds. English is always prepended (even if not listed).
 

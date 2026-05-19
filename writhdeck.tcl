@@ -1095,7 +1095,7 @@ set ::typewriter_mode 0
 
 
 # ===========================================================================
-# schemes (alt01 default everforest gruvbox nord retro solarized)
+# schemes (alt01 alt02 default everforest gruvbox nord retro solarized)
 # ===========================================================================
 # Alt01 - Dark red/bordeaux color scheme
 
@@ -1118,6 +1118,28 @@ dict set ::scheme_defs alt01 {
     color_markup_alt "#7e1c3e"
     color_bg2         "#150f10"
     color_bg2_alt     "#fffde9"
+}
+# Alt02 - Warm, muted color scheme
+
+dict set ::scheme_defs alt02 {
+    color_bg       "#2a2520"
+    color_fg       "#d4c4b0"
+    color_bg_bar   "#2a2520"
+    color_fg_bar   "#c4b4a0"
+    color_bg_sel   "#4a4035"
+    color_heading  "#e8a87c"
+    color_comment  "#6a5a50"
+    color_markup   "#c49070"
+    color_bg2      "#1d1917"
+    color_bg_alt   "#f5f0eb"
+    color_fg_alt   "#3a2a20"
+    color_bg_bar_alt "#e8e0d8"
+    color_fg_bar_alt "#3a2a20"
+    color_bg_sel_alt "#e0d4c8"
+    color_heading_alt "#a65d2b"
+    color_comment_alt "#a89080"
+    color_markup_alt "#8b5a3c"
+    color_bg2_alt     "#e8e0d8"
 }
 # Default color scheme - dark and light variants
 
@@ -4962,7 +4984,7 @@ proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2 bg2} {
     bind $t <$::cfg_key_paste>          { ed-paste; break }
     bind $t <$::cfg_key_select_all>     "[list $t tag add sel 1.0 end]; break"
     bind $t <$::cfg_key_dark_toggle>    { toggle-dark-mode; break }
-    bind $t <Tab>                       "[list $t insert insert {\t}]; break"
+    bind $t <Tab>                       {%W insert insert "\t"; break}
     bind $t <$::cfg_key_goto>           { goto-dialog; break }
     bind $t <$::cfg_key_help>           { help-dialog; break }
     bind $t <$::cfg_key_undo>           "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break; [list catch [list $t edit undo]]; ed-status; break"
@@ -6485,6 +6507,8 @@ proc tui-editor {filepath {init_state {}}} {
                 lassign [tui-build-layout $lines $tw layout_cache] vrows ish_cache isd_cache
                 set dirty_line -1
                 if {$split && !$split_ws2_mode} { set split_r_wrap_dirty 1 }
+            } elseif {$split && !$split_ws2_mode} {
+                set split_r_wrap_dirty 1
             }
         }
         if {$split && ($split_r_wrap_dirty || $tw_r != $split_r_prev_tw)} {
@@ -7248,7 +7272,7 @@ proc tui-editor {filepath {init_state {}}} {
                     set clear_sel 0
                 } elseif {[string match "F*" $key]} {                          ;# ignore unknown F-keys
                     set clear_sel 0
-                } elseif {[string length $key] >= 1 && ($c eq "" || $c >= 32)} {
+                } elseif {[string length $key] == 1 && ($c eq "" || $c >= 32)} {
                     tui-push-undo
                     if {$sel_anchor ne ""} { lassign [tui-sel-delete $lines $sel_anchor $cy $cx] lines cy cx; tui-mark-dirty }
                     set l [lindex $lines [expr {$cy-1}]]
@@ -7266,8 +7290,9 @@ proc tui-editor {filepath {init_state {}}} {
             foreach {_v _r} {cy split_r_cy  cx split_r_cx  vrows split_r_vrows  ish_cache split_r_ish  isd_cache split_r_isd  scroll_y split_r_scroll  layout_cache split_r_layout  tw tw_r} {
                 set _tmp [set $_v]; set $_v [set $_r]; set $_r $_tmp
             }
-            if {$_fswap == 2 && $wrap_dirty} { set split_r_wrap_dirty 1; set wrap_dirty 0 }
-            if {$_fswap == 1 && $wrap_dirty} { set split_r_wrap_dirty 1 }
+            if {$_fswap == 2 && $wrap_dirty}  { set split_r_wrap_dirty 1; set wrap_dirty 0 }
+            if {$_fswap == 2 && $dirty_line > 0} { set split_r_wrap_dirty 1; set dirty_line -1 }
+            if {$_fswap == 1 && $wrap_dirty}  { set split_r_wrap_dirty 1 }
         }
         if {$rst}       { set sticky -1 }
         if {$clear_sel} { set sel_anchor ""; set sel_sticky 0 }

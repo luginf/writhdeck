@@ -2582,7 +2582,7 @@ proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2 bg2} {
     bind $t <$::cfg_key_paste>          { ed-paste; break }
     bind $t <$::cfg_key_select_all>     "[list $t tag add sel 1.0 end]; break"
     bind $t <$::cfg_key_dark_toggle>    { toggle-dark-mode; break }
-    bind $t <Tab>                       "[list $t insert insert {\t}]; break"
+    bind $t <Tab>                       {%W insert insert "\t"; break}
     bind $t <$::cfg_key_goto>           { goto-dialog; break }
     bind $t <$::cfg_key_help>           { help-dialog; break }
     bind $t <$::cfg_key_undo>           "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break; [list catch [list $t edit undo]]; ed-status; break"
