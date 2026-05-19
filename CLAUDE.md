@@ -259,6 +259,17 @@ Two independent editor workspaces accessible via `key_workspace` (default F10). 
 - `tui-editor` returns `"__ws_toggle__"` on F10, `"__ws2_open__"` on Ctrl+O when `ws_n==2`
 - On `__ws2_open__`: `tui-ws-run` shows browser, user picks file, re-enters `tui-editor` with `ws_n` still 2
 - `tui-ws-check-inactive-dirty {rows cols}` — TUI counterpart of `ws-check-inactive-dirty`; called in browser `q`, editor Ctrl+W, and editor ESC+q
+- `tui-split-save-right` — saves the right pane state (split_r_*) to ws1_*/ws2_* before closing split or returning from editor
+
+**TUI split view — état actuel et limitations** (`src/tui.tcl`):
+- F3 ouvre le split : si `ws_dual_mode==1` (WS2 déjà activé), charge WS2 directement dans le panneau droit (`split_ws2_mode=1`) comme en GUI ; sinon, split même-fichier
+- F4 bascule le focus entre les deux panneaux (quel côté reçoit le curseur)
+- Les deux panneaux sont **indépendants** : curseurs et scrolls distincts. En mode même-fichier, taper du texte modifie le contenu partagé à la position du curseur actif.
+- F10 en split (mode même-fichier) charge WS2 dans le panneau droit (`split_ws2_mode=1`) ; F10 en split+WS2 cycle le focus
+- **`_fswap`** : quand `split_focus==2`, échange le contexte de navigation (`cy/cx/vrows/ish_cache/isd_cache/scroll_y/layout_cache/tw`) plus le contenu (`lines/dirty/filepath`) en mode WS2, avant le traitement des touches. Valeur : `1` (même-fichier) ou `2` (WS2). Les appels `tui-split-save-right` dans les handlers terminaux utilisent `$_fswap==2 ? $lines : $split_r_lines` pour extraire les bonnes données.
+- **Limitation connue : pas d'undo stack propre au panneau droit** (WS2 et même-fichier partagent l'undo stack du panneau gauche).
+- **Limitation connue : pas de coloration syntaxique indépendante** dans le panneau droit (contrairement au GUI).
+- Variables état split TUI (locales à `tui-editor`) : `split`, `split_ws2_mode`, `split_focus`, `split_r_lines`, `split_r_cy/cx/scroll/dirty/fp/vrows/ish/isd/layout/prev_tw/wrap_dirty`, `split_r_vi`, `split_r_scx`, `_fswap`
 
 ## Color schemes
 

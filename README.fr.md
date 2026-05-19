@@ -9,7 +9,7 @@ WrithDeck est un éditeur de texte sans distraction conçu pour les auteurs util
 **Fonctionnalités :**
 - Coloration syntaxique inline avec support des marqueurs Markdown
 - Navigateur de fichiers avec favoris et fichiers récents
-- Édition en vue fractionnée (GUI uniquement)
+- Édition en vue fractionnée (GUI et TUI)
 - Second espace de travail (F10) pour éditer deux fichiers indépendants côte à côte (GUI et TUI)
 - Table des matières avec navigation par en-têtes
 - Interface entièrement thémable (mode sombre/clair, 6 schémas de couleurs)

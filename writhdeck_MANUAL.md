@@ -331,6 +331,7 @@ Activated via `--no-gui` / `--tui` / `--ng`, or when no windowing system is avai
 - Scroll indicator: `▐/│` bar in the rightmost column when content overflows
 - Line numbers in left column (`line_numbers = 1`), shown on the first visual line of each paragraph
 - Configurable cursor shape: block or bar, blinking or steady
+- **Vertical split view** (F3): two panes with independent cursor, scroll, and editing; F4 cycles focus; if WS2 was previously activated, F3 opens left=current WS / right=other WS directly
 - **Typewriter / focus mode** (Ctrl+T): cursor vertically centered; text outside current paragraph dimmed
 - **Hemingway mode** (`hemingway_mode = 1`, activated with Ctrl+T): blocks arrows, backspace and undo; doubles margins
 
@@ -352,7 +353,9 @@ Activated via `--no-gui` / `--tui` / `--ng`, or when no windowing system is avai
 | Ctrl+D                                  | Toggle dark/light theme (reverse video)                      |
 | Ctrl+Up / Ctrl+Down                     | Jump to previous / next paragraph (terminal emulator only)   |
 | Ctrl+Left / Ctrl+Right or Alt+B / Alt+F | Jump to previous / next word                                 |
-| F10                                     | Switch to second workspace (WS1/WS2)                         |
+| F3                                      | Toggle split view                                            |
+| F4                                      | Split view — cycle focus between panes                       |
+| F10                                     | Switch to second workspace (WS1/WS2); in split view: load WS2 into right pane |
 | F11                                     | Table of contents (Esc / Ctrl+Q to close, Enter to jump)     |
 | Ctrl+A                                  | Select all                                                   |
 | Ctrl+K                                  | Toggle sticky selection (first: anchor; second: cancel)      |
@@ -365,10 +368,13 @@ Activated via `--no-gui` / `--tui` / `--ng`, or when no windowing system is avai
 ### Second workspace notes (TUI)
 
 - **F10** switches between WS1 and WS2; WS2 starts as an empty scratchpad
-- **F3** opens a split view with WS1 on the left and WS2 on the right (display only); **F4** swaps which workspace is the active (left) editor; **F3** again closes the split
+- **F3** opens a split view: if WS2 was previously activated, left pane = current workspace, right pane = other workspace; otherwise opens a same-file split; **F3** again closes the split
+- **F4** cycles focus between panes; both panes are fully independent (cursor, scroll, editing)
+- **F10 in split view** (same-file): loads WS2 into the right pane; F10 again cycles focus
 - The status bar shows `[1]` or `[2]` once both workspaces are active; the right pane shows a reverse-video header with the workspace number and filename
 - **Ctrl+O in WS2**: saves the current WS2 file, opens the browser to select a new file; the chosen file loads into WS2 (WS1 is unaffected)
 - On quit (`q` in browser), both workspaces are prompted for unsaved changes
+- Note: the right pane shares the undo history with the left pane and has no independent syntax highlighting
 
 ### Shortcuts — Browser
 
@@ -725,6 +731,7 @@ Activé via `--no-gui` / `--tui` / `--ng`, ou si aucun système de fenêtrage n'
 - Indicateur de défilement : barre `▐/│` dans la colonne de droite quand le contenu déborde
 - Numéros de ligne en colonne de gauche (`line_numbers = 1`), sur la première ligne visuelle de chaque paragraphe
 - Forme du curseur configurable : bloc ou barre, clignotant ou fixe
+- **Vue fractionnée verticale** (F3) : deux volets avec curseur, défilement et édition indépendants ; F4 cycle le focus ; si ES2 était déjà activé, F3 ouvre directement volet gauche = ES courant / volet droit = autre ES
 - **Mode machine à écrire / focus** (Ctrl+T) : curseur centré verticalement ; texte hors du paragraphe courant estompé
 - **Mode Hemingway** (`hemingway_mode = 1`, s'active avec Ctrl+T) : bloque les flèches, la suppression et l'annulation ; double les marges
 
@@ -746,7 +753,9 @@ Activé via `--no-gui` / `--tui` / `--ng`, ou si aucun système de fenêtrage n'
 | Ctrl+D                                  | Basculer thème sombre/clair (vidéo inverse)                         |
 | Ctrl+Up / Ctrl+Down                     | Sauter au paragraphe précédent / suivant (émulateur uniquement)     |
 | Ctrl+Left / Ctrl+Right ou Alt+B / Alt+F | Sauter au mot précédent / suivant                                   |
-| F10                                     | Basculer le second espace de travail (ES1/ES2)                      |
+| F3                                      | Basculer la vue fractionnée                                         |
+| F4                                      | Vue fractionnée — cycle le focus entre les volets                   |
+| F10                                     | Basculer le second espace de travail (ES1/ES2) ; en vue fractionnée : charge ES2 dans le volet droit |
 | F11                                     | Table des matières (Échap / Ctrl+Q pour fermer, Entrée pour sauter) |
 | Ctrl+A                                  | Tout sélectionner                                                   |
 | Ctrl+K                                  | Sélection collante (1er appui : ancre ; 2e appui : annuler)         |
@@ -759,9 +768,13 @@ Activé via `--no-gui` / `--tui` / `--ng`, ou si aucun système de fenêtrage n'
 ### Notes sur le second espace de travail (TUI)
 
 - **F10** bascule entre ES1 et ES2 ; ES2 démarre comme un bloc-notes vide
-- La barre de statut affiche `[1]` ou `[2]` dès que les deux espaces sont actifs
+- **F3** ouvre une vue fractionnée : si ES2 était déjà activé, volet gauche = espace courant, volet droit = autre espace ; sinon, split même-fichier ; **F3** à nouveau ferme le split
+- **F4** cycle le focus entre les volets ; les deux volets sont entièrement indépendants (curseur, défilement, édition)
+- **F10 en vue fractionnée** (même-fichier) : charge ES2 dans le volet droit ; F10 à nouveau cycle le focus
+- La barre de statut affiche `[1]` ou `[2]` dès que les deux espaces sont actifs ; le volet droit affiche un en-tête en vidéo inverse avec le numéro d'espace et le nom de fichier
 - **Ctrl+O dans ES2** : enregistre le fichier ES2 courant, ouvre le navigateur pour en choisir un nouveau ; le fichier choisi se charge dans ES2 (ES1 n'est pas affecté)
 - À la fermeture (`q` dans le navigateur), les deux espaces sont vérifiés pour des modifications non sauvegardées
+- Remarque : le volet droit partage l'historique d'annulation du volet gauche et n'a pas de coloration syntaxique indépendante
 
 ### Raccourcis — Navigateur
 

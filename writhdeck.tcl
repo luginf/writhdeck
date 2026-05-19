@@ -6470,6 +6470,8 @@ proc tui-editor {filepath {init_state {}}} {
             set split_r_prev_tw $tw_r; set split_r_wrap_dirty 0
         }
         lassign [tui-l2v $vrows $cy $cx] vi scx
+        set split_r_vi 0; set split_r_scx 0
+        if {$split} { lassign [tui-l2v $split_r_vrows $split_r_cy $split_r_cx] split_r_vi split_r_scx }
 
         set _cth [expr {$split ? $th - 1 : $th}]
         if {$toc_jumped} { set scroll_y $vi; set toc_jumped 0 } elseif {$::typewriter_mode} {
@@ -6660,8 +6662,7 @@ proc tui-editor {filepath {init_state {}}} {
         }
 
         if {$split && $split_focus == 2 && [llength $split_r_vrows] > 0} {
-            lassign [tui-l2v $split_r_vrows $split_r_cy $split_r_cx] _vi_r _scx_r
-            tui-move [expr {$_vi_r - $split_r_scroll + $roff + 1}] [expr {$_scx_r + $rcoff}]
+            tui-move [expr {$split_r_vi - $split_r_scroll + $roff + 1}] [expr {$split_r_scx + $rcoff}]
         } else {
             tui-move [expr {$vi - $scroll_y + $roff + ($split ? 1 : 0)}] [expr {$scx + $coff}]
         }
@@ -6695,32 +6696,20 @@ proc tui-editor {filepath {init_state {}}} {
             }
         }
 
-        # ws2 split + right focus: redirect all key handling to right pane state
+        # split focus==2: swap navigation context (and content for ws2 mode) so key handling targets right pane
         set _fswap 0
-        if {$split && $split_ws2_mode && $split_focus == 2} {
-            foreach {_v _r} {lines split_r_lines  cy split_r_cy  cx split_r_cx  dirty split_r_dirty  filepath split_r_fp} {
+        if {$split && $split_focus == 2} {
+            if {$split_ws2_mode} {
+                foreach {_v _r} {lines split_r_lines  dirty split_r_dirty  filepath split_r_fp} {
+                    set _tmp [set $_v]; set $_v [set $_r]; set $_r $_tmp
+                }
+            }
+            foreach {_v _r} {cy split_r_cy  cx split_r_cx  vrows split_r_vrows  ish_cache split_r_ish  isd_cache split_r_isd  scroll_y split_r_scroll  layout_cache split_r_layout  tw tw_r} {
                 set _tmp [set $_v]; set $_v [set $_r]; set $_r $_tmp
             }
-            set _fswap 1
+            set vi $split_r_vi; set scx $split_r_scx
+            set _fswap [expr {$split_ws2_mode ? 2 : 1}]
         }
-        # same-file split + right focus: compute right cursor pos for navigation
-        set _rvi -1; set _rscx 0
-        if {$split && !$split_ws2_mode && $split_focus == 2 && [llength $split_r_vrows] > 0} {
-            lassign [tui-l2v $split_r_vrows $split_r_cy $split_r_cx] _rvi _rscx
-        }
-        if {$_rvi >= 0} {
-            switch -- $key {
-                UP    { if {$_rvi > 0} { lassign [tui-v2l $split_r_vrows [expr {$_rvi-1}] $_rscx] split_r_cy split_r_cx }; set rst 0 }
-                DOWN  { if {$_rvi < [llength $split_r_vrows]-1} { lassign [tui-v2l $split_r_vrows [expr {$_rvi+1}] $_rscx] split_r_cy split_r_cx }; set rst 0 }
-                LEFT  { if {$split_r_cx > 0} { incr split_r_cx -1 } elseif {$split_r_cy > 1} { incr split_r_cy -1; set split_r_cx [string length [lindex $lines [expr {$split_r_cy-1}]]] } }
-                RIGHT { set _ll [string length [lindex $lines [expr {$split_r_cy-1}]]]; if {$split_r_cx < $_ll} { incr split_r_cx } elseif {$split_r_cy < [llength $lines]} { incr split_r_cy; set split_r_cx 0 } }
-                HOME  { set split_r_cx [lindex [lindex $split_r_vrows $_rvi] 1] }
-                END   { set split_r_cx [lindex [lindex $split_r_vrows $_rvi] 2] }
-                PPAGE { lassign [tui-v2l $split_r_vrows [expr {max(0,$_rvi-$_cth)}] $_rscx] split_r_cy split_r_cx; set rst 0 }
-                NPAGE { lassign [tui-v2l $split_r_vrows [expr {min([llength $split_r_vrows]-1,$_rvi+$_cth)}] $_rscx] split_r_cy split_r_cx; set rst 0 }
-            }
-        } else {
-
         switch -- $key {
             UP {
                 if {$::typewriter_mode && $::cfg_hemingway_mode} {}  \
@@ -6910,7 +6899,10 @@ proc tui-editor {filepath {init_state {}}} {
                     } elseif {$key eq "q"} {
                         # Quit/close file, exit command mode first
                         set ::tui_cmd_mode 0
-                        tui-split-save-right $split $::ws_n $split_r_lines $split_r_dirty $split_r_fp
+                        set _rsl [expr {$_fswap==2 ? $lines : $split_r_lines}]
+                        set _rsd [expr {$_fswap==2 ? $dirty : $split_r_dirty}]
+                        set _rsf [expr {$_fswap==2 ? $filepath : $split_r_fp}]
+                        tui-split-save-right $split $::ws_n $_rsl $_rsd $_rsf
                         lassign [tui-size] rows cols
                         if {$dirty} {
                             set r [tui-yesnocancel [t ed_save_before_tui] $rows $cols]
@@ -6969,7 +6961,10 @@ proc tui-editor {filepath {init_state {}}} {
                     set msg_time [clock seconds]
                     set clear_sel 0
                 } elseif {$key eq $::cfg_tui_close} {
-                    tui-split-save-right $split $::ws_n $split_r_lines $split_r_dirty $split_r_fp
+                    set _rsl [expr {$_fswap==2 ? $lines : $split_r_lines}]
+                    set _rsd [expr {$_fswap==2 ? $dirty : $split_r_dirty}]
+                    set _rsf [expr {$_fswap==2 ? $filepath : $split_r_fp}]
+                    tui-split-save-right $split $::ws_n $_rsl $_rsd $_rsf
                     lassign [tui-size] rows cols
                     if {$dirty} {
                         set r [tui-yesnocancel [t ed_save_before_tui] $rows $cols]
@@ -6995,7 +6990,10 @@ proc tui-editor {filepath {init_state {}}} {
                         }
                     }
                 } elseif {$key eq $::cfg_tui_open} {
-                    tui-split-save-right $split $::ws_n $split_r_lines $split_r_dirty $split_r_fp
+                    set _rsl [expr {$_fswap==2 ? $lines : $split_r_lines}]
+                    set _rsd [expr {$_fswap==2 ? $dirty : $split_r_dirty}]
+                    set _rsf [expr {$_fswap==2 ? $filepath : $split_r_fp}]
+                    tui-split-save-right $split $::ws_n $_rsl $_rsd $_rsf
                     if {$filepath ne ""} { tui-save-file $filepath $lines; daily-update $wc_cached; cursor-put $filepath $cy $cx }
                     set ::session_file ""; set dirty 0
                     if {$::ws_n == 2} { return "__ws2_open__" }
@@ -7160,7 +7158,11 @@ proc tui-editor {filepath {init_state {}}} {
                             set split_r_fp $::ws1_filename; set split_r_dirty $::ws1_dirty; set _c $::ws1_content
                         }
                         set split_r_lines [expr {$_c ne "" ? [split $_c "\n"] : [list ""]}]
-                        set split_r_cy 1; set split_r_cx 0; set split_r_scroll 0
+                        if {$_fswap} {
+                            set cy 1; set cx 0; set scroll_y 0
+                        } else {
+                            set split_r_cy 1; set split_r_cx 0; set split_r_scroll 0
+                        }
                         set split_r_wrap_dirty 1; set split_r_layout {}
                         set split_ws2_mode 1; set split_focus 1
                         set wrap_dirty 1; set prev_tw -1
@@ -7182,18 +7184,37 @@ proc tui-editor {filepath {init_state {}}} {
                     if {$split} {
                         # Close split
                         if {$split_ws2_mode} {
-                            tui-split-save-right 1 $::ws_n $split_r_lines $split_r_dirty $split_r_fp
+                            set _rsl [expr {$_fswap==2 ? $lines : $split_r_lines}]
+                            set _rsd [expr {$_fswap==2 ? $dirty : $split_r_dirty}]
+                            set _rsf [expr {$_fswap==2 ? $filepath : $split_r_fp}]
+                            tui-split-save-right 1 $::ws_n $_rsl $_rsd $_rsf
                         }
                         set split 0; set split_ws2_mode 0; set split_focus 1
                         set wrap_dirty 1; set prev_tw -1
                     } else {
-                        # Open same-file split
+                        # Open split: same-file by default
                         set split_r_cy $cy; set split_r_cx $cx; set split_r_scroll $scroll_y
                         set split_r_dirty 0; set split_r_fp $filepath
                         set split_r_lines $lines
                         set split_r_wrap_dirty 1; set split_r_layout {}
                         set split_ws2_mode 0; set split_focus 1
                         set split 1; set wrap_dirty 1; set prev_tw -1
+                        # Like GUI: if WS2 was activated, load it into right pane immediately
+                        if {$::ws_dual_mode} {
+                            if {$::ws_n == 1} {
+                                set split_r_fp $::ws2_filename
+                                set split_r_dirty $::ws2_dirty
+                                set _c $::ws2_content
+                            } else {
+                                set split_r_fp $::ws1_filename
+                                set split_r_dirty $::ws1_dirty
+                                set _c $::ws1_content
+                            }
+                            set split_r_lines [expr {$_c ne "" ? [split $_c "\n"] : [list ""]}]
+                            set split_r_cy 1; set split_r_cx 0; set split_r_scroll 0
+                            set split_r_wrap_dirty 1; set split_r_layout {}
+                            set split_ws2_mode 1
+                        }
                     }
                     puts -nonewline "\033\[2J"; flush stdout
                     set clear_sel 0
@@ -7212,11 +7233,17 @@ proc tui-editor {filepath {init_state {}}} {
                 }
             }
         }
-        } ;# end else (_rvi < 0)
         if {$_fswap} {
-            foreach {_v _r} {lines split_r_lines  cy split_r_cy  cx split_r_cx  dirty split_r_dirty  filepath split_r_fp} {
+            if {$_fswap == 2} {
+                foreach {_v _r} {lines split_r_lines  dirty split_r_dirty  filepath split_r_fp} {
+                    set _tmp [set $_v]; set $_v [set $_r]; set $_r $_tmp
+                }
+            }
+            foreach {_v _r} {cy split_r_cy  cx split_r_cx  vrows split_r_vrows  ish_cache split_r_ish  isd_cache split_r_isd  scroll_y split_r_scroll  layout_cache split_r_layout  tw tw_r} {
                 set _tmp [set $_v]; set $_v [set $_r]; set $_r $_tmp
             }
+            if {$_fswap == 2 && $wrap_dirty} { set split_r_wrap_dirty 1; set wrap_dirty 0 }
+            if {$_fswap == 1 && $wrap_dirty} { set split_r_wrap_dirty 1 }
         }
         if {$rst}       { set sticky -1 }
         if {$clear_sel} { set sel_anchor ""; set sel_sticky 0 }
@@ -7492,6 +7519,18 @@ proc tui-ws-run {fp} {
             set next  $::tui_ws_bg
             set ::tui_ws_bg $saved
             set ::ws_n [expr {$::ws_n == 1 ? 2 : 1}]
+            # Sync ws1/ws2 globals so split view can read correct inactive-workspace state
+            if {$::ws_n == 2} {
+                set ::ws1_filename   [dict get $saved filepath]
+                set ::ws1_content    [join [dict get $saved lines] "\n"]
+                set ::ws1_dirty      [dict get $saved dirty]
+                set ::ws1_scratchpad [expr {[dict get $saved filepath] eq ""}]
+            } else {
+                set ::ws2_filename   [dict get $saved filepath]
+                set ::ws2_content    [join [dict get $saved lines] "\n"]
+                set ::ws2_dirty      [dict get $saved dirty]
+                set ::ws2_scratchpad [expr {[dict get $saved filepath] eq ""}]
+            }
             puts -nonewline "\033\[2J"; flush stdout
             set next_fp [dict get $next filepath]
             set ret [tui-editor $next_fp $next]
