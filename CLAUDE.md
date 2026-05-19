@@ -318,6 +318,7 @@ Scheme files live in `src/schemes/` — one `.tcl` file per scheme, auto-detecte
 - No no-wrap mode (not planned)
 - Split view GUI only (TUI adaptation not planned yet)
 - `font_weight` not exposed in INI (removed, unreliable across fonts)
+- TUI split view : l'affichage du panneau droit peut être perturbé si le fichier contient des tabulations (les tabs sont expansés en 4 espaces dans le panneau gauche mais pas compensés dans le rendu droit)
 
 ## Git & commits
 

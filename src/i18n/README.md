@@ -1,0 +1,301 @@
+# Internationalization (i18n) Guide
+
+## Overview
+
+Writhdeck uses a modular translation system where each language is defined in a separate file. Translations are merged at build time via the Makefile, allowing flexible composition of language packs.
+
+## File Structure
+
+```
+src/i18n/
+├── en.tcl         # English (always included)
+├── fr.tcl         # French
+├── de.tcl         # German
+├── es.tcl         # Spanish
+├── ko.tcl         # Korean
+├── no.tcl         # Norwegian
+└── README.md      # This file
+```
+
+## Quick Start
+
+### Building with Different Language Packs
+
+```bash
+# Default: All available languages
+make
+
+# English + French only (minimal distribution) (~131KB)
+make LANGUAGES="en fr"
+
+# English only (smallest distribution) (~95KB)
+make LANGUAGES="en"
+
+# All languages: English, French, German, Spanish, Korean, Norwegian (~280KB)
+make LANGUAGES="en fr de es ko no"
+
+# Custom selection
+make LANGUAGES="en de"
+make LANGUAGES="fr es ko"
+```
+
+**Key Note:** English is automatically included as a fallback, even if not explicitly specified:
+- `make LANGUAGES="fr"` → builds with "en fr"
+- `make LANGUAGES="de es"` → builds with "en de es"
+
+### Testing Translations
+
+```bash
+# Build with all languages
+make LANGUAGES="en fr de es ko no"
+
+# Set language in INI file
+# Edit ~/.writhdeck.ini:
+# [behaviour]
+# lang = fr
+
+# Test in GUI
+wish writhdeck.tcl
+
+# Test in TUI
+tclsh writhdeck.tcl --tui
+```
+
+## File Sizes (approximate)
+
+| Build | Size | Languages |
+|-------|------|-----------|
+| `make LANGUAGES="en"` | 95K | EN only |
+| `make` (default) | 280K | All 6 languages |
+
+## Translation Structure
+
+Each language file uses this format:
+
+```tcl
+dict set ::i18n LANG {
+    key1 "translation for key1"
+    key2 "translation for key2"
+    ...
+}
+```
+
+**Important:** All keys from `en.tcl` must be present in every translation to avoid "key not found" errors at runtime.
+
+## Key Statistics
+
+- **Total translation keys:** 122
+- **Coverage:**
+  - Table of contents (4 keys)
+  - Browser shortcuts (14 keys)
+  - Browser help dialogs (13 keys)
+  - Editor operations (7 keys)
+  - Help dialog content (27 keys)
+  - Configuration dialog (16 keys)
+  - Dialog buttons/options (3 keys)
+  - Miscellaneous (37 keys)
+
+## Translation Keys
+
+Keys follow naming conventions by category:
+
+| Prefix | Purpose | Examples |
+|--------|---------|----------|
+| `toc_` | Table of contents | `toc_title`, `toc_no_headings` |
+| `br_` | Browser-related strings | `br_help_new_file`, `br_stats_title` |
+| `ed_` | Editor-related strings | `ed_saved`, `ed_watch_reload` |
+| `help_` | Help dialog strings | `help_date_time`, `help_k_save` |
+| `dlg_` | Dialog buttons/options | `dlg_yes`, `dlg_no`, `dlg_cancel` |
+| `goto_` | Go to line dialog | `goto_title`, `goto_prompt` |
+| `profile_config_` | Configuration dialog | `profile_config_title`, `profile_config_apply` |
+
+## Using Translations in Code
+
+To display a translated string in code, use the `t` function (defined in `src/config.tcl`):
+
+```tcl
+# Simple retrieval
+set msg [t help_date_time]
+
+# With format arguments
+set msg [format [t help_cur_time] "12:30:45" "2026-05-12"]
+```
+
+The function automatically falls back to English if the current language (`$::cfg_lang`) is missing a key.
+
+## Language Details
+
+| Code | Language | Variant | Status |
+|------|----------|---------|--------|
+| `en` | English | Standard (US/GB) | Complete |
+| `fr` | Français | Standard French | Complete |
+| `de` | Deutsch | Standard German | Complete |
+| `es` | Español | Standard Spanish | Complete |
+| `ko` | 한국어 | Standard Korean | Complete |
+| `no` | Norsk | Standard Norwegian | Complete |
+
+All languages use UTF-8 encoding and are ready for production.
+
+## Adding a New Language
+
+### Step 1: Create a translation file
+
+Create `src/i18n/XX.tcl` with this structure:
+
+```tcl
+dict set ::i18n XX {
+    toc_title          "Your translation here"
+    toc_no_headings    "Your translation here"
+    # ... (include all 122 keys from en.tcl)
+}
+```
+
+**Critical:** Copy all 122 keys from `src/i18n/en.tcl` and translate each value. Missing keys will cause runtime errors.
+
+### Step 2: Build with your language
+
+```bash
+# Manually specify your language
+make LANGUAGES="en fr XX"
+
+# Or use the automatic detection
+make  # This will include all .tcl files in src/i18n/
+```
+
+### Step 3: Test the translation
+
+```bash
+# Set language in ~/.writhdeck.ini:
+# [behaviour]
+# lang = XX
+
+# Test in GUI
+wish writhdeck.tcl
+
+# Test in TUI
+tclsh writhdeck.tcl --tui
+```
+
+## Customization
+
+To modify a translation string:
+
+1. Edit the corresponding `.tcl` file in `src/i18n/`
+2. Find the key and update its value
+3. Rebuild with `make`
+
+Example: Change the Help button label in German:
+
+```tcl
+# In src/i18n/de.tcl, find:
+br_key_help            "hilfe"
+
+# Change to:
+br_key_help            "Deine neue Übersetzung"
+
+# Then rebuild:
+make LANGUAGES="en fr de es ko no"
+```
+
+## Testing and Validation
+
+### Check for missing keys
+
+Before committing, verify that all translations are complete:
+
+```bash
+make test-i18n
+```
+
+This test ensures:
+- ✓ All languages have all keys
+- ✓ No duplicate or extra keys
+- ✓ Format strings are consistent
+
+### Check syntax
+
+Validate Tcl syntax in all translation files:
+
+```bash
+make test-syntax
+```
+
+## Encoding
+
+All i18n files use **UTF-8 encoding without BOM**. Accented characters are fully supported:
+- French: é, è, ê, à, ù, ô, ç
+- German: ä, ö, ü, ß
+- Spanish: á, é, í, ó, ú, ñ
+- Korean: 한글 (Hangul)
+- Norwegian: å, æ, ø
+
+## Missing Keys Fallback
+
+If a key is missing from the selected language, the `t` function returns the English version. This is visible as English text in a non-English UI. To prevent this:
+
+1. Always include all 122 keys from `src/i18n/en.tcl`
+2. Run `make test-i18n` to verify completeness
+3. Use a linter to check for missing translations
+
+## Build and Distribution
+
+### File Size Trade-offs
+
+- **Minimal (EN only):** 95KB
+  - Suitable for embedded systems or minimal deployments
+  - Use: `make LANGUAGES="en"`
+
+- **Standard (EN + FR):** 131KB
+  - Default build, covers most users
+  - Use: `make LANGUAGES="en fr"`
+
+- **Complete (All 6 languages):** 280KB
+  - Full international support
+  - Use: `make` (automatic detection)
+
+### Selective Build for Distribution
+
+If distributing to a specific region, build with relevant languages only:
+
+```bash
+# European distribution
+make LANGUAGES="en fr de es no"
+
+# Asian-focused distribution
+make LANGUAGES="en ko"
+```
+
+## Best Practices
+
+1. **Always translate all keys** - Use `make test-i18n` to verify completeness
+2. **Maintain format consistency** - Same number of `%s` and `%d` placeholders as English
+3. **Use proper encoding** - UTF-8 without BOM for special characters
+4. **Test before committing** - Run `make test` to catch errors early
+5. **Keep translations up-to-date** - When new keys are added, update all languages
+6. **Use consistent terminology** - Create a glossary for technical terms
+
+## Troubleshooting
+
+### "key 'example' not known in dictionary"
+
+**Cause:** Key exists in English but is missing from another language.
+
+**Fix:** Add the missing key to the language file and rebuild.
+
+### Garbled text in UI
+
+**Cause:** File not encoded as UTF-8.
+
+**Fix:** Re-save the i18n file with UTF-8 encoding in your editor.
+
+### Format string mismatch error
+
+**Cause:** Different number of `%s` or `%d` in translation vs. English.
+
+**Fix:** Ensure your translation has the same format specifiers as English. Run `make test-i18n` to detect these.
+
+### Build includes wrong languages
+
+**Cause:** Using old `make` without automatic language detection.
+
+**Fix:** Ensure Makefile has `AVAILABLE_LANGS` variable. Check: `grep AVAILABLE_LANGS Makefile`
