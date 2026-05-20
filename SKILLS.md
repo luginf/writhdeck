@@ -141,7 +141,7 @@ Minuterie compte à rebours et chronomètre (stopwatch) configurables, accessibl
 **Affichage du timer en pause** — `timer_last_tick` distingue "jamais démarré / reset" de "en pause" :
 - `timer_active=1` → en cours → affiche `timer_remaining`
 - `timer_active=0, timer_last_tick≠0` → en pause → affiche `timer_remaining`
-- `timer_active=0, timer_last_tick=0` → initial/reset → affiche `cfg_timer_duration * 60`
+- `timer_active=0, timer_last_tick=0` → initial/reset → affiche `cfg_timer_duration * 60` (countdown) ou `0` (stopwatch)
 - Condition : `$::timer_active || $::timer_last_tick != 0` — appliquée dans les 3 sites d'affichage (TUI draw loop, TUI fast path, GUI `ed-status`)
 
 **Implémentation alerte** :

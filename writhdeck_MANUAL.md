@@ -59,7 +59,7 @@ When both `--gui` and `--tui`/`--no-gui` are given, TUI takes precedence.
   - Bold `**text**`, italic `//text//`, underline `__text__`, strikethrough `--text--` — all markers configurable
   - Marker characters greyed out; styled text in a configurable `color_markup`
 - Table of contents overlay: jump to any heading (last selection remembered per session)
-- Status bar: fully configurable zones (left / center / right) with tokens: `workspace filename dirty sel ln col words chars goal clock help_bar space`
+- Status bar: fully configurable zones (left / center / right) with tokens: `workspace filename dirty sel ln col words chars goal clock timer help_bar space`; any unrecognized token is inserted as literal text (e.g. `|` or `--` as separators)
 - **Daily writing stats**: tracks words written per file per day (high-water mark — deletions don't reduce the count); favorites keep full history, other files keep only today's data
 - **Word goal** (`goal` status token): shows daily progress vs target, e.g. `47/500`; configurable via `word_goal` in INI or per profile
 - Go to line
@@ -247,6 +247,7 @@ Default mode, requires Tk.
 - Fullscreen toggle (default: `Alt+Enter`)
 - Optional second documents folder (`docs_dir`)
 - Clock in the status bar: add the `clock` token to a status zone
+- Custom text in the status bar: any unrecognized token is output as literal text — use `|`, `--`, or any word-like separator (no spaces in a single token; quote multi-word strings in the INI value)
 - Block cursor: inverted-color rectangle (`block_cursor_gui = 1`)
 - **Vertical split view** (F3): two independent panes on the same document; F4 cycles focus; active pane highlighted with a border
 - **Typewriter / focus mode** (Ctrl+T): keeps cursor vertically centered; dims text outside the current paragraph
@@ -514,7 +515,7 @@ Si `--gui` et `--no-gui` sont tous les deux présents, `--no-gui` a la priorité
   - Gras `**texte**`, italique `//texte//`, souligné `__texte__`, barré `--texte--` — tous les marqueurs configurables
   - Caractères de marquage grisés ; texte mis en forme dans une `color_markup` configurable
 - Overlay table des matières : saut vers n'importe quel titre (dernière sélection mémorisée par session)
-- Barre de statut : zones entièrement configurables (gauche / centre / droite) avec les jetons : `workspace filename dirty sel ln col words chars goal clock help_bar space`
+- Barre de statut : zones entièrement configurables (gauche / centre / droite) avec les jetons : `workspace filename dirty sel ln col words chars goal clock timer help_bar space` ; tout jeton non reconnu est inséré comme texte littéral (ex. `|` ou `--` comme séparateurs)
 - **Stats d'écriture journalières** : comptage par fichier par jour (high-water mark — les suppressions ne réduisent pas le compteur) ; les favoris conservent l'historique complet, les autres fichiers gardent seulement les données du jour
 - **Objectif de mots** (jeton `goal`) : affiche la progression du jour, ex. `47/500` ; configurable via `word_goal` dans le INI ou par profil
 - Aller à la ligne
@@ -702,6 +703,7 @@ Mode par défaut, nécessite Tk.
 - Basculement plein écran (défaut : `Alt+Entrée`)
 - Deuxième dossier de documents optionnel (`docs_dir`)
 - Horloge dans la barre de statut : ajouter le jeton `clock` à une zone de statut
+- Texte personnalisé dans la barre de statut : tout jeton non reconnu est affiché littéralement — utiliser `|`, `--` ou tout séparateur sans espace (pour un texte avec espaces, encadrer de guillemets dans la valeur INI)
 - Curseur bloc : rectangle avec couleurs inversées (`block_cursor_gui = 1`)
 - **Vue fractionnée verticale** (F3) : deux volets indépendants sur le même document ; F4 cycle le focus ; le volet actif est mis en évidence par une bordure
 - **Mode machine à écrire / focus** (Ctrl+T) : curseur centré verticalement ; texte hors du paragraphe courant estompé

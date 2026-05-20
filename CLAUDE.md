@@ -202,7 +202,7 @@ Configurable countdown timer and stopwatch accessible via modal command mode or 
 **Timer display state** — `timer_last_tick` distinguishes "never started / reset" from "paused":
 - `timer_active=1` → running → show `timer_remaining`
 - `timer_active=0, timer_last_tick≠0` → paused → show `timer_remaining`
-- `timer_active=0, timer_last_tick=0` → fresh/reset → show `cfg_timer_duration * 60`
+- `timer_active=0, timer_last_tick=0` → fresh/reset → show `cfg_timer_duration * 60` (countdown) or `0` (stopwatch)
 - Condition used in all three display sites: `$::timer_active || $::timer_last_tick != 0`
 
 **Alert implementation:**
@@ -270,7 +270,9 @@ Two independent editor workspaces accessible via `key_workspace` (default F10). 
 - `ws-check-inactive-dirty` — called by `quit-app`; prompts to save the inactive workspace if dirty; writes directly from `ws{n}_content`
 - `open-file-dialog` — detects `split_ws2_mode && focus eq .ed.pw.r.t` and routes Ctrl+O to WS2
 
-**Status bar token** `workspace` (`src/common.tcl`): appends `[ws_n] ` when `ws_dual_mode==1`; added at front of `cfg_status_left` default.
+**Status bar tokens** (`status-build` in `src/common.tcl`): `workspace filename dirty sel ln col words chars goal clock timer space help_bar`. Any unrecognized token falls through to a `default` clause and is appended as literal text — allows custom separators like `|` or `--` directly in `status_left/center/right` INI values. Multi-word literals must be quoted in the INI (Tcl list syntax).
+
+**Status bar token** `workspace`: appends `[ws_n] ` when `ws_dual_mode==1`; added at front of `cfg_status_left` default.
 
 **Quit handling:**
 - `quit-app` calls `ws-check-inactive-dirty` after the active-workspace prompt
