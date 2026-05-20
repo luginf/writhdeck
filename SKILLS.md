@@ -387,6 +387,8 @@ Voir `src/i18n/README.md` pour le guide complet (format, ajout de langue, format
 
 - **INI save : booléens en yes/no** : 17 paramètres booléens utilisent `[expr {$::cfg_xxx ? "yes" : "no"}]` dans `ini-save`. Loaders `line_numbers` et `cursor_restore` mis à jour vers `string is true $v` (auparavant assignation directe). Toutes les formes restent acceptées en entrée : `yes`/`no`/`1`/`0`/`true`/`false`/`on`/`off`.
 
+- **INI : commentaires `%` et titres TOC** : `%` accepté comme caractère de commentaire en plus de `#` (ligne entière et inline). `ini-save` utilise désormais `%` pour tous les commentaires et `= titre =` (heading WrithDeck) pour les titres de section — ces lignes sont silencieusement ignorées par le parser (ne matchent ni `^\[(\w+)\]$` ni `^(\w+)\s*=`) mais apparaissent dans le TOC F11 quand le fichier INI est ouvert dans l'éditeur. Sections générées : `WrithDeck configuration`, `editor`, `behaviour`, `timer` (sous-titre), `tui_colors`, `keys`, `profiles`, `schemes`, plus un heading par profil/scheme nommé. Regex inline : `{\s+[#%].*$}` appliqué après `string trim` (trim d'abord pour ne pas supprimer les valeurs hex `#rrggbb`).
+
 - **Fix GUI : Ctrl+C copie** : `bind $w <c>` dans `bind-cmd-mode` interceptait Ctrl+C — en Tk, un binding sans modificateur spécifié capture tous les états de modificateurs, et le widget-level surpasse le class-level (`<<Copy>>`). Fix : bindings explicites `<$::cfg_key_copy>` et `<$::cfg_key_cut>` ajoutés dans la section principale (`.ed.t`) et dans `bind-cmd-mode` (pour les panneaux split/WS2). `tk_textCopy %W` / `tk_textCut %W` sont les appels corrects.
 
 ## Récemment implémenté

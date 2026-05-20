@@ -564,6 +564,13 @@ proc timer-pause {} {
     }
 }
 
+proc timer-resume {} {
+    set ::timer_active 1
+    set ::timer_alert_shown 0
+    set ::timer_last_tick [clock seconds]
+    timer-schedule
+}
+
 proc timer-reset {} {
     set ::timer_active 0
     if {$::cfg_timer_type eq "countdown"} {
@@ -3312,8 +3319,12 @@ set ::ln_last_count 0
 proc gui-status-state {} {
     set t [active-ed]
     set clk [clock format [clock seconds] -format "%H:%M"]
-    set timer_display [expr {$::cfg_timer_duration * 60}]
-    if {$::timer_active} { set timer_display $::timer_remaining; timer-tick }
+    if {$::timer_active} { timer-tick }
+    if {$::timer_active || $::timer_last_tick != 0} {
+        set timer_display $::timer_remaining
+    } else {
+        set timer_display [expr {$::cfg_timer_duration * 60}]
+    }
     if {$::split_ws2_mode && $t eq ".ed.pw.r.t"} {
         if {$::ws_n == 1} {
             set fn [expr {$::ws2_scratchpad ? "** scratchpad **" : \
@@ -3343,7 +3354,7 @@ proc gui-status-state {} {
 proc gui-status-update {} {
     if {$::gui_cmd_mode} {
         set ::ed_bar_left ""
-        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t: timer  q: quit  s: stats  w: words"
+        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  q: quit  s: stats  w: words"
         set ::ed_bar_right ""
         return
     }
@@ -4209,8 +4220,13 @@ proc gui-handle-esc {} {
 
 proc gui-handle-keypress {key} {
     if {$::gui_cmd_mode} {
-        if {$key eq "t" || $key eq "T"} {
-            if {$::timer_active} { timer-pause } else { timer-start }
+        if {$key eq "p" || $key eq "P"} {
+            if {$::timer_active} { timer-pause } else { timer-resume }
+            set ::gui_cmd_mode 0
+            ed-status
+            return 1
+        } elseif {$key eq "t" || $key eq "T"} {
+            if {$::timer_active} { timer-reset } else { timer-start }
             set ::gui_cmd_mode 0
             ed-status
             return 1
@@ -4245,6 +4261,8 @@ proc bind-cmd-mode {w} {
     bind $w <$::cfg_key_cmd_mode>  { gui-handle-esc; break }
     bind $w <$::cfg_key_copy>      { tk_textCopy %W; break }
     bind $w <$::cfg_key_cut>       { tk_textCut  %W; break }
+    bind $w <p>     { if {![gui-handle-keypress p]} { %W insert insert p; ed-status }; break }
+    bind $w <P>     { if {![gui-handle-keypress P]} { %W insert insert P; ed-status }; break }
     bind $w <t>     { if {![gui-handle-keypress t]} { %W insert insert t; ed-status }; break }
     bind $w <T>     { if {![gui-handle-keypress T]} { %W insert insert T; ed-status }; break }
     bind $w <c>     { if {![gui-handle-keypress c]} { %W insert insert c; ed-status }; break }
@@ -6751,9 +6769,10 @@ proc tui-editor {filepath {init_state {}}} {
                 tui-compute-wc
             }
             timer-tick
-            set timer_display [expr {$::cfg_timer_duration * 60}]
-            if {$::timer_active} {
+            if {$::timer_active || $::timer_last_tick != 0} {
                 set timer_display $::timer_remaining
+            } else {
+                set timer_display [expr {$::cfg_timer_duration * 60}]
             }
             set tui_state [dict create \
                 fn    [expr {$filepath eq "" ? "** scratchpad **" : [file tail $filepath]}] \
@@ -6780,6 +6799,7 @@ proc tui-editor {filepath {init_state {}}} {
             tui-bar [expr {$rows-1}] $bar_left $bar_right $cols $bar_center
         }
 
+        puts -nonewline "\033\[?25l"
         if {$split && $split_focus == 2 && [llength $split_r_vrows] > 0} {
             tui-move [expr {$split_r_vi - $split_r_scroll + $roff + 1}] [expr {$vis_split_r_scx + $rcoff}]
         } else {
@@ -6787,9 +6807,36 @@ proc tui-editor {filepath {init_state {}}} {
         }
         puts -nonewline "\033\[?25h"; flush stdout
 
-        set key [tui-getch]; puts -nonewline "\033\[?25l"
+        set key [tui-getch]
         set rst       1
         set clear_sel 1
+
+        # Fast path for timer ticks: skip full redraw, update status bar only
+        if {$key eq "" && !$wrap_dirty && $dirty_line < 0} {
+            if {!$_hm_bar} {
+                timer-tick
+                set _td [expr {($::timer_active || $::timer_last_tick != 0) ? $::timer_remaining : $::cfg_timer_duration * 60}]
+                set _ts [dict create \
+                    fn    [expr {$filepath eq "" ? "** scratchpad **" : [file tail $filepath]}] \
+                    dirty $dirty sel [expr {$sel_anchor ne ""}] \
+                    ln $cy total [llength $lines] col [expr {$cx+1}] \
+                    words $wc_cached chars $cc_cached \
+                    clock [clock format [clock seconds] -format "%H:%M"] \
+                    timer $_td ws $::ws_n]
+                if {$::tui_cmd_mode} {
+                    set _bl " $message"; set _bc ""; set _br ""
+                } else {
+                    set _bl " [status-build $::cfg_status_left $_ts]"
+                    set _bc [status-build $::cfg_status_center $_ts]
+                    set _br "[status-build $::cfg_status_right $_ts] "
+                    if {$message ne "" && [clock seconds] - $msg_time < 4} { set _bl " $message" }
+                }
+                puts -nonewline "\033\[s"
+                tui-bar [expr {$rows-1}] $_bl $_br $cols $_bc
+                puts -nonewline "\033\[u"; flush stdout
+            }
+            continue
+        }
 
         # -- external modification check ---------------------------------------
         if {$::cfg_watch_file && $filepath ne "" && [file exists $filepath]} {
@@ -7008,9 +7055,16 @@ proc tui-editor {filepath {init_state {}}} {
                         set message ""
                         set msg_time [clock seconds]
                         set clear_sel 0
+                    } elseif {$key eq "p"} {
+                        # Pause if running, resume from saved value if paused
+                        if {$::timer_active} { timer-pause } else { timer-resume }
+                        set ::tui_cmd_mode 0
+                        set message ""
+                        set msg_time [clock seconds]
+                        set clear_sel 0
                     } elseif {$key eq "t"} {
-                        # Toggle timer, exit command mode
-                        if {$::timer_active} { timer-pause } else { timer-start }
+                        # Start if inactive, reset if active
+                        if {$::timer_active} { timer-reset } else { timer-start }
                         set ::tui_cmd_mode 0
                         set message ""
                         set msg_time [clock seconds]
@@ -7076,7 +7130,7 @@ proc tui-editor {filepath {init_state {}}} {
                     }
                 } elseif {$key eq $::cfg_tui_cmd_mode} {
                     set ::tui_cmd_mode 1
-                    set message "$::cfg_lbl_cmd_mode: exit mode  t: timer  q: quit  s: stats  w: words"
+                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  q: quit  s: stats  w: words"
                     set msg_time [clock seconds]
                     set clear_sel 0
                 } elseif {$key eq $::cfg_tui_close} {

@@ -168,7 +168,11 @@ Section order: `DOCS_DIR_DEFAULT` → `DOCS_DIR` (if custom) → Favorites → R
 
 ## INI parser
 
-**Inline comments** — `regsub {\s+#.*$}` is applied on the already-trimmed value: `set v [regsub {\s+#.*$} [string trim $val] {}]`. Trim first, then strip — this preserves values that start with `#` (hex colors like `#1a1a1a`) while stripping `# comment` that follows whitespace.
+**Comment characters** — both `#` and `%` are accepted as comment characters:
+- Line comments: lines starting with `#` or `%` are skipped entirely.
+- Inline comments: `regsub {\s+[#%].*$}` strips everything after a `#` or `%` preceded by whitespace. Applied after `string trim`, so values starting with `#` (hex colors like `#1a1a1a`) are preserved.
+
+**`ini-save` format** — comments use `%`; section titles use WrithDeck heading syntax `= title =` so they appear in the F11 TOC when the INI is opened in the editor. The `= title =` lines are silently ignored by the parser (no match for `[section]` or `key = value` patterns). Sections: `editor`, `behaviour`, `timer` (subsection), `tui_colors`, `keys`, `profiles`, `schemes` — plus one heading per named profile/scheme block.
 
 **Boolean values** — `ini-save` writes `yes`/`no` for all 17 boolean settings using `[expr {$::cfg_xxx ? "yes" : "no"}]`. All forms are accepted on load via `string is true $v`: `yes`, `no`, `1`, `0`, `true`, `false`, `on`, `off`.
 

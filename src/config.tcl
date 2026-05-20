@@ -281,6 +281,13 @@ proc timer-pause {} {
     }
 }
 
+proc timer-resume {} {
+    set ::timer_active 1
+    set ::timer_alert_shown 0
+    set ::timer_last_tick [clock seconds]
+    timer-schedule
+}
+
 proc timer-reset {} {
     set ::timer_active 0
     if {$::cfg_timer_type eq "countdown"} {

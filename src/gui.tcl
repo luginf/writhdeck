@@ -857,8 +857,12 @@ set ::ln_last_count 0
 proc gui-status-state {} {
     set t [active-ed]
     set clk [clock format [clock seconds] -format "%H:%M"]
-    set timer_display [expr {$::cfg_timer_duration * 60}]
-    if {$::timer_active} { set timer_display $::timer_remaining; timer-tick }
+    if {$::timer_active} { timer-tick }
+    if {$::timer_active || $::timer_last_tick != 0} {
+        set timer_display $::timer_remaining
+    } else {
+        set timer_display [expr {$::cfg_timer_duration * 60}]
+    }
     if {$::split_ws2_mode && $t eq ".ed.pw.r.t"} {
         if {$::ws_n == 1} {
             set fn [expr {$::ws2_scratchpad ? "** scratchpad **" : \
@@ -888,7 +892,7 @@ proc gui-status-state {} {
 proc gui-status-update {} {
     if {$::gui_cmd_mode} {
         set ::ed_bar_left ""
-        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t: timer  q: quit  s: stats  w: words"
+        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  q: quit  s: stats  w: words"
         set ::ed_bar_right ""
         return
     }
@@ -1754,8 +1758,13 @@ proc gui-handle-esc {} {
 
 proc gui-handle-keypress {key} {
     if {$::gui_cmd_mode} {
-        if {$key eq "t" || $key eq "T"} {
-            if {$::timer_active} { timer-pause } else { timer-start }
+        if {$key eq "p" || $key eq "P"} {
+            if {$::timer_active} { timer-pause } else { timer-resume }
+            set ::gui_cmd_mode 0
+            ed-status
+            return 1
+        } elseif {$key eq "t" || $key eq "T"} {
+            if {$::timer_active} { timer-reset } else { timer-start }
             set ::gui_cmd_mode 0
             ed-status
             return 1
@@ -1790,6 +1799,8 @@ proc bind-cmd-mode {w} {
     bind $w <$::cfg_key_cmd_mode>  { gui-handle-esc; break }
     bind $w <$::cfg_key_copy>      { tk_textCopy %W; break }
     bind $w <$::cfg_key_cut>       { tk_textCut  %W; break }
+    bind $w <p>     { if {![gui-handle-keypress p]} { %W insert insert p; ed-status }; break }
+    bind $w <P>     { if {![gui-handle-keypress P]} { %W insert insert P; ed-status }; break }
     bind $w <t>     { if {![gui-handle-keypress t]} { %W insert insert t; ed-status }; break }
     bind $w <T>     { if {![gui-handle-keypress T]} { %W insert insert T; ed-status }; break }
     bind $w <c>     { if {![gui-handle-keypress c]} { %W insert insert c; ed-status }; break }
