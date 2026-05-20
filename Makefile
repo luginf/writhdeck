@@ -30,10 +30,11 @@ SEP       := ===================================================================
 
 GUI_SRCS  := src/state.tcl src/config.tcl $(GUI_SCHEME_FILES) src/common.tcl src/gui.tcl src/tui.tcl src/main.tcl
 CLI_SRCS  := src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl src/tui.tcl src/main-cli.tcl
+JIM_SRCS  := src/compat-jim.tcl src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl src/tui.tcl src/main-cli.tcl
 
 COMPACT_SCRIPT := tools/tcl-compact.tcl
 
-.PHONY: all clean compact compact-cli .FORCE
+.PHONY: all clean compact compact-cli jimtcl .FORCE
 
 all: writhdeck.tcl writhdeck-cli.tcl
 
@@ -79,6 +80,30 @@ writhdeck-cli.tcl: src/boot-cli.tcl $(CLI_SRCS) $(CLI_I18N_FILES) Makefile
 	@chmod +x $@
 	@echo "Built $@ (TUI-only, languages: $(CLI_LANGS), schemes: $(CLI_SCHEMES))"
 
+jimtcl: writhdeck-jim.tcl
+
+writhdeck-jim.tcl: src/boot-jim.tcl $(JIM_SRCS) $(CLI_I18N_FILES) Makefile
+	@rm -f $@
+	@cat src/boot-jim.tcl > $@
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "compat-jim.tcl" "$(SEP)" >> $@
+	@cat src/compat-jim.tcl >> $@
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "state.tcl" "$(SEP)" >> $@
+	@cat src/state.tcl >> $@
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "config.tcl" "$(SEP)" >> $@
+	@cat src/config.tcl >> $@
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "schemes ($(CLI_SCHEMES))" "$(SEP)" >> $@
+	@for f in $(CLI_SCHEME_FILES); do cat $$f >> $@; done
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "i18n ($(CLI_LANGUAGES))" "$(SEP)" >> $@
+	@for f in $(CLI_I18N_FILES); do cat $$f >> $@; done
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "common.tcl" "$(SEP)" >> $@
+	@cat src/common.tcl >> $@
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "tui.tcl" "$(SEP)" >> $@
+	@cat src/tui.tcl >> $@
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "main-cli.tcl" "$(SEP)" >> $@
+	@cat src/main-cli.tcl >> $@
+	@chmod +x $@
+	@echo "Built $@ (JimTcl TUI-only, languages: $(CLI_LANGS), schemes: $(CLI_SCHEMES))"
+
 compact: writhdeck.tcl writhdeck-cli.tcl
 	@tclsh $(COMPACT_SCRIPT) writhdeck.tcl writhdeck-compact.tcl
 	@chmod +x writhdeck-compact.tcl
@@ -90,7 +115,7 @@ compact-cli: writhdeck-cli.tcl
 	@chmod +x writhdeck-cli-compact.tcl
 
 clean:
-	rm -f writhdeck.tcl writhdeck-cli.tcl writhdeck-compact.tcl writhdeck-cli-compact.tcl
+	rm -f writhdeck.tcl writhdeck-cli.tcl writhdeck-compact.tcl writhdeck-cli-compact.tcl writhdeck-jim.tcl
 	@echo "Cleaned build artifacts"
 
 .PHONY: test-gui test-cli test test-i18n test-syntax test-langs lint-doc
