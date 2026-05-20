@@ -861,7 +861,7 @@ proc gui-status-state {} {
     if {$::timer_active || $::timer_last_tick != 0} {
         set timer_display $::timer_remaining
     } else {
-        set timer_display [expr {$::cfg_timer_duration * 60}]
+        set timer_display [expr {$::cfg_timer_type eq "stopwatch" ? 0 : $::cfg_timer_duration * 60}]
     }
     if {$::split_ws2_mode && $t eq ".ed.pw.r.t"} {
         if {$::ws_n == 1} {

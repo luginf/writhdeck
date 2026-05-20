@@ -198,6 +198,7 @@ proc status-build {tokens state} {
             } }
             space    { append result " " }
             help_bar {}
+            default  { append result $tok }
         }
     }
     return $result

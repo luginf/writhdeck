@@ -1386,7 +1386,7 @@ proc tui-editor {filepath {init_state {}}} {
             if {$::timer_active || $::timer_last_tick != 0} {
                 set timer_display $::timer_remaining
             } else {
-                set timer_display [expr {$::cfg_timer_duration * 60}]
+                set timer_display [expr {$::cfg_timer_type eq "stopwatch" ? 0 : $::cfg_timer_duration * 60}]
             }
             set tui_state [dict create \
                 fn    [expr {$filepath eq "" ? "** scratchpad **" : [file tail $filepath]}] \
@@ -1429,7 +1429,7 @@ proc tui-editor {filepath {init_state {}}} {
         if {$key eq "" && !$wrap_dirty && $dirty_line < 0} {
             if {!$_hm_bar} {
                 timer-tick
-                set _td [expr {($::timer_active || $::timer_last_tick != 0) ? $::timer_remaining : $::cfg_timer_duration * 60}]
+                set _td [expr {($::timer_active || $::timer_last_tick != 0) ? $::timer_remaining : ($::cfg_timer_type eq "stopwatch" ? 0 : $::cfg_timer_duration * 60)}]
                 set _ts [dict create \
                     fn    [expr {$filepath eq "" ? "** scratchpad **" : [file tail $filepath]}] \
                     dirty $dirty sel [expr {$sel_anchor ne ""}] \
