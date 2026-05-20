@@ -514,14 +514,15 @@ proc ini-load {} {
 proc ini-save {} {
     set fh [open $::INI_FILE w]
     chan configure $fh -encoding utf-8
-    puts $fh "# WrithDeck - configuration"
-    puts $fh "# https://github.com/luginf/writhdeck"
+    puts $fh "= WrithDeck configuration ="
+    puts $fh "% https://github.com/luginf/writhdeck"
     puts $fh ""
+    puts $fh "= editor ="
     puts $fh "\[editor\]"
     puts $fh "profile        = $::cfg_profile"
     puts $fh "scheme         = $::cfg_scheme"
-    puts $fh "# docs_dir = ~/Documents/writerdeck"
-    puts $fh "# (main default document and conf folder: ~/Documents/writhdeck)"
+    puts $fh "% docs_dir = ~/Documents/writerdeck"
+    puts $fh "% (main default document and conf folder: ~/Documents/writhdeck)"
     puts $fh "console_margin_cols = $::cfg_console_margin_cols"
     puts $fh "console_margin_rows = $::cfg_console_margin_rows"
     puts $fh ""
@@ -532,6 +533,7 @@ proc ini-save {} {
     puts $fh "underline_marker     = $::cfg_underline_marker"
     puts $fh "strikethrough_marker = $::cfg_strikethrough_marker"
     puts $fh ""
+    puts $fh "= behaviour ="
     puts $fh "\[behaviour\]"
     puts $fh "browser              = [expr {$::cfg_browser              ? "yes" : "no"}]"
     puts $fh "watch_file           = [expr {$::cfg_watch_file           ? "yes" : "no"}]"
@@ -544,51 +546,53 @@ proc ini-save {} {
     puts $fh "block_cursor_gui     = [expr {$::cfg_block_cursor_gui     ? "yes" : "no"}]"
     puts $fh "block_cursor_console = [expr {$::cfg_block_cursor_console ? "yes" : "no"}]"
     puts $fh "blink_cursor         = [expr {$::cfg_blink_cursor         ? "yes" : "no"}]"
-    puts $fh "# lang: interface language - en or fr"
+    puts $fh "% lang: interface language - en fr de es ko no"
     puts $fh "lang           = $::cfg_lang"
-    puts $fh "# help_bar: text shown in the shortcuts bar, empty to hide"
+    puts $fh "% help_bar: text shown in the shortcuts bar, empty to hide"
     puts $fh "help_bar       = $::cfg_help_bar"
-    puts $fh "# word_goal: target word count shown in status bar with 'goal' token (0 = disabled)"
+    puts $fh "% word_goal: target word count shown in status bar with 'goal' token (0 = disabled)"
     puts $fh "word_goal      = $::cfg_word_goal"
-    puts $fh "# status bar zones - tokens: filename dirty sel ln col words chars goal clock timer help_bar space"
+    puts $fh "% status bar zones - tokens: filename dirty sel ln col words chars goal clock timer help_bar space"
     puts $fh "status_left    = $::cfg_status_left"
     puts $fh "status_center  = $::cfg_status_center"
     puts $fh "status_right   = $::cfg_status_right"
     puts $fh "dark_mode      = [expr {$::cfg_dark_mode ? "yes" : "no"}]"
-    puts $fh "# timer and stopwatch"
+    puts $fh "= timer ="
     puts $fh "timer_duration = $::cfg_timer_duration"
     puts $fh "timer_sound    = [expr {$::cfg_timer_sound  ? "yes" : "no"}]"
     puts $fh "timer_alert    = [expr {$::cfg_timer_alert  ? "yes" : "no"}]"
     puts $fh "timer_type     = $::cfg_timer_type"
     puts $fh "chrono_show    = [expr {$::cfg_chrono_show  ? "yes" : "no"}]"
     puts $fh ""
+    puts $fh "= tui_colors ="
     puts $fh "\[tui_colors\]"
-    puts $fh "# TUI color palette"
-    puts $fh "# Named colors: black red green yellow blue magenta cyan white"
-    puts $fh "#               bright_black bright_red bright_green bright_yellow"
-    puts $fh "#               bright_blue bright_magenta bright_cyan bright_white"
-    puts $fh "# With tui_256colors = yes: also accepts numeric values 0-255"
-    puts $fh "# Set tui_colors = yes to enable"
+    puts $fh "% TUI color palette"
+    puts $fh "% Named colors: black red green yellow blue magenta cyan white"
+    puts $fh "%               bright_black bright_red bright_green bright_yellow"
+    puts $fh "%               bright_blue bright_magenta bright_cyan bright_white"
+    puts $fh "% With tui_256colors = yes: also accepts numeric values 0-255"
+    puts $fh "% Set tui_colors = yes to enable"
     puts $fh "tui_colors      = [expr {$::cfg_tui_colors    ? "yes" : "no"}]"
-    puts $fh "# tui_256colors: use ANSI 256-color codes (brights distinct, numeric 0-255 accepted)"
+    puts $fh "% tui_256colors: use ANSI 256-color codes (brights distinct, numeric 0-255 accepted)"
     puts $fh "tui_256colors   = [expr {$::cfg_tui_256colors ? "yes" : "no"}]"
     puts $fh "tui_col_heading = $::cfg_tui_col_heading"
     puts $fh "tui_col_comment = $::cfg_tui_col_comment"
     puts $fh "tui_col_markup  = $::cfg_tui_col_markup"
     puts $fh "tui_col_bar_fg  = $::cfg_tui_col_bar_fg"
     puts $fh "tui_col_bar_bg  = $::cfg_tui_col_bar_bg"
-    puts $fh "# tui_col_sel_bg: selection background color (empty = reverse video)"
+    puts $fh "% tui_col_sel_bg: selection background color (empty = reverse video)"
     puts $fh "tui_col_sel_bg  = $::cfg_tui_col_sel_bg"
-    puts $fh "# example warm palette for tui_256colors = yes:"
-    puts $fh "#   tui_col_heading = 214   # amber  #ffaf00"
-    puts $fh "#   tui_col_comment = 136   # dark amber  #af8700"
-    puts $fh "#   tui_col_markup  = 172   # orange-brown  #d78700"
-    puts $fh "#   tui_col_bar_fg  = 220   # gold  #ffd700"
-    puts $fh "#   tui_col_bar_bg  = 94    # dark brown  #875f00"
-    puts $fh "#   tui_col_sel_bg  = 52    # dark burgundy  #5f0000"
+    puts $fh "% example warm palette for tui_256colors = yes:"
+    puts $fh "%   tui_col_heading = 214   % amber  #ffaf00"
+    puts $fh "%   tui_col_comment = 136   % dark amber  #af8700"
+    puts $fh "%   tui_col_markup  = 172   % orange-brown  #d78700"
+    puts $fh "%   tui_col_bar_fg  = 220   % gold  #ffd700"
+    puts $fh "%   tui_col_bar_bg  = 94    % dark brown  #875f00"
+    puts $fh "%   tui_col_sel_bg  = 52    % dark burgundy  #5f0000"
     puts $fh ""
+    puts $fh "= keys ="
     puts $fh "\[keys\]"
-    puts $fh "# Use Tk key names: Control-s, Alt-Return, F11, etc."
+    puts $fh "% Use Tk key names: Control-s, Alt-Return, F11, etc."
     puts $fh "key_save         = $::cfg_key_save"
     puts $fh "key_save_as      = $::cfg_key_save_as"
     puts $fh "key_close        = $::cfg_key_close"
@@ -615,13 +619,15 @@ proc ini-save {} {
     puts $fh "key_dark_toggle  = $::cfg_key_dark_toggle"
     puts $fh "key_cmd_mode     = $::cfg_key_cmd_mode"
     puts $fh ""
+    puts $fh "= profiles ="
     puts $fh "\[profiles\]"
-    puts $fh {# Each [name] block defines a profile (display, behaviour and status bar settings).}
-    puts $fh {# Select the active profile with:  profile = <name>  in [editor]}
+    puts $fh {% Each [name] block defines a profile (display, behaviour and status bar settings).}
+    puts $fh {% Select the active profile with:  profile = <name>  in [editor]}
     puts $fh ""
 
     # Add "roman" example profile if not already defined
     if {![dict exists $::cfg_profiles roman]} {
+        puts $fh "== roman =="
         puts $fh "\[roman\]"
         puts $fh "margin_width    = 180"
         puts $fh "margin_height   = 80"
@@ -635,6 +641,7 @@ proc ini-save {} {
 
     # Write all profiles including "default" from the dictionary
     foreach pname [dict keys $::cfg_profiles] {
+        puts $fh "= $pname ="
         puts $fh "\[$pname\]"
         set d [dict get $::cfg_profiles $pname]
         foreach key {margin_width margin_height
@@ -650,6 +657,7 @@ proc ini-save {} {
 
     # Also write defaults from global variables for backwards compatibility
     if {![dict exists $::cfg_profiles default]} {
+        puts $fh "== default =="
         puts $fh "\[default\]"
         puts $fh "margin_width    = $::cfg_margin_width"
         puts $fh "margin_height   = $::cfg_margin_height"
@@ -662,13 +670,15 @@ proc ini-save {} {
         puts $fh ""
     }
     puts $fh ""
+    puts $fh "= schemes ="
     puts $fh "\[schemes\]"
-    puts $fh {# Each [name] block defines a color scheme.}
-    puts $fh {# Select the active scheme with:  scheme = <name>  in [editor]}
-    puts $fh "# colors in #rrggbb format"
+    puts $fh {% Each [name] block defines a color scheme.}
+    puts $fh {% Select the active scheme with:  scheme = <name>  in [editor]}
+    puts $fh "% colors in #rrggbb format"
     puts $fh ""
+    puts $fh "== default =="
     puts $fh "\[default\]"
-    puts $fh "# dark mode"
+    puts $fh "% dark mode"
     puts $fh "color_bg       = $::cfg_bg"
     puts $fh "color_fg       = $::cfg_fg"
     puts $fh "color_bg_bar   = $::cfg_bg_bar"
@@ -677,7 +687,7 @@ proc ini-save {} {
     puts $fh "color_heading  = $::cfg_color_heading"
     puts $fh "color_comment  = $::cfg_color_comment"
     puts $fh "color_markup   = $::cfg_color_markup"
-    puts $fh "# light mode"
+    puts $fh "% light mode"
     puts $fh "color_bg_alt      = $::cfg_bg_alt"
     puts $fh "color_fg_alt      = $::cfg_fg_alt"
     puts $fh "color_bg_bar_alt  = $::cfg_bg_bar_alt"
@@ -686,13 +696,14 @@ proc ini-save {} {
     puts $fh "color_heading_alt = $::cfg_color_heading_alt"
     puts $fh "color_comment_alt = $::cfg_color_comment_alt"
     puts $fh "color_markup_alt  = $::cfg_color_markup_alt"
-    puts $fh "# outer margin background (same as color_bg/color_bg_alt by default)"
-    puts $fh "# color_bg2       = $::cfg_bg2"
-    puts $fh "# color_bg2_alt   = $::cfg_bg2_alt"
+    puts $fh "% outer margin background (same as color_bg/color_bg_alt by default)"
+    puts $fh "% color_bg2       = $::cfg_bg2"
+    puts $fh "% color_bg2_alt   = $::cfg_bg2_alt"
     # write any extra schemes stored in memory (user-defined)
     foreach sname [dict keys $::cfg_schemes] {
         if {$sname eq "default"} continue
         puts $fh ""
+        puts $fh "== $sname =="
         puts $fh "\[$sname\]"
         set d [dict get $::cfg_schemes $sname]
         foreach key {color_bg color_fg color_bg_bar color_fg_bar color_bg_sel
