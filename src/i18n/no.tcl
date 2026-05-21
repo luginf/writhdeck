@@ -134,5 +134,9 @@ dict set ::i18n no {
     timer_type_countdown   "nedtelling"
     timer_type_stopwatch   "stoppeklokke"
     chrono_show            "Vis i statuslinje:"
+    config_tab_misc        "Misc"
+    autosave_section       "Autolagring"
+    autosave_enabled       "Autolagring:"
+    autosave_interval      "Intervall (min):"
 }
 

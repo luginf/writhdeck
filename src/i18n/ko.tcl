@@ -134,5 +134,9 @@ dict set ::i18n ko {
     timer_type_countdown   "카운트다운"
     timer_type_stopwatch   "스톱워치"
     chrono_show            "상태 표시줄에 표시:"
+    config_tab_misc        "기타"
+    autosave_section       "자동 저장"
+    autosave_enabled       "자동 저장:"
+    autosave_interval      "간격 (분):"
 }
 

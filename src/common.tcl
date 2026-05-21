@@ -241,6 +241,30 @@ proc do-backup {dir name} {
     return $dst
 }
 
+proc do-autosave {ws_n content filepath} {
+    if {!$::cfg_autosave_enabled} return
+    set dir [file normalize [tilde-expand "~/Documents/writhdeck"]]
+    file mkdir $dir
+    set fn  [expr {$ws_n == 1 ? "autosave_ws01.txt" : "autosave_ws02.txt"}]
+    set dst [file join $dir $fn]
+    set ts  [clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S"]
+    if {$filepath eq ""} {
+        set header "scratchpad"
+    } else {
+        set folder [string map [list $::HOME_DIR ~] [file dirname $filepath]]
+        set header "$folder/[file tail $filepath]"
+    }
+    set fh [open $dst w]
+    chan configure $fh -encoding utf-8
+    puts $fh $header
+    puts $fh $ts
+    puts $fh ""
+    puts $fh "-------------------------"
+    puts -nonewline $fh $content
+    close $fh
+    set ::autosave_last_time [clock seconds]
+}
+
 proc toggle-favorite {path} {
     set path [file normalize $path]
     if {!$::state_cache_valid} { state-load }

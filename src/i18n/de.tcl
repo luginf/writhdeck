@@ -134,5 +134,9 @@ dict set ::i18n de {
     timer_type_countdown   "Countdown"
     timer_type_stopwatch   "Stoppuhr"
     chrono_show            "In der Statusleiste anzeigen:"
+    config_tab_misc        "Sonstiges"
+    autosave_section       "Autospeichern"
+    autosave_enabled       "Autospeichern:"
+    autosave_interval      "Intervall (Min):"
 }
 

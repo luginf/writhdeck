@@ -473,6 +473,10 @@ set ::timer_remaining      0
 set ::timer_last_tick      0
 set ::timer_schedule_id    ""
 set ::timer_alert_shown    0
+set ::cfg_autosave_enabled  1
+set ::cfg_autosave_interval 1
+set ::autosave_last_time    0
+set ::autosave_schedule_id  ""
 set ::fullscreen 0
 set ::split_mode 0
 # workspace state (WS1 = primary, WS2 = secondary toggled via cfg_key_workspace)
@@ -793,6 +797,8 @@ proc ini-load {} {
                 tui_col_bar_fg   { set ::cfg_tui_col_bar_fg   $v }
                 tui_col_bar_bg   { set ::cfg_tui_col_bar_bg   $v }
                 tui_col_sel_bg   { set ::cfg_tui_col_sel_bg   $v }
+                autosave_enabled  { set ::cfg_autosave_enabled  [string is true $v] }
+                autosave_interval { set ::cfg_autosave_interval $v }
             }
         }
     }
@@ -853,6 +859,11 @@ proc ini-save {} {
     puts $fh "timer_alert    = [expr {$::cfg_timer_alert  ? "yes" : "no"}]"
     puts $fh "timer_type     = $::cfg_timer_type"
     puts $fh "chrono_show    = [expr {$::cfg_chrono_show  ? "yes" : "no"}]"
+    puts $fh ""
+    puts $fh "= misc ="
+    puts $fh "\[misc\]"
+    puts $fh "autosave_enabled  = [expr {$::cfg_autosave_enabled  ? "yes" : "no"}]"
+    puts $fh "autosave_interval = $::cfg_autosave_interval"
     puts $fh ""
     puts $fh "= tui_colors ="
     puts $fh "\[tui_colors\]"
@@ -1479,6 +1490,10 @@ dict set ::i18n en {
     timer_type_countdown   "countdown"
     timer_type_stopwatch   "stopwatch"
     chrono_show            "Show in status bar:"
+    config_tab_misc        "Misc"
+    autosave_section       "Autosave"
+    autosave_enabled       "Autosave:"
+    autosave_interval      "Interval (min):"
 }
 
 dict set ::i18n de {
@@ -1617,6 +1632,10 @@ dict set ::i18n de {
     timer_type_countdown   "Countdown"
     timer_type_stopwatch   "Stoppuhr"
     chrono_show            "In der Statusleiste anzeigen:"
+    config_tab_misc        "Sonstiges"
+    autosave_section       "Autospeichern"
+    autosave_enabled       "Autospeichern:"
+    autosave_interval      "Intervall (Min):"
 }
 
 dict set ::i18n es {
@@ -1755,6 +1774,10 @@ dict set ::i18n es {
     timer_type_countdown   "cuenta atras"
     timer_type_stopwatch   "cronometro"
     chrono_show            "Mostrar en la barra de estado:"
+    config_tab_misc        "Misc"
+    autosave_section       "Autoguardado"
+    autosave_enabled       "Autoguardado:"
+    autosave_interval      "Intervalo (min):"
 }
 
 dict set ::i18n fr {
@@ -1893,6 +1916,10 @@ dict set ::i18n fr {
     timer_type_countdown   "compte a rebours"
     timer_type_stopwatch   "chronometre"
     chrono_show            "Afficher dans la barre :"
+    config_tab_misc        "Divers"
+    autosave_section       "Sauvegarde auto"
+    autosave_enabled       "Sauvegarde auto :"
+    autosave_interval      "Intervalle (min) :"
 }
 
 dict set ::i18n ko {
@@ -2031,6 +2058,10 @@ dict set ::i18n ko {
     timer_type_countdown   "카운트다운"
     timer_type_stopwatch   "스톱워치"
     chrono_show            "상태 표시줄에 표시:"
+    config_tab_misc        "기타"
+    autosave_section       "자동 저장"
+    autosave_enabled       "자동 저장:"
+    autosave_interval      "간격 (분):"
 }
 
 dict set ::i18n no {
@@ -2169,6 +2200,10 @@ dict set ::i18n no {
     timer_type_countdown   "nedtelling"
     timer_type_stopwatch   "stoppeklokke"
     chrono_show            "Vis i statuslinje:"
+    config_tab_misc        "Misc"
+    autosave_section       "Autolagring"
+    autosave_enabled       "Autolagring:"
+    autosave_interval      "Intervall (min):"
 }
 
 
@@ -2416,6 +2451,30 @@ proc do-backup {dir name} {
     if {[file type $src] eq "link"} { set src [file normalize $src] }
     file copy -force $src $dst
     return $dst
+}
+
+proc do-autosave {ws_n content filepath} {
+    if {!$::cfg_autosave_enabled} return
+    set dir [file normalize [tilde-expand "~/Documents/writhdeck"]]
+    file mkdir $dir
+    set fn  [expr {$ws_n == 1 ? "autosave_ws01.txt" : "autosave_ws02.txt"}]
+    set dst [file join $dir $fn]
+    set ts  [clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S"]
+    if {$filepath eq ""} {
+        set header "scratchpad"
+    } else {
+        set folder [string map [list $::HOME_DIR ~] [file dirname $filepath]]
+        set header "$folder/[file tail $filepath]"
+    }
+    set fh [open $dst w]
+    chan configure $fh -encoding utf-8
+    puts $fh $header
+    puts $fh $ts
+    puts $fh ""
+    puts $fh "-------------------------"
+    puts -nonewline $fh $content
+    close $fh
+    set ::autosave_last_time [clock seconds]
 }
 
 proc toggle-favorite {path} {
@@ -3776,6 +3835,7 @@ proc close-editor {} {
     }
     set ::session_file ""
     if {$::watch_after_id ne ""} { after cancel $::watch_after_id; set ::watch_after_id "" }
+    autosave-stop
     split-close
     if {$::ws_n == 2} {
         set ::ws2_filename   $::filename
@@ -4326,15 +4386,19 @@ proc profile-config-update-profile {w} {
 }
 
 proc config-tab-switch {w tab} {
-    pack forget $w.tab_profile $w.tab_timer
+    pack forget $w.tab_profile $w.tab_timer $w.tab_misc
+    $w.tabs.profile configure -fg $::fg_bar -bg $::bg
+    $w.tabs.timer   configure -fg $::fg_bar -bg $::bg
+    $w.tabs.misc    configure -fg $::fg_bar -bg $::bg
     if {$tab eq "profile"} {
         pack $w.tab_profile -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.profile configure -fg $::fg -bg $::bg_sel
-        $w.tabs.timer configure -fg $::fg_bar -bg $::bg
-    } else {
+    } elseif {$tab eq "timer"} {
         pack $w.tab_timer -fill both -expand 1 -padx 8 -pady 8
-        $w.tabs.profile configure -fg $::fg_bar -bg $::bg
         $w.tabs.timer configure -fg $::fg -bg $::bg_sel
+    } else {
+        pack $w.tab_misc -fill both -expand 1 -padx 8 -pady 8
+        $w.tabs.misc configure -fg $::fg -bg $::bg_sel
     }
 }
 
@@ -4369,12 +4433,16 @@ proc profile-config-dialog {} {
         -command "config-tab-switch $w profile" -borderwidth 1 -relief raised -padx 12 -pady 4
     button $w.tabs.timer -text [t config_tab_timer] -font $::font_sm -fg $::fg_bar -bg $::bg \
         -command "config-tab-switch $w timer" -borderwidth 1 -relief raised -padx 12 -pady 4
+    button $w.tabs.misc -text [t config_tab_misc] -font $::font_sm -fg $::fg_bar -bg $::bg \
+        -command "config-tab-switch $w misc" -borderwidth 1 -relief raised -padx 12 -pady 4
     pack $w.tabs.profile -side left -padx 2
     pack $w.tabs.timer -side left -padx 2
+    pack $w.tabs.misc -side left -padx 2
 
     # --- Tab content frames ---
     frame $w.tab_profile -bg $::bg
     frame $w.tab_timer -bg $::bg
+    frame $w.tab_misc -bg $::bg
     pack $w.tab_profile -fill both -expand 1 -padx 8 -pady 8
 
     # --- Profile tab content ---
@@ -4601,6 +4669,31 @@ proc profile-config-dialog {} {
     pack $w.tab_timer.timer_sec.show.lbl -side left
     pack $w.tab_timer.timer_sec.show.check -side left -padx {8 2}
 
+    # --- Misc tab content ---
+    frame $w.tab_misc.autosave_sec -relief ridge -borderwidth 2 -bg $::bg
+    pack $w.tab_misc.autosave_sec -fill x -padx 0 -pady 8
+    label $w.tab_misc.autosave_sec.title -text [t autosave_section] -font $::font_sm -fg $::fg_bar -bg $::bg
+    pack $w.tab_misc.autosave_sec.title -anchor w -padx 8 -pady {4 2}
+
+    frame $w.tab_misc.autosave_sec.enabled -bg $::bg
+    pack $w.tab_misc.autosave_sec.enabled -fill x -padx 12 -pady 4
+    label $w.tab_misc.autosave_sec.enabled.lbl -text [t autosave_enabled] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.tab_misc.autosave_sec.enabled.check -variable profile_config_autosave_enabled -font $::font_sm -bg $::bg -fg $::fg \
+        -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
+        -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
+    pack $w.tab_misc.autosave_sec.enabled.lbl -side left
+    pack $w.tab_misc.autosave_sec.enabled.check -side left -padx {8 2}
+
+    frame $w.tab_misc.autosave_sec.interval -bg $::bg
+    pack $w.tab_misc.autosave_sec.interval -fill x -padx 12 -pady 4
+    label $w.tab_misc.autosave_sec.interval.lbl -text [t autosave_interval] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.tab_misc.autosave_sec.interval.spin -from 1 -to 60 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
+    pack $w.tab_misc.autosave_sec.interval.lbl -side left
+    pack $w.tab_misc.autosave_sec.interval.spin -side left -padx {8 0}
+
+    set ::profile_config_autosave_enabled $::cfg_autosave_enabled
+    $w.tab_misc.autosave_sec.interval.spin set $::cfg_autosave_interval
+
     # Load timer values from config
     set ::profile_config_timer_sound $::cfg_timer_sound
     set ::profile_config_timer_alert $::cfg_timer_alert
@@ -4638,6 +4731,8 @@ proc profile-config-dialog {} {
             set timer_alrt $::profile_config_timer_alert
             set timer_typ $::profile_config_timer_type
             set chrono_shw $::profile_config_chrono_show
+            set autosave_en  $::profile_config_autosave_enabled
+            set autosave_int [.profile_config.tab_misc.autosave_sec.interval.spin get]
 
             if {$font eq "" || $size eq "" || $mw eq "" || $mh eq ""} return
 
@@ -4659,6 +4754,8 @@ proc profile-config-dialog {} {
             set ::cfg_timer_alert $timer_alrt
             set ::cfg_timer_type $timer_typ
             set ::cfg_chrono_show $chrono_shw
+            set ::cfg_autosave_enabled  $autosave_en
+            set ::cfg_autosave_interval $autosave_int
 
             ini-save
 
@@ -4714,6 +4811,33 @@ proc profile-config-dialog {} {
         destroy .profile_config
     }
     focus $w.tab_profile.profile.ffont.entry
+}
+
+proc autosave-stop {} {
+    if {$::autosave_schedule_id ne ""} {
+        after cancel $::autosave_schedule_id
+        set ::autosave_schedule_id ""
+    }
+}
+
+proc autosave-start {} {
+    autosave-stop
+    if {!$::cfg_autosave_enabled} return
+    set ::autosave_schedule_id [after [expr {max(1, $::cfg_autosave_interval) * 60000}] autosave-tick]
+}
+
+proc autosave-tick {} {
+    set ::autosave_schedule_id ""
+    if {!$::cfg_autosave_enabled} return
+    do-autosave $::ws_n [[primary-ed] get 1.0 end-1c] $::filename
+    if {$::ws_dual_mode} {
+        if {$::ws_n == 1} {
+            do-autosave 2 $::ws2_content $::ws2_filename
+        } else {
+            do-autosave 1 $::ws1_content $::ws1_filename
+        }
+    }
+    autosave-start
 }
 
 proc timer-alert-gui {} {
@@ -5377,6 +5501,7 @@ proc show-editor {path} {
     recent-push $path
     set _wc [llength [regexp -all -inline {\S+} [[primary-ed] get 1.0 end-1c]]]
     daily-open $path $_wc
+    autosave-start
     focus .ed.t
 }
 
@@ -6541,6 +6666,7 @@ proc tui-editor {filepath {init_state {}}} {
     set layout_cache {}
     set prev_rows -1; set prev_cols -1
     set dirty_line -1
+    set ::autosave_last_time [clock seconds]
     set split 0; set split_ws2_mode 0; set split_focus 1
     set split_r_lines [list ""]; set split_r_cy 1; set split_r_cx 0
     set split_r_scroll 0; set split_r_dirty 0; set split_r_fp ""
@@ -6553,6 +6679,14 @@ proc tui-editor {filepath {init_state {}}} {
         if {$rows != $prev_rows || $cols != $prev_cols} {
             set prev_rows $rows; set prev_cols $cols
             set wrap_dirty 1
+        }
+
+        # -- autosave ----------------------------------------------------------
+        if {$::cfg_autosave_enabled} {
+            set _now [clock seconds]
+            if {$_now - $::autosave_last_time >= max(1, $::cfg_autosave_interval) * 60} {
+                do-autosave $::ws_n [join $lines "\n"] $filepath
+            }
         }
 
         # -- layout ------------------------------------------------------------
@@ -6808,7 +6942,8 @@ proc tui-editor {filepath {init_state {}}} {
         }
         puts -nonewline "\033\[?25h"; flush stdout
 
-        set key [tui-getch]
+        set _gt [expr {($::timer_active && $::cfg_chrono_show) || $::cfg_autosave_enabled ? 50 : -1}]
+        set key [tui-getch $_gt]
         set rst       1
         set clear_sel 1
 
@@ -7582,32 +7717,49 @@ proc tui-timer-alert {} {
 
 proc tui-config-dialog {rows cols} {
     catch {
-        set timer_dur $::cfg_timer_duration
-        set timer_snd $::cfg_timer_sound
+        set timer_dur  $::cfg_timer_duration
+        set timer_snd  $::cfg_timer_sound
         set timer_alrt $::cfg_timer_alert
-        set timer_typ $::cfg_timer_type
+        set timer_typ  $::cfg_timer_type
+        set autosave_en  $::cfg_autosave_enabled
+        set autosave_int $::cfg_autosave_interval
+        set tab 0
         set sel 0
-        set max_fields 4
+        set max_timer 4
+        set max_misc  2
 
         puts -nonewline "\033\[2J\033\[H"; flush stdout
 
         while 1 {
             puts -nonewline "\033\[H"
 
+            set _tab0 [expr {$tab == 0 ? "\033\[7m [t config_tab_timer] \033\[m" : " [t config_tab_timer] "}]
+            set _tab1 [expr {$tab == 1 ? "\033\[7m [t config_tab_misc] \033\[m"  : " [t config_tab_misc] "}]
+
             set _lines {}
-            lappend _lines "  Config - Timer"
+            lappend _lines "  Config  $_tab0  $_tab1   (TAB to switch)"
             lappend _lines ""
-            lappend _lines "  Timer"
-            set _dur_mark [expr {$sel == 0 ? ">" : " "}]
-            lappend _lines "  $_dur_mark Duration: ${timer_dur}'00\""
-            set _type_mark [expr {$sel == 1 ? ">" : " "}]
-            lappend _lines "  $_type_mark Type: $timer_typ"
-            set _snd_mark [expr {$sel == 2 ? ">" : " "}]
-            set _snd_txt [expr {$timer_snd ? "on" : "off"}]
-            lappend _lines "  $_snd_mark Sound at end: \[$_snd_txt\]"
-            set _alrt_mark [expr {$sel == 3 ? ">" : " "}]
-            set _alrt_txt [expr {$timer_alrt ? "on" : "off"}]
-            lappend _lines "  $_alrt_mark Alert message: \[$_alrt_txt\]"
+
+            if {$tab == 0} {
+                lappend _lines "  [t timer_section]"
+                set _dur_mark  [expr {$sel == 0 ? ">" : " "}]
+                lappend _lines "  $_dur_mark [t timer_duration] ${timer_dur}'00\""
+                set _type_mark [expr {$sel == 1 ? ">" : " "}]
+                lappend _lines "  $_type_mark [t timer_type] $timer_typ"
+                set _snd_mark  [expr {$sel == 2 ? ">" : " "}]
+                set _snd_txt   [expr {$timer_snd  ? "on" : "off"}]
+                lappend _lines "  $_snd_mark [t timer_sound] \[$_snd_txt\]"
+                set _alrt_mark [expr {$sel == 3 ? ">" : " "}]
+                set _alrt_txt  [expr {$timer_alrt ? "on" : "off"}]
+                lappend _lines "  $_alrt_mark [t timer_alert] \[$_alrt_txt\]"
+            } else {
+                lappend _lines "  [t autosave_section]"
+                set _aen_mark  [expr {$sel == 0 ? ">" : " "}]
+                set _aen_txt   [expr {$autosave_en ? "on" : "off"}]
+                lappend _lines "  $_aen_mark [t autosave_enabled] \[$_aen_txt\]"
+                set _aint_mark [expr {$sel == 1 ? ">" : " "}]
+                lappend _lines "  $_aint_mark [t autosave_interval] $autosave_int"
+            }
             lappend _lines ""
 
             for {set _i 0} {$_i < [llength $_lines]} {incr _i} {
@@ -7616,36 +7768,58 @@ proc tui-config-dialog {rows cols} {
                 puts -nonewline "\033\[K"
             }
 
-            set hint "UP/DOWN nav  LEFT/RIGHT adjust/toggle  s:save  q:cancel"
+            set hint "TAB: switch tab  UP/DOWN: nav  LEFT/RIGHT: adjust  s:save  q:cancel"
             tui-bar [expr {$rows-1}] $hint "" $cols
             flush stdout
 
+            set max_fields [expr {$tab == 0 ? $max_timer : $max_misc}]
             set key [tui-getch]
             switch -- $key {
+                TAB {
+                    set tab [expr {$tab == 0 ? 1 : 0}]
+                    set sel 0
+                    puts -nonewline "\033\[2J"
+                }
                 UP - k { if {$sel > 0} { incr sel -1 } }
                 DOWN - j { if {$sel < [expr {$max_fields-1}]} { incr sel 1 } }
                 LEFT {
-                    if {$sel == 0 && $timer_dur > 1} { incr timer_dur -1 }
-                    if {$sel == 1} { set timer_typ [expr {$timer_typ eq "countdown" ? "stopwatch" : "countdown"}] }
-                    if {$sel == 2} { set timer_snd [expr {!$timer_snd}] }
-                    if {$sel == 3} { set timer_alrt [expr {!$timer_alrt}] }
+                    if {$tab == 0} {
+                        if {$sel == 0 && $timer_dur > 1}  { incr timer_dur -1 }
+                        if {$sel == 1} { set timer_typ [expr {$timer_typ eq "countdown" ? "stopwatch" : "countdown"}] }
+                        if {$sel == 2} { set timer_snd  [expr {!$timer_snd}] }
+                        if {$sel == 3} { set timer_alrt [expr {!$timer_alrt}] }
+                    } else {
+                        if {$sel == 0} { set autosave_en [expr {!$autosave_en}] }
+                        if {$sel == 1 && $autosave_int > 1} { incr autosave_int -1 }
+                    }
                 }
                 RIGHT {
-                    if {$sel == 0 && $timer_dur < 120} { incr timer_dur }
-                    if {$sel == 1} { set timer_typ [expr {$timer_typ eq "countdown" ? "stopwatch" : "countdown"}] }
-                    if {$sel == 2} { set timer_snd [expr {!$timer_snd}] }
-                    if {$sel == 3} { set timer_alrt [expr {!$timer_alrt}] }
+                    if {$tab == 0} {
+                        if {$sel == 0 && $timer_dur < 120} { incr timer_dur }
+                        if {$sel == 1} { set timer_typ [expr {$timer_typ eq "countdown" ? "stopwatch" : "countdown"}] }
+                        if {$sel == 2} { set timer_snd  [expr {!$timer_snd}] }
+                        if {$sel == 3} { set timer_alrt [expr {!$timer_alrt}] }
+                    } else {
+                        if {$sel == 0} { set autosave_en [expr {!$autosave_en}] }
+                        if {$sel == 1 && $autosave_int < 60} { incr autosave_int }
+                    }
                 }
                 " " {
-                    if {$sel == 1} { set timer_typ [expr {$timer_typ eq "countdown" ? "stopwatch" : "countdown"}] }
-                    if {$sel == 2} { set timer_snd [expr {!$timer_snd}] }
-                    if {$sel == 3} { set timer_alrt [expr {!$timer_alrt}] }
+                    if {$tab == 0} {
+                        if {$sel == 1} { set timer_typ [expr {$timer_typ eq "countdown" ? "stopwatch" : "countdown"}] }
+                        if {$sel == 2} { set timer_snd  [expr {!$timer_snd}] }
+                        if {$sel == 3} { set timer_alrt [expr {!$timer_alrt}] }
+                    } else {
+                        if {$sel == 0} { set autosave_en [expr {!$autosave_en}] }
+                    }
                 }
                 s {
-                    set ::cfg_timer_duration $timer_dur
-                    set ::cfg_timer_type $timer_typ
-                    set ::cfg_timer_sound $timer_snd
-                    set ::cfg_timer_alert $timer_alrt
+                    set ::cfg_timer_duration  $timer_dur
+                    set ::cfg_timer_type      $timer_typ
+                    set ::cfg_timer_sound     $timer_snd
+                    set ::cfg_timer_alert     $timer_alrt
+                    set ::cfg_autosave_enabled  $autosave_en
+                    set ::cfg_autosave_interval $autosave_int
                     ini-save
                     break
                 }

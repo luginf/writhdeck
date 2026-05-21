@@ -190,6 +190,10 @@ set ::timer_remaining      0
 set ::timer_last_tick      0
 set ::timer_schedule_id    ""
 set ::timer_alert_shown    0
+set ::cfg_autosave_enabled  1
+set ::cfg_autosave_interval 1
+set ::autosave_last_time    0
+set ::autosave_schedule_id  ""
 set ::fullscreen 0
 set ::split_mode 0
 # workspace state (WS1 = primary, WS2 = secondary toggled via cfg_key_workspace)
@@ -510,6 +514,8 @@ proc ini-load {} {
                 tui_col_bar_fg   { set ::cfg_tui_col_bar_fg   $v }
                 tui_col_bar_bg   { set ::cfg_tui_col_bar_bg   $v }
                 tui_col_sel_bg   { set ::cfg_tui_col_sel_bg   $v }
+                autosave_enabled  { set ::cfg_autosave_enabled  [string is true $v] }
+                autosave_interval { set ::cfg_autosave_interval $v }
             }
         }
     }
@@ -570,6 +576,11 @@ proc ini-save {} {
     puts $fh "timer_alert    = [expr {$::cfg_timer_alert  ? "yes" : "no"}]"
     puts $fh "timer_type     = $::cfg_timer_type"
     puts $fh "chrono_show    = [expr {$::cfg_chrono_show  ? "yes" : "no"}]"
+    puts $fh ""
+    puts $fh "= misc ="
+    puts $fh "\[misc\]"
+    puts $fh "autosave_enabled  = [expr {$::cfg_autosave_enabled  ? "yes" : "no"}]"
+    puts $fh "autosave_interval = $::cfg_autosave_interval"
     puts $fh ""
     puts $fh "= tui_colors ="
     puts $fh "\[tui_colors\]"

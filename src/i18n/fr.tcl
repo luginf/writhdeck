@@ -134,5 +134,9 @@ dict set ::i18n fr {
     timer_type_countdown   "compte a rebours"
     timer_type_stopwatch   "chronometre"
     chrono_show            "Afficher dans la barre :"
+    config_tab_misc        "Divers"
+    autosave_section       "Sauvegarde auto"
+    autosave_enabled       "Sauvegarde auto :"
+    autosave_interval      "Intervalle (min) :"
 }
 

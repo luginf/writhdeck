@@ -2,13 +2,14 @@
 # Included only in writhdeck-jim.tcl builds (make jimtcl).
 # Must be the first module loaded after boot-jim.tcl.
 #
-# Fixes five incompatibilities with standard Tcl 8.5+:
+# Fixes six incompatibilities with standard Tcl 8.5+:
 #   1. chan configure  → fconfigure wrapper (strips -encoding, unsupported in JimTcl)
 #   2. string is true  → JimTcl has no "true" class; use switch-based truthy check
 #   3. string is integer -strict → strip -strict flag (minor empty-string difference only)
 #   4. file normalize on non-existent paths → JimTcl errors; fallback to manual normalization
 #   5. min()/max() in expr {} → JimTcl has no math function support; override expr with
 #      a scanner that transforms min(a,b)/max(a,b) to [_min ...]/[_max ...] proc calls
+#   6. encoding convertfrom/convertto → JimTcl is natively UTF-8; return raw bytes as-is
 
 # --- 1. chan configure -------------------------------------------------------
 proc chan {sub args} {
@@ -73,6 +74,16 @@ proc file {sub args} {
         return $r
     }
     __file_jim $sub {*}$args
+}
+
+# --- 6. encoding convertfrom/convertto --------------------------------------
+# JimTcl is natively UTF-8: raw stdin bytes are already valid UTF-8 strings.
+proc encoding {sub args} {
+    switch -- $sub {
+        convertfrom { return [lindex $args 1] }
+        convertto   { return [lindex $args 1] }
+        default     { return "" }
+    }
 }
 
 # --- 5. min()/max() in expr {} ----------------------------------------------

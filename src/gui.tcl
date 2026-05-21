@@ -1313,6 +1313,7 @@ proc close-editor {} {
     }
     set ::session_file ""
     if {$::watch_after_id ne ""} { after cancel $::watch_after_id; set ::watch_after_id "" }
+    autosave-stop
     split-close
     if {$::ws_n == 2} {
         set ::ws2_filename   $::filename
@@ -1863,15 +1864,19 @@ proc profile-config-update-profile {w} {
 }
 
 proc config-tab-switch {w tab} {
-    pack forget $w.tab_profile $w.tab_timer
+    pack forget $w.tab_profile $w.tab_timer $w.tab_misc
+    $w.tabs.profile configure -fg $::fg_bar -bg $::bg
+    $w.tabs.timer   configure -fg $::fg_bar -bg $::bg
+    $w.tabs.misc    configure -fg $::fg_bar -bg $::bg
     if {$tab eq "profile"} {
         pack $w.tab_profile -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.profile configure -fg $::fg -bg $::bg_sel
-        $w.tabs.timer configure -fg $::fg_bar -bg $::bg
-    } else {
+    } elseif {$tab eq "timer"} {
         pack $w.tab_timer -fill both -expand 1 -padx 8 -pady 8
-        $w.tabs.profile configure -fg $::fg_bar -bg $::bg
         $w.tabs.timer configure -fg $::fg -bg $::bg_sel
+    } else {
+        pack $w.tab_misc -fill both -expand 1 -padx 8 -pady 8
+        $w.tabs.misc configure -fg $::fg -bg $::bg_sel
     }
 }
 
@@ -1906,12 +1911,16 @@ proc profile-config-dialog {} {
         -command "config-tab-switch $w profile" -borderwidth 1 -relief raised -padx 12 -pady 4
     button $w.tabs.timer -text [t config_tab_timer] -font $::font_sm -fg $::fg_bar -bg $::bg \
         -command "config-tab-switch $w timer" -borderwidth 1 -relief raised -padx 12 -pady 4
+    button $w.tabs.misc -text [t config_tab_misc] -font $::font_sm -fg $::fg_bar -bg $::bg \
+        -command "config-tab-switch $w misc" -borderwidth 1 -relief raised -padx 12 -pady 4
     pack $w.tabs.profile -side left -padx 2
     pack $w.tabs.timer -side left -padx 2
+    pack $w.tabs.misc -side left -padx 2
 
     # --- Tab content frames ---
     frame $w.tab_profile -bg $::bg
     frame $w.tab_timer -bg $::bg
+    frame $w.tab_misc -bg $::bg
     pack $w.tab_profile -fill both -expand 1 -padx 8 -pady 8
 
     # --- Profile tab content ---
@@ -2138,6 +2147,31 @@ proc profile-config-dialog {} {
     pack $w.tab_timer.timer_sec.show.lbl -side left
     pack $w.tab_timer.timer_sec.show.check -side left -padx {8 2}
 
+    # --- Misc tab content ---
+    frame $w.tab_misc.autosave_sec -relief ridge -borderwidth 2 -bg $::bg
+    pack $w.tab_misc.autosave_sec -fill x -padx 0 -pady 8
+    label $w.tab_misc.autosave_sec.title -text [t autosave_section] -font $::font_sm -fg $::fg_bar -bg $::bg
+    pack $w.tab_misc.autosave_sec.title -anchor w -padx 8 -pady {4 2}
+
+    frame $w.tab_misc.autosave_sec.enabled -bg $::bg
+    pack $w.tab_misc.autosave_sec.enabled -fill x -padx 12 -pady 4
+    label $w.tab_misc.autosave_sec.enabled.lbl -text [t autosave_enabled] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.tab_misc.autosave_sec.enabled.check -variable profile_config_autosave_enabled -font $::font_sm -bg $::bg -fg $::fg \
+        -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
+        -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
+    pack $w.tab_misc.autosave_sec.enabled.lbl -side left
+    pack $w.tab_misc.autosave_sec.enabled.check -side left -padx {8 2}
+
+    frame $w.tab_misc.autosave_sec.interval -bg $::bg
+    pack $w.tab_misc.autosave_sec.interval -fill x -padx 12 -pady 4
+    label $w.tab_misc.autosave_sec.interval.lbl -text [t autosave_interval] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.tab_misc.autosave_sec.interval.spin -from 1 -to 60 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
+    pack $w.tab_misc.autosave_sec.interval.lbl -side left
+    pack $w.tab_misc.autosave_sec.interval.spin -side left -padx {8 0}
+
+    set ::profile_config_autosave_enabled $::cfg_autosave_enabled
+    $w.tab_misc.autosave_sec.interval.spin set $::cfg_autosave_interval
+
     # Load timer values from config
     set ::profile_config_timer_sound $::cfg_timer_sound
     set ::profile_config_timer_alert $::cfg_timer_alert
@@ -2175,6 +2209,8 @@ proc profile-config-dialog {} {
             set timer_alrt $::profile_config_timer_alert
             set timer_typ $::profile_config_timer_type
             set chrono_shw $::profile_config_chrono_show
+            set autosave_en  $::profile_config_autosave_enabled
+            set autosave_int [.profile_config.tab_misc.autosave_sec.interval.spin get]
 
             if {$font eq "" || $size eq "" || $mw eq "" || $mh eq ""} return
 
@@ -2196,6 +2232,8 @@ proc profile-config-dialog {} {
             set ::cfg_timer_alert $timer_alrt
             set ::cfg_timer_type $timer_typ
             set ::cfg_chrono_show $chrono_shw
+            set ::cfg_autosave_enabled  $autosave_en
+            set ::cfg_autosave_interval $autosave_int
 
             ini-save
 
@@ -2251,6 +2289,33 @@ proc profile-config-dialog {} {
         destroy .profile_config
     }
     focus $w.tab_profile.profile.ffont.entry
+}
+
+proc autosave-stop {} {
+    if {$::autosave_schedule_id ne ""} {
+        after cancel $::autosave_schedule_id
+        set ::autosave_schedule_id ""
+    }
+}
+
+proc autosave-start {} {
+    autosave-stop
+    if {!$::cfg_autosave_enabled} return
+    set ::autosave_schedule_id [after [expr {max(1, $::cfg_autosave_interval) * 60000}] autosave-tick]
+}
+
+proc autosave-tick {} {
+    set ::autosave_schedule_id ""
+    if {!$::cfg_autosave_enabled} return
+    do-autosave $::ws_n [[primary-ed] get 1.0 end-1c] $::filename
+    if {$::ws_dual_mode} {
+        if {$::ws_n == 1} {
+            do-autosave 2 $::ws2_content $::ws2_filename
+        } else {
+            do-autosave 1 $::ws1_content $::ws1_filename
+        }
+    }
+    autosave-start
 }
 
 proc timer-alert-gui {} {
@@ -2914,6 +2979,7 @@ proc show-editor {path} {
     recent-push $path
     set _wc [llength [regexp -all -inline {\S+} [[primary-ed] get 1.0 end-1c]]]
     daily-open $path $_wc
+    autosave-start
     focus .ed.t
 }
 
