@@ -297,6 +297,8 @@ Le code est organisé en modules dans le dossier `src/` et construit via un `Mak
 |---|---|---|
 | `src/boot.tcl` | ~80 | Polyglot sh/Tcl, parsing args, détection Tk, setup HOME_DIR |
 | `src/boot-cli.tcl` | ~80 | Variante CLI : sans chargement Tk, force `::no_gui 1` |
+| `src/boot-jim.tcl` | ~80 | Variante JimTcl de boot-cli.tcl (polyglot appelle `jimsh`) |
+| `src/compat-jim.tcl` | ~90 | Shim de compatibilité JimTcl 0.84+ — chargé en premier dans les builds jim |
 | `src/state.tcl` | ~147 | Persistance JSON, curseurs, favoris, récents, stats quotidiennes |
 | `src/config.tcl` | ~804 | Chargement INI, profils, thèmes, clés, i18n, init thème |
 | `src/common.tcl` | ~204 | Listing docs, backup, parseurs inline, construction entrées browser |
@@ -310,7 +312,8 @@ Le code est organisé en modules dans le dossier `src/` et construit via un `Mak
 - `writhdeck-cli.tcl` — TUI seul (~2899 lignes, sans chargement Tk)
 - `make compact` — génère `writhdeck-compact.tcl` + `writhdeck-cli-compact.tcl` (~-20 à -25%)
 - `make compact-cli` — génère `writhdeck-cli-compact.tcl` seulement
-- `make clean` — supprime les fichiers générés (incluant variantes compact)
+- `make jimtcl` — génère `writhdeck-jim.tcl` (build TUI compatible JimTcl 0.84+)
+- `make clean` — supprime les fichiers générés (incluant variantes compact et jim)
 
 Les deux fichiers générés sont exécutables, trackés dans git, et ont des marqueurs de section (`# === state.tcl ===`) pour la lisibilité.
 
@@ -387,7 +390,15 @@ Voir `src/i18n/README.md` pour le guide complet (format, ajout de langue, format
 - **Presse-papiers interne** : historique des N derniers copier-coller
 - **Statistiques de session** : temps d'écriture, mots ajoutés depuis l'ouverture 
 
-## Récemment implémenté (session courante)
+## Récemment implémenté (session 2026-05-20)
+
+- **Compatibilité JimTcl 0.84** (branche `jimtcl`) : `make jimtcl` génère `writhdeck-jim.tcl`. Shim `src/compat-jim.tcl` chargé en premier — corrige 5 incompatibilités sans modifier les sources : (1) `proc chan` wrappant `fconfigure` + strip `-encoding` ; (2) override `string` pour `string is true` (switch sur `tolower`) et `string is integer -strict` (strip flag) ; (3) override `file` pour `file normalize` sur chemins inexistants (fallback manuel) ; (4) override `expr` avec un scanner de profondeur de parenthèses qui transforme `min(a,b)`/`max(a,b)` en `[_min ...]`/`[_max ...]`. **Règle critique** : tout le code interne du shim appelle `__expr_orig`, `__str_jim`, `__file_jim` directement pour éviter la récursion infinie. JimTcl installé à `/opt/jimsh`.
+
+- **Tokens littéraux dans la status bar** : clause `default` ajoutée au `switch` de `status-build` (`src/common.tcl`) — tout token non reconnu dans `status_left/center/right` est affiché littéralement (ex. `|`, `--` comme séparateurs).
+
+- **Fix affichage initial du stopwatch** : en mode `stopwatch`, la valeur initiale dans la status bar est maintenant `0` au lieu de `cfg_timer_duration * 60`. Corrigé en 3 sites : `src/gui.tcl`, `src/tui.tcl` (draw loop), `src/tui.tcl` (fast path timer).
+
+## Récemment implémenté (session précédente)
 
 - **Couleurs TUI ANSI 16/256** : nouvelle section `[tui_colors]` dans l'INI. `tui_colors = yes` active les couleurs. `tui_256colors = yes` bascule en mode 256 couleurs (`\033[38;5;Nm]` / `\033[48;5;Nm]`), qui distingue toujours `bright_*` de la couleur de base et accepte les valeurs numériques 0–255 (ex. `tui_col_heading = 214`). Proc centrale `tui-ansi-color {name is_bg}` dans `src/tui.tcl`. `tui-attr heading/dim-text/sel` et `tui-bar` utilisent les couleurs quand activées. `tui-inline-esc` inclut la couleur markup et `sel_bg`. La barre de statut utilise `tui_col_bar_fg`/`bar_bg` au lieu du reverse video. Sélection texte : `tui_col_sel_bg` (vide = reverse vidéo). Palette warm 256 suggérée : heading=214 comment=136 markup=172 bar_fg=220 bar_bg=94 sel_bg=52. Activation par édition manuelle du INI + redémarrage (le TUI n'a pas de touche `z` pour recharger).
 
@@ -401,7 +412,7 @@ Voir `src/i18n/README.md` pour le guide complet (format, ajout de langue, format
 
 - **Fix GUI : Ctrl+C copie** : `bind $w <c>` dans `bind-cmd-mode` interceptait Ctrl+C — en Tk, un binding sans modificateur spécifié capture tous les états de modificateurs, et le widget-level surpasse le class-level (`<<Copy>>`). Fix : bindings explicites `<$::cfg_key_copy>` et `<$::cfg_key_cut>` ajoutés dans la section principale (`.ed.t`) et dans `bind-cmd-mode` (pour les panneaux split/WS2). `tk_textCopy %W` / `tk_textCut %W` sont les appels corrects.
 
-## Récemment implémenté
+## Implémenté
 
 - **Second espace de travail (F10)** : `workspace-toggle` (GUI) et `tui-ws-run` (TUI). F10 bascule entre WS1 et WS2 dans l'éditeur. L'état de chaque workspace (filename, scratchpad, dirty, content, cursor, file_mtime) est sauvegardé dans `::ws1_*` / `::ws2_*`. WS2 démarre comme scratchpad vide (`::ws2_scratchpad 1`). `::ws_dual_mode` passe à 1 dès que workspace-toggle est appelé → les indicateurs `[1]`/`[2]` apparaissent dans la status bar (token `workspace`) et dans le titre. `show-editor` ne reset `::ws_n` que si `.br` est mappé (`winfo ismapped .br`). `close-editor` sauvegarde l'état de WS2 si actif, mais **ne remet plus `ws_n=1`** : `ws_n` est préservé pour permettre à `quit-app` (depuis le browser) de savoir quel workspace est inactif. `ws-check-inactive-dirty` vérifie si l'espace inactif a des modifications non sauvegardées et propose de sauvegarder ; appelée dans `quit-app` après le check du workspace actif. Watch-file : `::file_mtime_known` est sauvegardé/restauré par workspace pour éviter les faux positifs "modifié par processus externe". En split (F3), F10 ouvre WS2 dans le panneau droit (widget `text` indépendant, pas peer) via `split-ws2-open`. Ctrl+S dans le panneau droit → `split-ws2-save`. Ctrl+O dans le panneau droit → `open-file-dialog` détecte `::split_ws2_mode && focus eq .ed.pw.r.t` et appelle `split-ws2-load-file`. F3 (fermeture split) sauvegarde l'état WS2 via `split-ws2-save-state` avant de détruire les panneaux. TUI : `tui-editor` accepte `{init_state {}}` pour restaurer un workspace ; F10 retourne `"__ws_toggle__"` ; `tui-ws-run` boucle sur les toggles en échangeant `::tui_ws_bg`. Après chaque toggle, `tui-ws-run` synchonise les globals `::ws1_*`/`::ws2_*` depuis le dict sauvegardé (`saved = ::tui_ws_save`, le workspace qu'on vient de quitter) — nécessaire car le split TUI lit ces globals. **F3 en TUI** : si `::ws_dual_mode==1`, ouvre directement volet gauche = WS courant / volet droit = autre WS (idem GUI) ; sinon, split même-fichier. Panneau droit indépendant via mécanisme `_fswap` (valeur `1`= même-fichier, `2`= WS2) qui échange `cy/cx/vrows/ish_cache/isd_cache/scroll_y/layout_cache/tw ↔ split_r_*` avant le traitement des touches.
 

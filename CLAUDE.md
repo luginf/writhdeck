@@ -383,6 +383,8 @@ The codebase is organized in `src/` directory and built via `Makefile`:
 | ------------------ | ----- | ------------------------------------------------------------------- |
 | `src/boot.tcl`     | ~80   | Polyglot sh/Tcl, args parsing, Tk detection, HOME_DIR setup         |
 | `src/boot-cli.tcl` | ~80   | CLI variant: no Tk loading, forces `::no_gui 1`                     |
+| `src/boot-jim.tcl` | ~80   | JimTcl variant of boot-cli.tcl (polyglot uses `jimsh` instead of `tclsh`) |
+| `src/compat-jim.tcl` | ~90 | JimTcl compatibility shim — loaded first in `writhdeck-jim.tcl` builds |
 | `src/state.tcl`    | ~147  | JSON state persistence, cursors, favorites, recents, daily stats    |
 | `src/config.tcl`   | ~804  | INI loading/saving, profiles, color schemes, keys, i18n, theme init |
 | `src/common.tcl`   | ~204  | Docs listing, backup, inline parsers, browser entry building        |
@@ -397,7 +399,8 @@ The codebase is organized in `src/` directory and built via `Makefile`:
 - `make LANGUAGES="en fr de es ko"` — build with specific languages
 - `make compact` — generate `writhdeck-compact.tcl` + `writhdeck-cli-compact.tcl` (stripped, ~-20 to -25%)
 - `make compact-cli` — generate `writhdeck-cli-compact.tcl` only
-- `make clean` — remove generated files (includes compact variants)
+- `make jimtcl` — generate `writhdeck-jim.tcl` (JimTcl-compatible TUI build, see below)
+- `make clean` — remove generated files (includes compact and jim variants)
 - `make test` — run regression tests
 - `make test-i18n` — validate translations only
 - `make test-syntax` — check Tcl syntax only
@@ -448,6 +451,28 @@ make test-i18n    # Validates all languages have complete keys + matching format
 ```
 
 See `src/i18n/README.md` for adding new languages and comprehensive i18n documentation.
+
+## JimTcl compatibility (`make jimtcl`)
+
+`writhdeck-jim.tcl` is a TUI-only build that runs under JimTcl 0.84+ (`/opt/jimsh`). Built via `make jimtcl`. Source files are **not modified** — all fixes live in `src/compat-jim.tcl`, loaded immediately after `src/boot-jim.tcl`.
+
+**Five incompatibilities fixed by `src/compat-jim.tcl`:**
+
+| Incompatibility | Fix |
+|---|---|
+| `chan configure` — no `chan` ensemble in JimTcl | `proc chan` wrapping `fconfigure`; strips `-encoding` option |
+| `string is true` — class `true` unknown in JimTcl | Override of `string`: `switch` on `tolower` value (1/yes/true/on) |
+| `string is integer -strict` — `-strict` flag not supported | Strip `-strict`, forward to original `string is integer` |
+| `file normalize` on non-existent paths — JimTcl errors | Override of `file`: `catch` + manual path normalization fallback |
+| `min()`/`max()` in `expr {}` — no math functions in JimTcl | Override of `expr`: depth-counting scanner transforms `min(a,b)` → `[_min [__expr_orig {a}] [__expr_orig {b}]]` |
+
+**Critical rule for `compat-jim.tcl`:** All internal code in the shim must call `__expr_orig`, `__str_jim`, `__file_jim` directly — never the overridden `expr`/`string`/`file` — to prevent infinite recursion.
+
+**Usage:**
+```sh
+make jimtcl
+/opt/jimsh writhdeck-jim.tcl --tui [file.txt]
+```
 
 ## SKILLS.md
 
