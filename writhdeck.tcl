@@ -6684,7 +6684,8 @@ proc tui-editor {filepath {init_state {}}} {
         # -- autosave ----------------------------------------------------------
         if {$::cfg_autosave_enabled} {
             set _now [clock seconds]
-            if {$_now - $::autosave_last_time >= max(1, $::cfg_autosave_interval) * 60} {
+            set _ivl [expr {$::cfg_autosave_interval < 1 ? 1 : $::cfg_autosave_interval}]
+            if {$_now - $::autosave_last_time >= $_ivl * 60} {
                 do-autosave $::ws_n [join $lines "\n"] $filepath
             }
         }
