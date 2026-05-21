@@ -72,6 +72,7 @@ When both `--gui` and `--tui`/`--no-gui` are given, TUI takes precedence.
 - **Scratchpad**: temporary in-memory buffer, no disk file until explicitly saved
 - **Help dialog**: shows selection word/char count when text is selected (GUI and TUI)
 - **Timer and stopwatch**: countdown timer or stopwatch with configurable duration, visual alerts, and audio notifications (bell sound)
+- **Autosave**: periodic snapshot of unsaved work to `~/Documents/writhdeck/autosave_ws01.txt` / `autosave_ws02.txt`; configurable interval (default: 1 minute); enabled by default
 - **Modal command mode (ESC key)**: quick access to timer control, writing statistics, word occurrences, and file operations without breaking text focus
 - **Second workspace** (F10): switch between two independent editors; each preserves its own file, content, and dirty state; `[1]`/`[2]` indicator in status bar and title bar; in split view (F3), F10 loads the second workspace into the right pane (GUI and TUI)
 
@@ -118,6 +119,13 @@ All keyboard shortcuts are configurable via the `[keys]` section.
 | `timer_sound`             | `yes`     | Play bell sound when timer finishes; `no` to disable                                                |
 | `timer_alert`             | `yes`     | Show alert dialog when timer finishes; `no` to disable                                              |
 | `timer_type`              | `countdown` | Timer mode: `countdown` or `stopwatch`                                                            |
+
+### `[misc]`
+
+| Key                       | Default   | Description                                                                                         |
+| ------------------------- | --------- | --------------------------------------------------------------------------------------------------- |
+| `autosave_enabled`        | `yes`     | Periodic autosave of unsaved work; `no` to disable                                                  |
+| `autosave_interval`       | `1`       | Autosave interval in minutes (1–60)                                                                 |
 
 ### `[keys]`
 
@@ -217,6 +225,31 @@ When countdown reaches zero:
 
 The alert respects the `timer_alert` setting in INI. If disabled, the timer stops without visual/audio feedback.
 
+## Autosave
+
+WrithDeck automatically saves a snapshot of the current workspace at regular intervals. Autosave is **separate from Ctrl+S**: it writes to dedicated recovery files and does not save your document. Use Ctrl+S to save the actual file as usual.
+
+**Files written:**
+- `~/Documents/writhdeck/autosave_ws01.txt` — workspace 1
+- `~/Documents/writhdeck/autosave_ws02.txt` — workspace 2 (when active)
+
+**File format:**
+```
+folder/filename
+YYYY-MM-DD HH:MM:SS
+
+-------------------------
+content at time of save
+```
+
+Each autosave **overwrites** the file with the latest snapshot (not a log). The content always reflects the current editing state.
+
+**Configuration** (INI section `[misc]`, or via `c` key → Misc tab):
+- `autosave_enabled = yes` — enable/disable (default: enabled)
+- `autosave_interval = 1` — interval in minutes, 1–60 (default: 1)
+
+---
+
 ### Modal Command Mode (ESC Key)
 
 Press **ESC** while editing to enter a command mode. This provides quick access to common functions without losing text focus:
@@ -303,7 +336,7 @@ Default mode, requires Tk.
 | d                      | Delete file                                                           |
 | r                      | Rename file                                                           |
 | i                      | Show full path                                                        |
-| c                      | Configuration — profiles, fonts, margins, color scheme, language      |
+| c                      | Configuration — 3 tabs: Profile (fonts, margins, scheme, language), Timer, Misc (autosave) |
 | z                      | Reload — relaunch WrithDeck (returns to browser)                      |
 | h / Ctrl+H             | Help                                                                  |
 | Ctrl+O                 | Open any file (system dialog)                                         |
@@ -528,6 +561,7 @@ Si `--gui` et `--no-gui` sont tous les deux présents, `--no-gui` a la priorité
 - **Bloc-notes** : tampon temporaire en mémoire, pas de fichier disque tant qu'on ne sauvegarde pas explicitement
 - **Dialogue d'aide** : affiche le nombre de mots/caractères de la sélection quand du texte est sélectionné (GUI et TUI)
 - **Minuterie et chronomètre** : compte à rebours ou chronomètre configurable avec affichage en temps réel et alertes visuelles/sonores
+- **Sauvegarde automatique** : snapshot périodique des modifications non sauvegardées dans `~/Documents/writhdeck/autosave_ws01.txt` / `autosave_ws02.txt` ; intervalle configurable (défaut : 1 minute) ; activé par défaut
 - **Mode commande modal (touche ESC)** : accès rapide à la minuterie, stats, occurrences de mots et opérations fichier sans perdre la focus du texte
 - **Second espace de travail** (F10) : bascule entre deux éditeurs indépendants ; chacun préserve son fichier, son contenu et son état de modification ; indicateur `[1]`/`[2]` dans la barre de statut et la barre de titre ; en vue fractionnée (F3), F10 charge le second espace dans le volet droit (GUI et TUI)
 
@@ -574,6 +608,13 @@ Tous les raccourcis clavier sont configurables via la section `[keys]`.
 | `timer_sound`             | `1`      | Jouer un bip quand la minuterie se termine ; `0` pour désactiver                                                     |
 | `timer_alert`             | `1`      | Afficher une alerte visuelle quand la minuterie se termine ; `0` pour désactiver                                     |
 | `timer_type`              | `countdown` | Mode minuterie : `countdown` ou `stopwatch`                                                                          |
+
+### `[misc]`
+
+| Clé                       | Défaut   | Description                                                                                                          |
+| ------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `autosave_enabled`        | `yes`    | Sauvegarde automatique périodique des modifications non sauvegardées ; `no` pour désactiver                          |
+| `autosave_interval`       | `1`      | Intervalle de sauvegarde en minutes (1–60)                                                                           |
 
 ### `[keys]`
 
@@ -673,6 +714,33 @@ Quand le compte à rebours atteint zéro :
 
 L'alerte respecte le réglage `timer_alert` du INI. Si désactivée, la minuterie s'arrête sans rétroaction visuelle/sonore.
 
+---
+
+## Sauvegarde automatique
+
+WrithDeck sauvegarde automatiquement un snapshot de l'espace de travail courant à intervalles réguliers. La sauvegarde automatique est **distincte de Ctrl+S** : elle écrit dans des fichiers de récupération dédiés et ne sauvegarde pas votre document. Utilisez Ctrl+S pour sauvegarder le fichier réel comme d'habitude.
+
+**Fichiers écrits :**
+- `~/Documents/writhdeck/autosave_ws01.txt` — espace de travail 1
+- `~/Documents/writhdeck/autosave_ws02.txt` — espace de travail 2 (quand actif)
+
+**Format du fichier :**
+```
+dossier/fichier
+AAAA-MM-JJ HH:MM:SS
+
+-------------------------
+contenu au moment de la sauvegarde
+```
+
+Chaque sauvegarde **écrase** le fichier avec le dernier snapshot (pas un journal). Le contenu reflète toujours l'état courant de l'édition.
+
+**Configuration** (section `[misc]` du INI, ou touche `c` → onglet Divers) :
+- `autosave_enabled = yes` — activer/désactiver (défaut : activé)
+- `autosave_interval = 1` — intervalle en minutes, 1–60 (défaut : 1)
+
+---
+
 ### Mode commande modal (touche ESC)
 
 Appuyer sur **ESC** pendant l'édition pour entrer en mode commande. Cela donne un accès rapide aux fonctions courantes sans perdre la focus du texte :
@@ -759,7 +827,7 @@ Mode par défaut, nécessite Tk.
 | d                      | Supprimer le fichier                                                       |
 | r                      | Renommer le fichier                                                        |
 | i                      | Afficher le chemin complet                                                 |
-| c                      | Configuration — profils, polices, marges, couleurs, langue                 |
+| c                      | Configuration — 3 onglets : Profil (polices, marges, couleurs, langue), Minuterie, Divers (sauvegarde auto) |
 | z                      | Recharger — relancer WrithDeck (retour au browser)                         |
 | h / Ctrl+H             | Aide                                                                       |
 | Ctrl+O                 | Ouvrir un fichier quelconque (dialogue système)                            |
