@@ -381,7 +381,7 @@ Voir `src/i18n/README.md` pour le guide complet (format, ajout de langue, format
 
 - **Filtre browser** : taper des lettres filtre les fichiers en temps réel (~20 lignes)
 - **Temps de lecture** : `words/200` affiché dans le dialogue d'aide (1 ligne)
-- **Auto-save** : sauvegarder après N secondes d'inactivité (`after` Tcl, `autosave_delay` dans INI)
+- ~~**Auto-save**~~ — implémenté (voir session 2026-05-21)
 - **Renommer depuis l'éditeur** : `Ctrl+Shift+R` sans passer par le browser
 - **Recherche dans tous les fichiers** : grep sur le dossier depuis le browser (touche `g` ?)
 - **Focus phrase** : estomper tout sauf la phrase courante (plus fin que le focus paragraphe)
@@ -389,6 +389,12 @@ Voir `src/i18n/README.md` pour le guide complet (format, ajout de langue, format
 - **Mouse support TUI** : `\033[?1000h` pour clic-positionnement
 - **Presse-papiers interne** : historique des N derniers copier-coller
 - **Statistiques de session** : temps d'écriture, mots ajoutés depuis l'ouverture 
+
+## Récemment implémenté (session 2026-05-21)
+
+- **Autosave** : snapshot périodique dans `~/Documents/writhdeck/autosave_ws01.txt` / `autosave_ws02.txt`. Mode overwrite (pas append). Header : dossier/fichier, timestamp, séparateur, contenu courant (modifications non sauvegardées incluses). Config : section `[misc]` dans l'INI (`autosave_enabled`, `autosave_interval` en minutes). Onglet **Misc** ajouté dans le dialogue de config GUI et TUI. GUI : `autosave-start/stop/tick` via `after`. TUI : check temporel au début de la boucle éditeur ; `tui-getch 50ms` quand autosave actif (jamais 1000ms — crée une latence catastrophique à la frappe).
+
+- **Fix JimTcl — `encoding`** : 6e shim dans `src/compat-jim.tcl` — `proc encoding` intercepte `convertfrom`/`convertto` et retourne les bytes bruts (JimTcl est nativement UTF-8). Sans ce shim, taper un caractère accentué quittait avec "invalid command name encoding".
 
 ## Récemment implémenté (session 2026-05-20)
 

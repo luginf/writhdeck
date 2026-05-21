@@ -104,19 +104,24 @@ Current browser keys (12 total): h (help), n (new), t (scratchpad), f (favorite)
 
 ## Profile configuration dialog
 
-Accessible via `c` key in browser. Invoked by `profile-config-dialog` proc:
-- **Global settings frame**: Dropdown to select active profile + dropdown to select color scheme
-- **Profile settings frame**: Controls for font family (listbox), font size (spinbox), margin width (spinbox), margin height (spinbox)
-- **Font preview**: Real-time Text widget showing sample text in selected font
-- **Apply button**: Saves settings to `$::cfg_profiles[$profile]` dict, applies to editor if active, and triggers browser reload
+Accessible via `c` key in browser. Invoked by `profile-config-dialog` proc. Three tabs: **Profile**, **Timer**, **Misc**.
 
-Per-profile configuration stored in `::cfg_profiles` dict with keys: `font_family`, `font_size`, `margin_width`, `margin_height`. Values persist across sessions via `.writhdeck.json` (loaded by `ini-load`).
+- **Profile tab**: Dropdown to select active profile + scheme + language; controls for font family (listbox), font size (spinbox), margin width/height (spinbox), word goal, dark mode
+- **Timer tab**: Type (countdown/stopwatch), duration (spinbox), sound at end (checkbox), alert message (checkbox), show in status bar (checkbox)
+- **Misc tab**: Autosave enabled (checkbox), autosave interval in minutes (spinbox 1–60)
+- **Apply button**: Saves all tabs to globals + `ini-save`, applies theme, triggers `br-reload`
+
+Tab switching via `config-tab-switch {w tab}` — `pack forget` all frames, `pack` the active one, update button appearance. Tabs: `profile`, `timer`, `misc`.
+
+Per-profile configuration stored in `::cfg_profiles` dict. Values persist via `.writhdeck.json`.
 
 Key implementation details:
 - Uses `-command` option on spinbox to trigger preview updates on button clicks (not just keyboard entry)
 - `profile-apply-fonts` helper saves to dict and applies to editor frame
 - `br-refresh` called after apply to reload browser with fresh configuration
-- Dialog created inside a toplevel window with grid layout, destroyed after user closes
+- Dialog created inside a toplevel window, destroyed after user closes
+
+**TUI config dialog** (`tui-config-dialog`) — same two functional tabs (Timer, Misc); TAB key switches tabs; `\033[2J` on tab switch to clear stale lines from previous tab; UP/DOWN navigate fields, LEFT/RIGHT/SPACE adjust values, `s` saves, `q` cancels.
 
 ## State persistence (`.writhdeck.json`)
 
@@ -172,7 +177,7 @@ Section order: `DOCS_DIR_DEFAULT` → `DOCS_DIR` (if custom) → Favorites → R
 - Line comments: lines starting with `#` or `%` are skipped entirely.
 - Inline comments: `regsub {\s+[#%].*$}` strips everything after a `#` or `%` preceded by whitespace. Applied after `string trim`, so values starting with `#` (hex colors like `#1a1a1a`) are preserved.
 
-**`ini-save` format** — comments use `%`; section titles use WrithDeck heading syntax `= title =` so they appear in the F11 TOC when the INI is opened in the editor. The `= title =` lines are silently ignored by the parser (no match for `[section]` or `key = value` patterns). Sections: `editor`, `behaviour`, `timer` (subsection), `tui_colors`, `keys`, `profiles`, `schemes` — plus one heading per named profile/scheme block.
+**`ini-save` format** — comments use `%`; section titles use WrithDeck heading syntax `= title =` so they appear in the F11 TOC when the INI is opened in the editor. The `= title =` lines are silently ignored by the parser (no match for `[section]` or `key = value` patterns). Sections: `editor`, `behaviour`, `timer` (subsection), `misc`, `tui_colors`, `keys`, `profiles`, `schemes` — plus one heading per named profile/scheme block.
 
 **Boolean values** — `ini-save` writes `yes`/`no` for all 17 boolean settings using `[expr {$::cfg_xxx ? "yes" : "no"}]`. All forms are accepted on load via `string is true $v`: `yes`, `no`, `1`, `0`, `true`, `false`, `on`, `off`.
 
@@ -209,6 +214,36 @@ Configurable countdown timer and stopwatch accessible via modal command mode or 
 - **GUI** (`timer-alert-gui`): Toplevel dialog with "Timer finished!" message + `bell` command
 - **TUI** (`tui-timer-alert`): Full-screen overlay with "TIMER FINISHED!" message + `bell` command
 - Sound controlled by `$::cfg_timer_sound` setting
+
+## Autosave
+
+Periodic snapshot of the active workspace to `~/Documents/writhdeck/autosave_ws01.txt` (WS1) or `autosave_ws02.txt` (WS2). Overwrite mode — single latest snapshot, not a log.
+
+**Configuration** (`src/config.tcl`, section `[misc]` in INI):
+- `cfg_autosave_enabled` — boolean, default `yes`
+- `cfg_autosave_interval` — integer minutes, default `1`
+
+**File format:**
+```
+folder/filename          (or "scratchpad")
+YYYY-MM-DD HH:MM:SS
+
+-------------------------
+content (unsaved changes included)
+```
+
+**`do-autosave {ws_n content filepath}`** (`src/common.tcl`) — shared GUI/TUI. Opens in `w` mode. Guard: `max(1, $::cfg_autosave_interval)` prevents zero-interval tight loop.
+
+**GUI** (`src/gui.tcl`):
+- `autosave-start` — cancels any pending schedule, schedules `autosave-tick` after `max(1,interval)*60000` ms
+- `autosave-stop` — cancels pending schedule
+- `autosave-tick` — saves active WS from `[[primary-ed] get 1.0 end-1c]` + inactive WS from `::ws{n}_content` if `ws_dual_mode`; reschedules via `autosave-start`
+- `show-editor` calls `autosave-start`; `close-editor` calls `autosave-stop`
+
+**TUI** (`src/tui.tcl`):
+- `set ::autosave_last_time [clock seconds]` at start of `tui-editor`
+- Check at top of main loop: `if {$_now - $::autosave_last_time >= max(1, $::cfg_autosave_interval) * 60}`
+- `tui-getch` timeout: `50ms` when autosave enabled (same as timer), **never 1000ms** — 1000ms causes up to 1 second latency per keystroke because a key arriving after the first non-blocking read waits out the full sleep.
 
 ## TUI dialogs — pattern no-flicker
 
@@ -456,7 +491,7 @@ See `src/i18n/README.md` for adding new languages and comprehensive i18n documen
 
 `writhdeck-jim.tcl` is a TUI-only build that runs under JimTcl 0.84+ (`/opt/jimsh`). Built via `make jimtcl`. Source files are **not modified** — all fixes live in `src/compat-jim.tcl`, loaded immediately after `src/boot-jim.tcl`.
 
-**Five incompatibilities fixed by `src/compat-jim.tcl`:**
+**Six incompatibilities fixed by `src/compat-jim.tcl`:**
 
 | Incompatibility | Fix |
 |---|---|
@@ -465,6 +500,7 @@ See `src/i18n/README.md` for adding new languages and comprehensive i18n documen
 | `string is integer -strict` — `-strict` flag not supported | Strip `-strict`, forward to original `string is integer` |
 | `file normalize` on non-existent paths — JimTcl errors | Override of `file`: `catch` + manual path normalization fallback |
 | `min()`/`max()` in `expr {}` — no math functions in JimTcl | Override of `expr`: depth-counting scanner transforms `min(a,b)` → `[_min [__expr_orig {a}] [__expr_orig {b}]]` |
+| `encoding convertfrom`/`convertto` — no `encoding` command | `proc encoding` returning bytes as-is; JimTcl is natively UTF-8 so raw stdin bytes are already valid strings |
 
 **Critical rule for `compat-jim.tcl`:** All internal code in the shim must call `__expr_orig`, `__str_jim`, `__file_jim` directly — never the overridden `expr`/`string`/`file` — to prevent infinite recursion.
 
