@@ -435,7 +435,8 @@ The codebase is organized in `src/` directory and built via `Makefile`:
 - `make compact` — generate `writhdeck-compact.tcl` + `writhdeck-cli-compact.tcl` (stripped, ~-20 to -25%)
 - `make compact-cli` — generate `writhdeck-cli-compact.tcl` only
 - `make jimtcl` — generate `writhdeck-jim.tcl` (JimTcl-compatible TUI build, see below)
-- `make clean` — remove generated files (includes compact and jim variants)
+- `make sfx` — generate `writhdeck-sfx` (Self-Extracting eXecutable: shell stub + jimsh binary + script, no external deps at runtime); override interpreter with `JIMSH=/path/to/jimsh`
+- `make clean` — remove generated files (includes compact, jim, and sfx variants)
 - `make test` — run regression tests
 - `make test-i18n` — validate translations only
 - `make test-syntax` — check Tcl syntax only
@@ -509,6 +510,18 @@ See `src/i18n/README.md` for adding new languages and comprehensive i18n documen
 make jimtcl
 /opt/jimsh writhdeck-jim.tcl --tui [file.txt]
 ```
+
+## SFX (`make sfx`)
+
+**SFX = Self-Extracting eXecutable** — a single standalone file that bundles the jimsh binary and the Tcl script. At runtime, a small shell stub extracts both to a temp directory via `dd`, then `exec`s jimsh on the script. No external interpreter required on the target machine.
+
+```sh
+make jimtcl && make sfx          # → writhdeck-sfx
+make sfx JIMSH=/usr/local/jimsh  # override interpreter path
+./writhdeck-sfx --tui
+```
+
+File structure: `[shell stub ~214B][jimsh binary][writhdeck-jim.tcl]`. Offsets are calculated by `tools/make-sfx.py` and embedded in the stub. Portability depends on the jimsh binary: if dynamically linked (check with `ldd /opt/jimsh`), target systems need compatible shared libraries (`libssl`, `libcrypto`, `libc`…). For a fully portable SFX, recompile jimsh as a static binary (musl or `--disable-shared -static`).
 
 ## SKILLS.md
 

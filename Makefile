@@ -34,7 +34,9 @@ JIM_SRCS  := src/compat-jim.tcl src/state.tcl src/config.tcl $(CLI_SCHEME_FILES)
 
 COMPACT_SCRIPT := tools/tcl-compact.tcl
 
-.PHONY: all clean compact compact-cli jimtcl .FORCE
+.PHONY: all clean compact compact-cli jimtcl sfx .FORCE
+
+JIMSH ?= /opt/jimsh
 
 all: writhdeck.tcl writhdeck-cli.tcl
 
@@ -80,6 +82,9 @@ writhdeck-cli.tcl: src/boot-cli.tcl $(CLI_SRCS) $(CLI_I18N_FILES) Makefile
 	@chmod +x $@
 	@echo "Built $@ (TUI-only, languages: $(CLI_LANGS), schemes: $(CLI_SCHEMES))"
 
+sfx: writhdeck-jim.tcl
+	python3 tools/make-sfx.py $(JIMSH) writhdeck-jim.tcl writhdeck-sfx
+
 jimtcl: writhdeck-jim.tcl
 
 writhdeck-jim.tcl: src/boot-jim.tcl $(JIM_SRCS) $(CLI_I18N_FILES) Makefile
@@ -115,7 +120,7 @@ compact-cli: writhdeck-cli.tcl
 	@chmod +x writhdeck-cli-compact.tcl
 
 clean:
-	rm -f writhdeck.tcl writhdeck-cli.tcl writhdeck-compact.tcl writhdeck-cli-compact.tcl writhdeck-jim.tcl
+	rm -f writhdeck.tcl writhdeck-cli.tcl writhdeck-compact.tcl writhdeck-cli-compact.tcl writhdeck-jim.tcl writhdeck-sfx
 	@echo "Cleaned build artifacts"
 
 .PHONY: test-gui test-cli test test-i18n test-syntax test-langs lint-doc
