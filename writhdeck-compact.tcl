@@ -723,7 +723,11 @@ puts $fh "= editor ="
 puts $fh "\[editor\]"
 puts $fh "profile        = $::cfg_profile"
 puts $fh "scheme         = $::cfg_scheme"
+if {$::cfg_docs_dir ne ""} {
+puts $fh "docs_dir       = $::cfg_docs_dir"
+} else {
 puts $fh "% docs_dir = ~/Documents/writerdeck"
+}
 puts $fh "% (main default document and conf folder: ~/Documents/writhdeck)"
 puts $fh "console_margin_cols = $::cfg_console_margin_cols"
 puts $fh "console_margin_rows = $::cfg_console_margin_rows"
