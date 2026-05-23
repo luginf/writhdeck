@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Host theme for Compose — real theming is handled in MaterialTheme composable.
+         AppCompat is available transitively via activity-compose. -->
+    <style name="Theme.WrithDeck" parent="Theme.AppCompat.DayNight.NoActionBar" />
+</resources>

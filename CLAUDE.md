@@ -527,6 +527,24 @@ File structure: `[shell stub ~214B][jimsh binary][writhdeck-jim.tcl]`. Offsets a
 
 `SKILLS.md` in the repo root is the developer reference in French. It contains detailed rules, patterns, and a list of ideas not yet implemented — consult it before adding features.
 
-## ANDROID.md
+## Android app (`android/`)
 
-`ANDROID.md` in the repo root is the technical roadmap for building an Android app (Kotlin + Jetpack Compose) that embeds the WrithDeck Tcl engine via a JNI/NDK bridge. It covers: cross-compiling Tcl 8.6 for Android, the JNI C bridge, adapting `state.tcl` / `config.tcl` / `common.tcl` for Android, the Kotlin wrapper class, Gradle configuration, and known constraints.
+The `android/` subdirectory is a Kotlin + Jetpack Compose project embedding the WrithDeck Tcl engine via JNI/NDK. `ANDROID.md` documents the full architecture and build steps.
+
+**Current state (Phase 1):** skeleton created — JNI bridge, Gradle project, basic editor UI (browser + editor screens, word count). `state.tcl` and `config.tcl` are loaded via `boot-android.tcl`.
+
+**Cross-compilation (run from `android/`):**
+```sh
+cd android/
+wget https://prdownloads.sourceforge.net/tcl/tcl8.6.15-src.tar.gz
+tar xzf tcl8.6.15-src.tar.gz
+./tools/build-tcl-android.sh x86_64     # emulator
+./tools/build-tcl-android.sh arm64-v8a  # device
+```
+
+**Key rules for the NDK build:**
+- Use `clang --target=...` (not the `${triple}${api}-clang` wrappers) — the wrapper scripts fail inside autoconf's subshell on NDK r26+.
+- Pass `--sysroot=$TOOLCHAIN/sysroot` in both `CFLAGS` and `LDFLAGS`.
+- Do not run the build while Android Studio is installing/updating the NDK (files in `.temp/` are partially present and cause exit 127).
+
+**Gradle task `copyTclModules`** — copies `src/state.tcl` and `src/config.tcl` from the parent source tree into `android/app/src/main/assets/tcl/` at every `preBuild`. `boot-android.tcl` (in assets) is committed; the Tcl modules are generated.

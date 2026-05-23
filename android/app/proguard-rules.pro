@@ -1,0 +1,1 @@
+-keep class com.writhdeck.app.WrithdeckEngine { *; }
