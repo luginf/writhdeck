@@ -531,7 +531,7 @@ File structure: `[shell stub ~214B][jimsh binary][writhdeck-jim.tcl]`. Offsets a
 
 The `android/` subdirectory is a Kotlin + Jetpack Compose project embedding the WrithDeck Tcl engine via JNI/NDK. `ANDROID.md` documents the full architecture and build steps.
 
-**Current state (Phase 1):** skeleton created — JNI bridge, Gradle project, basic editor UI (browser + editor screens, word count). `state.tcl` and `config.tcl` are loaded via `boot-android.tcl`.
+**Current state (Phase 2 — fonctionnel):** JNI bridge opérationnel, editor UI complet (browser + éditeur, word count, TOC, mode commande), timer piloté par le moteur Tcl, stats journalières, occurrences de mots, ouverture/édition de `.txt` depuis un file manager, édition du `writhdeck.ini` directement dans l'app. Icône `writhdeck.png` incluse.
 
 **Cross-compilation (run from `android/`):**
 ```sh
@@ -547,4 +547,32 @@ tar xzf tcl8.6.15-src.tar.gz
 - Pass `--sysroot=$TOOLCHAIN/sysroot` in both `CFLAGS` and `LDFLAGS`.
 - Do not run the build while Android Studio is installing/updating the NDK (files in `.temp/` are partially present and cause exit 127).
 
-**Gradle task `copyTclModules`** — copies `src/state.tcl` and `src/config.tcl` from the parent source tree into `android/app/src/main/assets/tcl/` at every `preBuild`. `boot-android.tcl` (in assets) is committed; the Tcl modules are generated.
+**Gradle task `copyTclModules`** — copies `src/state.tcl` + `src/config.tcl` (parent source tree) and Tcl stdlib files from `android/tcl8.6.15/library/` into assets at every `preBuild`. `boot-android.tcl` is committed; the rest is generated. Output APK: `writhdeck-debug.apk`.
+
+**Tcl_Init() sur Android** — avant `Tcl_Init()`, positionner `tcl_library` vers `$filesDir/tcl/lib/tcl8.6` (copié depuis assets). Sans ça, Tcl cherche `/usr/local/lib/tcl8.6/` → init échoue. L'échec de `Tcl_Init` est loggué mais non fatal. `engineReady` est toujours `true` après init.
+
+**`boot-android.tcl` — ordre critique :**
+```tcl
+file mkdir $::DOCS_DIR_DEFAULT   # AVANT ini-load — sinon ini-save échoue (dossier absent)
+ini-load
+keys-init
+state-load
+```
+Les procs Android-spécifiques définies à la fin de `boot-android.tcl` : `android-timer-start/pause/resume/reset/tick/state`, `android-word-occurrences`, `android-get-stats`.
+
+**Architecture Tcl/Kotlin :**
+- **Tcl** : persistance (`state.tcl`), config (`config.tcl`, `ini-load`/`ini-save`), timer (état + logique via `android-timer-*`), occurrences de mots (`android-word-occurrences`), stats journalières (`android-get-stats` → `daily-update`)
+- **Kotlin** : UI Compose, ViewModel, JNI bridge, tick du timer (coroutine `delay(1000)` + appel `android-timer-tick`), comptage de mots en mémoire
+
+**Timer sur Android** — pas d'event loop Tcl → tick piloté par coroutine Kotlin :
+- `engine.eval("android-timer-start/pause/resume/reset")` → retourne `"active remaining"`
+- Coroutine : `delay(1000)` + `engine.eval("android-timer-tick")` → parse `"active remaining"` → update StateFlows
+- `_timerLastTick = 0L` → jamais démarré / réinitialisé (masque le timer dans la barre)
+
+**TOC heading_marker** — `buildToc()` utilise une détection par string (startsWith/endsWith + comptage itératif), pas de regex. Évite les problèmes avec `Regex.escape("=")` qui produit `\Q=\E`.
+
+**Curseur BasicTextField** — utiliser `remember { }` sans clé de contenu. `remember(content) { }` réinitialise le curseur à 0 à chaque frappe. `LaunchedEffect(content)` synchronise lors des ouvertures de fichier externes.
+
+**Édition writhdeck.ini** — bouton engrenage dans le browser → `vm.openIniFile()` appelle `ini-save` systématiquement (régénère avec les valeurs courantes) puis ouvre dans l'éditeur. À la sauvegarde, si le fichier est `writhdeck.ini`, `reloadConfig()` relance `ini-load + keys-init` dans le moteur et met à jour tous les StateFlows.
+
+**Ouverture de .txt externe** — intent-filter `ACTION_VIEW` + `ACTION_EDIT` / `text/plain` dans `AndroidManifest.xml`. `MainActivity` lit `intent.data` et appelle `vm.openExternalContent(uri, contentResolver, canWrite)`. Sauvegarde via `contentResolver.openOutputStream()` si `canWrite`.

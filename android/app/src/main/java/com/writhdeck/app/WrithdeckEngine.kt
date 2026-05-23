@@ -50,6 +50,10 @@ class WrithdeckEngine(private val context: Context) {
         else nativeEval(script)
     }
 
+    suspend fun setVar(name: String, value: String) = withContext(Dispatchers.IO) {
+        if (available) nativeSetVar(name, value)
+    }
+
     fun destroy() {
         if (available) nativeDestroy()
     }

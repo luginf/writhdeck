@@ -438,6 +438,61 @@ Voir `src/i18n/README.md` pour le guide complet (format, ajout de langue, format
 - **Backup timestamp** : inclut les secondes (`%Hh%Mm%S`), message affiche le dossier de sauvegarde
 - **GUI config grab fix** : `grab $w` déplacé après `update` et création des widgets
 
+## Application Android (`android/`)
+
+Architecture hybride : moteur Tcl embarqué via JNI, UI Compose Kotlin. Tk absent → toute la logique UI est en Kotlin ; la persistance, la config et les calculs de données restent en Tcl.
+
+### Procs Android dans `boot-android.tcl`
+
+| Proc | Rôle |
+|---|---|
+| `android-timer-start/pause/resume/reset` | Contrôle du timer Tcl ; retourne `"active remaining"` |
+| `android-timer-tick` | Appelée chaque seconde par la coroutine Kotlin ; retourne `"active remaining"` |
+| `android-timer-state` | État initial pour le ViewModel au démarrage |
+| `android-word-occurrences {text}` | Occurrences depuis le texte en mémoire (pas un fichier) ; retourne `"mot\tcount\n..."` |
+| `android-get-stats {filepath words}` | Appelle `daily-update` puis retourne les stats du fichier triées par date décroissante |
+
+**Ordre critique dans `boot-android.tcl`** :
+```tcl
+file mkdir $::DOCS_DIR_DEFAULT   # crée documents/ AVANT ini-load
+ini-load
+keys-init
+state-load
+```
+Sans le `file mkdir`, `ini-save` (appelé par `ini-load` si le fichier est absent) échoue silencieusement → .ini vide.
+
+### Timer Android
+
+Pas d'event loop Tcl → tick piloté par coroutine Kotlin :
+- Contrôle : `engine.eval("android-timer-start")` etc. → parse `"1 1500"` (active + secondes restantes)
+- Tick : `delay(1000)` + `engine.eval("android-timer-tick")` → met à jour les StateFlows
+- `_timerLastTick = 0L` distingue "jamais démarré" (masque timer dans barre) de "en pause" (non-nul)
+- Ne jamais appeler `timer-start`/`timer-tick` natifs (utilisent `after` → nécessite event loop)
+
+### Patterns Kotlin/Compose
+
+**`BasicTextField` + curseur** — toujours `remember { }` sans clé de contenu. `remember(content) { }` réinitialise le curseur à position 0 à chaque frappe. `LaunchedEffect(content)` gère les sync externes (ouverture de fichier).
+
+**Passer du texte au moteur Tcl** — utiliser `engine.setVar("::android_content", text)` puis `engine.eval("proc \$::android_content")`. Évite les problèmes d'échappement avec `{...}` si le texte contient `}`.
+
+**`buildToc` heading_marker** — détection par string (startsWith/endsWith + boucle de comptage), pas de regex. `Regex.escape("=")` → `\Q=\E` crée des problèmes dans les quantificateurs Kotlin/Java.
+
+**Édition writhdeck.ini** — `openIniFile()` appelle toujours `ini-save` avant de lire le fichier (régénère les valeurs courantes). À la sauvegarde, si `entry.name == "writhdeck.ini"` → `reloadConfig()` relance `ini-load + keys-init` dans le moteur.
+
+### Répartition Tcl/Kotlin
+
+| Fonctionnalité | Où |
+|---|---|
+| Persistance état (curseurs, récents, favoris, stats) | Tcl `state.tcl` |
+| Config (ini-load/save, profils, clés, timer config) | Tcl `config.tcl` |
+| Timer (état, logique countdown/stopwatch) | Tcl `android-timer-*` |
+| Occurrences de mots | Tcl `android-word-occurrences` |
+| Stats journalières | Tcl `android-get-stats` → `daily-update` |
+| Comptage de mots en temps réel | Kotlin (contenu mémoire) |
+| TOC (buildToc) | Kotlin |
+| UI, navigation, cycle de vie | Kotlin Compose |
+| Tick timer (scheduling) | Kotlin coroutine |
+
 ## Déjà implémenté (à ne pas re-suggérer)
 
 - **Typewriter scrolling** : `typewriter-center`, `typewriter-tick`, mode Hemingway (`Ctrl+T`)
