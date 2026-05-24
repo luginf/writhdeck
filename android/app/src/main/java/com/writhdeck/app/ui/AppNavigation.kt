@@ -13,7 +13,7 @@ import com.writhdeck.app.WrithdeckViewModel
 import java.net.URLEncoder
 
 @Composable
-fun AppNavigation(vm: WrithdeckViewModel = viewModel()) {
+fun AppNavigation(vm: WrithdeckViewModel = viewModel(), onRequestPermission: () -> Unit = {}) {
     val nav = rememberNavController()
     val currentFile by vm.currentFile.collectAsStateWithLifecycle()
 
@@ -31,7 +31,8 @@ fun AppNavigation(vm: WrithdeckViewModel = viewModel()) {
                 onOpenFile = { entry ->
                     vm.openFile(entry)
                     nav.navigate("editor") { launchSingleTop = true }
-                }
+                },
+                onRequestPermission = onRequestPermission
             )
         }
         composable("editor") {

@@ -1,8 +1,13 @@
 package com.writhdeck.app
 
+import android.Manifest
 import android.app.Application
 import android.content.ContentResolver
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -16,11 +21,26 @@ import java.io.File
 
 data class DocEntry(val name: String, val path: String)
 data class StatEntry(val date: String, val words: Int)
+data class ThemeColors(
+    val bg: String = "#1a1a1a",
+    val fg: String = "#d4cfbf",
+    val headingColor: String = "#87ceeb"
+)
 
 class WrithdeckViewModel(app: Application) : AndroidViewModel(app) {
 
     private val engine = WrithdeckEngine(app)
-    private val docsDir get() = File(getApplication<Application>().filesDir, "documents")
+
+    private val externalDocsDir = File(
+        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "writhdeck"
+    )
+    private val internalDocsDir = File(app.filesDir, "documents")
+
+    private val _storagePermissionGranted = MutableStateFlow(checkStoragePermission())
+    val storagePermissionGranted = _storagePermissionGranted.asStateFlow()
+
+    private val docsDir: File get() =
+        if (_storagePermissionGranted.value) externalDocsDir else internalDocsDir
 
     private val _engineReady = MutableStateFlow(false)
     val engineReady = _engineReady.asStateFlow()
@@ -30,6 +50,9 @@ class WrithdeckViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _recentDocs = MutableStateFlow<List<DocEntry>>(emptyList())
     val recentDocs = _recentDocs.asStateFlow()
+
+    private val _favoriteDocs = MutableStateFlow<List<DocEntry>>(emptyList())
+    val favoriteDocs = _favoriteDocs.asStateFlow()
 
     private val _content = MutableStateFlow("")
     val content = _content.asStateFlow()
@@ -43,7 +66,6 @@ class WrithdeckViewModel(app: Application) : AndroidViewModel(app) {
     private val _dirty = MutableStateFlow(false)
     val dirty = _dirty.asStateFlow()
 
-    // Heading / key config (lus depuis le moteur Tcl après ini-load)
     private val _headingMarker = MutableStateFlow("=")
     val headingMarker = _headingMarker.asStateFlow()
     private val _markdownHeadings = MutableStateFlow(true)
@@ -51,37 +73,68 @@ class WrithdeckViewModel(app: Application) : AndroidViewModel(app) {
     private val _keyToc = MutableStateFlow("F11")
     val keyToc = _keyToc.asStateFlow()
 
-    // Timer — état piloté par le moteur Tcl, tick déclenché par coroutine Kotlin
     private val _timerType = MutableStateFlow("countdown")
     val timerType = _timerType.asStateFlow()
+
+    private val _themeColors = MutableStateFlow(ThemeColors())
+    val themeColors = _themeColors.asStateFlow()
     private val _timerActive = MutableStateFlow(false)
     val timerActive = _timerActive.asStateFlow()
     private val _timerRemaining = MutableStateFlow(0)
     val timerRemaining = _timerRemaining.asStateFlow()
-    // 0L = jamais démarré / réinitialisé ; non-nul = en cours ou en pause
     private val _timerLastTick = MutableStateFlow(0L)
     val timerLastTick = _timerLastTick.asStateFlow()
 
     private var timerJob: Job? = null
 
-    // Non-null when a file was opened via ACTION_VIEW / ACTION_EDIT from another app
     private var externalUri: Uri? = null
     private var externalWritable = false
 
+    private val _snackbarMessage = MutableStateFlow<String?>(null)
+    val snackbarMessage = _snackbarMessage.asStateFlow()
+
     init {
+        viewModelScope.launch { initEngine() }
+    }
+
+    private suspend fun initEngine() {
+        val dd = docsDir.also { it.mkdirs() }
+        engine.init(dd.absolutePath)
+        _engineReady.value = true
+        _headingMarker.value = engine.eval("set ::cfg_heading_marker").trim().ifEmpty { "=" }
+        _markdownHeadings.value = engine.eval("set ::cfg_markdown_headings").trim() != "0"
+        _keyToc.value = engine.eval("set ::cfg_key_toc").trim().ifEmpty { "F11" }
+        _timerType.value = engine.eval("set ::cfg_timer_type").trim().ifEmpty { "countdown" }
+        applyTimerState(engine.eval("android-timer-state"), resetLastTick = true)
+        _themeColors.value = loadThemeColors()
+        refreshDocs()
+        refreshFavorites()
+        refreshRecents()
+    }
+
+    // Called from onResume / permission result in MainActivity
+    fun onStoragePermissionGranted() {
+        if (_storagePermissionGranted.value) return
+        _storagePermissionGranted.value = true
         viewModelScope.launch {
-            engine.init()
-            _engineReady.value = true
-            _headingMarker.value = engine.eval("set ::cfg_heading_marker").trim().ifEmpty { "=" }
-            _markdownHeadings.value = engine.eval("set ::cfg_markdown_headings").trim() != "0"
-            _keyToc.value = engine.eval("set ::cfg_key_toc").trim().ifEmpty { "F11" }
-            _timerType.value = engine.eval("set ::cfg_timer_type").trim().ifEmpty { "countdown" }
-            // Lit l'état initial du timer depuis Tcl (après ini-load dans boot-android.tcl)
-            applyTimerState(engine.eval("android-timer-state"), resetLastTick = true)
-            refreshDocs()
-            refreshRecents()
+            _snackbarMessage.value = "Migrating documents..."
+            withContext(Dispatchers.IO) {
+                externalDocsDir.mkdirs()
+                internalDocsDir.listFiles()?.filter { it.isFile }?.forEach { f ->
+                    val dst = File(externalDocsDir, f.name)
+                    if (!dst.exists()) f.copyTo(dst)
+                    f.delete()
+                }
+            }
+            _engineReady.value = false
+            timerJob?.cancel(); timerJob = null
+            withContext(Dispatchers.IO) { engine.destroy() }
+            initEngine()
+            _snackbarMessage.value = "Documents stored in Documents/writhdeck/"
         }
     }
+
+    fun dismissSnackbar() { _snackbarMessage.value = null }
 
     // --- Docs ---
 
@@ -89,11 +142,28 @@ class WrithdeckViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             docsDir.mkdirs()
             val files = docsDir
-                .listFiles { f -> f.isFile && (f.extension == "txt" || f.extension == "md") }
+                .listFiles { f -> f.isFile && (f.extension == "txt" || f.extension == "md" || f.extension == "ini") }
                 ?.sortedByDescending { it.lastModified() }
                 ?.map { DocEntry(it.name, it.absolutePath) }
                 ?: emptyList()
             _docs.value = files
+        }
+    }
+
+    fun refreshFavorites() {
+        viewModelScope.launch {
+            if (!_engineReady.value) return@launch
+            val raw = withContext(Dispatchers.Default) {
+                engine.eval("join \$::state_favorites \"\n\"")
+            }
+            val entries = raw.lines()
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .mapNotNull { path ->
+                    val f = File(path)
+                    if (f.exists() && f.canRead()) DocEntry(f.name, f.absolutePath) else null
+                }
+            _favoriteDocs.value = entries
         }
     }
 
@@ -114,7 +184,6 @@ class WrithdeckViewModel(app: Application) : AndroidViewModel(app) {
     fun openIniFile() {
         viewModelScope.launch {
             val iniFile = File(docsDir, "writhdeck.ini")
-            // Toujours régénérer pour avoir les valeurs courantes (pas un fichier vide ou obsolète)
             if (_engineReady.value) {
                 docsDir.mkdirs()
                 engine.eval("ini-save")
@@ -160,6 +229,84 @@ class WrithdeckViewModel(app: Application) : AndroidViewModel(app) {
             val safeName = if (name.endsWith(".txt") || name.endsWith(".md")) name else "$name.txt"
             File(docsDir, safeName).createNewFile()
             refreshDocs()
+        }
+    }
+
+    fun renameFile(entry: DocEntry, newName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val ext = File(entry.path).extension
+            val safeName = if (newName.endsWith(".txt") || newName.endsWith(".md")) newName
+                           else if (ext.isNotEmpty()) "$newName.$ext" else "$newName.txt"
+            val parent = File(entry.path).parentFile ?: docsDir
+            val dst = File(parent, safeName)
+            val src = File(entry.path)
+            if (dst.exists() || !src.renameTo(dst)) {
+                _snackbarMessage.value = "Could not rename"
+                return@launch
+            }
+            if (_engineReady.value) {
+                engine.setVar("::android_old", entry.path)
+                engine.setVar("::android_new", dst.absolutePath)
+                engine.eval("""
+                    recent-rename ${'$'}::android_old ${'$'}::android_new
+                    if {[lsearch -exact ${'$'}::state_favorites ${'$'}::android_old] >= 0} {
+                        toggle-favorite ${'$'}::android_old
+                        toggle-favorite ${'$'}::android_new
+                    }
+                    state-save
+                """.trimIndent())
+            }
+            if (_currentFile.value?.path == entry.path) {
+                _currentFile.value = DocEntry(dst.name, dst.absolutePath)
+            }
+            refreshDocs()
+            refreshFavorites()
+            refreshRecents()
+        }
+    }
+
+    fun deleteFile(entry: DocEntry) {
+        viewModelScope.launch(Dispatchers.IO) {
+            File(entry.path).delete()
+            if (_engineReady.value) {
+                engine.setVar("::android_del", entry.path)
+                engine.eval("""
+                    recent-remove ${'$'}::android_del
+                    if {[lsearch -exact ${'$'}::state_favorites ${'$'}::android_del] >= 0} {
+                        toggle-favorite ${'$'}::android_del
+                    }
+                    state-save
+                """.trimIndent())
+            }
+            if (_currentFile.value?.path == entry.path) {
+                _currentFile.value = null
+                _content.value = ""
+                _dirty.value = false
+            }
+            refreshDocs()
+            refreshFavorites()
+            refreshRecents()
+        }
+    }
+
+    fun backupFile(entry: DocEntry) {
+        viewModelScope.launch {
+            if (!_engineReady.value) return@launch
+            val result = withContext(Dispatchers.Default) {
+                engine.eval("android-backup {${entry.path}}")
+            }
+            _snackbarMessage.value = if (result.startsWith("ERROR:")) "Backup failed"
+                                     else "Backed up: ${File(result).name}"
+        }
+    }
+
+    fun toggleFavorite(entry: DocEntry) {
+        viewModelScope.launch {
+            if (!_engineReady.value) return@launch
+            withContext(Dispatchers.Default) {
+                engine.eval("toggle-favorite {${entry.path}}\nstate-save")
+            }
+            refreshFavorites()
         }
     }
 
@@ -214,9 +361,18 @@ class WrithdeckViewModel(app: Application) : AndroidViewModel(app) {
         _markdownHeadings.value = engine.eval("set ::cfg_markdown_headings").trim() != "0"
         _keyToc.value = engine.eval("set ::cfg_key_toc").trim().ifEmpty { "F11" }
         _timerType.value = engine.eval("set ::cfg_timer_type").trim().ifEmpty { "countdown" }
+        _themeColors.value = loadThemeColors()
     }
 
-    // --- Timer (état géré par le moteur Tcl, tick piloté par coroutine) ---
+    private suspend fun loadThemeColors(): ThemeColors {
+        val raw = engine.eval("android-get-theme").trim()
+        val parts = raw.split(Regex("\\s+"))
+        if (parts.size >= 3 && parts[0].startsWith("#"))
+            return ThemeColors(bg = parts[0], fg = parts[1], headingColor = parts[2])
+        return ThemeColors()
+    }
+
+    // --- Timer ---
 
     private fun applyTimerState(result: String, resetLastTick: Boolean = false) {
         val parts = result.trim().split(" ")
@@ -226,7 +382,6 @@ class WrithdeckViewModel(app: Application) : AndroidViewModel(app) {
         _timerActive.value = active
         _timerRemaining.value = remaining
         if (resetLastTick) {
-            // 0 dans Tcl = jamais démarré
             _timerLastTick.value = if (tclTick == 0L) 0L else System.currentTimeMillis()
         }
     }
@@ -263,7 +418,6 @@ class WrithdeckViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val result = engine.eval("android-timer-pause")
             applyTimerState(result)
-            // lastTick non-nul → affiche le timer en pause dans la barre
         }
     }
 
@@ -283,7 +437,7 @@ class WrithdeckViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val result = engine.eval("android-timer-reset")
             applyTimerState(result)
-            _timerLastTick.value = 0L  // réinitialise → masque le timer dans la barre
+            _timerLastTick.value = 0L
         }
     }
 
@@ -304,7 +458,7 @@ class WrithdeckViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // --- Occurrences de mots (via moteur Tcl) ---
+    // --- Word occurrences ---
 
     suspend fun getWordOccurrences(): List<Pair<String, Int>> {
         if (!_engineReady.value) return emptyList()
@@ -321,13 +475,22 @@ class WrithdeckViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // --- Comptage de mots (Kotlin, sur contenu en mémoire) ---
-
     private fun countWords(text: String): Int =
         text.trim().split(Regex("\\s+")).count { it.isNotEmpty() }
 
     override fun onCleared() {
         timerJob?.cancel()
         engine.destroy()
+    }
+
+    private fun checkStoragePermission(): Boolean {
+        val app = getApplication<Application>()
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Environment.isExternalStorageManager()
+        } else {
+            ContextCompat.checkSelfPermission(
+                app, Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        }
     }
 }

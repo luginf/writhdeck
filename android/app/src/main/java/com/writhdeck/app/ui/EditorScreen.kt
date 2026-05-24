@@ -1,5 +1,7 @@
 package com.writhdeck.app.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -7,26 +9,104 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Title
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.writhdeck.app.StatEntry
 import com.writhdeck.app.WrithdeckViewModel
 import kotlinx.coroutines.launch
+
+fun applyHeading(tfv: TextFieldValue, marker: String): TextFieldValue {
+    if (marker.isEmpty()) return tfv
+    val text = tfv.text
+    val sel = tfv.selection
+    val lineStart = (text.lastIndexOf('\n', (sel.min - 1).coerceAtLeast(0))
+        .let { if (it < 0) 0 else it + 1 })
+    val lineEnd = text.indexOf('\n', sel.max).let { if (it < 0) text.length else it }
+    val mLen = marker.length
+
+    val newLines = text.substring(lineStart, lineEnd).split('\n').joinToString("\n") { line ->
+        val t = line.trim()
+        if (t.isEmpty()) return@joinToString line
+        val isH = t.startsWith(marker) && t.endsWith(marker) && t.length > mLen
+        if (isH) {
+            var s = 0; while (s + mLen <= t.length && t.substring(s, s + mLen) == marker) s += mLen
+            var e = t.length; while (e - mLen >= s && t.substring(e - mLen, e) == marker) e -= mLen
+            t.substring(s, e).trim()
+        } else {
+            "$marker $t $marker"
+        }
+    }
+    val newText = text.substring(0, lineStart) + newLines + text.substring(lineEnd)
+    return TextFieldValue(newText, TextRange(lineStart, lineStart + newLines.length))
+}
+
+fun parseHexColor(hex: String): Color {
+    val h = hex.trimStart('#')
+    if (h.length != 6) return Color.Unspecified
+    return try {
+        Color(
+            red   = h.substring(0, 2).toInt(16) / 255f,
+            green = h.substring(2, 4).toInt(16) / 255f,
+            blue  = h.substring(4, 6).toInt(16) / 255f
+        )
+    } catch (_: Exception) { Color.Unspecified }
+}
+
+private class HeadingVisualTransformation(
+    private val headingMarker: String,
+    private val markdownHeadings: Boolean,
+    private val headingColor: Color
+) : VisualTransformation {
+    private val mdRe = if (markdownHeadings) Regex("^#{1,6}\\s") else null
+
+    override fun filter(text: AnnotatedString): TransformedText {
+        if (headingColor == Color.Unspecified) return TransformedText(text, OffsetMapping.Identity)
+        val mLen = headingMarker.length
+        val spans = mutableListOf<Triple<Int, Int, SpanStyle>>()
+        var offset = 0
+        for (line in text.text.lines()) {
+            val trimmed = line.trim()
+            val isH = (mLen > 0 && trimmed.startsWith(headingMarker) && trimmed.endsWith(headingMarker)) ||
+                      (mdRe != null && mdRe.containsMatchIn(trimmed))
+            if (isH) {
+                val end = (offset + line.length).coerceAtMost(text.length)
+                if (end > offset) spans.add(Triple(offset, end, SpanStyle(color = headingColor)))
+            }
+            offset += line.length + 1
+        }
+        if (spans.isEmpty()) return TransformedText(text, OffsetMapping.Identity)
+        val annotated = buildAnnotatedString {
+            append(text)
+            for ((s, e, style) in spans) addStyle(style, s, e)
+        }
+        return TransformedText(annotated, OffsetMapping.Identity)
+    }
+}
 
 fun tkKeyToAndroid(tkName: String): Key? = when (tkName.trim()) {
     "F1"  -> Key.F1;  "F2"  -> Key.F2;  "F3"  -> Key.F3;  "F4"  -> Key.F4
@@ -80,7 +160,7 @@ fun buildToc(text: String, headingMarker: String, markdownHeadings: Boolean): Li
                    trimmed.substring(end - mLen, end) == headingMarker) {
                 end -= mLen
             }
-            val title = trimmed.substring(pos, end).trim()
+            val title = if (end > pos) trimmed.substring(pos, end).trim() else ""
             if (level > 0 && title.isNotEmpty()) {
                 entries.add(TocEntry(level, title, offset))
                 added = true
@@ -115,6 +195,11 @@ fun EditorScreen(vm: WrithdeckViewModel, onBack: () -> Unit) {
     val timerLastTick by vm.timerLastTick.collectAsStateWithLifecycle()
     val timerType by vm.timerType.collectAsStateWithLifecycle()
 
+    val themeColors by vm.themeColors.collectAsStateWithLifecycle()
+    val bgColor  = remember(themeColors.bg)           { parseHexColor(themeColors.bg) }
+    val fgColor  = remember(themeColors.fg)           { parseHexColor(themeColors.fg) }
+    val hdColor  = remember(themeColors.headingColor) { parseHexColor(themeColors.headingColor) }
+
     val colorScheme = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
 
@@ -122,6 +207,9 @@ fun EditorScreen(vm: WrithdeckViewModel, onBack: () -> Unit) {
     LaunchedEffect(content) {
         if (content != tfv.text) tfv = TextFieldValue(content)
     }
+
+    var distractionFree by remember { mutableStateOf(false) }
+    if (distractionFree) BackHandler { distractionFree = false }
 
     var showToc by remember { mutableStateOf(false) }
     val toc = remember(content, headingMarker, markdownHeadings) {
@@ -137,7 +225,7 @@ fun EditorScreen(vm: WrithdeckViewModel, onBack: () -> Unit) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            if (!distractionFree) TopAppBar(
                 title = {
                     Text(
                         text = buildString {
@@ -163,17 +251,20 @@ fun EditorScreen(vm: WrithdeckViewModel, onBack: () -> Unit) {
                             Icon(Icons.Filled.List, contentDescription = "TOC")
                         }
                     }
+                    IconButton(onClick = { vm.saveFile() }, enabled = dirty) {
+                        Icon(Icons.Filled.Save, contentDescription = "Save")
+                    }
                     IconButton(onClick = { showCmdMode = true }) {
                         Icon(Icons.Filled.Menu, contentDescription = "Commands")
                     }
-                    IconButton(onClick = { vm.saveFile() }, enabled = dirty) {
-                        Icon(Icons.Filled.Save, contentDescription = "Save")
+                    IconButton(onClick = { distractionFree = true }) {
+                        Icon(Icons.Filled.Fullscreen, contentDescription = "Distraction-free")
                     }
                 }
             )
         },
         bottomBar = {
-            Surface(tonalElevation = 2.dp) {
+            if (!distractionFree) Surface(tonalElevation = 2.dp) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -201,37 +292,60 @@ fun EditorScreen(vm: WrithdeckViewModel, onBack: () -> Unit) {
             }
         }
     ) { padding ->
-        BasicTextField(
-            value = tfv,
-            onValueChange = { new ->
-                tfv = new
-                if (new.text != content) vm.updateContent(new.text)
-            },
-            textStyle = TextStyle(
-                fontFamily = FontFamily.Monospace,
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
-                color = colorScheme.onSurface
-            ),
-            cursorBrush = SolidColor(colorScheme.primary),
+        val editorBg = if (bgColor != Color.Unspecified) bgColor else colorScheme.background
+        val editorFg = if (fgColor != Color.Unspecified) fgColor else colorScheme.onSurface
+        Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(editorBg)
                 .padding(padding)
-                .padding(horizontal = 20.dp, vertical = 12.dp)
-                .imePadding()
-                .onKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
-                    when {
-                        tocAndroidKey != null && event.key == tocAndroidKey && toc.isNotEmpty() -> {
-                            showToc = true; true
+        ) {
+            BasicTextField(
+                value = tfv,
+                onValueChange = { new ->
+                    tfv = new
+                    if (new.text != content) vm.updateContent(new.text)
+                },
+                textStyle = TextStyle(
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 16.sp,
+                    lineHeight = 24.sp,
+                    color = editorFg
+                ),
+                cursorBrush = SolidColor(colorScheme.primary),
+                visualTransformation = remember(headingMarker, markdownHeadings, hdColor) {
+                    HeadingVisualTransformation(headingMarker, markdownHeadings, hdColor)
+                },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .imePadding()
+                    .onKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
+                        when {
+                            tocAndroidKey != null && event.key == tocAndroidKey && toc.isNotEmpty() -> {
+                                showToc = true; true
+                            }
+                            event.key == Key.Escape -> {
+                                showCmdMode = true; true
+                            }
+                            else -> false
                         }
-                        event.key == Key.Escape -> {
-                            showCmdMode = true; true
-                        }
-                        else -> false
                     }
+            )
+            if (distractionFree) {
+                IconButton(
+                    onClick = { distractionFree = false },
+                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.FullscreenExit,
+                        contentDescription = "Exit distraction-free",
+                        tint = editorFg.copy(alpha = 0.35f)
+                    )
                 }
-        )
+            }
+        }
     }
 
     // TOC sheet
@@ -362,6 +476,16 @@ fun EditorScreen(vm: WrithdeckViewModel, onBack: () -> Unit) {
                     enabled = toc.isNotEmpty(),
                     modifier = Modifier.weight(1f)
                 ) { Text("TOC") }
+                OutlinedButton(
+                    onClick = {
+                        val newTfv = applyHeading(tfv, headingMarker)
+                        tfv = newTfv
+                        vm.updateContent(newTfv.text)
+                        showCmdMode = false
+                    },
+                    enabled = headingMarker.isNotEmpty(),
+                    modifier = Modifier.weight(1f)
+                ) { Text("Heading") }
             }
 
             Spacer(Modifier.height(24.dp))

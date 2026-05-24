@@ -21,15 +21,10 @@ Java_com_writhdeck_app_WrithdeckEngine_nativeInit(
     Tcl_FindExecutable(NULL);
     interp = Tcl_CreateInterp();
     if (!interp) { LOGE("Tcl_CreateInterp failed"); return JNI_FALSE; }
-    if (Tcl_Init(interp) != TCL_OK) {
-        LOGE("Tcl_Init: %s", Tcl_GetStringResult(interp));
-        Tcl_DeleteInterp(interp); interp = NULL;
-        return JNI_FALSE;
-    }
+
     const char *dir = (*env)->GetStringUTFChars(env, filesDir, NULL);
 
-    /* Point tcl_library to the stdlib files we copy from assets.
-       Must be set BEFORE Tcl_Init() so init.tcl / clock.tcl are found. */
+    /* tcl_library must be set BEFORE Tcl_Init so init.tcl / clock.tcl are found. */
     char lib_path[1024];
     snprintf(lib_path, sizeof(lib_path), "%s/tcl/lib/tcl8.6", dir);
     Tcl_SetVar(interp, "tcl_library", lib_path, TCL_GLOBAL_ONLY);

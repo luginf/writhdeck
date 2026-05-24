@@ -29,12 +29,13 @@ class WrithdeckEngine(private val context: Context) {
 
     val available = tryLoad()
 
-    suspend fun init(): Boolean {
+    suspend fun init(docsDir: String): Boolean {
         if (!available) return false
         return withContext(Dispatchers.IO) {
             copyAssetsToFilesDir()
             val ok = nativeInit(context.filesDir.absolutePath)
             if (ok) {
+                nativeSetVar("::ANDROID_DOCS_DIR", docsDir)
                 val boot = File(context.filesDir, "tcl/boot-android.tcl").absolutePath
                 val result = nativeEval("source {$boot}")
                 if (result.startsWith("ERROR:") || result.contains("not found")) {

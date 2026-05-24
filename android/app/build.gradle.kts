@@ -12,6 +12,11 @@ val copyTclModules = tasks.register<Copy>("copyTclModules") {
     from("${rootProject.rootDir.parent}/src") {
         include("state.tcl", "config.tcl")
     }
+    // Color scheme definitions — needed so ini-save produces a complete ini with all scheme colors
+    from("${rootProject.rootDir.parent}/src/schemes") {
+        include("*.tcl")
+        into("schemes")
+    }
     // Tcl stdlib — Tcl_Init() needs init.tcl / clock.tcl at runtime on Android.
     // Source: tcl8.6.15/library/ (created by build-tcl-android.sh download step).
     from("${rootProject.rootDir}/tcl8.6.15/library") {

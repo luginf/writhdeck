@@ -1,10 +1,15 @@
 # boot-android.tcl — démarrage de l'interpréteur WrithDeck sur Android
 # ::ANDROID_FILES_DIR est injecté par nativeInit() avant que ce script soit sourcé
 
-set ::HOME_DIR          $::ANDROID_FILES_DIR
-set ::DOCS_DIR_DEFAULT  [file join $::ANDROID_FILES_DIR "documents"]
-set ::DOCS_DIR          $::DOCS_DIR_DEFAULT
-set ::INI_FILE          [file join $::DOCS_DIR_DEFAULT "writhdeck.ini"]
+set ::HOME_DIR $::ANDROID_FILES_DIR
+# Use external docs dir if injected by Kotlin (public Documents/WrithDeck/), else internal fallback
+if {[info exists ::ANDROID_DOCS_DIR] && $::ANDROID_DOCS_DIR ne ""} {
+    set ::DOCS_DIR_DEFAULT $::ANDROID_DOCS_DIR
+} else {
+    set ::DOCS_DIR_DEFAULT [file join $::ANDROID_FILES_DIR "documents"]
+}
+set ::DOCS_DIR $::DOCS_DIR_DEFAULT
+set ::INI_FILE [file join $::DOCS_DIR_DEFAULT "writhdeck.ini"]
 set ::no_gui            1
 set ::cfg_lang          "en"
 
@@ -20,6 +25,13 @@ foreach _mod {state config} {
     }
 }
 unset _mod _f
+
+# Load color scheme definitions so ini-save produces a complete ini (all scheme colors)
+foreach _sf [glob -nocomplain [file join $::ANDROID_FILES_DIR "tcl" "schemes" "*.tcl"]] {
+    catch { source $_sf }
+}
+unset -nocomplain _sf
+schemes-init
 
 # Crée le dossier documents/ avant ini-load — ini-save en a besoin pour écrire le .ini par défaut
 file mkdir $::DOCS_DIR_DEFAULT
@@ -91,6 +103,28 @@ proc android-timer-state {} {
             : ($::cfg_timer_type eq "stopwatch" ? 0 : $::cfg_timer_duration * 60)
     }]
     return "$::timer_active $rem $::timer_last_tick"
+}
+
+# ── Theme colors (single-call helper for Kotlin) ──────────────────────────────
+
+proc android-get-theme {} {
+    if {$::cfg_dark_mode} {
+        return [list $::cfg_bg $::cfg_fg $::cfg_color_heading]
+    } else {
+        return [list $::cfg_bg_alt $::cfg_fg_alt $::cfg_color_heading_alt]
+    }
+}
+
+# ── Backup ────────────────────────────────────────────────────────────────────
+
+proc android-backup {path} {
+    set ts [clock format [clock seconds] -format "%Y-%m-%dT%Hh%Mm%S"]
+    set backupDir [file join $::DOCS_DIR_DEFAULT "backups"]
+    file mkdir $backupDir
+    set name [file tail $path]
+    set dst [file join $backupDir "${name}.${ts}"]
+    file copy -force $path $dst
+    return $dst
 }
 
 # ── Occurrences de mots (sur le texte en mémoire) ──────────────────────────────
