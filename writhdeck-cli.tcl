@@ -123,6 +123,13 @@ proc state-parse-array {raw key} {
     return $result
 }
 
+# On Android /storage/emulated/0/ resolves to /data/media/0/ via file normalize (unreadable).
+# Skip normalization when running under the Android JNI bridge.
+proc _state_normpath {p} {
+    if {[info exists ::ANDROID_FILES_DIR]} { return $p }
+    return [file normalize $p]
+}
+
 proc state-load {} {
     set ::cursor_cache   {}
     set ::favorites_list {}
@@ -146,16 +153,16 @@ proc state-load {} {
             }
         }
     }
-    foreach p [state-parse-array $raw "favorites"] { lappend ::favorites_list [file normalize $p] }
-    foreach p [state-parse-array $raw "recent"]    { lappend ::recent_list    [file normalize $p] }
+    foreach p [state-parse-array $raw "favorites"] { lappend ::favorites_list [_state_normpath $p] }
+    foreach p [state-parse-array $raw "recent"]    { lappend ::recent_list    [_state_normpath $p] }
     set new_cache {}
-    dict for {k v} $::cursor_cache { dict set new_cache [file normalize $k] $v }
+    dict for {k v} $::cursor_cache { dict set new_cache [_state_normpath $k] $v }
     set ::cursor_cache $new_cache
     foreach item [state-parse-array $raw "daily"] {
         set item [string map [list {\t} "\t"] $item]
         set parts [split $item "\t"]
         if {[llength $parts] >= 3} {
-            set fp [file normalize [lindex $parts 0]]
+            set fp [_state_normpath [lindex $parts 0]]
             if {![dict exists $::daily_data $fp]} { dict set ::daily_data $fp {} }
             for {set i 1} {$i + 1 < [llength $parts]} {incr i 2} {
                 set date [lindex $parts $i]
@@ -364,6 +371,7 @@ set ::cfg_bg2                "#1a1a1a"
 set ::cfg_bg2_alt            "#fdf6e3"
 # dark_mode: 0 = light (alt colors), 1 = dark (primary colors)
 set ::cfg_dark_mode          1
+set ::cfg_android_dark_mode  "auto"
 set ::cfg_key_dark_toggle    "Control-d"
 set ::cfg_browser              1
 set ::cfg_console_center_alert 1
@@ -693,6 +701,7 @@ proc ini-load {} {
                 color_bg2_alt        { set ::cfg_bg2_alt           $v }
                 word_goal            { set ::cfg_word_goal            $v }
                 dark_mode            { set ::cfg_dark_mode [string is true $v] }
+                android_dark_mode    { set ::cfg_android_dark_mode  $v }
                 key_dark_toggle      { set ::cfg_key_dark_toggle   $v }
                 browser              { set ::cfg_browser              [string is true $v] }
                 console_center_alert { set ::cfg_console_center_alert [string is true $v] }
@@ -809,7 +818,8 @@ proc ini-save {} {
     puts $fh "status_left    = $::cfg_status_left"
     puts $fh "status_center  = $::cfg_status_center"
     puts $fh "status_right   = $::cfg_status_right"
-    puts $fh "dark_mode      = [expr {$::cfg_dark_mode ? "yes" : "no"}]"
+    puts $fh "dark_mode         = [expr {$::cfg_dark_mode ? "yes" : "no"}]"
+    puts $fh "android_dark_mode = $::cfg_android_dark_mode"
     puts $fh "= timer ="
     puts $fh "timer_duration = $::cfg_timer_duration"
     puts $fh "timer_sound    = [expr {$::cfg_timer_sound  ? "yes" : "no"}]"

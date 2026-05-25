@@ -40,6 +40,13 @@ proc state-parse-array {raw key} {
     return $result
 }
 
+# On Android /storage/emulated/0/ resolves to /data/media/0/ via file normalize (unreadable).
+# Skip normalization when running under the Android JNI bridge.
+proc _state_normpath {p} {
+    if {[info exists ::ANDROID_FILES_DIR]} { return $p }
+    return [file normalize $p]
+}
+
 proc state-load {} {
     set ::cursor_cache   {}
     set ::favorites_list {}
@@ -63,16 +70,16 @@ proc state-load {} {
             }
         }
     }
-    foreach p [state-parse-array $raw "favorites"] { lappend ::favorites_list [file normalize $p] }
-    foreach p [state-parse-array $raw "recent"]    { lappend ::recent_list    [file normalize $p] }
+    foreach p [state-parse-array $raw "favorites"] { lappend ::favorites_list [_state_normpath $p] }
+    foreach p [state-parse-array $raw "recent"]    { lappend ::recent_list    [_state_normpath $p] }
     set new_cache {}
-    dict for {k v} $::cursor_cache { dict set new_cache [file normalize $k] $v }
+    dict for {k v} $::cursor_cache { dict set new_cache [_state_normpath $k] $v }
     set ::cursor_cache $new_cache
     foreach item [state-parse-array $raw "daily"] {
         set item [string map [list {\t} "\t"] $item]
         set parts [split $item "\t"]
         if {[llength $parts] >= 3} {
-            set fp [file normalize [lindex $parts 0]]
+            set fp [_state_normpath [lindex $parts 0]]
             if {![dict exists $::daily_data $fp]} { dict set ::daily_data $fp {} }
             for {set i 1} {$i + 1 < [llength $parts]} {incr i 2} {
                 set date [lindex $parts $i]

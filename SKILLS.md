@@ -438,60 +438,69 @@ Voir `src/i18n/README.md` pour le guide complet (format, ajout de langue, format
 - **Backup timestamp** : inclut les secondes (`%Hh%Mm%S`), message affiche le dossier de sauvegarde
 - **GUI config grab fix** : `grab $w` déplacé après `update` et création des widgets
 
-## Application Android (`android/`)
+## Application Android (`../writhdeck-android/`)
 
-Architecture hybride : moteur Tcl embarqué via JNI, UI Compose Kotlin. Tk absent → toute la logique UI est en Kotlin ; la persistance, la config et les calculs de données restent en Tcl.
+Dépôt séparé côte à côte avec `writhdeck/`. **Architecture pure Kotlin + Jetpack Compose — pas de Tcl/JNI.** Toute la logique (config, persistance, timer, couleurs) est en Kotlin.
 
-### Procs Android dans `boot-android.tcl`
+### Fichiers clés
 
-| Proc | Rôle |
+| Fichier | Rôle |
 |---|---|
-| `android-timer-start/pause/resume/reset` | Contrôle du timer Tcl ; retourne `"active remaining"` |
-| `android-timer-tick` | Appelée chaque seconde par la coroutine Kotlin ; retourne `"active remaining"` |
-| `android-timer-state` | État initial pour le ViewModel au démarrage |
-| `android-word-occurrences {text}` | Occurrences depuis le texte en mémoire (pas un fichier) ; retourne `"mot\tcount\n..."` |
-| `android-get-stats {filepath words}` | Appelle `daily-update` puis retourne les stats du fichier triées par date décroissante |
+| `AppConfig.kt` | `AppConfig` + `IniParser` (parse/write/patchKeys) + `ThemeColors` |
+| `StateStore.kt` | `AppState` + JSON hand-rolled, migration des anciens paths Tcl |
+| `ColorSchemes.kt` | `SchemeColors` + `BUILTIN_SCHEMES` (8 schemes) |
+| `WrithdeckViewModel.kt` | StateFlows, config, timer, docs, favoris |
+| `ui/BrowserScreen.kt` | Browser avec support raccourcis clavier |
+| `ui/EditorScreen.kt` | Éditeur : BasicTextField, TOC, mode commande |
 
-**Ordre critique dans `boot-android.tcl`** :
-```tcl
-file mkdir $::DOCS_DIR_DEFAULT   # crée documents/ AVANT ini-load
-ini-load
-keys-init
-state-load
+### INI (`IniParser`)
+
+- `parse()` : section-aware — `= profile: name =` route les clés dans des maps par profil ; `active_profile` dans le global choisit quel profil surcharge les globaux.
+- `write()` : génère un template complet avec 8 schemes en commentaire, profils `default` et `novel`.
+- `patchKeys()` : patche des paires clé=valeur dans un texte INI existant (utilisé par `setDarkModePreference`).
+- `initApp()` crée `writhdeck.ini` avec le contenu par défaut au premier lancement → il apparaît dans la liste des documents dès le départ.
+
+### Persistance état (`StateStore`)
+
+JSON hand-rolled compatible avec le format desktop `.writhdeck.json`. Migration des anciens paths normalisés par Tcl (`file normalize`) :
+```kotlin
+// Tcl convertissait /storage/emulated/0/ → /data/media/0/ (illisible)
+private fun migratePath(path: String): String =
+    if (path.startsWith("/data/media/0/"))
+        "/storage/emulated/0/" + path.removePrefix("/data/media/0/")
+    else path
 ```
-Sans le `file mkdir`, `ini-save` (appelé par `ini-load` si le fichier est absent) échoue silencieusement → .ini vide.
+Appliqué dans `load()` sur les clés de cursors, favorites, recent et daily.
 
-### Timer Android
+### Dark mode
 
-Pas d'event loop Tcl → tick piloté par coroutine Kotlin :
-- Contrôle : `engine.eval("android-timer-start")` etc. → parse `"1 1500"` (active + secondes restantes)
-- Tick : `delay(1000)` + `engine.eval("android-timer-tick")` → met à jour les StateFlows
-- `_timerLastTick = 0L` distingue "jamais démarré" (masque timer dans barre) de "en pause" (non-nul)
-- Ne jamais appeler `timer-start`/`timer-tick` natifs (utilisent `after` → nécessite event loop)
+`android_dark_mode = auto|yes|no` dans l'INI. `AppConfig.themeColors(useDark)` retourne `ThemeColors(bg, fg, headingColor)` depuis le scheme actif. `updateThemeColors(systemDark)` est appelé par `MainActivity` quand le système change. Toggle TopAppBar : `auto` (moon outlined) → `yes` (moon filled) → `no` (sun).
+
+### Timer
+
+Coroutine Kotlin pure (`delay(1000)` + décrément du StateFlow). Pas de Tcl event loop. `_timerLastTick = 0L` → jamais démarré/réinitialisé (masque le timer dans la barre de statut).
 
 ### Patterns Kotlin/Compose
 
-**`BasicTextField` + curseur** — toujours `remember { }` sans clé de contenu. `remember(content) { }` réinitialise le curseur à position 0 à chaque frappe. `LaunchedEffect(content)` gère les sync externes (ouverture de fichier).
+**`BasicTextField` + curseur** — toujours `remember { }` sans clé de contenu. `remember(content) { }` réinitialise le curseur à 0 à chaque frappe. `LaunchedEffect(content)` gère les sync externes (ouverture de fichier).
 
-**Passer du texte au moteur Tcl** — utiliser `engine.setVar("::android_content", text)` puis `engine.eval("proc \$::android_content")`. Évite les problèmes d'échappement avec `{...}` si le texte contient `}`.
+**Clavier IME dans BrowserScreen** — le `BasicTextField` invisible (1dp, alpha 0) ne doit pas afficher le clavier au retour de l'éditeur. Pattern `imeAllowed` :
+```kotlin
+var imeAllowed by remember { mutableStateOf(false) }
+// icône clavier : imeAllowed = true avant show, false avant hide
+// modifier BTF : .onFocusChanged { fs -> if (fs.isFocused && !imeAllowed) keyboardController?.hide() }
+// chaque onOpenFile : imeAllowed = false
+```
 
-**`buildToc` heading_marker** — détection par string (startsWith/endsWith + boucle de comptage), pas de regex. `Regex.escape("=")` → `\Q=\E` crée des problèmes dans les quantificateurs Kotlin/Java.
+**`buildToc` heading_marker** — détection par string (startsWith/endsWith + comptage), pas de regex. `Regex.escape("=")` → `\Q=\E` crée des problèmes dans les quantificateurs Kotlin/Java.
 
-**Édition writhdeck.ini** — `openIniFile()` appelle toujours `ini-save` avant de lire le fichier (régénère les valeurs courantes). À la sauvegarde, si `entry.name == "writhdeck.ini"` → `reloadConfig()` relance `ini-load + keys-init` dans le moteur.
+**Marges desktop** — `cfg_margin_width` peut valoir 60–180 sur desktop. Sur Android : `coerceIn(0, 48)` dans `IniParser.parse()`.
 
-### Répartition Tcl/Kotlin
+**`combinedClickable` + `IconButton`** — utiliser un `Row` avec `combinedClickable` + `IconButton` enfant direct. Un `ListItem` avec `combinedClickable` absorbe les taps sur l'icône.
 
-| Fonctionnalité | Où |
-|---|---|
-| Persistance état (curseurs, récents, favoris, stats) | Tcl `state.tcl` |
-| Config (ini-load/save, profils, clés, timer config) | Tcl `config.tcl` |
-| Timer (état, logique countdown/stopwatch) | Tcl `android-timer-*` |
-| Occurrences de mots | Tcl `android-word-occurrences` |
-| Stats journalières | Tcl `android-get-stats` → `daily-update` |
-| Comptage de mots en temps réel | Kotlin (contenu mémoire) |
-| TOC (buildToc) | Kotlin |
-| UI, navigation, cycle de vie | Kotlin Compose |
-| Tick timer (scheduling) | Kotlin coroutine |
+**Config reload** — après sauvegarde de `writhdeck.ini` depuis l'éditeur : `reloadConfig()` re-parse le fichier, met à jour `config`, appelle `applyConfig()` pour pousser tous les StateFlows affectés.
+
+**Fichiers en lecture seule (`fileWritable`)** — `_fileWritable: MutableStateFlow<Boolean>` dans le ViewModel. Mis à jour dans `openFile` (`File.canWrite()`), `openExternalContent` (`canWrite` du flag d'intent), et `saveFile` (si l'écriture directe échoue). EditorScreen : titre `[read-only]`, Save désactivé, AlertDialog à l'ouverture, confirmation "Discard?" au retour arrière si dirty. **Ne jamais utiliser `storagePermissionGranted` pour bypasser `File.canWrite()`** — cette permission ne donne pas accès aux répertoires privés d'autres apps (ex. Termux `/data/data/com.termux/`).
 
 ## Déjà implémenté (à ne pas re-suggérer)
 
