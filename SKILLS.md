@@ -438,6 +438,70 @@ Voir `src/i18n/README.md` pour le guide complet (format, ajout de langue, format
 - **Backup timestamp** : inclut les secondes (`%Hh%Mm%S`), message affiche le dossier de sauvegarde
 - **GUI config grab fix** : `grab $w` déplacé après `update` et création des widgets
 
+## Application Android (`../writhdeck-android/`)
+
+Dépôt séparé côte à côte avec `writhdeck/`. **Architecture pure Kotlin + Jetpack Compose — pas de Tcl/JNI.** Toute la logique (config, persistance, timer, couleurs) est en Kotlin.
+
+### Fichiers clés
+
+| Fichier | Rôle |
+|---|---|
+| `AppConfig.kt` | `AppConfig` + `IniParser` (parse/write/patchKeys) + `ThemeColors` |
+| `StateStore.kt` | `AppState` + JSON hand-rolled, migration des anciens paths Tcl |
+| `ColorSchemes.kt` | `SchemeColors` + `BUILTIN_SCHEMES` (8 schemes) |
+| `WrithdeckViewModel.kt` | StateFlows, config, timer, docs, favoris |
+| `ui/BrowserScreen.kt` | Browser avec support raccourcis clavier |
+| `ui/EditorScreen.kt` | Éditeur : BasicTextField, TOC, mode commande |
+
+### INI (`IniParser`)
+
+- `parse()` : section-aware — `= profile: name =` route les clés dans des maps par profil ; `active_profile` dans le global choisit quel profil surcharge les globaux.
+- `write()` : génère un template complet avec 8 schemes en commentaire, profils `default` et `novel`.
+- `patchKeys()` : patche des paires clé=valeur dans un texte INI existant (utilisé par `setDarkModePreference`).
+- `initApp()` crée `writhdeck.ini` avec le contenu par défaut au premier lancement → il apparaît dans la liste des documents dès le départ.
+
+### Persistance état (`StateStore`)
+
+JSON hand-rolled compatible avec le format desktop `.writhdeck.json`. Migration des anciens paths normalisés par Tcl (`file normalize`) :
+```kotlin
+// Tcl convertissait /storage/emulated/0/ → /data/media/0/ (illisible)
+private fun migratePath(path: String): String =
+    if (path.startsWith("/data/media/0/"))
+        "/storage/emulated/0/" + path.removePrefix("/data/media/0/")
+    else path
+```
+Appliqué dans `load()` sur les clés de cursors, favorites, recent et daily.
+
+### Dark mode
+
+`android_dark_mode = auto|yes|no` dans l'INI. `AppConfig.themeColors(useDark)` retourne `ThemeColors(bg, fg, headingColor)` depuis le scheme actif. `updateThemeColors(systemDark)` est appelé par `MainActivity` quand le système change. Toggle TopAppBar : `auto` (moon outlined) → `yes` (moon filled) → `no` (sun).
+
+### Timer
+
+Coroutine Kotlin pure (`delay(1000)` + décrément du StateFlow). Pas de Tcl event loop. `_timerLastTick = 0L` → jamais démarré/réinitialisé (masque le timer dans la barre de statut).
+
+### Patterns Kotlin/Compose
+
+**`BasicTextField` + curseur** — toujours `remember { }` sans clé de contenu. `remember(content) { }` réinitialise le curseur à 0 à chaque frappe. `LaunchedEffect(content)` gère les sync externes (ouverture de fichier).
+
+**Clavier IME dans BrowserScreen** — le `BasicTextField` invisible (1dp, alpha 0) ne doit pas afficher le clavier au retour de l'éditeur. Pattern `imeAllowed` :
+```kotlin
+var imeAllowed by remember { mutableStateOf(false) }
+// icône clavier : imeAllowed = true avant show, false avant hide
+// modifier BTF : .onFocusChanged { fs -> if (fs.isFocused && !imeAllowed) keyboardController?.hide() }
+// chaque onOpenFile : imeAllowed = false
+```
+
+**`buildToc` heading_marker** — détection par string (startsWith/endsWith + comptage), pas de regex. `Regex.escape("=")` → `\Q=\E` crée des problèmes dans les quantificateurs Kotlin/Java.
+
+**Marges desktop** — `cfg_margin_width` peut valoir 60–180 sur desktop. Sur Android : `coerceIn(0, 48)` dans `IniParser.parse()`.
+
+**`combinedClickable` + `IconButton`** — utiliser un `Row` avec `combinedClickable` + `IconButton` enfant direct. Un `ListItem` avec `combinedClickable` absorbe les taps sur l'icône.
+
+**Config reload** — après sauvegarde de `writhdeck.ini` depuis l'éditeur : `reloadConfig()` re-parse le fichier, met à jour `config`, appelle `applyConfig()` pour pousser tous les StateFlows affectés.
+
+**Fichiers en lecture seule (`fileWritable`)** — `_fileWritable: MutableStateFlow<Boolean>` dans le ViewModel. Mis à jour dans `openFile` (`File.canWrite()`), `openExternalContent` (`canWrite` du flag d'intent), et `saveFile` (si l'écriture directe échoue). EditorScreen : titre `[read-only]`, Save désactivé, AlertDialog à l'ouverture, confirmation "Discard?" au retour arrière si dirty. **Ne jamais utiliser `storagePermissionGranted` pour bypasser `File.canWrite()`** — cette permission ne donne pas accès aux répertoires privés d'autres apps (ex. Termux `/data/data/com.termux/`).
+
 ## Déjà implémenté (à ne pas re-suggérer)
 
 - **Typewriter scrolling** : `typewriter-center`, `typewriter-tick`, mode Hemingway (`Ctrl+T`)
