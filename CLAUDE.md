@@ -327,15 +327,7 @@ Two independent editor workspaces accessible via `key_workspace` (default F10). 
 - `tui-ws-check-inactive-dirty {rows cols}` — TUI counterpart of `ws-check-inactive-dirty`; called in browser `q`, editor Ctrl+W, and editor ESC+q
 - `tui-split-save-right` — saves the right pane state (split_r_*) to ws1_*/ws2_* before closing split or returning from editor
 
-**TUI split view — état actuel et limitations** (`src/tui.tcl`):
-- F3 ouvre le split : si `ws_dual_mode==1` (WS2 déjà activé), charge WS2 directement dans le panneau droit (`split_ws2_mode=1`) comme en GUI ; sinon, split même-fichier
-- F4 bascule le focus entre les deux panneaux (quel côté reçoit le curseur)
-- Les deux panneaux sont **indépendants** : curseurs et scrolls distincts. En mode même-fichier, taper du texte modifie le contenu partagé à la position du curseur actif.
-- F10 en split (mode même-fichier) charge WS2 dans le panneau droit (`split_ws2_mode=1`) ; F10 en split+WS2 cycle le focus
-- **`_fswap`** : quand `split_focus==2`, échange le contexte de navigation (`cy/cx/vrows/ish_cache/isd_cache/scroll_y/layout_cache/tw`) plus le contenu (`lines/dirty/filepath`) en mode WS2, avant le traitement des touches. Valeur : `1` (même-fichier) ou `2` (WS2). Les appels `tui-split-save-right` dans les handlers terminaux utilisent `$_fswap==2 ? $lines : $split_r_lines` pour extraire les bonnes données.
-- **Limitation connue : pas d'undo stack propre au panneau droit** (WS2 et même-fichier partagent l'undo stack du panneau gauche).
-- **Limitation connue : pas de coloration syntaxique indépendante** dans le panneau droit (contrairement au GUI).
-- Variables état split TUI (locales à `tui-editor`) : `split`, `split_ws2_mode`, `split_focus`, `split_r_lines`, `split_r_cy/cx/scroll/dirty/fp/vrows/ish/isd/layout/prev_tw/wrap_dirty`, `split_r_vi`, `split_r_scx`, `_fswap`
+**TUI split view** — F3: if `ws_dual_mode==1` opens WS2 in right pane (`split_ws2_mode=1`), otherwise same-file split. F4 toggles focus. `_fswap` (value `1`/`2`) swaps `cy/cx/scroll/layout/lines/dirty` between left and right pane when `split_focus==2`. Right pane shares the undo stack and has no independent syntax highlighting. See SKILLS.md for full state variable list.
 
 ## Color schemes
 
@@ -395,7 +387,7 @@ ANSI 16-color palette for TUI/TTY mode. Disabled by default (`tui_colors = no`).
 
 **RULE** — `tui-attr dim` (typewriter focus, line numbers, separators) is always dim regardless of color settings. Only `dim-text` (comment marker lines) uses the comment color.
 
-**Activation** — éditer `~/.writhdeck.ini` manuellement (`tui_colors = yes`) puis relancer le programme. La touche `z` (reload) n'existe que dans le browser GUI ; le TUI n'a pas d'équivalent — tout changement INI nécessite un redémarrage complet.
+**Activation** — edit `~/.writhdeck.ini` (`tui_colors = yes`) and restart. TUI has no `z` reload; INI changes require a full restart.
 
 ## Known limitations
 
@@ -412,21 +404,7 @@ ANSI 16-color palette for TUI/TTY mode. Disabled by default (`tui_colors = no`).
 
 ## Module structure and builds
 
-The codebase is organized in `src/` directory and built via `Makefile`:
-
-| Module             | Lines | Content                                                             |
-| ------------------ | ----- | ------------------------------------------------------------------- |
-| `src/boot.tcl`     | ~80   | Polyglot sh/Tcl, args parsing, Tk detection, HOME_DIR setup         |
-| `src/boot-cli.tcl` | ~80   | CLI variant: no Tk loading, forces `::no_gui 1`                     |
-| `src/boot-jim.tcl` | ~80   | JimTcl variant of boot-cli.tcl (polyglot uses `jimsh` instead of `tclsh`) |
-| `src/compat-jim.tcl` | ~90 | JimTcl compatibility shim — loaded first in `writhdeck-jim.tcl` builds |
-| `src/state.tcl`    | ~147  | JSON state persistence, cursors, favorites, recents, daily stats    |
-| `src/config.tcl`   | ~804  | INI loading/saving, profiles, color schemes, keys, i18n, theme init |
-| `src/common.tcl`   | ~204  | Docs listing, backup, inline parsers, browser entry building        |
-| `src/gui.tcl`      | ~2001 | Full GUI (Tk) block — wrapped in `if {!$::no_gui}`                  |
-| `src/tui.tcl`      | ~1644 | TUI mode code — terminal UI, browser, editor                        |
-| `src/main.tcl`     | ~31   | Entry point dispatch (GUI or TUI based on `$::no_gui`)              |
-| `src/main-cli.tcl` | ~2    | CLI entry point (always calls `tui-main`)                           |
+Source modules listed in **Generated file structure** above. Build via `Makefile`:
 
 **Build targets** (via `make`):
 - `make` or `make all` — generate both files with all available languages
