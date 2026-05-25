@@ -128,6 +128,7 @@ set ::cfg_bg2                "#1a1a1a"
 set ::cfg_bg2_alt            "#fdf6e3"
 # dark_mode: 0 = light (alt colors), 1 = dark (primary colors)
 set ::cfg_dark_mode          1
+set ::cfg_android_dark_mode  "auto"
 set ::cfg_key_dark_toggle    "Control-d"
 set ::cfg_browser              1
 set ::cfg_console_center_alert 1
@@ -457,6 +458,7 @@ proc ini-load {} {
                 color_bg2_alt        { set ::cfg_bg2_alt           $v }
                 word_goal            { set ::cfg_word_goal            $v }
                 dark_mode            { set ::cfg_dark_mode [string is true $v] }
+                android_dark_mode    { set ::cfg_android_dark_mode  $v }
                 key_dark_toggle      { set ::cfg_key_dark_toggle   $v }
                 browser              { set ::cfg_browser              [string is true $v] }
                 console_center_alert { set ::cfg_console_center_alert [string is true $v] }
@@ -573,7 +575,8 @@ proc ini-save {} {
     puts $fh "status_left    = $::cfg_status_left"
     puts $fh "status_center  = $::cfg_status_center"
     puts $fh "status_right   = $::cfg_status_right"
-    puts $fh "dark_mode      = [expr {$::cfg_dark_mode ? "yes" : "no"}]"
+    puts $fh "dark_mode         = [expr {$::cfg_dark_mode ? "yes" : "no"}]"
+    puts $fh "android_dark_mode = $::cfg_android_dark_mode"
     puts $fh "= timer ="
     puts $fh "timer_duration = $::cfg_timer_duration"
     puts $fh "timer_sound    = [expr {$::cfg_timer_sound  ? "yes" : "no"}]"
