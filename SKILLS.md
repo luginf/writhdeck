@@ -451,25 +451,42 @@ Dépôt séparé. **Pure Kotlin + Jetpack Compose — pas de Tcl/JNI.** Build : 
 
 ### Fonctionnalités implémentées
 
-- Browser, éditeur, TOC, mode commande modal (ESC)
-- 8 color schemes ; sélecteur graphique + éditeur couleur (`SchemeConfigScreen`) ; schemes custom persistés dans l'INI (`= scheme: name =`)
+- Browser, éditeur, TOC async (Dispatchers.Default), mode commande modal (ESC)
+- 8 color schemes ; sélecteur graphique + éditeur couleur (`SchemeConfigScreen`) ; schemes custom persistés dans l'INI ; tous les 8 schemes builtin écrits dans l'INI par `IniParser.write()`
 - Autosave périodique (`autosave_ws0N.txt`), coroutine Kotlin
-- Restauration de curseur au ré-ouverture (linecol ↔ offset)
+- Restauration de curseur au ré-ouverture (linecol ↔ offset) + survie à la rotation (`liveCursor` plain var)
 - Second espace de travail (F10 / `toggleWorkspace`) avec `WsSnapshot`
 - Scratchpad permanent en tête de browser (touche `t`)
-- Settings screen (`SettingsScreen`) : police, marges, objectif, autosave, timer
+- Settings screen (`SettingsScreen`) : scheme (dropdown), police, marges (max 200dp, champ éditable), objectif, autosave, timer, **barre de status** (tokens left/center/right)
 - Dark mode toggle (auto/yes/no), config reload après sauvegarde INI
 - Fichiers externes (intent), lecture seule (`fileWritable`), backup
+- **Éditeur natif** : `AndroidView { EditText }` — rendu virtualisé, performances constantes sur 500K+ chars
+- **Coloration syntaxique** : spans Android (`SyntaxHeadingSpan`/`SyntaxCommentSpan`) appliqués async avec debounce 300ms
+- **Recherche Ctrl+F** : focus automatique sur la barre via `FocusRequester`; spans de résultats (`SearchBgSpan`/`SearchCurrentBgSpan`)
+- **Raccourcis** : Ctrl+S save, Ctrl+Q quit, Ctrl+Z undo (natif), gérés via `keyHandlerRef`
+- **Barre de status configurable** : tokens `ws filename dirty words goal timer` + texte littéral
+
+### Performances (gros fichiers)
+
+- **Éditeur natif** : `AndroidView { EditText }` utilise `DynamicLayout` — ne mesure que les lignes visibles. Pas de limite pratique sur la taille du document.
+- **Word count débounced** : `wordCountJob` coroutine, `delay(1000)` + `Dispatchers.Default`. `updateContent()` ne bloque plus le thread principal.
+- **Syntax highlighting débounced** : `LaunchedEffect` avec `delay(300)` + `withContext(Dispatchers.Default)`, appliqué via `setSpan()` (ne déclenche pas le TextWatcher).
 
 ### Patterns critiques
 
-**`remember(currentFile?.path, wsActive)`** dans EditorScreen — reset `tfv` sur changement de fichier **et** de workspace. `_initialCursorOffset` toujours mis à jour **avant** `_currentFile`.
+**`AndroidView` factory vs update** — `factory {}` s'exécute une seule fois, capture des refs stables (arrays). `update {}` s'exécute à chaque recomposition et met à jour `keyHandlerRef[0]` avec un nouveau lambda fermant sur l'état Compose courant.
+
+**`ignoreTextChange[0]`** — mettre à `true` avant tout `editText.setText(...)` programmatique, remettre à `false` après. Empêche la boucle TextWatcher → ViewModel → update → setText.
+
+**Détection changement de fichier** — `editText.tag = "${currentFile?.path}:${wsActive}"`. Dans `update {}`, comparer avec la clé courante ; ne faire `setText` que si différent.
+
+**Cursor save** — `doBack()` et `DisposableEffect.onDispose` lisent `editorRef.value?.selectionStart` directement. Fonctionne quel que soit le mode de navigation.
 
 **`patchKeys` vs `patchProfileKey`** — `patchKeys` patche globalement (convient pour `android_dark_mode`). `patchProfileKey(text, profile, key, value)` patche uniquement dans `= profile: X =` (convient pour `scheme`, `font_size`, etc.).
 
-**`remember { }` sans clé de contenu** dans `BasicTextField` — `remember(content) { }` réinitialise le curseur à 0 à chaque frappe.
-
 **IME dans BrowserScreen** — `imeAllowed` flag : masquer le clavier automatiquement si le focus revient sans que l'utilisateur l'ait demandé (`.onFocusChanged { if (isFocused && !imeAllowed) hide() }`).
+
+**`windowSoftInputMode="adjustResize"`** dans le manifest — le window se redimensionne. Ne pas ajouter `imePadding()` sur le Box éditeur (double padding).
 
 **Ne jamais utiliser `storagePermissionGranted` pour bypasser `File.canWrite()`** — les répertoires privés d'autres apps (Termux, etc.) ne sont pas accessibles même avec la permission stockage.
 
