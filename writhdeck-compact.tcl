@@ -6083,6 +6083,8 @@ set split_r_lines [list ""]; set split_r_cy 1; set split_r_cx 0
 set split_r_scroll 0; set split_r_dirty 0; set split_r_fp ""
 set split_r_vrows {}; set split_r_ish {}; set split_r_isd {}
 set split_r_layout {}; set split_r_prev_tw -1; set split_r_wrap_dirty 1
+set _skip_draw 0
+set _last_bar_l ""; set _last_bar_c ""; set _last_bar_r ""
 while 1 {
 set ::tui_size_n 14
 lassign [tui-size] rows cols
@@ -6113,6 +6115,7 @@ set tw_r  [expr {max(1, $cols - $rcoff - $marg)}]
 }
 set cy [expr {max(1, min($cy, [llength $lines]))}]
 set cx [expr {max(0, min($cx, [string length [lindex $lines [expr {$cy-1}]]]))}]
+set _need_draw [expr {$wrap_dirty || $tw != $prev_tw || $dirty_line > 0}]
 if {$wrap_dirty || $tw != $prev_tw} {
 lassign [tui-build-layout $lines $tw layout_cache] vrows ish_cache isd_cache
 set prev_tw $tw; set wrap_dirty 0; set dirty_line -1
@@ -6162,6 +6165,8 @@ if {$_rv < $split_r_scroll}              { set split_r_scroll $_rv }
 if {$_rv >= $split_r_scroll + $_cth}     { set split_r_scroll [expr {$_rv - $_cth + 1}] }
 set split_r_scroll [expr {max(0, min($split_r_scroll, max(0, [llength $split_r_vrows] - $_cth)))}]
 }
+set _do_draw [expr {$_need_draw || !$_skip_draw}]; set _skip_draw 0
+if {$_do_draw} {
 puts -nonewline "\033\[?25l"
 set sel_r [tui-sel-range $sel_anchor $cy $cx]
 if {$sel_r ne {}} { lassign $sel_r _sly _scx_s _ely _ecx_s }
@@ -6321,6 +6326,7 @@ if {$::cfg_key_error ne "" && $message eq ""} { set message "key conflict: $::cf
 if {$message ne "" && [clock seconds] - $msg_time < 4} { set bar_left " $message" }
 }
 tui-bar [expr {$rows-1}] $bar_left $bar_right $cols $bar_center
+set _last_bar_l $bar_left; set _last_bar_c $bar_center; set _last_bar_r $bar_right
 }
 if {$split && $split_focus == 2 && [llength $split_r_vrows] > 0} {
 tui-move [expr {$split_r_vi - $split_r_scroll + $roff + 1}] [expr {$vis_split_r_scx + $rcoff}]
@@ -6328,6 +6334,7 @@ tui-move [expr {$split_r_vi - $split_r_scroll + $roff + 1}] [expr {$vis_split_r_
 tui-move [expr {$vi - $scroll_y + $roff + ($split ? 1 : 0)}] [expr {$vis_scx + $coff}]
 }
 puts -nonewline "\033\[?25h"; flush stdout
+} ;# _do_draw
 set _gt [expr {($::timer_active && $::cfg_chrono_show) || $::cfg_autosave_enabled ? 50 : -1}]
 set key [tui-getch $_gt]
 set rst       1
@@ -6351,10 +6358,14 @@ set _bc [status-build $::cfg_status_center $_ts]
 set _br "[status-build $::cfg_status_right $_ts] "
 if {$message ne "" && [clock seconds] - $msg_time < 4} { set _bl " $message" }
 }
+if {$_bl ne $_last_bar_l || $_bc ne $_last_bar_c || $_br ne $_last_bar_r} {
+set _last_bar_l $_bl; set _last_bar_c $_bc; set _last_bar_r $_br
 puts -nonewline "\033\[s"
 tui-bar [expr {$rows-1}] $_bl $_br $cols $_bc
 puts -nonewline "\033\[u"; flush stdout
 }
+}
+set _skip_draw 1
 continue
 }
 if {$::cfg_watch_file && $filepath ne "" && [file exists $filepath]} {

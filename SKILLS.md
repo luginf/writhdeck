@@ -206,7 +206,17 @@ Définies dans `src/tui.tcl`, toutes suivent le pattern no-flicker :
 - Avec timer actif (`cfg_chrono_show`) : poll 50ms → retourne `""` si pas de touche (le timer se met à jour)
 - Appel explicite `tui-getch 0` : non-bloquant, retourne `""` immédiatement
 
-**Fast path timer tick (anti-clignotement)** — quand `tui-getch` retourne `""` et `!$wrap_dirty && $dirty_line < 0` : seule la barre de statut est mise à jour via `\033[s]` (save cursor) → `tui-bar` → `\033[u]` (restore cursor) → flush. Le redraw complet est sauté (`continue`). Évite le clignotement du curseur causé par 20 redraws complets/sec. Le `\033[?25l` (hide) est placé juste avant `tui-move` + `\033[?25h` en fin de boucle pour que hide et show soient dans le même segment de flush.
+**Fast path timer tick (anti-clignotement, compatible HaikuOS)** — la boucle principale poll toutes les 50ms quand le timer ou l'autosave est actif. Pour éviter tout clignotement (HaikuOS Terminal est sensible au moindre output terminal), la règle est : **zéro output terminal sur les ticks où rien ne change**.
+
+Mécanisme (`src/tui.tcl`, boucle `while 1` de `tui-editor`) :
+- `_need_draw` calculé avant la section layout : `$wrap_dirty || $tw != $prev_tw || $dirty_line > 0`
+- `_do_draw = $_need_draw || !$_skip_draw` — vrai au premier tick et après chaque touche ; faux sur les ticks timer purs
+- `_skip_draw` est mis à 1 par le fast path (`continue`) et remis à 0 en début de chaque itération avant le calcul de `_do_draw`
+- Le bloc draw (`if {$_do_draw}`) contient le dessin complet + `tui-move` + `\033[?25h` + flush — **rien en dehors de ce bloc n'écrit sur stdout**
+- `\033[?25l]` utilisé **uniquement à l'intérieur** de `if {$_do_draw}` (début du bloc draw). Les draws n'ayant lieu qu'après une touche, ce hide/show se produit à vitesse de frappe — imperceptible — et évite les artefacts (curseur visible en bas de page pendant tui-bar)
+- Le fast path cache les strings de la barre (`_last_bar_l`, `_last_bar_c`, `_last_bar_r`). Sur un tick timer : calcule les nouvelles strings ; si identiques au cache → **zéro byte envoyé** ; si changées (≈1×/sec pour horloge/timer) → `\033[s]` + bar + `\033[u]` + flush uniquement
+
+**Résultat** : sur les ticks sans changement, aucun output terminal — pas de hide/show curseur, pas de tui-move, pas de flush. Le curseur reste visible à sa position depuis le dernier draw complet.
 
 **Scroll dans les overlays** : toujours borner avec `max(0, total - usable)` pour éviter les indices négatifs quand le contenu tient en une page (`lindex list -N` retourne `""` en Tcl).
 
