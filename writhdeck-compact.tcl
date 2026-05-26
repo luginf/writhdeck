@@ -5397,6 +5397,7 @@ switch -exact -- "\x1b$seq" {
 "\x1b\[23~"   { return F11   }  "\x1b\[24~"   { return F12   }
 "\x1bOA"      { return UP    }  "\x1bOB"      { return DOWN  }
 "\x1bOC"      { return RIGHT }  "\x1bOD"      { return LEFT  }
+"\x1bOH"      { return HOME  }  "\x1bOF"      { return END   }
 "\x1bOP"      { return F1    }  "\x1bOQ"      { return F2    }
 "\x1bOR"      { return F3    }  "\x1bOS"      { return F4    }
 "\x1b\[\[A"   { return F1    }  "\x1b\[\[B"   { return F2    }
