@@ -3187,6 +3187,7 @@ proc tui-editor {filepath {init_state {}}} {
         }
 
         # -- draw --------------------------------------------------------------
+        puts -nonewline "\033\[?25l"
         set sel_r [tui-sel-range $sel_anchor $cy $cx]
         if {$sel_r ne {}} { lassign $sel_r _sly _scx_s _ely _ecx_s }
 
@@ -3361,7 +3362,6 @@ proc tui-editor {filepath {init_state {}}} {
             tui-bar [expr {$rows-1}] $bar_left $bar_right $cols $bar_center
         }
 
-        puts -nonewline "\033\[?25l"
         if {$split && $split_focus == 2 && [llength $split_r_vrows] > 0} {
             tui-move [expr {$split_r_vi - $split_r_scroll + $roff + 1}] [expr {$vis_split_r_scx + $rcoff}]
         } else {
