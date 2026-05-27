@@ -138,5 +138,13 @@ dict set ::i18n de {
     autosave_section       "Autospeichern"
     autosave_enabled       "Autospeichern:"
     autosave_interval      "Intervall (Min):"
+    config_tab_display     "Anzeige"
+    config_statusbar_section "Statusleiste"
+    config_statusbar_left  "Links:"
+    config_statusbar_center "Mitte:"
+    config_statusbar_right "Rechts:"
+    config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
+    config_editor_section  "Editor"
+    config_heading_marker  "Uberschrift-Marker:"
 }
 

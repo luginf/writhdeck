@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260527"
+set ::version          "v20260527b"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -1313,6 +1313,14 @@ dict set ::i18n en {
     autosave_section       "Autosave"
     autosave_enabled       "Autosave:"
     autosave_interval      "Interval (min):"
+    config_tab_display     "Display"
+    config_statusbar_section "Status bar"
+    config_statusbar_left  "Left:"
+    config_statusbar_center "Center:"
+    config_statusbar_right "Right:"
+    config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
+    config_editor_section  "Editor"
+    config_heading_marker  "Heading marker:"
 }
 
 dict set ::i18n fr {
@@ -1455,6 +1463,14 @@ dict set ::i18n fr {
     autosave_section       "Sauvegarde auto"
     autosave_enabled       "Sauvegarde auto :"
     autosave_interval      "Intervalle (min) :"
+    config_tab_display     "Affichage"
+    config_statusbar_section "Barre de statut"
+    config_statusbar_left  "Gauche :"
+    config_statusbar_center "Centre :"
+    config_statusbar_right "Droite :"
+    config_statusbar_tokens "Tokens : workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
+    config_editor_section  "Editeur"
+    config_heading_marker  "Marqueur de titre :"
 }
 
 

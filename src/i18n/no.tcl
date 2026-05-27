@@ -138,5 +138,13 @@ dict set ::i18n no {
     autosave_section       "Autolagring"
     autosave_enabled       "Autolagring:"
     autosave_interval      "Intervall (min):"
+    config_tab_display     "Visning"
+    config_statusbar_section "Statuslinje"
+    config_statusbar_left  "Venstre:"
+    config_statusbar_center "Senter:"
+    config_statusbar_right "Hoyre:"
+    config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
+    config_editor_section  "Editor"
+    config_heading_marker  "Overskrift-markering:"
 }
 

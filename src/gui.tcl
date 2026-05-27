@@ -1864,16 +1864,20 @@ proc profile-config-update-profile {w} {
 }
 
 proc config-tab-switch {w tab} {
-    pack forget $w.tab_profile $w.tab_timer $w.tab_misc
+    pack forget $w.tab_profile $w.tab_timer $w.tab_misc $w.tab_display
     $w.tabs.profile configure -fg $::fg_bar -bg $::bg
     $w.tabs.timer   configure -fg $::fg_bar -bg $::bg
     $w.tabs.misc    configure -fg $::fg_bar -bg $::bg
+    $w.tabs.display configure -fg $::fg_bar -bg $::bg
     if {$tab eq "profile"} {
         pack $w.tab_profile -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.profile configure -fg $::fg -bg $::bg_sel
     } elseif {$tab eq "timer"} {
         pack $w.tab_timer -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.timer configure -fg $::fg -bg $::bg_sel
+    } elseif {$tab eq "display"} {
+        pack $w.tab_display -fill both -expand 1 -padx 8 -pady 8
+        $w.tabs.display configure -fg $::fg -bg $::bg_sel
     } else {
         pack $w.tab_misc -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.misc configure -fg $::fg -bg $::bg_sel
@@ -1913,14 +1917,18 @@ proc profile-config-dialog {} {
         -command "config-tab-switch $w timer" -borderwidth 1 -relief raised -padx 12 -pady 4
     button $w.tabs.misc -text [t config_tab_misc] -font $::font_sm -fg $::fg_bar -bg $::bg \
         -command "config-tab-switch $w misc" -borderwidth 1 -relief raised -padx 12 -pady 4
+    button $w.tabs.display -text [t config_tab_display] -font $::font_sm -fg $::fg_bar -bg $::bg \
+        -command "config-tab-switch $w display" -borderwidth 1 -relief raised -padx 12 -pady 4
     pack $w.tabs.profile -side left -padx 2
     pack $w.tabs.timer -side left -padx 2
     pack $w.tabs.misc -side left -padx 2
+    pack $w.tabs.display -side left -padx 2
 
     # --- Tab content frames ---
     frame $w.tab_profile -bg $::bg
     frame $w.tab_timer -bg $::bg
     frame $w.tab_misc -bg $::bg
+    frame $w.tab_display -bg $::bg
     pack $w.tab_profile -fill both -expand 1 -padx 8 -pady 8
 
     # --- Profile tab content ---
@@ -2172,6 +2180,45 @@ proc profile-config-dialog {} {
     set ::profile_config_autosave_enabled $::cfg_autosave_enabled
     $w.tab_misc.autosave_sec.interval.spin set $::cfg_autosave_interval
 
+    # --- Display tab content ---
+    frame $w.tab_display.statusbar_sec -relief ridge -borderwidth 2 -bg $::bg
+    pack $w.tab_display.statusbar_sec -fill x -padx 0 -pady 8
+    label $w.tab_display.statusbar_sec.title -text [t config_statusbar_section] -font $::font_sm -fg $::fg_bar -bg $::bg
+    pack $w.tab_display.statusbar_sec.title -anchor w -padx 8 -pady {4 2}
+
+    foreach {zone key} {left config_statusbar_left center config_statusbar_center right config_statusbar_right} {
+        frame $w.tab_display.statusbar_sec.f$zone -bg $::bg
+        pack $w.tab_display.statusbar_sec.f$zone -fill x -padx 12 -pady 3
+        label $w.tab_display.statusbar_sec.f$zone.lbl -text [t $key] -font $::font_sm -width 10 -anchor w -bg $::bg -fg $::fg
+        entry $w.tab_display.statusbar_sec.f$zone.entry -width 40 -font $::font_sm -bg $::bg_bar -fg $::fg \
+            -insertbackground $::fg -selectbackground $::bg_sel -selectforeground $::fg
+        pack $w.tab_display.statusbar_sec.f$zone.lbl -side left
+        pack $w.tab_display.statusbar_sec.f$zone.entry -side left -fill x -expand 1 -padx {4 0}
+    }
+
+    label $w.tab_display.statusbar_sec.tokens -text [t config_statusbar_tokens] \
+        -font $::font_sm -fg $::fg_bar -bg $::bg -wraplength 480 -justify left
+    pack $w.tab_display.statusbar_sec.tokens -anchor w -padx 12 -pady {6 4}
+
+    frame $w.tab_display.editor_sec -relief ridge -borderwidth 2 -bg $::bg
+    pack $w.tab_display.editor_sec -fill x -padx 0 -pady 8
+    label $w.tab_display.editor_sec.title -text [t config_editor_section] -font $::font_sm -fg $::fg_bar -bg $::bg
+    pack $w.tab_display.editor_sec.title -anchor w -padx 8 -pady {4 2}
+
+    frame $w.tab_display.editor_sec.fhm -bg $::bg
+    pack $w.tab_display.editor_sec.fhm -fill x -padx 12 -pady 4
+    label $w.tab_display.editor_sec.fhm.lbl -text [t config_heading_marker] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    entry $w.tab_display.editor_sec.fhm.entry -width 6 -font $::font_sm -bg $::bg_bar -fg $::fg \
+        -insertbackground $::fg -selectbackground $::bg_sel -selectforeground $::fg
+    pack $w.tab_display.editor_sec.fhm.lbl -side left
+    pack $w.tab_display.editor_sec.fhm.entry -side left -padx {4 0}
+
+    # Load display values
+    $w.tab_display.statusbar_sec.fleft.entry insert 0 $::cfg_status_left
+    $w.tab_display.statusbar_sec.fcenter.entry insert 0 $::cfg_status_center
+    $w.tab_display.statusbar_sec.fright.entry insert 0 $::cfg_status_right
+    $w.tab_display.editor_sec.fhm.entry insert 0 $::cfg_heading_marker
+
     # Load timer values from config
     set ::profile_config_timer_sound $::cfg_timer_sound
     set ::profile_config_timer_alert $::cfg_timer_alert
@@ -2211,6 +2258,10 @@ proc profile-config-dialog {} {
             set chrono_shw $::profile_config_chrono_show
             set autosave_en  $::profile_config_autosave_enabled
             set autosave_int [.profile_config.tab_misc.autosave_sec.interval.spin get]
+            set status_l  [.profile_config.tab_display.statusbar_sec.fleft.entry get]
+            set status_c  [.profile_config.tab_display.statusbar_sec.fcenter.entry get]
+            set status_r  [.profile_config.tab_display.statusbar_sec.fright.entry get]
+            set heading_m [.profile_config.tab_display.editor_sec.fhm.entry get]
 
             if {$font eq "" || $size eq "" || $mw eq "" || $mh eq ""} return
 
@@ -2234,6 +2285,10 @@ proc profile-config-dialog {} {
             set ::cfg_chrono_show $chrono_shw
             set ::cfg_autosave_enabled  $autosave_en
             set ::cfg_autosave_interval $autosave_int
+            if {$heading_m ne ""} { set ::cfg_heading_marker $heading_m }
+            set ::cfg_status_left   $status_l
+            set ::cfg_status_center $status_c
+            set ::cfg_status_right  $status_r
 
             ini-save
 

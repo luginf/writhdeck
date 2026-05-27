@@ -138,5 +138,13 @@ dict set ::i18n ko {
     autosave_section       "자동 저장"
     autosave_enabled       "자동 저장:"
     autosave_interval      "간격 (분):"
+    config_tab_display     "화면"
+    config_statusbar_section "상태 표시줄"
+    config_statusbar_left  "왼쪽:"
+    config_statusbar_center "가운데:"
+    config_statusbar_right "오른쪽:"
+    config_statusbar_tokens "토큰: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
+    config_editor_section  "편집기"
+    config_heading_marker  "제목 마커:"
 }
 

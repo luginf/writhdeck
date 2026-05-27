@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260527"
+set ::version          "v20260527b"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -1498,6 +1498,14 @@ dict set ::i18n en {
     autosave_section       "Autosave"
     autosave_enabled       "Autosave:"
     autosave_interval      "Interval (min):"
+    config_tab_display     "Display"
+    config_statusbar_section "Status bar"
+    config_statusbar_left  "Left:"
+    config_statusbar_center "Center:"
+    config_statusbar_right "Right:"
+    config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
+    config_editor_section  "Editor"
+    config_heading_marker  "Heading marker:"
 }
 
 dict set ::i18n de {
@@ -1640,6 +1648,14 @@ dict set ::i18n de {
     autosave_section       "Autospeichern"
     autosave_enabled       "Autospeichern:"
     autosave_interval      "Intervall (Min):"
+    config_tab_display     "Anzeige"
+    config_statusbar_section "Statusleiste"
+    config_statusbar_left  "Links:"
+    config_statusbar_center "Mitte:"
+    config_statusbar_right "Rechts:"
+    config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
+    config_editor_section  "Editor"
+    config_heading_marker  "Uberschrift-Marker:"
 }
 
 dict set ::i18n es {
@@ -1782,6 +1798,14 @@ dict set ::i18n es {
     autosave_section       "Autoguardado"
     autosave_enabled       "Autoguardado:"
     autosave_interval      "Intervalo (min):"
+    config_tab_display     "Pantalla"
+    config_statusbar_section "Barra de estado"
+    config_statusbar_left  "Izquierda:"
+    config_statusbar_center "Centro:"
+    config_statusbar_right "Derecha:"
+    config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
+    config_editor_section  "Editor"
+    config_heading_marker  "Marcador de titulo:"
 }
 
 dict set ::i18n fr {
@@ -1924,6 +1948,14 @@ dict set ::i18n fr {
     autosave_section       "Sauvegarde auto"
     autosave_enabled       "Sauvegarde auto :"
     autosave_interval      "Intervalle (min) :"
+    config_tab_display     "Affichage"
+    config_statusbar_section "Barre de statut"
+    config_statusbar_left  "Gauche :"
+    config_statusbar_center "Centre :"
+    config_statusbar_right "Droite :"
+    config_statusbar_tokens "Tokens : workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
+    config_editor_section  "Editeur"
+    config_heading_marker  "Marqueur de titre :"
 }
 
 dict set ::i18n ko {
@@ -2066,6 +2098,14 @@ dict set ::i18n ko {
     autosave_section       "자동 저장"
     autosave_enabled       "자동 저장:"
     autosave_interval      "간격 (분):"
+    config_tab_display     "화면"
+    config_statusbar_section "상태 표시줄"
+    config_statusbar_left  "왼쪽:"
+    config_statusbar_center "가운데:"
+    config_statusbar_right "오른쪽:"
+    config_statusbar_tokens "토큰: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
+    config_editor_section  "편집기"
+    config_heading_marker  "제목 마커:"
 }
 
 dict set ::i18n no {
@@ -2208,6 +2248,14 @@ dict set ::i18n no {
     autosave_section       "Autolagring"
     autosave_enabled       "Autolagring:"
     autosave_interval      "Intervall (min):"
+    config_tab_display     "Visning"
+    config_statusbar_section "Statuslinje"
+    config_statusbar_left  "Venstre:"
+    config_statusbar_center "Senter:"
+    config_statusbar_right "Hoyre:"
+    config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
+    config_editor_section  "Editor"
+    config_heading_marker  "Overskrift-markering:"
 }
 
 
@@ -4390,16 +4438,20 @@ proc profile-config-update-profile {w} {
 }
 
 proc config-tab-switch {w tab} {
-    pack forget $w.tab_profile $w.tab_timer $w.tab_misc
+    pack forget $w.tab_profile $w.tab_timer $w.tab_misc $w.tab_display
     $w.tabs.profile configure -fg $::fg_bar -bg $::bg
     $w.tabs.timer   configure -fg $::fg_bar -bg $::bg
     $w.tabs.misc    configure -fg $::fg_bar -bg $::bg
+    $w.tabs.display configure -fg $::fg_bar -bg $::bg
     if {$tab eq "profile"} {
         pack $w.tab_profile -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.profile configure -fg $::fg -bg $::bg_sel
     } elseif {$tab eq "timer"} {
         pack $w.tab_timer -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.timer configure -fg $::fg -bg $::bg_sel
+    } elseif {$tab eq "display"} {
+        pack $w.tab_display -fill both -expand 1 -padx 8 -pady 8
+        $w.tabs.display configure -fg $::fg -bg $::bg_sel
     } else {
         pack $w.tab_misc -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.misc configure -fg $::fg -bg $::bg_sel
@@ -4439,14 +4491,18 @@ proc profile-config-dialog {} {
         -command "config-tab-switch $w timer" -borderwidth 1 -relief raised -padx 12 -pady 4
     button $w.tabs.misc -text [t config_tab_misc] -font $::font_sm -fg $::fg_bar -bg $::bg \
         -command "config-tab-switch $w misc" -borderwidth 1 -relief raised -padx 12 -pady 4
+    button $w.tabs.display -text [t config_tab_display] -font $::font_sm -fg $::fg_bar -bg $::bg \
+        -command "config-tab-switch $w display" -borderwidth 1 -relief raised -padx 12 -pady 4
     pack $w.tabs.profile -side left -padx 2
     pack $w.tabs.timer -side left -padx 2
     pack $w.tabs.misc -side left -padx 2
+    pack $w.tabs.display -side left -padx 2
 
     # --- Tab content frames ---
     frame $w.tab_profile -bg $::bg
     frame $w.tab_timer -bg $::bg
     frame $w.tab_misc -bg $::bg
+    frame $w.tab_display -bg $::bg
     pack $w.tab_profile -fill both -expand 1 -padx 8 -pady 8
 
     # --- Profile tab content ---
@@ -4698,6 +4754,45 @@ proc profile-config-dialog {} {
     set ::profile_config_autosave_enabled $::cfg_autosave_enabled
     $w.tab_misc.autosave_sec.interval.spin set $::cfg_autosave_interval
 
+    # --- Display tab content ---
+    frame $w.tab_display.statusbar_sec -relief ridge -borderwidth 2 -bg $::bg
+    pack $w.tab_display.statusbar_sec -fill x -padx 0 -pady 8
+    label $w.tab_display.statusbar_sec.title -text [t config_statusbar_section] -font $::font_sm -fg $::fg_bar -bg $::bg
+    pack $w.tab_display.statusbar_sec.title -anchor w -padx 8 -pady {4 2}
+
+    foreach {zone key} {left config_statusbar_left center config_statusbar_center right config_statusbar_right} {
+        frame $w.tab_display.statusbar_sec.f$zone -bg $::bg
+        pack $w.tab_display.statusbar_sec.f$zone -fill x -padx 12 -pady 3
+        label $w.tab_display.statusbar_sec.f$zone.lbl -text [t $key] -font $::font_sm -width 10 -anchor w -bg $::bg -fg $::fg
+        entry $w.tab_display.statusbar_sec.f$zone.entry -width 40 -font $::font_sm -bg $::bg_bar -fg $::fg \
+            -insertbackground $::fg -selectbackground $::bg_sel -selectforeground $::fg
+        pack $w.tab_display.statusbar_sec.f$zone.lbl -side left
+        pack $w.tab_display.statusbar_sec.f$zone.entry -side left -fill x -expand 1 -padx {4 0}
+    }
+
+    label $w.tab_display.statusbar_sec.tokens -text [t config_statusbar_tokens] \
+        -font $::font_sm -fg $::fg_bar -bg $::bg -wraplength 480 -justify left
+    pack $w.tab_display.statusbar_sec.tokens -anchor w -padx 12 -pady {6 4}
+
+    frame $w.tab_display.editor_sec -relief ridge -borderwidth 2 -bg $::bg
+    pack $w.tab_display.editor_sec -fill x -padx 0 -pady 8
+    label $w.tab_display.editor_sec.title -text [t config_editor_section] -font $::font_sm -fg $::fg_bar -bg $::bg
+    pack $w.tab_display.editor_sec.title -anchor w -padx 8 -pady {4 2}
+
+    frame $w.tab_display.editor_sec.fhm -bg $::bg
+    pack $w.tab_display.editor_sec.fhm -fill x -padx 12 -pady 4
+    label $w.tab_display.editor_sec.fhm.lbl -text [t config_heading_marker] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    entry $w.tab_display.editor_sec.fhm.entry -width 6 -font $::font_sm -bg $::bg_bar -fg $::fg \
+        -insertbackground $::fg -selectbackground $::bg_sel -selectforeground $::fg
+    pack $w.tab_display.editor_sec.fhm.lbl -side left
+    pack $w.tab_display.editor_sec.fhm.entry -side left -padx {4 0}
+
+    # Load display values
+    $w.tab_display.statusbar_sec.fleft.entry insert 0 $::cfg_status_left
+    $w.tab_display.statusbar_sec.fcenter.entry insert 0 $::cfg_status_center
+    $w.tab_display.statusbar_sec.fright.entry insert 0 $::cfg_status_right
+    $w.tab_display.editor_sec.fhm.entry insert 0 $::cfg_heading_marker
+
     # Load timer values from config
     set ::profile_config_timer_sound $::cfg_timer_sound
     set ::profile_config_timer_alert $::cfg_timer_alert
@@ -4737,6 +4832,10 @@ proc profile-config-dialog {} {
             set chrono_shw $::profile_config_chrono_show
             set autosave_en  $::profile_config_autosave_enabled
             set autosave_int [.profile_config.tab_misc.autosave_sec.interval.spin get]
+            set status_l  [.profile_config.tab_display.statusbar_sec.fleft.entry get]
+            set status_c  [.profile_config.tab_display.statusbar_sec.fcenter.entry get]
+            set status_r  [.profile_config.tab_display.statusbar_sec.fright.entry get]
+            set heading_m [.profile_config.tab_display.editor_sec.fhm.entry get]
 
             if {$font eq "" || $size eq "" || $mw eq "" || $mh eq ""} return
 
@@ -4760,6 +4859,10 @@ proc profile-config-dialog {} {
             set ::cfg_chrono_show $chrono_shw
             set ::cfg_autosave_enabled  $autosave_en
             set ::cfg_autosave_interval $autosave_int
+            if {$heading_m ne ""} { set ::cfg_heading_marker $heading_m }
+            set ::cfg_status_left   $status_l
+            set ::cfg_status_center $status_c
+            set ::cfg_status_right  $status_r
 
             ini-save
 
