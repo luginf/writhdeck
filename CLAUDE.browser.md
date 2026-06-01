@@ -21,21 +21,25 @@ Current browser keys (12 total): h (help), n (new), t (scratchpad), f (favorite)
 
 ## Profile configuration dialog
 
-Accessible via `c` key in browser. Invoked by `profile-config-dialog` proc. Three tabs: **Profile**, **Timer**, **Misc**.
+Accessible via `c` key in browser. Invoked by `profile-config-dialog` proc. Four tabs: **Profile**, **Timer**, **Misc**, **Display**.
 
-- **Profile tab**: Dropdown to select active profile + scheme + language; controls for font family (listbox), font size (spinbox), margin width/height (spinbox), word goal, dark mode
+- **Profile tab**: Dropdown to select active profile + scheme + language; controls for font family (listbox), font size (spinbox), margin width/height (spinbox), word goal, dark mode, line spacing (%), bar height, line numbers, block cursor, blinking cursor
 - **Timer tab**: Type (countdown/stopwatch), duration (spinbox), sound at end (checkbox), alert message (checkbox), show in status bar (checkbox)
-- **Misc tab**: Autosave enabled (checkbox), autosave interval in minutes (spinbox 1–60)
+- **Misc tab**: Autosave enabled/interval; Behaviour section: documents folder (entry + Browse button), browser on start, watch file, Hemingway mode, split shrink margin, cursor restore
+- **Display tab**: Status bar zones (left/center/right entries); Editor section (heading marker); Markup section (comment/bold/italic/underline/strikethrough markers, markdown headings)
 - **Apply button**: Saves all tabs to globals + `ini-save`, applies theme, triggers `br-reload`
 
-Tab switching via `config-tab-switch {w tab}` — `pack forget` all frames, `pack` the active one, update button appearance. Tabs: `profile`, `timer`, `misc`.
+Tab switching via `config-tab-switch {w tab}` — `pack forget` all frames, `pack` the active one, update button appearance. Tabs: `profile`, `timer`, `misc`, `display`.
 
-Per-profile configuration stored in `::cfg_profiles` dict. Values persist via `.writhdeck.json`.
+Per-profile configuration stored in `::cfg_profiles` dict (keys: `font_family`, `font_size`, `margin_width`, `margin_height`, `word_goal`, `dark_mode`, `line_spacing`, `bar_height`, `line_numbers`, `block_cursor_gui`, `blink_cursor`). Values persist via `.writhdeck.json`.
+
+Profile values loaded on profile switch via `profile-config-update-profile {w}` — reads each key from the profile dict, falls back to global if absent.
 
 Key implementation details:
-- Uses `-command` option on spinbox to trigger preview updates on button clicks (not just keyboard entry)
-- `profile-apply-fonts` helper saves to dict and applies to editor frame
-- `br-refresh` called after apply to reload browser with fresh configuration
+- `-command` option on spinbox to trigger font preview updates on button clicks (not just keyboard entry)
+- `profile-config-update-profile` called on initial load and on profile dropdown change (via trace)
+- Markup marker entries use `marker-val` on load (shows empty string for disabled markers) and on save
+- docs_dir Browse button uses `tk_chooseDirectory`, stores path with `~` substitution for HOME
 - Dialog created inside a toplevel window, destroyed after user closes
 
 **TUI config dialog** (`tui-config-dialog`) — same two functional tabs (Timer, Misc); TAB key switches tabs; `\033[2J` on tab switch to clear stale lines from previous tab; UP/DOWN navigate fields, LEFT/RIGHT/SPACE adjust values, `s` saves, `q` cancels.

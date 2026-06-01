@@ -1313,6 +1313,7 @@ dict set ::i18n en {
     autosave_section       "Autosave"
     autosave_enabled       "Autosave:"
     autosave_interval      "Interval (min):"
+    config_tab_fonts       "Fonts"
     config_tab_display     "Display"
     config_statusbar_section "Status bar"
     config_statusbar_left  "Left:"
@@ -1321,6 +1322,26 @@ dict set ::i18n en {
     config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "Editor"
     config_heading_marker  "Heading marker:"
+    config_markup_section        "Markup markers"
+    config_comment_marker        "Comment marker:"
+    config_bold_marker           "Bold marker:"
+    config_italic_marker         "Italic marker:"
+    config_underline_marker      "Underline marker:"
+    config_strikethrough_marker  "Strikethrough marker:"
+    config_markdown_headings     "Markdown headings (#):"
+    config_behaviour_section     "Behaviour"
+    config_docs_dir              "Extra documents folder:"
+    config_browse                "Browse"
+    config_browser_startup       "Show browser on start:"
+    config_watch_file            "Watch for external changes:"
+    config_hemingway_mode        "Hemingway mode (no delete):"
+    config_split_shrink_margin   "Shrink margin in split view:"
+    config_cursor_restore        "Restore cursor position:"
+    profile_config_line_spacing  "Line spacing (%):"
+    profile_config_bar_height    "Bar height:"
+    profile_config_line_numbers  "Line numbers:"
+    profile_config_block_cursor  "Block cursor:"
+    profile_config_blink_cursor  "Blinking cursor:"
 }
 
 dict set ::i18n fr {
@@ -1463,6 +1484,7 @@ dict set ::i18n fr {
     autosave_section       "Sauvegarde auto"
     autosave_enabled       "Sauvegarde auto :"
     autosave_interval      "Intervalle (min) :"
+    config_tab_fonts       "Polices"
     config_tab_display     "Affichage"
     config_statusbar_section "Barre de statut"
     config_statusbar_left  "Gauche :"
@@ -1471,6 +1493,26 @@ dict set ::i18n fr {
     config_statusbar_tokens "Tokens : workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "Editeur"
     config_heading_marker  "Marqueur de titre :"
+    config_markup_section        "Marqueurs inline"
+    config_comment_marker        "Marqueur commentaire :"
+    config_bold_marker           "Marqueur gras :"
+    config_italic_marker         "Marqueur italique :"
+    config_underline_marker      "Marqueur souligne :"
+    config_strikethrough_marker  "Marqueur barre :"
+    config_markdown_headings     "Titres Markdown (# ...) :"
+    config_behaviour_section     "Comportement"
+    config_docs_dir              "Dossier documents extra :"
+    config_browse                "Parcourir"
+    config_browser_startup       "Navigateur au demarrage :"
+    config_watch_file            "Surveiller modifications externes :"
+    config_hemingway_mode        "Mode Hemingway (sans suppression) :"
+    config_split_shrink_margin   "Reduire marge en vue split :"
+    config_cursor_restore        "Restaurer position curseur :"
+    profile_config_line_spacing  "Interligne (%) :"
+    profile_config_bar_height    "Hauteur barre :"
+    profile_config_line_numbers  "Numeros de ligne :"
+    profile_config_block_cursor  "Curseur bloc :"
+    profile_config_blink_cursor  "Curseur clignotant :"
 }
 
 
@@ -3547,6 +3589,36 @@ proc tui-editor {filepath {init_state {}}} {
                         puts -nonewline "\033\[2J\033\[H"; flush stdout
                         set wrap_dirty 1
                         set clear_sel 0
+                    } elseif {$key eq "b"} {
+                        set ::tui_cmd_mode 0
+                        set _rsl [expr {$_fswap==2 ? $lines : $split_r_lines}]
+                        set _rsd [expr {$_fswap==2 ? $dirty : $split_r_dirty}]
+                        set _rsf [expr {$_fswap==2 ? $filepath : $split_r_fp}]
+                        tui-split-save-right $split $::ws_n $_rsl $_rsd $_rsf
+                        lassign [tui-size] rows cols
+                        if {$dirty} {
+                            set r [tui-yesnocancel [t ed_save_before_tui] $rows $cols]
+                            if {$r eq "cancel"} {
+                                set clear_sel 0
+                            } else {
+                                if {$r eq "yes"} {
+                                    if {$filepath eq ""} {
+                                        tui-scratchpad-save $rows $cols lines filepath dirty
+                                    } else {
+                                        tui-save-file $filepath $lines
+                                    }
+                                }
+                                if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                                if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
+                                    set ::session_file ""; return
+                                }
+                            }
+                        } else {
+                            if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                            if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
+                                set ::session_file ""; return
+                            }
+                        }
                     } elseif {$key ne ""} {
                         # Any non-empty key exits command mode
                         set ::tui_cmd_mode 0
@@ -3556,7 +3628,7 @@ proc tui-editor {filepath {init_state {}}} {
                     }
                 } elseif {$key eq $::cfg_tui_cmd_mode} {
                     set ::tui_cmd_mode 1
-                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  q: quit  s: stats  w: words"
+                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words"
                     set msg_time [clock seconds]
                     set clear_sel 0
                 } elseif {$key eq $::cfg_tui_close} {

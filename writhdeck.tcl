@@ -1498,6 +1498,7 @@ dict set ::i18n en {
     autosave_section       "Autosave"
     autosave_enabled       "Autosave:"
     autosave_interval      "Interval (min):"
+    config_tab_fonts       "Fonts"
     config_tab_display     "Display"
     config_statusbar_section "Status bar"
     config_statusbar_left  "Left:"
@@ -1506,6 +1507,26 @@ dict set ::i18n en {
     config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "Editor"
     config_heading_marker  "Heading marker:"
+    config_markup_section        "Markup markers"
+    config_comment_marker        "Comment marker:"
+    config_bold_marker           "Bold marker:"
+    config_italic_marker         "Italic marker:"
+    config_underline_marker      "Underline marker:"
+    config_strikethrough_marker  "Strikethrough marker:"
+    config_markdown_headings     "Markdown headings (#):"
+    config_behaviour_section     "Behaviour"
+    config_docs_dir              "Extra documents folder:"
+    config_browse                "Browse"
+    config_browser_startup       "Show browser on start:"
+    config_watch_file            "Watch for external changes:"
+    config_hemingway_mode        "Hemingway mode (no delete):"
+    config_split_shrink_margin   "Shrink margin in split view:"
+    config_cursor_restore        "Restore cursor position:"
+    profile_config_line_spacing  "Line spacing (%):"
+    profile_config_bar_height    "Bar height:"
+    profile_config_line_numbers  "Line numbers:"
+    profile_config_block_cursor  "Block cursor:"
+    profile_config_blink_cursor  "Blinking cursor:"
 }
 
 dict set ::i18n de {
@@ -1648,6 +1669,7 @@ dict set ::i18n de {
     autosave_section       "Autospeichern"
     autosave_enabled       "Autospeichern:"
     autosave_interval      "Intervall (Min):"
+    config_tab_fonts       "Schriften"
     config_tab_display     "Anzeige"
     config_statusbar_section "Statusleiste"
     config_statusbar_left  "Links:"
@@ -1656,6 +1678,26 @@ dict set ::i18n de {
     config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "Editor"
     config_heading_marker  "Uberschrift-Marker:"
+    config_markup_section        "Markup-Marker"
+    config_comment_marker        "Kommentar-Marker:"
+    config_bold_marker           "Fett-Marker:"
+    config_italic_marker         "Kursiv-Marker:"
+    config_underline_marker      "Unterstrich-Marker:"
+    config_strikethrough_marker  "Durchgestrich-Marker:"
+    config_markdown_headings     "Markdown-Uberschriften (#):"
+    config_behaviour_section     "Verhalten"
+    config_docs_dir              "Zusaetzl. Dokumentenordner:"
+    config_browse                "Durchsuchen"
+    config_browser_startup       "Browser beim Start anzeigen:"
+    config_watch_file            "Externe Anderungen uberwachen:"
+    config_hemingway_mode        "Hemingway-Modus (kein Loschen):"
+    config_split_shrink_margin   "Rand in geteilter Ansicht verkleinern:"
+    config_cursor_restore        "Cursorposition wiederherstellen:"
+    profile_config_line_spacing  "Zeilenabstand (%):"
+    profile_config_bar_height    "Leistenhohe:"
+    profile_config_line_numbers  "Zeilennummern:"
+    profile_config_block_cursor  "Blockcursor:"
+    profile_config_blink_cursor  "Blinkender Cursor:"
 }
 
 dict set ::i18n es {
@@ -1798,6 +1840,7 @@ dict set ::i18n es {
     autosave_section       "Autoguardado"
     autosave_enabled       "Autoguardado:"
     autosave_interval      "Intervalo (min):"
+    config_tab_fonts       "Fuentes"
     config_tab_display     "Pantalla"
     config_statusbar_section "Barra de estado"
     config_statusbar_left  "Izquierda:"
@@ -1806,6 +1849,26 @@ dict set ::i18n es {
     config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "Editor"
     config_heading_marker  "Marcador de titulo:"
+    config_markup_section        "Marcadores de formato"
+    config_comment_marker        "Marcador de comentario:"
+    config_bold_marker           "Marcador negrita:"
+    config_italic_marker         "Marcador cursiva:"
+    config_underline_marker      "Marcador subrayado:"
+    config_strikethrough_marker  "Marcador tachado:"
+    config_markdown_headings     "Titulos Markdown (#):"
+    config_behaviour_section     "Comportamiento"
+    config_docs_dir              "Carpeta extra de documentos:"
+    config_browse                "Explorar"
+    config_browser_startup       "Mostrar navegador al inicio:"
+    config_watch_file            "Vigilar cambios externos:"
+    config_hemingway_mode        "Modo Hemingway (sin borrar):"
+    config_split_shrink_margin   "Reducir margen en vista dividida:"
+    config_cursor_restore        "Restaurar posicion del cursor:"
+    profile_config_line_spacing  "Interlineado (%):"
+    profile_config_bar_height    "Altura de barra:"
+    profile_config_line_numbers  "Numeros de linea:"
+    profile_config_block_cursor  "Cursor de bloque:"
+    profile_config_blink_cursor  "Cursor parpadeante:"
 }
 
 dict set ::i18n fr {
@@ -1948,6 +2011,7 @@ dict set ::i18n fr {
     autosave_section       "Sauvegarde auto"
     autosave_enabled       "Sauvegarde auto :"
     autosave_interval      "Intervalle (min) :"
+    config_tab_fonts       "Polices"
     config_tab_display     "Affichage"
     config_statusbar_section "Barre de statut"
     config_statusbar_left  "Gauche :"
@@ -1956,6 +2020,26 @@ dict set ::i18n fr {
     config_statusbar_tokens "Tokens : workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "Editeur"
     config_heading_marker  "Marqueur de titre :"
+    config_markup_section        "Marqueurs inline"
+    config_comment_marker        "Marqueur commentaire :"
+    config_bold_marker           "Marqueur gras :"
+    config_italic_marker         "Marqueur italique :"
+    config_underline_marker      "Marqueur souligne :"
+    config_strikethrough_marker  "Marqueur barre :"
+    config_markdown_headings     "Titres Markdown (# ...) :"
+    config_behaviour_section     "Comportement"
+    config_docs_dir              "Dossier documents extra :"
+    config_browse                "Parcourir"
+    config_browser_startup       "Navigateur au demarrage :"
+    config_watch_file            "Surveiller modifications externes :"
+    config_hemingway_mode        "Mode Hemingway (sans suppression) :"
+    config_split_shrink_margin   "Reduire marge en vue split :"
+    config_cursor_restore        "Restaurer position curseur :"
+    profile_config_line_spacing  "Interligne (%) :"
+    profile_config_bar_height    "Hauteur barre :"
+    profile_config_line_numbers  "Numeros de ligne :"
+    profile_config_block_cursor  "Curseur bloc :"
+    profile_config_blink_cursor  "Curseur clignotant :"
 }
 
 dict set ::i18n ko {
@@ -2098,6 +2182,7 @@ dict set ::i18n ko {
     autosave_section       "자동 저장"
     autosave_enabled       "자동 저장:"
     autosave_interval      "간격 (분):"
+    config_tab_fonts       "글꼴"
     config_tab_display     "화면"
     config_statusbar_section "상태 표시줄"
     config_statusbar_left  "왼쪽:"
@@ -2106,6 +2191,26 @@ dict set ::i18n ko {
     config_statusbar_tokens "토큰: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "편집기"
     config_heading_marker  "제목 마커:"
+    config_markup_section        "서식 마커"
+    config_comment_marker        "주석 마커:"
+    config_bold_marker           "굵게 마커:"
+    config_italic_marker         "기울임 마커:"
+    config_underline_marker      "밑줄 마커:"
+    config_strikethrough_marker  "취소선 마커:"
+    config_markdown_headings     "마크다운 제목 (#):"
+    config_behaviour_section     "동작"
+    config_docs_dir              "추가 문서 폴더:"
+    config_browse                "찾아보기"
+    config_browser_startup       "시작 시 브라우저 표시:"
+    config_watch_file            "외부 변경 감시:"
+    config_hemingway_mode        "헤밍웨이 모드 (삭제 불가):"
+    config_split_shrink_margin   "분할 보기에서 여백 축소:"
+    config_cursor_restore        "커서 위치 복원:"
+    profile_config_line_spacing  "줄 간격 (%):"
+    profile_config_bar_height    "바 높이:"
+    profile_config_line_numbers  "줄 번호:"
+    profile_config_block_cursor  "블록 커서:"
+    profile_config_blink_cursor  "깜빡이는 커서:"
 }
 
 dict set ::i18n no {
@@ -2248,6 +2353,7 @@ dict set ::i18n no {
     autosave_section       "Autolagring"
     autosave_enabled       "Autolagring:"
     autosave_interval      "Intervall (min):"
+    config_tab_fonts       "Skrifter"
     config_tab_display     "Visning"
     config_statusbar_section "Statuslinje"
     config_statusbar_left  "Venstre:"
@@ -2256,6 +2362,26 @@ dict set ::i18n no {
     config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "Editor"
     config_heading_marker  "Overskrift-markering:"
+    config_markup_section        "Formatmarkorer"
+    config_comment_marker        "Kommentar-markoring:"
+    config_bold_marker           "Fet-markoring:"
+    config_italic_marker         "Kursiv-markoring:"
+    config_underline_marker      "Understrek-markoring:"
+    config_strikethrough_marker  "Gjennomstrek-markoring:"
+    config_markdown_headings     "Markdown-overskrifter (#):"
+    config_behaviour_section     "Atferd"
+    config_docs_dir              "Ekstra dokumentmappe:"
+    config_browse                "Bla gjennom"
+    config_browser_startup       "Vis nettleser ved oppstart:"
+    config_watch_file            "Se etter eksterne endringer:"
+    config_hemingway_mode        "Hemingway-modus (ingen sletting):"
+    config_split_shrink_margin   "Krymp margin i delt visning:"
+    config_cursor_restore        "Gjenopprett markrorposisjon:"
+    profile_config_line_spacing  "Linjeavstand (%):"
+    profile_config_bar_height    "Linjehory de:"
+    profile_config_line_numbers  "Linjenumre:"
+    profile_config_block_cursor  "Blokk-markror:"
+    profile_config_blink_cursor  "Blinkende markror:"
 }
 
 
@@ -3466,7 +3592,7 @@ proc gui-status-state {} {
 proc gui-status-update {} {
     if {$::gui_cmd_mode} {
         set ::ed_bar_left ""
-        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  q: quit  s: stats  w: words"
+        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words"
         set ::ed_bar_right ""
         return
     }
@@ -3873,7 +3999,7 @@ proc search-prev {} {
     if {$pos ne ""} { $t mark set insert $pos; $t see insert }
 }
 
-proc close-editor {} {
+proc close-editor {{force_browser 0}} {
     if {$::dirty} {
         set _label [expr {$::scratchpad ? "scratchpad" : [file tail $::filename]}]
         set r [yesnocancel-dialog [t ed_save_before $_label]]
@@ -3905,7 +4031,7 @@ proc close-editor {} {
     wm title . "Writhdeck"
     .ed.t delete 1.0 end
     search-close
-    if {$::cfg_browser} { show-browser } else { exit }
+    if {$::cfg_browser || $force_browser} { show-browser } else { exit }
 }
 
 proc apply-theme {} {
@@ -4363,6 +4489,11 @@ proc gui-handle-keypress {key} {
             ed-status
             close-editor
             return 1
+        } elseif {$key eq "b" || $key eq "B"} {
+            set ::gui_cmd_mode 0
+            ed-status
+            close-editor 1
+            return 1
         }
         # Pour les autres touches non reconnues, reste en mode modal
         return 1
@@ -4380,6 +4511,8 @@ proc bind-cmd-mode {w} {
     bind $w <T>     { if {![gui-handle-keypress T]} { %W insert insert T; ed-status }; break }
     bind $w <c>     { if {![gui-handle-keypress c]} { %W insert insert c; ed-status }; break }
     bind $w <C>     { if {![gui-handle-keypress C]} { %W insert insert C; ed-status }; break }
+    bind $w <b>     { if {![gui-handle-keypress b]} { %W insert insert b; ed-status }; break }
+    bind $w <B>     { if {![gui-handle-keypress B]} { %W insert insert B; ed-status }; break }
     bind $w <q>     { if {![gui-handle-keypress q]} { %W insert insert q; ed-status }; break }
     bind $w <Q>     { if {![gui-handle-keypress Q]} { %W insert insert Q; ed-status }; break }
     bind $w <s>     { if {![gui-handle-keypress s]} { %W insert insert s; ed-status }; break }
@@ -4399,14 +4532,14 @@ proc profile-config-update-profile {w} {
     if {[dict exists $::cfg_profiles $profile font_family]} {
         set cur_font [dict get $::cfg_profiles $profile font_family]
     }
-    $w.tab_profile.profile.ffont.entry delete 0 end
-    $w.tab_profile.profile.ffont.entry insert 0 $cur_font
+    $w.tab_fonts.ffont.entry delete 0 end
+    $w.tab_fonts.ffont.entry insert 0 $cur_font
 
     set cur_size $::cfg_font_size
     if {[dict exists $::cfg_profiles $profile font_size]} {
         set cur_size [dict get $::cfg_profiles $profile font_size]
     }
-    $w.tab_profile.fsize.spin set $cur_size
+    $w.tab_fonts.fsize.spin set $cur_size
 
     set cur_mw $::cfg_margin_width
     if {[dict exists $::cfg_profiles $profile margin_width]} {
@@ -4432,20 +4565,54 @@ proc profile-config-update-profile {w} {
     }
     set ::profile_config_dark_mode $cur_dark
 
+    set cur_ls $::cfg_line_spacing
+    if {[dict exists $::cfg_profiles $profile line_spacing]} {
+        set cur_ls [dict get $::cfg_profiles $profile line_spacing]
+    }
+    $w.tab_profile.flinespace.spin set $cur_ls
+
+    set cur_bh $::cfg_bar_height
+    if {[dict exists $::cfg_profiles $profile bar_height]} {
+        set cur_bh [dict get $::cfg_profiles $profile bar_height]
+    }
+    $w.tab_profile.fbarheight.spin set $cur_bh
+
+    set cur_ln $::cfg_line_numbers
+    if {[dict exists $::cfg_profiles $profile line_numbers]} {
+        set cur_ln [string is true [dict get $::cfg_profiles $profile line_numbers]]
+    }
+    set ::profile_config_line_numbers $cur_ln
+
+    set cur_bc $::cfg_block_cursor_gui
+    if {[dict exists $::cfg_profiles $profile block_cursor_gui]} {
+        set cur_bc [string is true [dict get $::cfg_profiles $profile block_cursor_gui]]
+    }
+    set ::profile_config_block_cursor $cur_bc
+
+    set cur_bl $::cfg_blink_cursor
+    if {[dict exists $::cfg_profiles $profile blink_cursor]} {
+        set cur_bl [string is true [dict get $::cfg_profiles $profile blink_cursor]]
+    }
+    set ::profile_config_blink_cursor $cur_bl
+
     set idx [lsearch -exact [lsort [font families]] $cur_font]
-    $w.tab_profile.profile.fonts selection clear 0 end
-    if {$idx >= 0} { $w.tab_profile.profile.fonts selection set $idx; $w.tab_profile.profile.fonts see $idx }
+    $w.tab_fonts.fonts selection clear 0 end
+    if {$idx >= 0} { $w.tab_fonts.fonts selection set $idx; $w.tab_fonts.fonts see $idx }
 }
 
 proc config-tab-switch {w tab} {
-    pack forget $w.tab_profile $w.tab_timer $w.tab_misc $w.tab_display
+    pack forget $w.tab_profile $w.tab_fonts $w.tab_timer $w.tab_misc $w.tab_display
     $w.tabs.profile configure -fg $::fg_bar -bg $::bg
+    $w.tabs.fonts   configure -fg $::fg_bar -bg $::bg
     $w.tabs.timer   configure -fg $::fg_bar -bg $::bg
     $w.tabs.misc    configure -fg $::fg_bar -bg $::bg
     $w.tabs.display configure -fg $::fg_bar -bg $::bg
     if {$tab eq "profile"} {
         pack $w.tab_profile -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.profile configure -fg $::fg -bg $::bg_sel
+    } elseif {$tab eq "fonts"} {
+        pack $w.tab_fonts -fill both -expand 1 -padx 8 -pady 8
+        $w.tabs.fonts configure -fg $::fg -bg $::bg_sel
     } elseif {$tab eq "timer"} {
         pack $w.tab_timer -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.timer configure -fg $::fg -bg $::bg_sel
@@ -4487,6 +4654,8 @@ proc profile-config-dialog {} {
     pack $w.tabs -fill x -padx 8 -pady {8 0}
     button $w.tabs.profile -text [t config_tab_profile] -font $::font_sm -fg $::fg -bg $::bg_sel \
         -command "config-tab-switch $w profile" -borderwidth 1 -relief raised -padx 12 -pady 4
+    button $w.tabs.fonts -text [t config_tab_fonts] -font $::font_sm -fg $::fg_bar -bg $::bg \
+        -command "config-tab-switch $w fonts" -borderwidth 1 -relief raised -padx 12 -pady 4
     button $w.tabs.timer -text [t config_tab_timer] -font $::font_sm -fg $::fg_bar -bg $::bg \
         -command "config-tab-switch $w timer" -borderwidth 1 -relief raised -padx 12 -pady 4
     button $w.tabs.misc -text [t config_tab_misc] -font $::font_sm -fg $::fg_bar -bg $::bg \
@@ -4494,12 +4663,14 @@ proc profile-config-dialog {} {
     button $w.tabs.display -text [t config_tab_display] -font $::font_sm -fg $::fg_bar -bg $::bg \
         -command "config-tab-switch $w display" -borderwidth 1 -relief raised -padx 12 -pady 4
     pack $w.tabs.profile -side left -padx 2
+    pack $w.tabs.fonts -side left -padx 2
     pack $w.tabs.timer -side left -padx 2
     pack $w.tabs.misc -side left -padx 2
     pack $w.tabs.display -side left -padx 2
 
     # --- Tab content frames ---
     frame $w.tab_profile -bg $::bg
+    frame $w.tab_fonts -bg $::bg
     frame $w.tab_timer -bg $::bg
     frame $w.tab_misc -bg $::bg
     frame $w.tab_display -bg $::bg
@@ -4562,76 +4733,6 @@ proc profile-config-dialog {} {
     pack $w.tab_profile.profile.fprof.lbl -side left -padx {0 8}
     pack $w.tab_profile.profile.fprof.om -side left -fill x -expand 1 -padx {8 0}
 
-    # Font family row
-    frame $w.tab_profile.profile.ffont -bg $::bg
-    pack $w.tab_profile.profile.ffont -fill x -padx 12 -pady 4
-    label $w.tab_profile.profile.ffont.lbl -text [t profile_config_font] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
-    entry $w.tab_profile.profile.ffont.entry -width 30 -font $::font_sm -bg $::bg_bar -fg $::fg
-    pack $w.tab_profile.profile.ffont.lbl -side left
-    pack $w.tab_profile.profile.ffont.entry -side left -fill x -expand 1 -padx {8 0}
-
-    # Available fonts listbox with scrollbar
-    label $w.tab_profile.profile.lbl_fonts -text "Available fonts:" -font $::font_sm -bg $::bg -fg $::fg
-    pack $w.tab_profile.profile.lbl_fonts -anchor w -padx 12 -pady {4 2}
-    frame $w.tab_profile.profile.fonts_frame -bg $::bg
-    pack $w.tab_profile.profile.fonts_frame -fill both -expand 1 -padx 12 -pady 2
-    listbox $w.tab_profile.profile.fonts -height 5 -width 40 -font $::font_sm -selectmode single \
-        -yscrollcommand [list $w.tab_profile.profile.fonts_scroll set] -bg $::bg_bar -fg $::fg
-    scrollbar $w.tab_profile.profile.fonts_scroll -command [list $w.tab_profile.profile.fonts yview] -bg $::bg_bar
-    foreach f [lsort [font families]] {
-        $w.tab_profile.profile.fonts insert end $f
-    }
-    pack $w.tab_profile.profile.fonts -side left -fill both -expand 1 -in $w.tab_profile.profile.fonts_frame
-    pack $w.tab_profile.profile.fonts_scroll -side left -fill y -in $w.tab_profile.profile.fonts_frame
-
-    # Font preview (below listbox)
-    label $w.tab_profile.profile.preview -text "Preview" -font $::font_sm -bg $::bg -fg $::fg
-    pack $w.tab_profile.profile.preview -fill x -padx 12 -pady {8 2}
-
-    # Font size row (create BEFORE bindings)
-    frame $w.tab_profile.fsize -bg $::bg
-    pack $w.tab_profile.fsize -fill x -padx 12 -pady 4
-    label $w.tab_profile.fsize.lbl -text [t profile_config_size] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
-    spinbox $w.tab_profile.fsize.spin -from 6 -to 72 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg -command {
-        set font [.profile_config.tab_profile.profile.ffont.entry get]
-        set size [.profile_config.tab_profile.fsize.spin get]
-        if {$font ne "" && $size ne ""} {
-            catch {.profile_config.tab_profile.profile.preview configure -font [list $font $size] -text "Sample Text - $font"}
-        }
-    }
-    pack $w.tab_profile.fsize.lbl -side left
-    pack $w.tab_profile.fsize.spin -side left -padx {8 0}
-
-    # Bind to update preview on font/size change (AFTER all widgets created)
-    bind $w.tab_profile.profile.fonts <<ListboxSelect>> {
-        set sel [%W curselection]
-        if {[llength $sel] > 0} {
-            set font_var [%W get [lindex $sel 0]]
-            .profile_config.tab_profile.profile.ffont.entry delete 0 end
-            .profile_config.tab_profile.profile.ffont.entry insert 0 $font_var
-            set size [.profile_config.tab_profile.fsize.spin get]
-            if {$size ne ""} {
-                .profile_config.tab_profile.profile.preview configure -font [list $font_var $size] -text "Sample Text - $font_var"
-            }
-        }
-    }
-
-    bind $w.tab_profile.profile.ffont.entry <KeyRelease> {
-        set font [.profile_config.tab_profile.profile.ffont.entry get]
-        set size [.profile_config.tab_profile.fsize.spin get]
-        if {$font ne "" && $size ne ""} {
-            catch {.profile_config.tab_profile.profile.preview configure -font [list $font $size] -text "Sample Text - $font"}
-        }
-    }
-
-    bind $w.tab_profile.fsize.spin <KeyRelease> {
-        set font [.profile_config.tab_profile.profile.ffont.entry get]
-        set size [.profile_config.tab_profile.fsize.spin get]
-        if {$font ne "" && $size ne ""} {
-            catch {.profile_config.tab_profile.profile.preview configure -font [list $font $size] -text "Sample Text - $font"}
-        }
-    }
-
     # Margin width row
     frame $w.tab_profile.fmarginw -bg $::bg
     pack $w.tab_profile.fmarginw -fill x -padx 12 -pady 4
@@ -4667,6 +4768,132 @@ proc profile-config-dialog {} {
         -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
     pack $w.tab_profile.fdarkmode.lbl -side left
     pack $w.tab_profile.fdarkmode.check -side left -padx {8 2}
+
+    # Line spacing row
+    frame $w.tab_profile.flinespace -bg $::bg
+    pack $w.tab_profile.flinespace -fill x -padx 12 -pady 4
+    label $w.tab_profile.flinespace.lbl -text [t profile_config_line_spacing] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.tab_profile.flinespace.spin -from 80 -to 200 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
+    pack $w.tab_profile.flinespace.lbl -side left
+    pack $w.tab_profile.flinespace.spin -side left -padx {8 0}
+
+    # Bar height row
+    frame $w.tab_profile.fbarheight -bg $::bg
+    pack $w.tab_profile.fbarheight -fill x -padx 12 -pady 4
+    label $w.tab_profile.fbarheight.lbl -text [t profile_config_bar_height] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.tab_profile.fbarheight.spin -from 0 -to 40 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
+    pack $w.tab_profile.fbarheight.lbl -side left
+    pack $w.tab_profile.fbarheight.spin -side left -padx {8 0}
+
+    # Line numbers row
+    frame $w.tab_profile.flinenums -bg $::bg
+    pack $w.tab_profile.flinenums -fill x -padx 12 -pady 4
+    label $w.tab_profile.flinenums.lbl -text [t profile_config_line_numbers] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.tab_profile.flinenums.check -variable profile_config_line_numbers -font $::font_sm -bg $::bg -fg $::fg \
+        -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
+        -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
+    pack $w.tab_profile.flinenums.lbl -side left
+    pack $w.tab_profile.flinenums.check -side left -padx {8 2}
+
+    # Block cursor row
+    frame $w.tab_profile.fblockcur -bg $::bg
+    pack $w.tab_profile.fblockcur -fill x -padx 12 -pady 4
+    label $w.tab_profile.fblockcur.lbl -text [t profile_config_block_cursor] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.tab_profile.fblockcur.check -variable profile_config_block_cursor -font $::font_sm -bg $::bg -fg $::fg \
+        -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
+        -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
+    pack $w.tab_profile.fblockcur.lbl -side left
+    pack $w.tab_profile.fblockcur.check -side left -padx {8 2}
+
+    # Blink cursor row
+    frame $w.tab_profile.fblinkcur -bg $::bg
+    pack $w.tab_profile.fblinkcur -fill x -padx 12 -pady 4
+    label $w.tab_profile.fblinkcur.lbl -text [t profile_config_blink_cursor] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.tab_profile.fblinkcur.check -variable profile_config_blink_cursor -font $::font_sm -bg $::bg -fg $::fg \
+        -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
+        -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
+    pack $w.tab_profile.fblinkcur.lbl -side left
+    pack $w.tab_profile.fblinkcur.check -side left -padx {8 2}
+
+    # --- Fonts tab content ---
+    frame $w.tab_fonts.profile -relief ridge -borderwidth 2 -bg $::bg
+    pack $w.tab_fonts.profile -fill x -padx 0 -pady 8
+
+    label $w.tab_fonts.profile.title -text "Profile Settings" -font $::font_sm -fg $::fg_bar -bg $::bg
+    pack $w.tab_fonts.profile.title -anchor w -padx 8 -pady {4 2}
+
+    frame $w.tab_fonts.profile.fprof -bg $::bg
+    pack $w.tab_fonts.profile.fprof -fill x -padx 12 -pady {0 6}
+    label $w.tab_fonts.profile.fprof.lbl -text [t profile_config_edit_profile] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    tk_optionMenu $w.tab_fonts.profile.fprof.om ::profile_config_profile {*}$profiles
+    $w.tab_fonts.profile.fprof.om configure -bg $::bg_bar -fg $::fg_bar -activebackground $::bg_sel -activeforeground $::fg -borderwidth 1 -highlightthickness 0
+    pack $w.tab_fonts.profile.fprof.lbl -side left -padx {0 8}
+    pack $w.tab_fonts.profile.fprof.om -side left -fill x -expand 1 -padx {8 0}
+
+    frame $w.tab_fonts.ffont -bg $::bg
+    pack $w.tab_fonts.ffont -fill x -padx 12 -pady 4
+    label $w.tab_fonts.ffont.lbl -text [t profile_config_font] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    entry $w.tab_fonts.ffont.entry -width 30 -font $::font_sm -bg $::bg_bar -fg $::fg
+    pack $w.tab_fonts.ffont.lbl -side left
+    pack $w.tab_fonts.ffont.entry -side left -fill x -expand 1 -padx {8 0}
+
+    label $w.tab_fonts.lbl_fonts -text "Available fonts:" -font $::font_sm -bg $::bg -fg $::fg
+    pack $w.tab_fonts.lbl_fonts -anchor w -padx 12 -pady {4 2}
+    frame $w.tab_fonts.fonts_frame -bg $::bg
+    pack $w.tab_fonts.fonts_frame -fill both -expand 1 -padx 12 -pady 2
+    listbox $w.tab_fonts.fonts -height 6 -width 40 -font $::font_sm -selectmode single \
+        -yscrollcommand [list $w.tab_fonts.fonts_scroll set] -bg $::bg_bar -fg $::fg
+    scrollbar $w.tab_fonts.fonts_scroll -command [list $w.tab_fonts.fonts yview] -bg $::bg_bar
+    foreach f [lsort [font families]] {
+        $w.tab_fonts.fonts insert end $f
+    }
+    pack $w.tab_fonts.fonts -side left -fill both -expand 1 -in $w.tab_fonts.fonts_frame
+    pack $w.tab_fonts.fonts_scroll -side left -fill y -in $w.tab_fonts.fonts_frame
+
+    label $w.tab_fonts.preview -text "Preview" -font $::font_sm -bg $::bg -fg $::fg
+    pack $w.tab_fonts.preview -fill x -padx 12 -pady {8 2}
+
+    frame $w.tab_fonts.fsize -bg $::bg
+    pack $w.tab_fonts.fsize -fill x -padx 12 -pady 4
+    label $w.tab_fonts.fsize.lbl -text [t profile_config_size] -font $::font_sm -width 20 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.tab_fonts.fsize.spin -from 6 -to 72 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg -command {
+        set font [.profile_config.tab_fonts.ffont.entry get]
+        set size [.profile_config.tab_fonts.fsize.spin get]
+        if {$font ne "" && $size ne ""} {
+            catch {.profile_config.tab_fonts.preview configure -font [list $font $size] -text "Sample Text - $font"}
+        }
+    }
+    pack $w.tab_fonts.fsize.lbl -side left
+    pack $w.tab_fonts.fsize.spin -side left -padx {8 0}
+
+    bind $w.tab_fonts.fonts <<ListboxSelect>> {
+        set sel [%W curselection]
+        if {[llength $sel] > 0} {
+            set font_var [%W get [lindex $sel 0]]
+            .profile_config.tab_fonts.ffont.entry delete 0 end
+            .profile_config.tab_fonts.ffont.entry insert 0 $font_var
+            set size [.profile_config.tab_fonts.fsize.spin get]
+            if {$size ne ""} {
+                .profile_config.tab_fonts.preview configure -font [list $font_var $size] -text "Sample Text - $font_var"
+            }
+        }
+    }
+
+    bind $w.tab_fonts.ffont.entry <KeyRelease> {
+        set font [.profile_config.tab_fonts.ffont.entry get]
+        set size [.profile_config.tab_fonts.fsize.spin get]
+        if {$font ne "" && $size ne ""} {
+            catch {.profile_config.tab_fonts.preview configure -font [list $font $size] -text "Sample Text - $font"}
+        }
+    }
+
+    bind $w.tab_fonts.fsize.spin <KeyRelease> {
+        set font [.profile_config.tab_fonts.ffont.entry get]
+        set size [.profile_config.tab_fonts.fsize.spin get]
+        if {$font ne "" && $size ne ""} {
+            catch {.profile_config.tab_fonts.preview configure -font [list $font $size] -text "Sample Text - $font"}
+        }
+    }
 
     # --- Timer tab content ---
     frame $w.tab_timer.timer_sec -relief ridge -borderwidth 2 -bg $::bg
@@ -4754,6 +4981,61 @@ proc profile-config-dialog {} {
     set ::profile_config_autosave_enabled $::cfg_autosave_enabled
     $w.tab_misc.autosave_sec.interval.spin set $::cfg_autosave_interval
 
+    # --- Behaviour section ---
+    frame $w.tab_misc.behaviour_sec -relief ridge -borderwidth 2 -bg $::bg
+    pack $w.tab_misc.behaviour_sec -fill x -padx 0 -pady 8
+    label $w.tab_misc.behaviour_sec.title -text [t config_behaviour_section] -font $::font_sm -fg $::fg_bar -bg $::bg
+    pack $w.tab_misc.behaviour_sec.title -anchor w -padx 8 -pady {4 2}
+
+    # docs_dir row (entry + browse button)
+    frame $w.tab_misc.behaviour_sec.fdocs -bg $::bg
+    pack  $w.tab_misc.behaviour_sec.fdocs -fill x -padx 12 -pady 4
+    label $w.tab_misc.behaviour_sec.fdocs.lbl -text [t config_docs_dir] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+    entry $w.tab_misc.behaviour_sec.fdocs.entry -width 32 -font $::font_sm -bg $::bg_bar -fg $::fg \
+        -insertbackground $::fg -selectbackground $::bg_sel -selectforeground $::fg
+    button $w.tab_misc.behaviour_sec.fdocs.btn -text [t config_browse] -font $::font_sm \
+        -bg $::bg_bar -fg $::fg_bar -padx 4 \
+        -command {
+            set d [tk_chooseDirectory -initialdir [expr {$::cfg_docs_dir ne "" \
+                ? [tilde-expand $::cfg_docs_dir] : $::DOCS_DIR_DEFAULT}] \
+                -title "Documents folder" -parent .profile_config]
+            if {$d ne ""} {
+                .profile_config.tab_misc.behaviour_sec.fdocs.entry delete 0 end
+                .profile_config.tab_misc.behaviour_sec.fdocs.entry insert 0 \
+                    [string map [list $::HOME_DIR ~] $d]
+            }
+        }
+    pack $w.tab_misc.behaviour_sec.fdocs.lbl -side left
+    pack $w.tab_misc.behaviour_sec.fdocs.entry -side left -fill x -expand 1 -padx {4 4}
+    pack $w.tab_misc.behaviour_sec.fdocs.btn  -side left
+
+    # Boolean behaviour options
+    foreach {fname key var} {
+        fbrowser  config_browser_startup      profile_config_browser
+        fwatch    config_watch_file           profile_config_watch_file
+        fhemingway config_hemingway_mode      profile_config_hemingway
+        fshrink   config_split_shrink_margin  profile_config_split_shrink
+        fcrestore config_cursor_restore       profile_config_cursor_restore
+    } {
+        frame $w.tab_misc.behaviour_sec.$fname -bg $::bg
+        pack  $w.tab_misc.behaviour_sec.$fname -fill x -padx 12 -pady 3
+        label $w.tab_misc.behaviour_sec.$fname.lbl -text [t $key] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+        checkbutton $w.tab_misc.behaviour_sec.$fname.check -variable $var \
+            -font $::font_sm -bg $::bg -fg $::fg \
+            -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
+            -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
+        pack $w.tab_misc.behaviour_sec.$fname.lbl -side left
+        pack $w.tab_misc.behaviour_sec.$fname.check -side left -padx {8 2}
+    }
+
+    # Load behaviour values
+    $w.tab_misc.behaviour_sec.fdocs.entry insert 0 $::cfg_docs_dir
+    set ::profile_config_browser      $::cfg_browser
+    set ::profile_config_watch_file   $::cfg_watch_file
+    set ::profile_config_hemingway    $::cfg_hemingway_mode
+    set ::profile_config_split_shrink $::cfg_split_shrink_margin
+    set ::profile_config_cursor_restore $::cfg_cursor_restore
+
     # --- Display tab content ---
     frame $w.tab_display.statusbar_sec -relief ridge -borderwidth 2 -bg $::bg
     pack $w.tab_display.statusbar_sec -fill x -padx 0 -pady 8
@@ -4787,11 +5069,49 @@ proc profile-config-dialog {} {
     pack $w.tab_display.editor_sec.fhm.lbl -side left
     pack $w.tab_display.editor_sec.fhm.entry -side left -padx {4 0}
 
+    # --- Markup section ---
+    frame $w.tab_display.markup_sec -relief ridge -borderwidth 2 -bg $::bg
+    pack $w.tab_display.markup_sec -fill x -padx 0 -pady 8
+    label $w.tab_display.markup_sec.title -text [t config_markup_section] -font $::font_sm -fg $::fg_bar -bg $::bg
+    pack $w.tab_display.markup_sec.title -anchor w -padx 8 -pady {4 2}
+
+    foreach {fname key} {
+        fcm  config_comment_marker
+        fbm  config_bold_marker
+        fim  config_italic_marker
+        fum  config_underline_marker
+        fsm  config_strikethrough_marker
+    } {
+        frame $w.tab_display.markup_sec.$fname -bg $::bg
+        pack  $w.tab_display.markup_sec.$fname -fill x -padx 12 -pady 3
+        label $w.tab_display.markup_sec.$fname.lbl -text [t $key] -font $::font_sm -width 22 -anchor w -bg $::bg -fg $::fg
+        entry $w.tab_display.markup_sec.$fname.entry -width 6 -font $::font_sm -bg $::bg_bar -fg $::fg \
+            -insertbackground $::fg -selectbackground $::bg_sel -selectforeground $::fg
+        pack  $w.tab_display.markup_sec.$fname.lbl -side left
+        pack  $w.tab_display.markup_sec.$fname.entry -side left -padx {4 0}
+    }
+
+    frame $w.tab_display.markup_sec.fmdh -bg $::bg
+    pack  $w.tab_display.markup_sec.fmdh -fill x -padx 12 -pady 3
+    label $w.tab_display.markup_sec.fmdh.lbl -text [t config_markdown_headings] -font $::font_sm -width 22 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.tab_display.markup_sec.fmdh.check -variable profile_config_markdown_headings \
+        -font $::font_sm -bg $::bg -fg $::fg \
+        -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
+        -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
+    pack $w.tab_display.markup_sec.fmdh.lbl -side left
+    pack $w.tab_display.markup_sec.fmdh.check -side left -padx {8 2}
+
     # Load display values
     $w.tab_display.statusbar_sec.fleft.entry insert 0 $::cfg_status_left
     $w.tab_display.statusbar_sec.fcenter.entry insert 0 $::cfg_status_center
     $w.tab_display.statusbar_sec.fright.entry insert 0 $::cfg_status_right
     $w.tab_display.editor_sec.fhm.entry insert 0 $::cfg_heading_marker
+    $w.tab_display.markup_sec.fcm.entry  insert 0 [marker-val $::cfg_comment_marker]
+    $w.tab_display.markup_sec.fbm.entry  insert 0 [marker-val $::cfg_bold_marker]
+    $w.tab_display.markup_sec.fim.entry  insert 0 [marker-val $::cfg_italic_marker]
+    $w.tab_display.markup_sec.fum.entry  insert 0 [marker-val $::cfg_underline_marker]
+    $w.tab_display.markup_sec.fsm.entry  insert 0 [marker-val $::cfg_strikethrough_marker]
+    set ::profile_config_markdown_headings $::cfg_markdown_headings
 
     # Load timer values from config
     set ::profile_config_timer_sound $::cfg_timer_sound
@@ -4808,20 +5128,24 @@ proc profile-config-dialog {} {
     # Load initial values
     profile-config-update-profile $w
 
-    # Button frame
+    # Button frame — packed before tab content via -before so it stays visible at top
     frame $w.btns -bg $::bg
-    pack $w.btns -fill x -padx 8 -pady 8
-
+    pack $w.btns -before $w.tab_profile -fill x -padx 8 -pady {4 0}
     button $w.btns.apply -text [t profile_config_apply] -font $::font_sm \
         -bg $::bg_bar -fg $::fg_bar -width 12 \
         -command {
             set profile $::profile_config_profile
-            set font [.profile_config.tab_profile.profile.ffont.entry get]
-            set size [.profile_config.tab_profile.fsize.spin get]
+            set font [.profile_config.tab_fonts.ffont.entry get]
+            set size [.profile_config.tab_fonts.fsize.spin get]
             set mw [.profile_config.tab_profile.fmarginw.spin get]
             set mh [.profile_config.tab_profile.fmarginh.spin get]
             set goal [.profile_config.tab_profile.fwordgoal.spin get]
             set dark $::profile_config_dark_mode
+            set line_spacing [.profile_config.tab_profile.flinespace.spin get]
+            set bar_height   [.profile_config.tab_profile.fbarheight.spin get]
+            set line_numbers $::profile_config_line_numbers
+            set block_cursor $::profile_config_block_cursor
+            set blink_cursor $::profile_config_blink_cursor
             set def_prof $::profile_config_default_prof
             set def_scheme $::profile_config_default_scheme
             set def_lang $::profile_config_language
@@ -4832,10 +5156,22 @@ proc profile-config-dialog {} {
             set chrono_shw $::profile_config_chrono_show
             set autosave_en  $::profile_config_autosave_enabled
             set autosave_int [.profile_config.tab_misc.autosave_sec.interval.spin get]
+            set docs_dir    [.profile_config.tab_misc.behaviour_sec.fdocs.entry get]
+            set browser     $::profile_config_browser
+            set watch_file  $::profile_config_watch_file
+            set hemingway   $::profile_config_hemingway
+            set split_shrink $::profile_config_split_shrink
+            set cursor_restore $::profile_config_cursor_restore
             set status_l  [.profile_config.tab_display.statusbar_sec.fleft.entry get]
             set status_c  [.profile_config.tab_display.statusbar_sec.fcenter.entry get]
             set status_r  [.profile_config.tab_display.statusbar_sec.fright.entry get]
             set heading_m [.profile_config.tab_display.editor_sec.fhm.entry get]
+            set comment_m [.profile_config.tab_display.markup_sec.fcm.entry get]
+            set bold_m    [.profile_config.tab_display.markup_sec.fbm.entry get]
+            set italic_m  [.profile_config.tab_display.markup_sec.fim.entry get]
+            set under_m   [.profile_config.tab_display.markup_sec.fum.entry get]
+            set strike_m  [.profile_config.tab_display.markup_sec.fsm.entry get]
+            set md_heads  $::profile_config_markdown_headings
 
             if {$font eq "" || $size eq "" || $mw eq "" || $mh eq ""} return
 
@@ -4845,8 +5181,12 @@ proc profile-config-dialog {} {
             dict set ::cfg_profiles $profile margin_height $mh
             dict set ::cfg_profiles $profile word_goal $goal
             dict set ::cfg_profiles $profile dark_mode $dark
+            dict set ::cfg_profiles $profile line_spacing $line_spacing
+            dict set ::cfg_profiles $profile bar_height $bar_height
+            dict set ::cfg_profiles $profile line_numbers $line_numbers
+            dict set ::cfg_profiles $profile block_cursor_gui $block_cursor
+            dict set ::cfg_profiles $profile blink_cursor $blink_cursor
 
-            # Check if the profile being edited is currently active BEFORE changing ::cfg_profile
             set is_current_profile [expr {$profile eq $::cfg_profile}]
 
             set ::cfg_profile $def_prof
@@ -4859,14 +5199,25 @@ proc profile-config-dialog {} {
             set ::cfg_chrono_show $chrono_shw
             set ::cfg_autosave_enabled  $autosave_en
             set ::cfg_autosave_interval $autosave_int
+            set ::cfg_docs_dir          $docs_dir
+            set ::cfg_browser           $browser
+            set ::cfg_watch_file        $watch_file
+            set ::cfg_hemingway_mode    $hemingway
+            set ::cfg_split_shrink_margin $split_shrink
+            set ::cfg_cursor_restore    $cursor_restore
             if {$heading_m ne ""} { set ::cfg_heading_marker $heading_m }
+            set ::cfg_comment_marker        [marker-val $comment_m]
+            set ::cfg_bold_marker           [marker-val $bold_m]
+            set ::cfg_italic_marker         [marker-val $italic_m]
+            set ::cfg_underline_marker      [marker-val $under_m]
+            set ::cfg_strikethrough_marker  [marker-val $strike_m]
+            set ::cfg_markdown_headings     $md_heads
             set ::cfg_status_left   $status_l
             set ::cfg_status_center $status_c
             set ::cfg_status_right  $status_r
 
             ini-save
 
-            # Apply the selected scheme to update color variables
             scheme-apply $def_scheme
             lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ _ _ bg2
             set ::bg $bg
@@ -4876,7 +5227,6 @@ proc profile-config-dialog {} {
             set ::bg2 $bg2
             set ::bg_sel $bg_sel
 
-            # Apply profile if it was the currently active one
             if {$is_current_profile} {
                 profile-apply $profile
                 if {[info exists ::editor_open]} {
@@ -4891,7 +5241,6 @@ proc profile-config-dialog {} {
                 }
             }
 
-            # Apply theme to update all GUI colors
             apply-theme
 
             catch {trace remove variable ::profile_config_profile write}
@@ -4899,7 +5248,6 @@ proc profile-config-dialog {} {
             br-reload
         }
     pack $w.btns.apply -side left -padx 4
-
     button $w.btns.cancel -text [t profile_config_cancel] -font $::font_sm \
         -bg $::bg_bar -fg $::fg_bar -width 12 -command {
             catch {trace remove variable ::profile_config_profile write}
@@ -4917,7 +5265,7 @@ proc profile-config-dialog {} {
         catch {trace remove variable ::profile_config_profile write}
         destroy .profile_config
     }
-    focus $w.tab_profile.profile.ffont.entry
+    focus $w.tab_profile.profile.fprof.om
 }
 
 proc autosave-stop {} {
@@ -7377,6 +7725,36 @@ proc tui-editor {filepath {init_state {}}} {
                         puts -nonewline "\033\[2J\033\[H"; flush stdout
                         set wrap_dirty 1
                         set clear_sel 0
+                    } elseif {$key eq "b"} {
+                        set ::tui_cmd_mode 0
+                        set _rsl [expr {$_fswap==2 ? $lines : $split_r_lines}]
+                        set _rsd [expr {$_fswap==2 ? $dirty : $split_r_dirty}]
+                        set _rsf [expr {$_fswap==2 ? $filepath : $split_r_fp}]
+                        tui-split-save-right $split $::ws_n $_rsl $_rsd $_rsf
+                        lassign [tui-size] rows cols
+                        if {$dirty} {
+                            set r [tui-yesnocancel [t ed_save_before_tui] $rows $cols]
+                            if {$r eq "cancel"} {
+                                set clear_sel 0
+                            } else {
+                                if {$r eq "yes"} {
+                                    if {$filepath eq ""} {
+                                        tui-scratchpad-save $rows $cols lines filepath dirty
+                                    } else {
+                                        tui-save-file $filepath $lines
+                                    }
+                                }
+                                if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                                if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
+                                    set ::session_file ""; return
+                                }
+                            }
+                        } else {
+                            if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                            if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
+                                set ::session_file ""; return
+                            }
+                        }
                     } elseif {$key ne ""} {
                         # Any non-empty key exits command mode
                         set ::tui_cmd_mode 0
@@ -7386,7 +7764,7 @@ proc tui-editor {filepath {init_state {}}} {
                     }
                 } elseif {$key eq $::cfg_tui_cmd_mode} {
                     set ::tui_cmd_mode 1
-                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  q: quit  s: stats  w: words"
+                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words"
                     set msg_time [clock seconds]
                     set clear_sel 0
                 } elseif {$key eq $::cfg_tui_close} {
