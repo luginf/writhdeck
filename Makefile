@@ -7,6 +7,7 @@
 #   make LANGUAGES="en fr de es"                      # GUI: specific languages
 #   make CLI_LANGUAGES="en fr de es ko no"            # CLI: specific languages (by default: en fr)
 #   make SCHEMES="default solarized gruvbox"          # GUI: specific schemes (by default: all)
+#   make GUI_CONFIG=no                                # GUI: omit config dialog (~700 lines saved)
 #   make CLI_SCHEMES="default alt01"                  # CLI: specific schemes (by default: default alt01)
 #
 # Typical builds:
@@ -28,7 +29,9 @@ GUI_SCHEME_FILES := $(patsubst %,src/schemes/%.tcl,$(SCHEMES))
 CLI_SCHEME_FILES := $(patsubst %,src/schemes/%.tcl,$(CLI_SCHEMES))
 SEP       := ===========================================================================
 
-GUI_SRCS  := src/state.tcl src/config.tcl $(GUI_SCHEME_FILES) src/common.tcl src/gui.tcl src/tui.tcl src/main.tcl
+GUI_CONFIG ?= yes
+GUI_CONFIG_SRC := $(if $(filter yes,$(GUI_CONFIG)),src/gui-config.tcl,)
+GUI_SRCS  := src/state.tcl src/config.tcl $(GUI_SCHEME_FILES) src/common.tcl $(GUI_CONFIG_SRC) src/gui.tcl src/tui.tcl src/main.tcl
 CLI_SRCS  := src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl src/tui.tcl src/main-cli.tcl
 JIM_SRCS  := src/compat-jim.tcl src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl src/tui.tcl src/main-cli.tcl
 
@@ -53,6 +56,7 @@ writhdeck.tcl: src/boot.tcl $(GUI_SRCS) $(GUI_I18N_FILES) Makefile
 	@for f in $(GUI_I18N_FILES); do cat $$f >> $@; done
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "common.tcl" "$(SEP)" >> $@
 	@cat src/common.tcl >> $@
+	@for f in $(GUI_CONFIG_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "gui-config.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "gui.tcl" "$(SEP)" >> $@
 	@cat src/gui.tcl >> $@
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "tui.tcl" "$(SEP)" >> $@
@@ -60,7 +64,7 @@ writhdeck.tcl: src/boot.tcl $(GUI_SRCS) $(GUI_I18N_FILES) Makefile
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "main.tcl" "$(SEP)" >> $@
 	@cat src/main.tcl >> $@
 	@chmod +x $@
-	@echo "Built $@ (GUI+TUI, languages: $(GUI_LANGS), schemes: $(SCHEMES))"
+	@echo "Built $@ (GUI+TUI, languages: $(GUI_LANGS), schemes: $(SCHEMES)$(if $(GUI_CONFIG_SRC),, no-config))"
 
 writhdeck-cli.tcl: src/boot-cli.tcl $(CLI_SRCS) $(CLI_I18N_FILES) Makefile
 	@rm -f $@

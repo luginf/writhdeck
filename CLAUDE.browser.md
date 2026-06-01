@@ -21,26 +21,30 @@ Current browser keys (12 total): h (help), n (new), t (scratchpad), f (favorite)
 
 ## Profile configuration dialog
 
-Accessible via `c` key in browser. Invoked by `profile-config-dialog` proc. Four tabs: **Profile**, **Timer**, **Misc**, **Display**.
+Accessible via `c` key in browser. Invoked by `profile-config-dialog` proc. **Five tabs: Profile, Fonts, Timer, Misc, Display.** Defined in `src/gui-config.tcl` (optional module — excluded with `make GUI_CONFIG=no`).
 
-- **Profile tab**: Dropdown to select active profile + scheme + language; controls for font family (listbox), font size (spinbox), margin width/height (spinbox), word goal, dark mode, line spacing (%), bar height, line numbers, block cursor, blinking cursor
+- **Profile tab**: Global settings (default profile/scheme/language); per-profile: margin width/height, word goal, dark mode, line spacing (%), bar height, line numbers, block cursor, blinking cursor
+- **Fonts tab**: Per-profile font family (entry + available fonts listbox with scrollbar), font preview label (initialized with current font/size on open and on profile switch), font size spinbox
 - **Timer tab**: Type (countdown/stopwatch), duration (spinbox), sound at end (checkbox), alert message (checkbox), show in status bar (checkbox)
 - **Misc tab**: Autosave enabled/interval; Behaviour section: documents folder (entry + Browse button), browser on start, watch file, Hemingway mode, split shrink margin, cursor restore
 - **Display tab**: Status bar zones (left/center/right entries); Editor section (heading marker); Markup section (comment/bold/italic/underline/strikethrough markers, markdown headings)
-- **Apply button**: Saves all tabs to globals + `ini-save`, applies theme, triggers `br-reload`
+- **Apply button**: Packed before tab content via `pack -before` so it stays visible at top; saves all tabs to globals + `ini-save`, applies theme, triggers `br-reload`
 
-Tab switching via `config-tab-switch {w tab}` — `pack forget` all frames, `pack` the active one, update button appearance. Tabs: `profile`, `timer`, `misc`, `display`.
+Tab switching via `config-tab-switch {w tab}` — `pack forget` all frames, `pack` the active one, update button appearance. Tabs: `profile`, `fonts`, `timer`, `misc`, `display`.
 
 Per-profile configuration stored in `::cfg_profiles` dict (keys: `font_family`, `font_size`, `margin_width`, `margin_height`, `word_goal`, `dark_mode`, `line_spacing`, `bar_height`, `line_numbers`, `block_cursor_gui`, `blink_cursor`). Values persist via `.writhdeck.json`.
 
-Profile values loaded on profile switch via `profile-config-update-profile {w}` — reads each key from the profile dict, falls back to global if absent.
+Profile values loaded on profile switch via `profile-config-update-profile {w}` — reads each key from the profile dict, falls back to global if absent. Also updates the font preview label.
 
 Key implementation details:
-- `-command` option on spinbox to trigger font preview updates on button clicks (not just keyboard entry)
+- Both Profile tab and Fonts tab have a profile selector linked to the same `::profile_config_profile` variable
+- Font preview (`$w.tab_fonts.preview`) updated in `profile-config-update-profile` and on listbox select / entry KeyRelease / spinbox command
+- `-command` option on font size spinbox to trigger preview updates on button clicks
 - `profile-config-update-profile` called on initial load and on profile dropdown change (via trace)
 - Markup marker entries use `marker-val` on load (shows empty string for disabled markers) and on save
 - docs_dir Browse button uses `tk_chooseDirectory`, stores path with `~` substitution for HOME
 - Dialog created inside a toplevel window, destroyed after user closes
+- `c` shortcut and `bind .br.mid.lst <c>` guarded with `[info procs profile-config-dialog] ne ""` — absent when `GUI_CONFIG=no`
 
 **TUI config dialog** (`tui-config-dialog`) — same two functional tabs (Timer, Misc); TAB key switches tabs; `\033[2J` on tab switch to clear stale lines from previous tab; UP/DOWN navigate fields, LEFT/RIGHT/SPACE adjust values, `s` saves, `q` cancels.
 
