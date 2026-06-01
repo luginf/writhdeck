@@ -4540,6 +4540,7 @@ proc profile-config-update-profile {w} {
         set cur_size [dict get $::cfg_profiles $profile font_size]
     }
     $w.tab_fonts.fsize.spin set $cur_size
+    catch {$w.tab_fonts.preview configure -font [list $cur_font $cur_size] -text "Sample Text - $cur_font"}
 
     set cur_mw $::cfg_margin_width
     if {[dict exists $::cfg_profiles $profile margin_width]} {
