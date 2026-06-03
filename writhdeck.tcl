@@ -1506,6 +1506,22 @@ dict set ::i18n en {
     config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "Editor"
     config_heading_marker  "Heading marker:"
+    config_tab_schemes     "Schemes"
+    config_scheme_select   "Scheme:"
+    config_scheme_new      "New"
+    config_scheme_delete   "Delete"
+    config_scheme_dark     "Dark"
+    config_scheme_light    "Light"
+    config_scheme_save     "Save"
+    config_color_bg        "Background"
+    config_color_fg        "Text"
+    config_color_bg_bar    "Bar BG"
+    config_color_fg_bar    "Bar text"
+    config_color_bg_sel    "Selection"
+    config_color_heading   "Heading"
+    config_color_comment   "Comment"
+    config_color_markup    "Markup"
+    config_color_bg2       "Frame BG"
 }
 
 dict set ::i18n de {
@@ -1656,6 +1672,22 @@ dict set ::i18n de {
     config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "Editor"
     config_heading_marker  "Uberschrift-Marker:"
+    config_tab_schemes     "Schemata"
+    config_scheme_select   "Schema:"
+    config_scheme_new      "Neu"
+    config_scheme_delete   "Loschen"
+    config_scheme_dark     "Dunkel"
+    config_scheme_light    "Hell"
+    config_scheme_save     "Speichern"
+    config_color_bg        "Hintergrund"
+    config_color_fg        "Text"
+    config_color_bg_bar    "Leiste HG"
+    config_color_fg_bar    "Leiste Text"
+    config_color_bg_sel    "Auswahl"
+    config_color_heading   "Uberschrift"
+    config_color_comment   "Kommentar"
+    config_color_markup    "Auszeichnung"
+    config_color_bg2       "Rahmen HG"
 }
 
 dict set ::i18n es {
@@ -1806,6 +1838,22 @@ dict set ::i18n es {
     config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "Editor"
     config_heading_marker  "Marcador de titulo:"
+    config_tab_schemes     "Esquemas"
+    config_scheme_select   "Esquema:"
+    config_scheme_new      "Nuevo"
+    config_scheme_delete   "Eliminar"
+    config_scheme_dark     "Oscuro"
+    config_scheme_light    "Claro"
+    config_scheme_save     "Guardar"
+    config_color_bg        "Fondo"
+    config_color_fg        "Texto"
+    config_color_bg_bar    "Barra fondo"
+    config_color_fg_bar    "Barra texto"
+    config_color_bg_sel    "Seleccion"
+    config_color_heading   "Titulo"
+    config_color_comment   "Comentario"
+    config_color_markup    "Marcado"
+    config_color_bg2       "Marco fondo"
 }
 
 dict set ::i18n fr {
@@ -1956,6 +2004,22 @@ dict set ::i18n fr {
     config_statusbar_tokens "Tokens : workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "Editeur"
     config_heading_marker  "Marqueur de titre :"
+    config_tab_schemes     "Schemas"
+    config_scheme_select   "Schema :"
+    config_scheme_new      "Nouveau"
+    config_scheme_delete   "Supprimer"
+    config_scheme_dark     "Sombre"
+    config_scheme_light    "Clair"
+    config_scheme_save     "Sauvegarder"
+    config_color_bg        "Fond"
+    config_color_fg        "Texte"
+    config_color_bg_bar    "Fond barre"
+    config_color_fg_bar    "Texte barre"
+    config_color_bg_sel    "Selection"
+    config_color_heading   "Titre"
+    config_color_comment   "Commentaire"
+    config_color_markup    "Balisage"
+    config_color_bg2       "Fond cadre"
 }
 
 dict set ::i18n ko {
@@ -2106,6 +2170,22 @@ dict set ::i18n ko {
     config_statusbar_tokens "토큰: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "편집기"
     config_heading_marker  "제목 마커:"
+    config_tab_schemes     "색상 구성표"
+    config_scheme_select   "구성표:"
+    config_scheme_new      "새로"
+    config_scheme_delete   "삭제"
+    config_scheme_dark     "어둡게"
+    config_scheme_light    "밝게"
+    config_scheme_save     "저장"
+    config_color_bg        "배경"
+    config_color_fg        "텍스트"
+    config_color_bg_bar    "바 배경"
+    config_color_fg_bar    "바 텍스트"
+    config_color_bg_sel    "선택"
+    config_color_heading   "제목"
+    config_color_comment   "주석"
+    config_color_markup    "마크업"
+    config_color_bg2       "프레임 배경"
 }
 
 dict set ::i18n no {
@@ -2256,6 +2336,22 @@ dict set ::i18n no {
     config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
     config_editor_section  "Editor"
     config_heading_marker  "Overskrift-markering:"
+    config_tab_schemes     "Fargeskkjema"
+    config_scheme_select   "Skjema:"
+    config_scheme_new      "Ny"
+    config_scheme_delete   "Slett"
+    config_scheme_dark     "Mork"
+    config_scheme_light    "Lys"
+    config_scheme_save     "Lagre"
+    config_color_bg        "Bakgrunn"
+    config_color_fg        "Tekst"
+    config_color_bg_bar    "Linje BG"
+    config_color_fg_bar    "Linje tekst"
+    config_color_bg_sel    "Valg"
+    config_color_heading   "Overskrift"
+    config_color_comment   "Kommentar"
+    config_color_markup    "Markup"
+    config_color_bg2       "Ramme BG"
 }
 
 
@@ -4391,6 +4487,123 @@ proc bind-cmd-mode {w} {
 }
 bind-cmd-mode .ed.t
 
+proc scheme-config-color-keys {dark} {
+    if {$dark} {
+        return {color_bg color_fg color_bg_bar color_fg_bar color_bg_sel \
+                color_heading color_comment color_markup color_bg2}
+    } else {
+        return {color_bg_alt color_fg_alt color_bg_bar_alt color_fg_bar_alt color_bg_sel_alt \
+                color_heading_alt color_comment_alt color_markup_alt color_bg2_alt}
+    }
+}
+
+proc scheme-config-populate {} {
+    set w .profile_config
+    if {![winfo exists $w.tab_schemes.colors.row0]} return
+    set scheme $::scheme_edit_name
+    if {![dict exists $::cfg_schemes $scheme]} return
+    set d [dict get $::cfg_schemes $scheme]
+    set keys [scheme-config-color-keys $::scheme_edit_dark]
+    set i 0
+    foreach key $keys {
+        set row $w.tab_schemes.colors.row$i
+        set val [expr {[dict exists $d $key] ? [dict get $d $key] : ""}]
+        $row.ent delete 0 end
+        $row.ent insert 0 $val
+        catch { $row.swatch configure -bg $val }
+        incr i
+    }
+    if {$::scheme_edit_dark} {
+        $w.tab_schemes.dl.dark  configure -fg $::fg     -bg $::bg_sel
+        $w.tab_schemes.dl.light configure -fg $::fg_bar -bg $::bg
+    } else {
+        $w.tab_schemes.dl.dark  configure -fg $::fg_bar -bg $::bg
+        $w.tab_schemes.dl.light configure -fg $::fg     -bg $::bg_sel
+    }
+}
+
+proc scheme-color-pick {row_idx} {
+    set w .profile_config
+    set row $w.tab_schemes.colors.row$row_idx
+    set cur [$row.ent get]
+    if {![regexp {^#[0-9a-fA-F]{6}$} $cur]} { set cur "#808080" }
+    set new [tk_chooseColor -initialcolor $cur -title "Pick color" -parent $w]
+    if {$new eq ""} return
+    $row.ent delete 0 end
+    $row.ent insert 0 $new
+    catch { $row.swatch configure -bg $new }
+}
+
+proc scheme-config-save {} {
+    set w .profile_config
+    set scheme $::scheme_edit_name
+    if {$scheme eq ""} return
+    set keys [scheme-config-color-keys $::scheme_edit_dark]
+    set i 0
+    foreach key $keys {
+        set row $w.tab_schemes.colors.row$i
+        set val [string trim [$row.ent get]]
+        if {$val ne ""} { dict set ::cfg_schemes $scheme $key $val }
+        incr i
+    }
+    ini-save
+    if {$scheme eq $::cfg_scheme} { scheme-apply $scheme; apply-theme }
+}
+
+proc scheme-config-rebuild-selector {} {
+    set w .profile_config
+    set slist [lsort [dict keys $::cfg_schemes]]
+
+    # Rebuild the Schemes tab selector
+    set cur $::scheme_edit_name
+    catch {destroy $w.tab_schemes.top.sel_om}
+    tk_optionMenu $w.tab_schemes.top.sel_om ::scheme_edit_name {*}$slist
+    $w.tab_schemes.top.sel_om configure -bg $::bg_bar -fg $::fg_bar \
+        -activebackground $::bg_sel -activeforeground $::fg \
+        -borderwidth 1 -highlightthickness 0
+    pack $w.tab_schemes.top.sel_om -after $w.tab_schemes.top.sel_lbl \
+        -side left -padx {4 0}
+    if {$cur ni $slist} { set ::scheme_edit_name [lindex $slist 0] }
+
+    # Also rebuild the Profile tab's "Default color scheme" dropdown
+    set cur_def $::profile_config_default_scheme
+    catch {destroy $w.tab_profile.global.fscheme.om}
+    tk_optionMenu $w.tab_profile.global.fscheme.om ::profile_config_default_scheme {*}$slist
+    $w.tab_profile.global.fscheme.om configure -bg $::bg_bar -fg $::fg_bar \
+        -activebackground $::bg_sel -activeforeground $::fg -borderwidth 1 -highlightthickness 0
+    pack $w.tab_profile.global.fscheme.om -anchor w
+    if {$cur_def ni $slist} { set ::profile_config_default_scheme [lindex $slist 0] }
+}
+
+proc scheme-config-new {} {
+    set name [string trim [input-dialog "New scheme" "Scheme name:"]]
+    if {$name eq ""} return
+    if {[dict exists $::cfg_schemes $name]} {
+        info-dialog "A scheme named \"$name\" already exists."
+        return
+    }
+    set src $::scheme_edit_name
+    if {[dict exists $::cfg_schemes $src]} {
+        dict set ::cfg_schemes $name [dict get $::cfg_schemes $src]
+    } else {
+        dict set ::cfg_schemes $name {}
+    }
+    scheme-config-rebuild-selector
+    set ::scheme_edit_name $name
+    scheme-config-populate
+}
+
+proc scheme-config-delete {} {
+    set name $::scheme_edit_name
+    if {$name eq "default"} { info-dialog "Cannot delete the default scheme."; return }
+    if {[confirm-dialog "Delete scheme \"$name\"?"] ne "yes"} return
+    dict unset ::cfg_schemes $name
+    ini-save
+    set ::scheme_edit_name "default"
+    scheme-config-rebuild-selector
+    scheme-config-populate
+}
+
 proc profile-config-update-profile {w} {
     set profile $::profile_config_profile
     if {$profile eq ""} return
@@ -4438,11 +4651,12 @@ proc profile-config-update-profile {w} {
 }
 
 proc config-tab-switch {w tab} {
-    pack forget $w.tab_profile $w.tab_timer $w.tab_misc $w.tab_display
+    pack forget $w.tab_profile $w.tab_timer $w.tab_misc $w.tab_display $w.tab_schemes
     $w.tabs.profile configure -fg $::fg_bar -bg $::bg
     $w.tabs.timer   configure -fg $::fg_bar -bg $::bg
     $w.tabs.misc    configure -fg $::fg_bar -bg $::bg
     $w.tabs.display configure -fg $::fg_bar -bg $::bg
+    $w.tabs.schemes configure -fg $::fg_bar -bg $::bg
     if {$tab eq "profile"} {
         pack $w.tab_profile -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.profile configure -fg $::fg -bg $::bg_sel
@@ -4452,6 +4666,9 @@ proc config-tab-switch {w tab} {
     } elseif {$tab eq "display"} {
         pack $w.tab_display -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.display configure -fg $::fg -bg $::bg_sel
+    } elseif {$tab eq "schemes"} {
+        pack $w.tab_schemes -fill both -expand 1 -padx 8 -pady 8
+        $w.tabs.schemes configure -fg $::fg -bg $::bg_sel
     } else {
         pack $w.tab_misc -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.misc configure -fg $::fg -bg $::bg_sel
@@ -4493,16 +4710,20 @@ proc profile-config-dialog {} {
         -command "config-tab-switch $w misc" -borderwidth 1 -relief raised -padx 12 -pady 4
     button $w.tabs.display -text [t config_tab_display] -font $::font_sm -fg $::fg_bar -bg $::bg \
         -command "config-tab-switch $w display" -borderwidth 1 -relief raised -padx 12 -pady 4
+    button $w.tabs.schemes -text [t config_tab_schemes] -font $::font_sm -fg $::fg_bar -bg $::bg \
+        -command "config-tab-switch $w schemes" -borderwidth 1 -relief raised -padx 12 -pady 4
     pack $w.tabs.profile -side left -padx 2
     pack $w.tabs.timer -side left -padx 2
     pack $w.tabs.misc -side left -padx 2
     pack $w.tabs.display -side left -padx 2
+    pack $w.tabs.schemes -side left -padx 2
 
     # --- Tab content frames ---
     frame $w.tab_profile -bg $::bg
     frame $w.tab_timer -bg $::bg
     frame $w.tab_misc -bg $::bg
     frame $w.tab_display -bg $::bg
+    frame $w.tab_schemes -bg $::bg
     pack $w.tab_profile -fill both -expand 1 -padx 8 -pady 8
 
     # --- Profile tab content ---
@@ -4793,6 +5014,73 @@ proc profile-config-dialog {} {
     $w.tab_display.statusbar_sec.fright.entry insert 0 $::cfg_status_right
     $w.tab_display.editor_sec.fhm.entry insert 0 $::cfg_heading_marker
 
+    # --- Schemes tab content ---
+    frame $w.tab_schemes.top -bg $::bg
+    pack $w.tab_schemes.top -fill x -pady {0 4}
+    label $w.tab_schemes.top.sel_lbl -text [t config_scheme_select] -font $::font_sm \
+        -bg $::bg -fg $::fg -anchor w
+    set ::scheme_edit_name $::cfg_scheme
+    tk_optionMenu $w.tab_schemes.top.sel_om ::scheme_edit_name {*}$schemes
+    $w.tab_schemes.top.sel_om configure -bg $::bg_bar -fg $::fg_bar \
+        -activebackground $::bg_sel -activeforeground $::fg -borderwidth 1 -highlightthickness 0
+    button $w.tab_schemes.top.new_btn -text [t config_scheme_new] -font $::font_sm \
+        -bg $::bg_bar -fg $::fg_bar -padx 6 -command scheme-config-new
+    button $w.tab_schemes.top.del_btn -text [t config_scheme_delete] -font $::font_sm \
+        -bg $::bg_bar -fg $::fg_bar -padx 6 -command scheme-config-delete
+    pack $w.tab_schemes.top.sel_lbl  -side left -padx {0 4}
+    pack $w.tab_schemes.top.sel_om   -side left -padx {0 4}
+    pack $w.tab_schemes.top.new_btn  -side left -padx 2
+    pack $w.tab_schemes.top.del_btn  -side left -padx 2
+
+    frame $w.tab_schemes.dl -bg $::bg
+    pack $w.tab_schemes.dl -fill x -pady 4
+    set ::scheme_edit_dark 1
+    button $w.tab_schemes.dl.dark -text [t config_scheme_dark] -font $::font_sm \
+        -fg $::fg -bg $::bg_sel -borderwidth 1 -relief raised -padx 8 \
+        -command {set ::scheme_edit_dark 1; scheme-config-populate}
+    button $w.tab_schemes.dl.light -text [t config_scheme_light] -font $::font_sm \
+        -fg $::fg_bar -bg $::bg -borderwidth 1 -relief raised -padx 8 \
+        -command {set ::scheme_edit_dark 0; scheme-config-populate}
+    pack $w.tab_schemes.dl.dark  -side left -padx {0 2}
+    pack $w.tab_schemes.dl.light -side left -padx 2
+
+    frame $w.tab_schemes.colors -bg $::bg
+    pack $w.tab_schemes.colors -fill x
+    set _scheme_labels [list \
+        [t config_color_bg] [t config_color_fg] [t config_color_bg_bar] [t config_color_fg_bar] \
+        [t config_color_bg_sel] [t config_color_heading] [t config_color_comment] \
+        [t config_color_markup] [t config_color_bg2]]
+    set _row_i 0
+    foreach _lbl $_scheme_labels {
+        set _r $w.tab_schemes.colors.row${_row_i}
+        frame $_r -bg $::bg
+        pack $_r -fill x -padx 12 -pady 2
+        label $_r.lbl -text "${_lbl}:" -font $::font_sm -width 14 -anchor w \
+            -bg $::bg -fg $::fg
+        button $_r.swatch -width 3 -height 1 -relief raised -borderwidth 1 \
+            -bg $::bg_bar -command [list scheme-color-pick $_row_i]
+        entry $_r.ent -width 10 -font $::font_sm -bg $::bg_bar -fg $::fg \
+            -insertbackground $::fg
+        bind $_r.ent <KeyRelease> [list apply {{r} {
+            set v [string trim [$r.ent get]]
+            if {[regexp {^#[0-9a-fA-F]{6}$} $v]} { catch {$r.swatch configure -bg $v} }
+        }} $_r]
+        pack $_r.lbl    -side left
+        pack $_r.swatch -side left -padx {4 2}
+        pack $_r.ent    -side left
+        incr _row_i
+    }
+    unset _row_i _lbl _r _scheme_labels
+
+    frame $w.tab_schemes.btns -bg $::bg
+    pack $w.tab_schemes.btns -fill x -pady {8 0}
+    button $w.tab_schemes.btns.save -text [t config_scheme_save] -font $::font_sm \
+        -bg $::bg_bar -fg $::fg_bar -padx 10 -command scheme-config-save
+    pack $w.tab_schemes.btns.save -side left -padx 12
+
+    trace add variable ::scheme_edit_name write [list apply {{a b c} {scheme-config-populate}}]
+    scheme-config-populate
+
     # Load timer values from config
     set ::profile_config_timer_sound $::cfg_timer_sound
     set ::profile_config_timer_alert $::cfg_timer_alert
@@ -4895,6 +5183,7 @@ proc profile-config-dialog {} {
             apply-theme
 
             catch {trace remove variable ::profile_config_profile write}
+            catch {trace remove variable ::scheme_edit_name write}
             destroy .profile_config
             br-reload
         }
@@ -4903,10 +5192,12 @@ proc profile-config-dialog {} {
     button $w.btns.cancel -text [t profile_config_cancel] -font $::font_sm \
         -bg $::bg_bar -fg $::fg_bar -width 12 -command {
             catch {trace remove variable ::profile_config_profile write}
+            catch {trace remove variable ::scheme_edit_name write}
             destroy .profile_config
         }
     pack $w.btns.cancel -side left -padx 4
 
+    pack configure $w.btns -before $w.tab_profile
     update
     set geom [wm geometry $w]
     set width [string range $geom 0 [string first x $geom]-1]
@@ -4915,6 +5206,7 @@ proc profile-config-dialog {} {
     grab $w
     bind $w <Escape> {
         catch {trace remove variable ::profile_config_profile write}
+        catch {trace remove variable ::scheme_edit_name write}
         destroy .profile_config
     }
     focus $w.tab_profile.profile.ffont.entry
