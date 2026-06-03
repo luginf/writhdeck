@@ -1,0 +1,3047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Writhdeck</title>
+<style>
+/* CSS custom properties — set by JS via applyTheme() */
+:root {
+  --bg:      #1a1a1a;
+  --fg:      #e8e8e8;
+  --bg-bar:  #2a2a2a;
+  --fg-bar:  #aaaaaa;
+  --bg-sel:  #3a5a8a;
+  --heading: #c8a060;
+  --comment: #606060;
+  --markup:  #6aa9d4;
+  --bg2:     #1a1a1a;
+
+  --font-family:   monospace;
+  --font-size:     14px;
+  --line-spacing:  1.5;
+  --margin-x:      80px;
+  --margin-y:      40px;
+  --bar-height:    28px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg2);
+  color: var(--fg);
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+}
+
+button {
+  cursor: pointer;
+  background: var(--bg-bar);
+  color: var(--fg-bar);
+  border: 1px solid transparent;
+  padding: 2px 8px;
+  font: inherit;
+  font-size: 0.85em;
+}
+button:hover { border-color: var(--fg-bar); }
+
+input[type="text"], input[type="number"], select, textarea {
+  background: var(--bg-bar);
+  color: var(--fg);
+  border: 1px solid var(--fg-bar);
+  font: inherit;
+  padding: 2px 6px;
+}
+input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid var(--fg-bar); }
+
+/* ─── Browser ──────────────────────────────────────────────────────────── */
+#browser {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+}
+#browser[hidden] { display: none; }
+
+#br-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-bar);
+  flex-shrink: 0;
+}
+#br-title { font-size: 1.1em; font-weight: bold; color: var(--fg); }
+#br-header-btns { display: flex; gap: 4px; }
+#br-new-btn, #br-import-btn { font-size: 1.1em; padding: 0 8px; }
+
+#br-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.br-section-header {
+  padding: 6px 12px 2px;
+  font-size: 0.75em;
+  color: var(--fg-bar);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.br-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px;
+  cursor: pointer;
+  gap: 8px;
+}
+.br-item:hover { background: var(--bg-bar); }
+.br-item.selected { background: var(--bg-sel); color: var(--fg); }
+.br-item-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.br-item-meta { font-size: 0.75em; color: var(--fg-bar); white-space: nowrap; }
+.br-item-pin { font-size: 0.8em; color: var(--fg-bar); opacity: 0.6; }
+.br-item-pin.active { color: var(--heading); opacity: 1; }
+
+#br-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--bg-bar);
+  border-top: 1px solid var(--bg2);
+  flex-shrink: 0;
+}
+.br-shortcut {
+  font-size: 0.75em;
+  color: var(--fg-bar);
+  cursor: pointer;
+  padding: 1px 4px;
+}
+.br-shortcut:hover { color: var(--fg); }
+.br-shortcut-key { color: var(--fg); }
+
+/* ─── Editor ────────────────────────────────────────────────────────────── */
+#editor {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg2);
+}
+#editor[hidden] { display: none; }
+
+#ed-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 2px 8px;
+  background: var(--bg-bar);
+  flex-shrink: 0;
+  min-height: var(--bar-height);
+}
+#ed-actions { display: flex; gap: 2px; }
+#ed-actions button { padding: 2px 6px; font-size: 0.9em; }
+#ed-toc-btn.active { color: var(--fg); border-color: var(--heading); }
+
+#ed-body {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* Editor wrap — takes remaining width */
+#ed-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* Line numbers */
+#ed-linenos {
+  flex-shrink: 0;
+  width: 40px;
+  background: var(--bg-bar);
+  border-right: 1px solid var(--bg2);
+  overflow: hidden;
+  text-align: right;
+  padding: var(--margin-y) 6px;
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+  line-height: var(--line-spacing);
+  color: var(--fg-bar);
+  user-select: none;
+  pointer-events: none;
+  white-space: pre;
+}
+#ed-linenos[hidden] { display: none; }
+
+/* Typewriter mode — subtle indicator on status bar */
+#editor.typewriter #ed-bar { border-top: 2px solid var(--heading); }
+
+/* TOC side panel */
+#toc-panel {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-bar);
+  border-left: 1px solid var(--bg2);
+  overflow: hidden;
+}
+#toc-panel[hidden] { display: none; }
+
+#toc-panel-header {
+  padding: 6px 12px;
+  font-size: 0.75em;
+  color: var(--fg-bar);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--bg2);
+  flex-shrink: 0;
+}
+
+#ed-highlight,
+#ed-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+  line-height: var(--line-spacing);
+  padding: var(--margin-y) var(--margin-x);
+  margin: 0;
+  border: none;
+  outline: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  tab-size: 4;
+}
+
+#ed-highlight {
+  background: transparent;
+  color: transparent;
+  pointer-events: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+#ed-input {
+  background: transparent;
+  color: var(--fg);
+  caret-color: var(--fg);
+  resize: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 1;
+  selection-color: var(--bg-sel);
+}
+#ed-input::selection { background: var(--bg-sel); }
+
+/* highlight spans */
+.hl-heading  { color: var(--heading); font-weight: bold; }
+.hl-comment  { color: var(--comment); }
+.hl-markup   { color: var(--markup); }
+
+/* Search bar */
+#search-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--bg-bar);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+#search-bar[hidden] { display: none; }
+#search-input, #replace-input { width: 200px; }
+#search-count { font-size: 0.8em; color: var(--fg-bar); min-width: 80px; }
+
+/* Status bar */
+#ed-bar {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: var(--bg-bar);
+  color: var(--fg-bar);
+  font-size: 0.8em;
+  min-height: var(--bar-height);
+  flex-shrink: 0;
+  gap: 8px;
+}
+#ed-bar-left  { flex: 1; }
+#ed-bar-center { text-align: center; flex: 1; }
+#ed-bar-right { text-align: right; flex: 1; }
+
+/* Export menu */
+#export-menu {
+  position: fixed;
+  right: 8px;
+  top: 40px;
+  background: var(--bg-bar);
+  border: 1px solid var(--fg-bar);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+#export-menu[hidden] { display: none; }
+#export-menu button { text-align: left; padding: 6px 16px; border: none; }
+#export-menu button:hover { background: var(--bg-sel); color: var(--fg); }
+
+/* ─── Dialogs ───────────────────────────────────────────────────────────── */
+dialog {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--fg-bar);
+  padding: 0;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+}
+dialog::backdrop { background: rgba(0,0,0,0.5); }
+
+/* Settings */
+#settings-dlg { width: 520px; }
+#settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  background: var(--bg-bar);
+  padding: 4px 8px 0;
+  gap: 2px;
+}
+.stab {
+  padding: 4px 10px;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--fg-bar);
+  font-size: 0.85em;
+}
+.stab.active { color: var(--fg); border-bottom-color: var(--heading); }
+#settings-body { padding: 16px; max-height: 65vh; overflow-y: auto; }
+.stab-content { display: none; }
+.stab-content.active { display: flex; flex-direction: column; gap: 10px; }
+.stab-content label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.9em;
+}
+.stab-content label input[type="checkbox"] { margin-right: auto; }
+.hint { font-size: 0.75em; color: var(--fg-bar); }
+.hint-label { flex-direction: column; align-items: flex-start !important; }
+#settings-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-bar);
+}
+
+/* Font list */
+#font-preview-wrap { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+#font-preview {
+  font-size: 1.1em;
+  color: var(--fg);
+  padding: 4px 0;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#font-list {
+  max-height: 160px;
+  overflow-y: auto;
+  border: 1px solid var(--fg-bar);
+  font-size: 0.85em;
+}
+.font-item {
+  padding: 3px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.font-item:hover { background: var(--bg-bar); }
+.font-item.selected { background: var(--bg-sel); color: var(--fg); }
+
+/* Scheme colors grid */
+#scheme-colors {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 8px;
+  align-items: center;
+  font-size: 0.85em;
+  margin-top: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+/* TOC */
+#toc-dlg { width: 360px; }
+#toc-header, #stats-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-bar);
+}
+#toc-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+.toc-item {
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 0.85em;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.toc-item:hover { background: var(--bg-sel); }
+.toc-item.level-2 { padding-left: 22px; color: var(--fg-bar); }
+.toc-item.level-3 { padding-left: 32px; color: var(--fg-bar); font-size: 0.8em; }
+
+/* Info */
+#info-dlg { width: 380px; }
+#info-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; background: var(--bg-bar);
+}
+#info-body { padding: 16px; font-size: 0.9em; }
+.info-row { display: flex; gap: 12px; padding: 4px 0; border-bottom: 1px solid var(--bg-bar); }
+.info-label { color: var(--fg-bar); min-width: 100px; }
+.info-value { color: var(--fg); word-break: break-all; }
+.info-storage-disk    { color: var(--heading); }
+.info-storage-browser { color: var(--markup); }
+
+/* Stats */
+#stats-dlg { width: 400px; }
+#stats-body { padding: 12px; max-height: 60vh; overflow-y: auto; }
+.stats-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+.stats-table th, .stats-table td { padding: 4px 8px; text-align: left; }
+.stats-table th { color: var(--fg-bar); border-bottom: 1px solid var(--bg-bar); }
+.stats-doc-name { color: var(--heading); font-weight: bold; margin-top: 12px; margin-bottom: 4px; }
+
+/* Timer alert */
+#timer-alert-dlg { text-align: center; padding: 24px 32px; }
+#timer-alert-dlg p { font-size: 1.2em; margin-bottom: 16px; }
+
+/* Scrollbar styling (webkit) */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--bg-bar); }
+
+</style>
+</head>
+<body>
+
+<!-- Browser panel -->
+<div id="browser">
+  <div id="br-header">
+    <span id="br-title">Writhdeck</span>
+    <div id="br-header-btns">
+      <button id="br-folder-btn"  title="Watch a folder — all files editable in place (w)">dir</button>
+      <button id="br-opendisk-btn" title="Open a file from disk — edit in place (o)">file</button>
+      <button id="br-import-btn" title="Import copy of file (Ctrl+O)">↑</button>
+      <button id="br-new-btn" title="New document (n)">+</button>
+    </div>
+  </div>
+  <div id="br-list"></div>
+  <div id="br-bar"></div>
+</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="file-import-input" accept=".txt,.md,.tcl,.text" hidden multiple>
+<input type="file" id="ini-import-input"  accept=".ini,.txt" hidden>
+
+<!-- Editor panel -->
+<div id="editor" hidden>
+  <div id="ed-header">
+    <div id="ed-actions">
+      <button id="ed-toc-btn" title="Table of contents (F11)">≡</button>
+      <button id="ed-export-btn" title="Export">↓</button>
+      <button id="ed-settings-btn" title="Settings (c)">⚙</button>
+      <button id="ed-close-btn" title="Back to browser (Ctrl+Q / Esc)">✕</button>
+    </div>
+  </div>
+  <div id="ed-body">
+    <div id="ed-linenos" hidden></div>
+    <div id="ed-wrap">
+      <pre id="ed-highlight" aria-hidden="true"></pre>
+      <textarea id="ed-input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+    </div>
+    <!-- TOC side panel -->
+    <div id="toc-panel" hidden>
+      <div id="toc-panel-header">Contents</div>
+      <div id="toc-list"></div>
+    </div>
+  </div>
+  <div id="search-bar" hidden>
+    <label>Find: <input id="search-input" type="text" autocomplete="off"></label>
+    <span id="search-count"></span>
+    <button id="search-prev">▲</button>
+    <button id="search-next">▼</button>
+    <label id="replace-row" hidden>Replace: <input id="replace-input" type="text" autocomplete="off"></label>
+    <button id="replace-one" hidden>Replace</button>
+    <button id="replace-all" hidden>All</button>
+    <button id="search-close">✕</button>
+  </div>
+  <div id="ed-bar">
+    <span id="ed-bar-left"></span>
+    <span id="ed-bar-center"></span>
+    <span id="ed-bar-right"></span>
+  </div>
+</div>
+
+<!-- Export menu -->
+<div id="export-menu" hidden>
+  <button data-fmt="txt">Export as .txt</button>
+  <button data-fmt="md">Export as .md</button>
+</div>
+
+<!-- Settings dialog -->
+<dialog id="settings-dlg">
+  <div id="settings-tabs">
+    <button class="stab active" data-tab="profile">Profile</button>
+    <button class="stab" data-tab="fonts">Fonts</button>
+    <button class="stab" data-tab="timer">Timer</button>
+    <button class="stab" data-tab="misc">Misc</button>
+    <button class="stab" data-tab="display">Display</button>
+    <button class="stab" data-tab="schemes">Schemes</button>
+  </div>
+  <div id="settings-body">
+
+    <!-- Profile tab -->
+    <div class="stab-content active" data-tab="profile">
+      <label>Default scheme
+        <select data-key="scheme" id="scheme-select-profile"></select>
+      </label>
+      <label><input type="checkbox" data-key="darkMode"> Dark mode</label>
+      <label>Margin horiz (px)<input type="number" data-key="marginX" min="0" max="400"></label>
+      <label>Margin vert (px)<input type="number" data-key="marginY" min="0" max="400"></label>
+      <label>Line spacing (%)<input type="number" data-key="lineSpacing" min="80" max="250"></label>
+      <label>Word goal (words/day, 0=off)<input type="number" data-key="wordGoal" min="0"></label>
+      <label><input type="checkbox" data-key="hemingwayMode"> Hemingway mode (no delete)</label>
+    </div>
+
+    <!-- Fonts tab -->
+    <div class="stab-content" data-tab="fonts">
+      <label>Font family<input type="text" data-key="fontFamily" id="font-family-input"></label>
+      <label>Font size (px)<input type="number" data-key="fontSize" min="8" max="48"></label>
+      <div id="font-preview-wrap">
+        <span class="hint">Preview:</span>
+        <div id="font-preview">The quick brown fox</div>
+      </div>
+      <label class="hint-label"><span class="hint">Available system fonts (click to select):</span></label>
+      <div id="font-list"></div>
+    </div>
+
+    <!-- Timer tab -->
+    <div class="stab-content" data-tab="timer">
+      <label>Type
+        <select data-key="timerType">
+          <option value="countdown">Countdown</option>
+          <option value="stopwatch">Stopwatch</option>
+        </select>
+      </label>
+      <label>Duration (min)<input type="number" data-key="timerDuration" min="1" max="240"></label>
+      <label><input type="checkbox" data-key="timerSound"> Sound at end</label>
+      <label><input type="checkbox" data-key="timerAlert"> Alert dialog</label>
+      <label><input type="checkbox" data-key="timerShow"> Show in status bar</label>
+    </div>
+
+    <!-- Misc tab -->
+    <div class="stab-content" data-tab="misc">
+      <label><input type="checkbox" data-key="cursorRestore"> Restore cursor position on open</label>
+      <label><input type="checkbox" data-key="openLastDoc"> Open last document on startup</label>
+      <p class="hint" style="margin-top:12px">writhdeck.ini — compatible with the desktop version</p>
+      <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+        <button id="misc-ini-import-btn">Import writhdeck.ini</button>
+        <button id="misc-ini-export-btn">Export writhdeck.ini</button>
+      </div>
+      <p class="hint" style="margin-top:12px">Documents</p>
+      <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+        <button id="misc-import-btn">Import file from disk</button>
+        <button id="misc-export-all-btn">Export all (.txt)</button>
+        <button id="misc-export-zip-btn">Export all (ZIP)</button>
+      </div>
+    </div>
+
+    <!-- Display tab -->
+    <div class="stab-content" data-tab="display">
+      <p class="hint">Status bar zones</p>
+      <label>Left<input type="text" data-key="statusLeft"></label>
+      <label>Center<input type="text" data-key="statusCenter"></label>
+      <label>Right<input type="text" data-key="statusRight"></label>
+      <p class="hint">Tokens: filename dirty words chars goal clock timer</p>
+      <p class="hint" style="margin-top:10px">Editor options</p>
+      <label><input type="checkbox" data-key="lineNumbers"> Line numbers (Ctrl+L)</label>
+      <p class="hint" style="margin-top:10px">Keyboard shortcuts</p>
+      <label><input type="checkbox" data-key="interceptBrowserShortcuts">
+        Override browser shortcuts
+        <span class="hint" style="display:block;margin-top:2px">
+          Ctrl+T = typewriter &nbsp; Ctrl+N = new doc<br>
+          (browser: new tab / new window — disabled by default)
+        </span>
+      </label>
+      <p class="hint" style="margin-top:10px">Syntax markers</p>
+      <label>Heading marker<input type="text" data-key="headingMarker" maxlength="4"></label>
+      <label>Comment marker<input type="text" data-key="commentMarker" maxlength="4"></label>
+      <label>Bold marker<input type="text" data-key="boldMarker" maxlength="4"></label>
+      <label>Italic marker<input type="text" data-key="italicMarker" maxlength="4"></label>
+      <label>Underline marker<input type="text" data-key="underlineMarker" maxlength="4"></label>
+      <label>Strikethrough marker<input type="text" data-key="strikeMarker" maxlength="4"></label>
+      <label><input type="checkbox" data-key="markdownHeadings"> Markdown headings (#)</label>
+    </div>
+
+    <!-- Schemes tab -->
+    <div class="stab-content" data-tab="schemes">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <label>Scheme <select data-key="scheme" id="scheme-select"></select></label>
+        <button id="scheme-new-btn">New</button>
+        <button id="scheme-delete-btn">Delete</button>
+      </div>
+      <label style="margin-top:8px"><input type="checkbox" data-key="darkMode" id="scheme-dark-check"> Dark mode</label>
+      <div id="scheme-colors"></div>
+    </div>
+
+  </div>
+  <div id="settings-footer">
+    <button id="settings-apply">Apply</button>
+    <button id="settings-close">Close</button>
+  </div>
+</dialog>
+
+<!-- File info dialog -->
+<dialog id="info-dlg">
+  <div id="info-header">
+    <span>Document info</span>
+    <button id="info-close">✕</button>
+  </div>
+  <div id="info-body"></div>
+</dialog>
+
+<!-- Stats dialog -->
+<dialog id="stats-dlg">
+  <div id="stats-header">
+    <span>Writing Stats</span>
+    <button id="stats-close">✕</button>
+  </div>
+  <div id="stats-body"></div>
+</dialog>
+
+<!-- Timer alert dialog -->
+<dialog id="timer-alert-dlg">
+  <p>Timer finished!</p>
+  <button id="timer-alert-ok">OK</button>
+</dialog>
+
+<script>
+'use strict';
+// Color scheme definitions — ported from src/schemes/*.tcl
+// Each scheme: dark (primary) + light (alt) color sets
+const SCHEMES = {
+  default: {
+    bg:'#1a1a1a', fg:'#e8e8e8', bgBar:'#2a2a2a', fgBar:'#aaaaaa', bgSel:'#3a5a8a',
+    heading:'#c8a060', comment:'#606060', markup:'#6aa9d4', bg2:'#1a1a1a',
+    bgAlt:'#fdf6e3', fgAlt:'#657b83', bgBarAlt:'#eee8d5', fgBarAlt:'#93a1a1',
+    bgSelAlt:'#e6ddb9', headingAlt:'#b58900', commentAlt:'#aaaaaa', markupAlt:'#2a7090', bg2Alt:'#fdf6e3'
+  },
+  solarized: {
+    bg:'#002b36', fg:'#839496', bgBar:'#073642', fgBar:'#586e75', bgSel:'#004555',
+    heading:'#b58900', comment:'#586e75', markup:'#268bd2', bg2:'#002b36',
+    bgAlt:'#fdf6e3', fgAlt:'#657b83', bgBarAlt:'#eee8d5', fgBarAlt:'#93a1a1',
+    bgSelAlt:'#e6ddb9', headingAlt:'#b58900', commentAlt:'#93a1a1', markupAlt:'#268bd2', bg2Alt:'#fdf6e3'
+  },
+  gruvbox: {
+    bg:'#282828', fg:'#ebdbb2', bgBar:'#1d2021', fgBar:'#a89984', bgSel:'#504945',
+    heading:'#fabd2f', comment:'#928374', markup:'#83a598', bg2:'#282828',
+    bgAlt:'#fbf1c7', fgAlt:'#3c3836', bgBarAlt:'#ebdbb2', fgBarAlt:'#7c6f64',
+    bgSelAlt:'#d5c4a1', headingAlt:'#b57614', commentAlt:'#a89984', markupAlt:'#076678', bg2Alt:'#fbf1c7'
+  },
+  everforest: {
+    bg:'#2b3339', fg:'#d3c6aa', bgBar:'#1e2326', fgBar:'#a7c080', bgSel:'#3a464c',
+    heading:'#a7c080', comment:'#7a8478', markup:'#7fbbb3', bg2:'#2b3339',
+    bgAlt:'#fdf6e3', fgAlt:'#5c6a72', bgBarAlt:'#efead4', fgBarAlt:'#8da101',
+    bgSelAlt:'#e6e2cc', headingAlt:'#8da101', commentAlt:'#a6b0a0', markupAlt:'#3a94c5', bg2Alt:'#fdf6e3'
+  },
+  nord: {
+    bg:'#2e3440', fg:'#d8dee9', bgBar:'#3b4252', fgBar:'#81a1c1', bgSel:'#434c5e',
+    heading:'#88c0d0', comment:'#4c566a', markup:'#8fbec0', bg2:'#2e3440',
+    bgAlt:'#eceff4', fgAlt:'#2e3440', bgBarAlt:'#e5e9f0', fgBarAlt:'#5e81ac',
+    bgSelAlt:'#d8dee9', headingAlt:'#5e81ac', commentAlt:'#4c566a', markupAlt:'#5e81ac', bg2Alt:'#eceff4'
+  },
+  alt01: {
+    bg:'#1a1214', fg:'#e8dcc8', bgBar:'#241820', fgBar:'#9e8878', bgSel:'#521828',
+    heading:'#e63060', comment:'#6e5858', markup:'#c24868', bg2:'#1a1214',
+    bgAlt:'#fffde9', fgAlt:'#363c42', bgBarAlt:'#eee8d5', fgBarAlt:'#93a1a1',
+    bgSelAlt:'#f0e7c1', headingAlt:'#c8064a', commentAlt:'#aaaaaa', markupAlt:'#7e1c3e', bg2Alt:'#fffde9'
+  },
+  alt02: {
+    bg:'#2a2520', fg:'#d4c4b0', bgBar:'#2a2520', fgBar:'#c4b4a0', bgSel:'#4a4035',
+    heading:'#e8a87c', comment:'#6a5a50', markup:'#c49070', bg2:'#2a2520',
+    bgAlt:'#f5f0eb', fgAlt:'#3a2a20', bgBarAlt:'#e8e0d8', fgBarAlt:'#3a2a20',
+    bgSelAlt:'#e0d4c8', headingAlt:'#a65d2b', commentAlt:'#a89080', markupAlt:'#8b5a3c', bg2Alt:'#f5f0eb'
+  },
+  retro: {
+    bg:'#0a0a0a', fg:'#33ff33', bgBar:'#111111', fgBar:'#22bb22', bgSel:'#004400',
+    heading:'#aaffaa', comment:'#1a661a', markup:'#00ffcc', bg2:'#0a0a0a',
+    bgAlt:'#ffffff', fgAlt:'#000000', bgBarAlt:'#e0e0e0', fgBarAlt:'#333333',
+    bgSelAlt:'#d0d0d0', headingAlt:'#000000', commentAlt:'#999999', markupAlt:'#333333', bg2Alt:'#ffffff'
+  }
+};
+
+// User-defined custom schemes (loaded from IndexedDB, merged at runtime)
+let customSchemes = {};
+
+function getScheme(name) {
+  return customSchemes[name] || SCHEMES[name] || SCHEMES.default;
+}
+
+function getAllSchemeNames() {
+  return [...Object.keys(SCHEMES), ...Object.keys(customSchemes)];
+}
+
+
+'use strict';
+// IndexedDB wrapper — promise-based
+const DB = (() => {
+  const DB_NAME = 'writhdeck';
+  const DB_VER  = 1;
+  let _db = null;
+
+  function open() {
+    if (_db) return Promise.resolve(_db);
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VER);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('documents')) {
+          db.createObjectStore('documents', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!db.objectStoreNames.contains('meta')) {
+          db.createObjectStore('meta', { keyPath: 'key' });
+        }
+      };
+      req.onsuccess = e => { _db = e.target.result; resolve(_db); };
+      req.onerror   = e => reject(e.target.error);
+    });
+  }
+
+  function tx(store, mode, fn) {
+    return open().then(db => new Promise((resolve, reject) => {
+      const t = db.transaction(store, mode);
+      const s = t.objectStore(store);
+      const req = fn(s);
+      if (req && typeof req.onsuccess === 'undefined') {
+        // fn returned a value, not a request
+        resolve(req);
+        return;
+      }
+      t.oncomplete = () => resolve(req ? req.result : undefined);
+      t.onerror    = e => reject(e.target.error);
+      if (req) {
+        req.onerror  = e => reject(e.target.error);
+      }
+    }));
+  }
+
+  // Documents
+  function saveDoc(doc) {
+    return tx('documents', 'readwrite', s => {
+      doc.modified = Date.now();
+      if (!doc.created) doc.created = doc.modified;
+      return s.put(doc);
+    }).then(id => { if (!doc.id) doc.id = id; return doc; });
+  }
+
+  function getDoc(id) {
+    return tx('documents', 'readonly', s => s.get(Number(id)));
+  }
+
+  function getAllDocs() {
+    return open().then(db => new Promise((resolve, reject) => {
+      const t = db.transaction('documents', 'readonly');
+      const s = t.objectStore('documents');
+      const req = s.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror   = e => reject(e.target.error);
+    }));
+  }
+
+  function deleteDoc(id) {
+    return tx('documents', 'readwrite', s => s.delete(Number(id)));
+  }
+
+  // Meta (settings, favorites, etc.)
+  function getMeta(key) {
+    return open().then(db => new Promise((resolve, reject) => {
+      const t = db.transaction('meta', 'readonly');
+      const req = t.objectStore('meta').get(key);
+      req.onsuccess = () => resolve(req.result ? req.result.value : undefined);
+      req.onerror   = e => reject(e.target.error);
+    }));
+  }
+
+  function setMeta(key, value) {
+    return tx('meta', 'readwrite', s => s.put({ key, value }));
+  }
+
+  return { open, saveDoc, getDoc, getAllDocs, deleteDoc, getMeta, setMeta };
+})();
+
+
+'use strict';
+// In-memory application state
+const State = {
+  doc:   null,  // { id, name, content, created, modified }
+  dirty: false,
+
+  docs: [],   // IDB-backed document list
+
+  // Watched folder (File System Access API)
+  dirHandle:    null,
+  dirFiles:     [],   // in-memory only, rebuilt by scanDir()
+  dirIniHandle: null, // FileSystemFileHandle for writhdeck.ini in folder
+
+  // Cached INI text — the canonical settings format in IDB
+  iniText: '',
+
+  // Settings defaults (overwritten from IDB on load)
+  settings: {
+    scheme: 'default',
+    darkMode: true,
+    fontSize: 14,
+    fontFamily: 'monospace',
+    marginX: 80,
+    marginY: 40,
+    lineSpacing: 1.5,
+    headingMarker: '=',
+    commentMarker: '%',
+    boldMarker: '**',
+    italicMarker: '//',
+    underlineMarker: '__',
+    strikeMarker: '--',
+    markdownHeadings: true,
+    wordGoal: 0,
+    hemingwayMode: false,
+    cursorRestore: true,
+    openLastDoc: false,
+    timerType: 'countdown',
+    timerDuration: 25,
+    timerSound: true,
+    timerAlert: true,
+    timerShow: true,
+    statusLeft: 'filename dirty words',
+    statusCenter: '',
+    statusRight: 'goal clock timer',
+    lineNumbers: false,
+    interceptBrowserShortcuts: false
+  },
+
+  favorites: [],  // [id, ...]
+  recents: [],    // [id, ...] max 4
+  cursors: {},    // {id: charOffset}
+  daily: {},      // {id: {"YYYY-MM-DD": N, ...}}
+  customSchemes: {}
+};
+
+// ── Load ──────────────────────────────────────────────────────────────────
+
+async function loadState() {
+  const [iniText, oldSettings, favorites, recents, cursors, daily, oldCs, dh] = await Promise.all([
+    DB.getMeta('iniText'),       // canonical INI storage (current)
+    DB.getMeta('settings'),      // legacy JSON (migration only)
+    DB.getMeta('favorites'),
+    DB.getMeta('recents'),
+    DB.getMeta('cursors'),
+    DB.getMeta('daily'),
+    DB.getMeta('customSchemes'), // legacy separate custom schemes
+    DB.getMeta('dirHandle')
+  ]);
+
+  if (iniText) {
+    // Normal path — INI is the source of truth
+    const { settings, schemes } = INI.parseIni(iniText);
+    Object.assign(State.settings, settings);
+    Object.assign(customSchemes, schemes);
+    State.customSchemes = { ...customSchemes };
+    State.iniText = iniText;
+  } else if (oldSettings) {
+    // One-time migration from legacy JSON format
+    Object.assign(State.settings, oldSettings);
+    if (oldCs) Object.assign(customSchemes, oldCs);
+    State.customSchemes = { ...customSchemes };
+    await saveSettings();             // re-persist as INI
+    await DB.setMeta('settings', null);
+    await DB.setMeta('customSchemes', null);
+  }
+  // else: first run — defaults are in place, INI saved after init by app.js
+
+  if (favorites) State.favorites = favorites;
+  if (recents)   State.recents   = recents;
+  if (cursors)   State.cursors   = cursors;
+  if (daily)     State.daily     = daily;
+  if (dh)        State.dirHandle = dh;
+
+  State.docs = await DB.getAllDocs();
+}
+
+// ── Settings — INI is canonical ───────────────────────────────────────────
+
+async function saveSettings() {
+  const allSchemes = { ...SCHEMES, ...customSchemes };
+  const text = INI.writeIni(State.settings, allSchemes);
+  State.iniText = text;
+  await DB.setMeta('iniText', text);
+}
+
+// Custom schemes are embedded in the INI — just re-save settings
+async function saveCustomSchemes() {
+  State.customSchemes = { ...customSchemes };
+  await saveSettings();
+}
+
+// ── Persistence helpers ───────────────────────────────────────────────────
+
+async function saveFavorites() { await DB.setMeta('favorites', State.favorites); }
+async function saveRecents()   { await DB.setMeta('recents',   State.recents);   }
+async function saveCursors()   { await DB.setMeta('cursors',   State.cursors);   }
+async function saveDaily()     { await DB.setMeta('daily',     State.daily);     }
+async function saveDirHandle() { await DB.setMeta('dirHandle', State.dirHandle); }
+
+async function clearDirHandle() {
+  State.dirHandle    = null;
+  State.dirFiles     = [];
+  State.dirIniHandle = null;
+  await DB.setMeta('dirHandle', null);
+}
+
+// ── Watched folder ────────────────────────────────────────────────────────
+
+async function scanDir() {
+  if (!State.dirHandle) return false;
+  const files = [];
+  try {
+    for await (const [name, handle] of State.dirHandle.entries()) {
+      if (handle.kind !== 'file') continue;
+      if (!/\.(txt|md|tcl|text)$/i.test(name)) continue;
+      const file = await handle.getFile();
+      files.push({
+        id: `dir:${name}`, name, content: null,
+        fileHandle: handle, fromDisk: true, dirFile: true,
+        modified: file.lastModified
+      });
+    }
+  } catch (e) {
+    if (e.name !== 'NotAllowedError') console.error(e);
+    return false;
+  }
+  files.sort((a, b) => a.name.localeCompare(b.name));
+  State.dirFiles = files;
+  try {
+    State.dirIniHandle = await State.dirHandle.getFileHandle('writhdeck.ini');
+  } catch (_) {
+    State.dirIniHandle = null;
+  }
+  return true;
+}
+
+// ── Recents / favorites ───────────────────────────────────────────────────
+
+function pushRecent(id) {
+  State.recents = [id, ...State.recents.filter(r => r !== id)].slice(0, 4);
+  saveRecents();
+}
+
+function removeRecent(id) {
+  State.recents = State.recents.filter(r => r !== id);
+  saveRecents();
+}
+
+function toggleFavorite(id) {
+  const idx = State.favorites.indexOf(id);
+  if (idx >= 0) State.favorites.splice(idx, 1);
+  else State.favorites.unshift(id);
+  saveFavorites();
+}
+
+function isFavorite(id) { return State.favorites.includes(id); }
+
+// ── Daily stats — high-water mark ─────────────────────────────────────────
+
+function updateDaily(id, wordCount) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (!State.daily[id]) State.daily[id] = {};
+  const prev = State.daily[id][today] || 0;
+  if (wordCount > prev) { State.daily[id][today] = wordCount; saveDaily(); }
+}
+
+function todayWords(id) {
+  const today = new Date().toISOString().slice(0, 10);
+  return (State.daily[id] && State.daily[id][today]) || 0;
+}
+
+
+'use strict';
+// writhdeck.ini parser/writer — compatible with the Tcl/Tk desktop version
+
+// ── Key mappings ─────────────────────────────────────────────────────────
+// INI key  →  State.settings key  (+ type coercion)
+
+const INI_TO_SETTINGS = {
+  scheme:               ['scheme',          'str'],
+  dark_mode:            ['darkMode',         'bool'],
+  font_size:            ['fontSize',         'int'],
+  font_family:          ['fontFamily',       'str'],
+  bar_font_family:      ['fontFamily',       'str'],   // fallback
+  margin_width:         ['marginX',          'int'],
+  margin_height:        ['marginY',          'int'],
+  line_spacing:         ['lineSpacing',      'float'],
+  word_goal:            ['wordGoal',         'int'],
+  heading_marker:       ['headingMarker',    'str'],
+  comment_marker:       ['commentMarker',    'str'],
+  dim_marker:           ['commentMarker',    'str'],   // legacy alias
+  bold_marker:          ['boldMarker',       'str'],
+  italic_marker:        ['italicMarker',     'str'],
+  underline_marker:     ['underlineMarker',  'str'],
+  strikethrough_marker: ['strikeMarker',     'str'],
+  markdown_headings:    ['markdownHeadings', 'bool'],
+  hemingway_mode:       ['hemingwayMode',    'bool'],
+  timer_type:           ['timerType',        'str'],
+  timer_duration:       ['timerDuration',    'int'],
+  timer_sound:          ['timerSound',       'bool'],
+  timer_alert:          ['timerAlert',       'bool'],
+  chrono_show:          ['timerShow',        'bool'],
+  status_left:          ['statusLeft',       'str'],
+  status_center:        ['statusCenter',     'str'],
+  status_right:         ['statusRight',      'str'],
+  cursor_restore:             ['cursorRestore',             'bool'],
+  line_numbers:               ['lineNumbers',               'bool'],
+  intercept_browser_shortcuts:['interceptBrowserShortcuts', 'bool'],
+};
+
+const SETTINGS_TO_INI = Object.fromEntries(
+  Object.entries(INI_TO_SETTINGS).map(([k, [v]]) => [v, k])
+);
+// Fix aliases — keep the canonical INI key for write
+SETTINGS_TO_INI['commentMarker']  = 'comment_marker';
+SETTINGS_TO_INI['fontFamily']     = 'font_family';
+
+// Scheme color key mapping (INI ↔ JS)
+const SCHEME_INI_TO_JS = {
+  color_bg:          'bg',         color_fg:          'fg',
+  color_bg_bar:      'bgBar',      color_fg_bar:      'fgBar',
+  color_bg_sel:      'bgSel',      color_heading:     'heading',
+  color_comment:     'comment',    color_markup:      'markup',
+  color_bg2:         'bg2',
+  color_bg_alt:      'bgAlt',      color_fg_alt:      'fgAlt',
+  color_bg_bar_alt:  'bgBarAlt',   color_fg_bar_alt:  'fgBarAlt',
+  color_bg_sel_alt:  'bgSelAlt',   color_heading_alt: 'headingAlt',
+  color_comment_alt: 'commentAlt', color_markup_alt:  'markupAlt',
+  color_bg2_alt:     'bg2Alt',
+  // legacy alias
+  color_dim:         'comment',    color_dim_alt:     'commentAlt',
+};
+const SCHEME_JS_TO_INI = {
+  bg:'color_bg', fg:'color_fg', bgBar:'color_bg_bar', fgBar:'color_fg_bar',
+  bgSel:'color_bg_sel', heading:'color_heading', comment:'color_comment',
+  markup:'color_markup', bg2:'color_bg2',
+  bgAlt:'color_bg_alt', fgAlt:'color_fg_alt', bgBarAlt:'color_bg_bar_alt',
+  fgBarAlt:'color_fg_bar_alt', bgSelAlt:'color_bg_sel_alt',
+  headingAlt:'color_heading_alt', commentAlt:'color_comment_alt',
+  markupAlt:'color_markup_alt', bg2Alt:'color_bg2_alt',
+};
+
+// ── Boolean coercion ──────────────────────────────────────────────────────
+function parseBool(v) {
+  return /^(yes|1|true|on)$/i.test(String(v).trim());
+}
+
+// Strips inline comments (# or % preceded by whitespace)
+function stripComment(v) {
+  return v.replace(/\s+[#%].*$/, '').trim();
+}
+
+// ── Parser ────────────────────────────────────────────────────────────────
+function parseIni(text) {
+  const settings = {};
+  const schemes  = {};   // {name: {jsKey: value}}
+
+  let section    = '';
+  let curScheme  = '';
+  let curProfile = '';
+  const TOPLEVEL = new Set(['editor', 'behaviour', 'keys', 'timer', 'misc', 'tui_colors', 'display']);
+
+  for (const rawLine of text.split('\n')) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#') || line.startsWith('%')) continue;
+
+    // Section header [name]
+    const secMatch = line.match(/^\[(\w[\w\s]*)\]$/);
+    if (secMatch) {
+      const hdr = secMatch[1].trim();
+      if (hdr === 'schemes') {
+        section = 'schemes'; curScheme = ''; curProfile = '';
+      } else if (hdr === 'profiles') {
+        section = 'profiles'; curProfile = ''; curScheme = '';
+      } else if (section === 'schemes' && !TOPLEVEL.has(hdr)) {
+        curScheme = hdr;
+      } else if (section === 'profiles' && !TOPLEVEL.has(hdr)) {
+        curProfile = hdr;
+      } else {
+        section = hdr; curScheme = ''; curProfile = '';
+      }
+      continue;
+    }
+
+    // key = value
+    const kvMatch = line.match(/^(\w+)\s*=(.*)$/);
+    if (!kvMatch) continue;
+    const key = kvMatch[1].trim();
+    const val = stripComment(kvMatch[2]);
+
+    if (curScheme) {
+      // Scheme color key
+      const jsKey = SCHEME_INI_TO_JS[key];
+      if (jsKey) {
+        if (!schemes[curScheme]) schemes[curScheme] = {};
+        schemes[curScheme][jsKey] = val;
+      }
+    } else if (!curProfile) {
+      // Global setting
+      const mapping = INI_TO_SETTINGS[key];
+      if (mapping) {
+        const [jsKey, type] = mapping;
+        if (type === 'bool')        settings[jsKey] = parseBool(val);
+        else if (type === 'int')    settings[jsKey] = parseInt(val, 10)  || undefined;
+        else if (type === 'float')  settings[jsKey] = parseFloat(val)    || undefined;
+        else                        settings[jsKey] = val;
+      }
+    }
+  }
+
+  // Remove undefined values
+  Object.keys(settings).forEach(k => settings[k] === undefined && delete settings[k]);
+
+  return { settings, schemes };
+}
+
+// ── Writer ────────────────────────────────────────────────────────────────
+function writeIni(s, allSchemes) {
+  const b = (v) => v ? 'yes' : 'no';
+  const nl = '\n';
+
+  let out = '= WrithDeck configuration =' + nl;
+  out += '% https://github.com/luginf/writhdeck' + nl + nl;
+
+  out += '= editor =' + nl + '[editor]' + nl;
+  out += `scheme         = ${s.scheme || 'default'}` + nl;
+  if (s.fontFamily)    out += `font_family    = ${s.fontFamily}` + nl;
+  if (s.fontSize)      out += `font_size      = ${s.fontSize}` + nl;
+  out += `margin_width   = ${s.marginX   || 60}` + nl;
+  out += `margin_height  = ${s.marginY   || 40}` + nl;
+  out += `line_spacing   = ${s.lineSpacing || 100}` + nl;
+  out += `word_goal      = ${s.wordGoal  || 0}` + nl;
+  out += `heading_marker       = ${s.headingMarker   || '='}` + nl;
+  out += `comment_marker       = ${s.commentMarker   || '%'}` + nl;
+  out += `bold_marker          = ${s.boldMarker      || '**'}` + nl;
+  out += `italic_marker        = ${s.italicMarker    || '//'}` + nl;
+  out += `underline_marker     = ${s.underlineMarker || '__'}` + nl;
+  out += `strikethrough_marker = ${s.strikeMarker    || '--'}` + nl;
+  out += `markdown_headings    = ${b(s.markdownHeadings !== false)}` + nl;
+  out += nl;
+
+  out += '= behaviour =' + nl + '[behaviour]' + nl;
+  out += `hemingway_mode  = ${b(s.hemingwayMode)}` + nl;
+  out += `cursor_restore               = ${b(s.cursorRestore !== false)}` + nl;
+  out += `line_numbers                 = ${b(s.lineNumbers)}` + nl;
+  out += `intercept_browser_shortcuts  = ${b(s.interceptBrowserShortcuts)}` + nl;
+  out += `dark_mode       = ${b(s.darkMode)}` + nl;
+  out += nl;
+
+  out += '= timer =' + nl;
+  out += `timer_type     = ${s.timerType     || 'countdown'}` + nl;
+  out += `timer_duration = ${s.timerDuration || 25}` + nl;
+  out += `timer_sound    = ${b(s.timerSound)}` + nl;
+  out += `timer_alert    = ${b(s.timerAlert)}` + nl;
+  out += `chrono_show    = ${b(s.timerShow)}` + nl;
+  out += nl;
+
+  out += '= display =' + nl + '[display]' + nl;
+  out += `status_left    = ${s.statusLeft   || ''}` + nl;
+  out += `status_center  = ${s.statusCenter || ''}` + nl;
+  out += `status_right   = ${s.statusRight  || ''}` + nl;
+  out += nl;
+
+  out += '= schemes =' + nl + '[schemes]' + nl;
+  out += '% colors in #rrggbb format' + nl + nl;
+
+  const schemeOrder = ['default', ...Object.keys(allSchemes).filter(n => n !== 'default')];
+  for (const name of schemeOrder) {
+    const sc = allSchemes[name];
+    if (!sc) continue;
+    out += `= ${name} =` + nl + `[${name}]` + nl;
+    out += '% dark mode' + nl;
+    for (const jsKey of ['bg','fg','bgBar','fgBar','bgSel','heading','comment','markup','bg2']) {
+      if (sc[jsKey]) out += `${SCHEME_JS_TO_INI[jsKey]} = ${sc[jsKey]}` + nl;
+    }
+    out += '% light mode' + nl;
+    for (const jsKey of ['bgAlt','fgAlt','bgBarAlt','fgBarAlt','bgSelAlt','headingAlt','commentAlt','markupAlt','bg2Alt']) {
+      if (sc[jsKey]) out += `${SCHEME_JS_TO_INI[jsKey]} = ${sc[jsKey]}` + nl;
+    }
+    out += nl;
+  }
+
+  return out;
+}
+
+const INI = { parseIni, writeIni };
+
+
+'use strict';
+// Syntax highlighting engine — textarea overlay technique
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function highlight(text, s) {
+  // Build regexes from current settings
+  const hm = escRx(s.headingMarker);
+  const cm = escRx(s.commentMarker);
+  const bm = escRx(s.boldMarker);
+  const im = escRx(s.italicMarker);
+  const um = escRx(s.underlineMarker);
+  const sm = escRx(s.strikeMarker);
+
+  const lines = text.split('\n');
+  const out = lines.map(line => {
+    const esc = escapeHtml(line);
+
+    // Heading line
+    if (hm && line.startsWith(s.headingMarker)) {
+      return `<span class="hl-heading">${esc}</span>`;
+    }
+    // Markdown headings
+    if (s.markdownHeadings && /^#{1,6}\s/.test(line)) {
+      return `<span class="hl-heading">${esc}</span>`;
+    }
+    // Comment line
+    if (cm && line.startsWith(s.commentMarker)) {
+      return `<span class="hl-comment">${esc}</span>`;
+    }
+    // Inline markup (apply in order, non-greedy)
+    let result = esc;
+    if (bm) result = result.replace(new RegExp(escRx(escapeHtml(s.boldMarker)) + '(.+?)' + escRx(escapeHtml(s.boldMarker)), 'g'),
+      (_, inner) => `<span class="hl-markup">${escapeHtml(s.boldMarker)}${inner}${escapeHtml(s.boldMarker)}</span>`);
+    if (im) result = result.replace(new RegExp(escRx(escapeHtml(s.italicMarker)) + '(.+?)' + escRx(escapeHtml(s.italicMarker)), 'g'),
+      (_, inner) => `<span class="hl-markup">${escapeHtml(s.italicMarker)}${inner}${escapeHtml(s.italicMarker)}</span>`);
+    if (um) result = result.replace(new RegExp(escRx(escapeHtml(s.underlineMarker)) + '(.+?)' + escRx(escapeHtml(s.underlineMarker)), 'g'),
+      (_, inner) => `<span class="hl-markup">${escapeHtml(s.underlineMarker)}${inner}${escapeHtml(s.underlineMarker)}</span>`);
+    if (sm) result = result.replace(new RegExp(escRx(escapeHtml(s.strikeMarker)) + '(.+?)' + escRx(escapeHtml(s.strikeMarker)), 'g'),
+      (_, inner) => `<span class="hl-markup">${escapeHtml(s.strikeMarker)}${inner}${escapeHtml(s.strikeMarker)}</span>`);
+    return result;
+  });
+
+  // Trailing newline required for correct height in the overlay
+  return out.join('\n') + '\n';
+}
+
+function escRx(s) {
+  return s ? s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
+}
+
+function wordCount(text) {
+  return (text.match(/\S+/g) || []).length;
+}
+
+
+'use strict';
+// Timer / stopwatch module
+const Timer = (() => {
+  let remaining = 0;   // seconds
+  let active    = false;
+  let lastTick  = 0;
+  let intervalId = null;
+
+  function reset() {
+    const s = State.settings;
+    remaining = s.timerType === 'countdown' ? s.timerDuration * 60 : 0;
+    lastTick  = 0;
+  }
+
+  function start() {
+    if (active) return;
+    if (lastTick === 0) reset();
+    active    = true;
+    lastTick  = Date.now();
+    intervalId = setInterval(tick, 500);
+    Editor.updateStatusBar();
+  }
+
+  function pause() {
+    if (!active) return;
+    active = false;
+    clearInterval(intervalId);
+    intervalId = null;
+    Editor.updateStatusBar();
+  }
+
+  function toggle() { active ? pause() : start(); }
+
+  function stopReset() {
+    pause();
+    lastTick = 0;
+    reset();
+    Editor.updateStatusBar();
+  }
+
+  function tick() {
+    if (!active) return;
+    const now = Date.now();
+    const elapsed = Math.floor((now - lastTick) / 1000);
+    if (elapsed < 1) return;
+    lastTick = now;
+    if (State.settings.timerType === 'countdown') {
+      remaining -= elapsed;
+      if (remaining <= 0) {
+        remaining = 0;
+        pause();
+        onFinished();
+      }
+    } else {
+      remaining += elapsed;
+    }
+    Editor.updateStatusBar();
+  }
+
+  function onFinished() {
+    if (State.settings.timerSound) beep();
+    if (State.settings.timerAlert) {
+      document.getElementById('timer-alert-dlg').showModal();
+    }
+  }
+
+  function beep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 660;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.8);
+    } catch (_) {}
+  }
+
+  function format() {
+    const r = Math.max(0, remaining);
+    const m = Math.floor(r / 60);
+    const s = r % 60;
+    const disp = `${m}'${String(s).padStart(2,'0')}"`;
+    return active ? `[${disp}]` : (lastTick !== 0 ? disp : (
+      State.settings.timerType === 'countdown'
+        ? `${State.settings.timerDuration}'00"`
+        : `0'00"`
+    ));
+  }
+
+  function isActive() { return active; }
+
+  return { start, pause, toggle, stopReset, format, isActive, reset };
+})();
+
+
+'use strict';
+// Table of Contents — side panel (right)
+const TOC = (() => {
+  let _visible = false;
+
+  function parse(text, s) {
+    const entries = [];
+    text.split('\n').forEach((line, idx) => {
+      let level = 0, title = '';
+      if (s.markdownHeadings) {
+        const m = line.match(/^(#{1,3})\s+(.+)/);
+        if (m) { level = m[1].length; title = m[2]; }
+      }
+      if (!level && s.headingMarker) {
+        const hm  = s.headingMarker;
+        const hmR = hm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (line.startsWith(hm)) {
+          const mm = line.match(new RegExp(`^(${hmR}+)`));
+          level = mm ? Math.min(Math.round(mm[1].length / hm.length), 3) : 1;
+          title = line.slice(hm.length).replace(new RegExp(`^${hmR}*\\s*`), '')
+                      .replace(new RegExp(`\\s*${hmR}*$`), '').trim()
+                  || line.trim();
+        }
+      }
+      if (level && title) entries.push({ line: idx, level, title });
+    });
+    return entries;
+  }
+
+  function lineToOffset(text, lineIdx) {
+    return text.split('\n').slice(0, lineIdx).reduce((s, l) => s + l.length + 1, 0);
+  }
+
+  function render() {
+    const ta      = document.getElementById('ed-input');
+    const list    = document.getElementById('toc-list');
+    const entries = parse(ta.value, State.settings);
+    list.innerHTML = '';
+    if (!entries.length) {
+      const div = document.createElement('div');
+      div.className = 'toc-item';
+      div.style.color = 'var(--fg-bar)';
+      div.textContent = 'No headings found.';
+      list.appendChild(div);
+      return;
+    }
+    entries.forEach(e => {
+      const div = document.createElement('div');
+      div.className = `toc-item level-${e.level}`;
+      div.textContent = e.title;
+      div.addEventListener('click', () => {
+        const offset = lineToOffset(ta.value, e.line);
+        ta.focus();
+        ta.setSelectionRange(offset, offset);
+        const lh = parseFloat(getComputedStyle(ta).lineHeight) || 20;
+        ta.scrollTop = e.line * lh - ta.clientHeight / 3;
+      });
+      list.appendChild(div);
+    });
+  }
+
+  function toggle() {
+    const panel = document.getElementById('toc-panel');
+    _visible = !_visible;
+    panel.hidden = !_visible;
+    if (_visible) render();
+    // Sync TOC button state
+    document.getElementById('ed-toc-btn').classList.toggle('active', _visible);
+  }
+
+  function hide() {
+    _visible = false;
+    document.getElementById('toc-panel').hidden = true;
+    document.getElementById('ed-toc-btn').classList.remove('active');
+  }
+
+  function refresh() { if (_visible) render(); }
+
+  return { toggle, hide, refresh, isVisible: () => _visible };
+})();
+
+
+'use strict';
+// Daily writing stats module
+const Stats = (() => {
+  function show() {
+    const body = document.getElementById('stats-body');
+    body.innerHTML = '';
+
+    const daily = State.daily;
+    const docs  = State.docs;
+    if (!Object.keys(daily).length) {
+      body.innerHTML = '<p style="color:var(--fg-bar);padding:12px">No writing stats yet.</p>';
+      document.getElementById('stats-dlg').showModal();
+      return;
+    }
+
+    const docMap = {};
+    docs.forEach(d => { docMap[d.id] = d.name; });
+
+    Object.entries(daily).forEach(([id, days]) => {
+      if (!Object.keys(days).length) return;
+      const name = document.createElement('div');
+      name.className = 'stats-doc-name';
+      name.textContent = docMap[id] || `#${id}`;
+      body.appendChild(name);
+
+      const table = document.createElement('table');
+      table.className = 'stats-table';
+      table.innerHTML = '<tr><th>Date</th><th>Words</th></tr>';
+      const today = new Date().toISOString().slice(0, 10);
+      Object.entries(days).sort((a,b) => b[0].localeCompare(a[0])).forEach(([date, wc]) => {
+        const tr = document.createElement('tr');
+        const suffix = date === today ? ' ← today' : '';
+        tr.innerHTML = `<td>${date}${suffix}</td><td>${wc}</td>`;
+        table.appendChild(tr);
+      });
+      body.appendChild(table);
+    });
+
+    document.getElementById('stats-dlg').showModal();
+  }
+
+  return { show };
+})();
+
+
+'use strict';
+// Editor module
+const Editor = (() => {
+  const ta  = () => document.getElementById('ed-input');
+  const pre = () => document.getElementById('ed-highlight');
+
+  let _autosaveId     = null;
+  let _clockId        = null;
+  let _tocRefresh     = null;
+  let _cmdMode        = false;
+  let _typewriter     = false;
+  let _wc = 0;
+
+  // ── Open / close ──────────────────────────────────────────────────────────
+
+  async function open(doc) {
+    // For disk files, try to read fresh content from disk
+    if (doc.fileHandle) {
+      try {
+        const perm = await doc.fileHandle.queryPermission({ mode: 'readwrite' });
+        if (perm === 'granted') {
+          const file = await doc.fileHandle.getFile();
+          doc.content = await file.text();
+        } else {
+          const req = await doc.fileHandle.requestPermission({ mode: 'readwrite' });
+          if (req === 'granted') {
+            const file = await doc.fileHandle.getFile();
+            doc.content = await file.text();
+          }
+          // If denied: fall through and use cached content
+        }
+      } catch (_) { /* use cached content */ }
+    }
+
+    State.doc   = doc;
+    State.dirty = false;
+
+    document.getElementById('browser').hidden = true;
+    document.getElementById('editor').hidden  = false;
+    document.title = `${doc.name} — Writhdeck`;
+
+    const input = ta();
+    input.value = doc.content || '';
+
+    // Restore cursor
+    const offset = State.cursors[doc.id] || 0;
+    input.setSelectionRange(offset, offset);
+
+    _typewriter = false;
+    document.getElementById('editor').classList.remove('typewriter');
+    rehighlight();
+    syncScroll();
+    applyLineNumbers();
+    updateStatusBar();
+    input.focus();
+    _wc = wordCount(input.value);
+
+    startAutosave();
+    startClock();
+    if (!doc.virtual) pushRecent(doc.id);
+    Browser.render();
+  }
+
+  async function close() {
+    if (State.dirty && !State.doc.isIni) {
+      const ok = confirm(`Save "${State.doc.name}" before closing?`);
+      if (ok) await save();
+    }
+    saveCursorPos();
+    stopAutosave();
+    stopClock();
+    TOC.hide();
+    _cmdMode    = false;
+    State.doc   = null;
+    State.dirty = false;
+    document.title = 'Writhdeck';
+    document.getElementById('editor').hidden  = true;
+    document.getElementById('browser').hidden = false;
+    Browser.render();
+  }
+
+  // ── Save ──────────────────────────────────────────────────────────────────
+
+  async function save() {
+    if (!State.doc) return;
+    State.doc.content = ta().value;
+
+    // Virtual INI doc — parse and apply, don't write to docs store
+    if (State.doc.isIni) {
+      try {
+        const { settings, schemes } = INI.parseIni(State.doc.content);
+        Object.assign(State.settings, settings);
+        for (const [n, sc] of Object.entries(schemes)) {
+          customSchemes[n] = SCHEMES[n] ? { ...SCHEMES[n], ...sc } : sc;
+        }
+        await saveSettings();   // re-generates canonical INI text → IDB
+        State.doc.content = State.iniText; // reflect normalised output
+        ta().value = State.iniText;
+        rehighlight();
+        applyTheme();
+        State.dirty = false;
+        setMsg('Settings applied');
+        Browser.render();
+      } catch (e) {
+        setMsg('Parse error');
+        console.error(e);
+      }
+      return;
+    }
+
+    State.doc.modified = Date.now();
+
+    if (State.doc.fileHandle) {
+      // Save to disk (File System Access API)
+      try {
+        const perm = await State.doc.fileHandle.queryPermission({ mode: 'readwrite' });
+        if (perm !== 'granted') {
+          const req = await State.doc.fileHandle.requestPermission({ mode: 'readwrite' });
+          if (req !== 'granted') { setMsg('Permission denied'); return; }
+        }
+        const writable = await State.doc.fileHandle.createWritable();
+        await writable.write(State.doc.content);
+        await writable.close();
+        setMsg('Saved to disk');
+      } catch (e) {
+        setMsg('Disk save failed');
+        console.error(e);
+        return;
+      }
+    }
+
+    // Always update IDB (caches content, persists handle)
+    await DB.saveDoc(State.doc);
+    State.dirty = false;
+    if (!State.doc.fileHandle) setMsg('Saved');
+
+    // Update docs list
+    const idx = State.docs.findIndex(d => d.id === State.doc.id);
+    if (idx >= 0) State.docs[idx] = State.doc;
+
+    // Update daily stats
+    _wc = wordCount(State.doc.content);
+    updateDaily(State.doc.id, _wc);
+
+    updateStatusBar();
+  }
+
+  // ── Input handling ────────────────────────────────────────────────────────
+
+  function onInput() {
+    rehighlight();
+    if (!State.dirty) State.dirty = true;
+    typewriterScroll();
+    updateLineNumbers();
+    if (_tocRefresh) clearTimeout(_tocRefresh);
+    _tocRefresh = setTimeout(() => TOC.refresh(), 600);
+    // Hemingway mode: prevent delete
+    if (State.settings && State.settings.hemingwayMode) {
+      // Handled via keydown
+    }
+    updateStatusBar();
+  }
+
+  function rehighlight() {
+    pre().innerHTML = highlight(ta().value, State.settings);
+  }
+
+  function syncScroll() {
+    pre().scrollTop  = ta().scrollTop;
+    pre().scrollLeft = ta().scrollLeft;
+    const ln = document.getElementById('ed-linenos');
+    if (ln && !ln.hidden) ln.scrollTop = ta().scrollTop;
+  }
+
+  function saveCursorPos() {
+    if (!State.doc) return;
+    State.cursors[State.doc.id] = ta().selectionStart;
+    saveCursors();
+  }
+
+  // ── Status bar ────────────────────────────────────────────────────────────
+
+  // ── Typewriter mode ───────────────────────────────────────────────────────
+
+  function toggleTypewriter() {
+    _typewriter = !_typewriter;
+    document.getElementById('editor').classList.toggle('typewriter', _typewriter);
+    setMsg(_typewriter ? 'Typewriter mode on' : 'Typewriter mode off');
+    if (_typewriter) typewriterScroll();
+  }
+
+  function typewriterScroll() {
+    if (!_typewriter) return;
+    const input = ta();
+    const text  = input.value.substring(0, input.selectionStart);
+    const line  = text.split('\n').length - 1;
+    const lh    = parseFloat(getComputedStyle(input).lineHeight) || 20;
+    input.scrollTop = Math.max(0, line * lh - input.clientHeight / 2 + lh / 2);
+  }
+
+  // ── Line numbers ──────────────────────────────────────────────────────────
+
+  function updateLineNumbers() {
+    const el = document.getElementById('ed-linenos');
+    if (!el || el.hidden) return;
+    const count = (ta().value.match(/\n/g) || []).length + 1;
+    el.textContent = Array.from({ length: count }, (_, i) => i + 1).join('\n');
+    el.scrollTop = ta().scrollTop;
+  }
+
+  function applyLineNumbers() {
+    const el = document.getElementById('ed-linenos');
+    if (!el) return;
+    const show = State.settings.lineNumbers;
+    el.hidden = !show;
+    if (show) updateLineNumbers();
+  }
+
+  function toggleLineNumbers() {
+    State.settings.lineNumbers = !State.settings.lineNumbers;
+    applyLineNumbers();
+    saveSettings();
+    setMsg(State.settings.lineNumbers ? 'Line numbers on' : 'Line numbers off');
+  }
+
+  // ── Go to line ────────────────────────────────────────────────────────────
+
+  function gotoLine() {
+    const raw = prompt('Go to line:');
+    if (!raw) return;
+    const n = parseInt(raw, 10);
+    if (isNaN(n) || n < 1) return;
+    const input  = ta();
+    const lines  = input.value.split('\n');
+    let offset = 0;
+    for (let i = 0; i < Math.min(n - 1, lines.length); i++) {
+      offset += lines[i].length + 1;
+    }
+    input.focus();
+    input.setSelectionRange(offset, offset);
+    const lh = parseFloat(getComputedStyle(input).lineHeight) || 20;
+    input.scrollTop = (n - 1) * lh - input.clientHeight / 3;
+  }
+
+  // ── Command mode (ESC) ───────────────────────────────────────────────────
+
+  function enterCmdMode() {
+    _cmdMode = true;
+    updateStatusBar();
+  }
+
+  function exitCmdMode() {
+    _cmdMode = false;
+    updateStatusBar();
+  }
+
+  function isCmdMode() { return _cmdMode; }
+
+  // ── Messages ──────────────────────────────────────────────────────────────
+
+  let _msgTimeout = null;
+  let _msg = '';
+
+  function setMsg(text) {
+    _msg = text;
+    updateStatusBar();
+    if (_msgTimeout) clearTimeout(_msgTimeout);
+    _msgTimeout = setTimeout(() => { _msg = ''; updateStatusBar(); }, 2000);
+  }
+
+  function updateStatusBar() {
+    if (_cmdMode) {
+      document.getElementById('ed-bar-left').textContent =
+        'ESC: exit  s:stats  i:info  t:timer  p:pause  q:close';
+      document.getElementById('ed-bar-center').textContent = '';
+      document.getElementById('ed-bar-right').textContent  = '';
+      return;
+    }
+    const s = State.settings;
+    const doc = State.doc;
+    const wc = doc ? wordCount(ta().value) : 0;
+    const today = doc ? todayWords(doc.id) : 0;
+    const clk = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+    function buildZone(spec) {
+      return spec.split(/\s+/).map(tok => {
+        switch (tok) {
+          case 'filename': return doc ? doc.name : '';
+          case 'dirty':    return State.dirty ? '[+]' : '';
+          case 'words':    return `${wc}w`;
+          case 'chars':    return `${(ta().value || '').length}c`;
+          case 'goal':     return s.wordGoal > 0 ? `${today}/${s.wordGoal}` : '';
+          case 'clock':    return clk;
+          case 'timer':    return s.timerShow ? Timer.format() : '';
+          default:         return tok;
+        }
+      }).filter(Boolean).join('  ');
+    }
+
+    const l = _msg || buildZone(s.statusLeft   || '');
+    const c =        buildZone(s.statusCenter  || '');
+    const r =        buildZone(s.statusRight   || '');
+    document.getElementById('ed-bar-left').textContent   = l;
+    document.getElementById('ed-bar-center').textContent = c;
+    document.getElementById('ed-bar-right').textContent  = r;
+  }
+
+  function startClock() {
+    stopClock();
+    _clockId = setInterval(updateStatusBar, 10000);
+  }
+  function stopClock() {
+    if (_clockId) { clearInterval(_clockId); _clockId = null; }
+  }
+
+  // ── Autosave ──────────────────────────────────────────────────────────────
+
+  function startAutosave() {
+    stopAutosave();
+    _autosaveId = setInterval(() => { if (State.dirty) save(); }, 60000);
+  }
+  function stopAutosave() {
+    if (_autosaveId) { clearInterval(_autosaveId); _autosaveId = null; }
+  }
+
+  // ── Find / Replace ────────────────────────────────────────────────────────
+
+  let _searchTerm = '';
+  let _matches    = [];
+  let _matchIdx   = -1;
+
+  function searchOpen(withReplace = false) {
+    const bar = document.getElementById('search-bar');
+    bar.hidden = false;
+    document.getElementById('replace-row').hidden   = !withReplace;
+    document.getElementById('replace-one').hidden   = !withReplace;
+    document.getElementById('replace-all').hidden   = !withReplace;
+    document.getElementById('search-input').focus();
+    if (_searchTerm) document.getElementById('search-input').value = _searchTerm;
+    searchUpdate();
+  }
+
+  function searchClose() {
+    document.getElementById('search-bar').hidden = true;
+    ta().focus();
+    _matches = []; _matchIdx = -1;
+    document.getElementById('search-count').textContent = '';
+  }
+
+  function searchUpdate() {
+    _searchTerm = document.getElementById('search-input').value;
+    _matches = [];
+    _matchIdx = -1;
+    if (!_searchTerm) { document.getElementById('search-count').textContent = ''; return; }
+    const text = ta().value;
+    const lower = text.toLowerCase();
+    const term  = _searchTerm.toLowerCase();
+    let pos = 0;
+    while ((pos = lower.indexOf(term, pos)) !== -1) {
+      _matches.push(pos);
+      pos += term.length;
+    }
+    document.getElementById('search-count').textContent = `${_matches.length} match${_matches.length !== 1 ? 'es' : ''}`;
+    if (_matches.length) searchNext();
+  }
+
+  function searchNext() {
+    if (!_matches.length) return;
+    _matchIdx = (_matchIdx + 1) % _matches.length;
+    selectMatch(_matches[_matchIdx]);
+  }
+
+  function searchPrev() {
+    if (!_matches.length) return;
+    _matchIdx = (_matchIdx - 1 + _matches.length) % _matches.length;
+    selectMatch(_matches[_matchIdx]);
+  }
+
+  function selectMatch(pos) {
+    ta().focus();
+    ta().setSelectionRange(pos, pos + _searchTerm.length);
+    // Scroll into view
+    const lh = parseFloat(getComputedStyle(ta()).lineHeight) || 20;
+    const lineIdx = ta().value.slice(0, pos).split('\n').length - 1;
+    ta().scrollTop = lineIdx * lh - ta().clientHeight / 3;
+  }
+
+  function replaceOne() {
+    if (!_matches.length || _matchIdx < 0) return;
+    const repl  = document.getElementById('replace-input').value;
+    const start = _matches[_matchIdx];
+    const text  = ta().value;
+    ta().value  = text.slice(0, start) + repl + text.slice(start + _searchTerm.length);
+    onInput();
+    searchUpdate();
+  }
+
+  function replaceAll() {
+    const repl = document.getElementById('replace-input').value;
+    const re   = new RegExp(_searchTerm.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
+    ta().value = ta().value.replace(re, repl);
+    onInput();
+    searchUpdate();
+    setMsg(`Replaced`);
+  }
+
+  // ── Export ────────────────────────────────────────────────────────────────
+
+  function exportDoc(fmt) {
+    if (!State.doc) return;
+    const ext  = fmt === 'md' ? '.md' : '.txt';
+    const name = State.doc.name.replace(/\.[^.]+$/, '') + ext;
+    const blob = new Blob([State.doc.content || ta().value], {type: 'text/plain'});
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob), download: name
+    });
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+
+  return {
+    open, close, save, onInput, syncScroll, rehighlight, updateStatusBar, setMsg,
+    saveCursorPos, applyLineNumbers,
+    toggleTypewriter, toggleLineNumbers, gotoLine,
+    enterCmdMode, exitCmdMode, isCmdMode,
+    searchOpen, searchClose, searchUpdate, searchNext, searchPrev, replaceOne, replaceAll,
+    exportDoc
+  };
+})();
+
+
+'use strict';
+// Document browser module
+const Browser = (() => {
+
+  // FSA detection — use typeof rather than 'in' (more robust in Brave)
+  const hasFSA = (() => { try { return typeof window.showOpenFilePicker === 'function'; } catch(_) { return false; } })();
+
+  function render() {
+    const list = document.getElementById('br-list');
+    list.innerHTML = '';
+
+    const docs   = State.docs;
+    const favIds = new Set(State.favorites);
+    const recIds = new Set(State.recents);
+
+    const favDocs   = State.favorites.map(id => docs.find(d => d.id === id)).filter(Boolean);
+    const diskDocs  = docs.filter(d => d.fromDisk).sort((a, b) => b.modified - a.modified);
+    const localDocs = docs.filter(d => !d.fromDisk).sort((a, b) => b.modified - a.modified);
+
+    if (favDocs.length) {
+      section('Favorites', favDocs, list, {});
+    }
+
+    // writhdeck.ini — always visible
+    iniRow(list);
+
+    // Watched folder section
+    if (hasFSA && State.dirHandle) {
+      folderSection(list);
+    }
+
+    // Individual disk files (opened with 📂, not from watched folder)
+    if (hasFSA && diskDocs.filter(d => !d.dirFile).length) {
+      const indiv = diskDocs.filter(d => !d.dirFile);
+      const recentDisk = indiv.filter(d => recIds.has(d.id));
+      const olderDisk  = indiv.filter(d => !recIds.has(d.id));
+      if (recentDisk.length) section('Recent files', recentDisk, list, { disk: true });
+      if (olderDisk.length)  section('Files from disk', olderDisk, list, { disk: true });
+    }
+
+    section('Documents', localDocs, list, { showRecent: id => recIds.has(id) });
+
+    buildShortcutBar();
+  }
+
+  function section(title, docs, container, opts) {
+    const hdr = document.createElement('div');
+    hdr.className = 'br-section-header';
+    hdr.textContent = title;
+    container.appendChild(hdr);
+    if (!docs.length) {
+      const empty = document.createElement('div');
+      empty.className = 'br-item';
+      empty.style.color = 'var(--fg-bar)';
+      empty.style.fontSize = '0.85em';
+      empty.textContent = 'No documents yet. Press n to create one.';
+      container.appendChild(empty);
+      return;
+    }
+    docs.forEach(doc => container.appendChild(docRow(doc, opts || {})));
+  }
+
+  function docRow(doc, opts) {
+    const row = document.createElement('div');
+    row.className = 'br-item';
+    if (State.doc && State.doc.id === doc.id) row.classList.add('selected');
+
+    // No pin for folder files (they are ephemeral, not in IDB)
+    const pin = document.createElement('span');
+    if (!opts.dirFile) {
+      pin.className = 'br-item-pin' + (isFavorite(doc.id) ? ' active' : '');
+      pin.textContent = '★';
+      pin.title = isFavorite(doc.id) ? 'Unpin' : 'Pin to favorites';
+      pin.addEventListener('click', e => {
+        e.stopPropagation();
+        toggleFavorite(doc.id);
+        render();
+      });
+    } else {
+      pin.style.cssText = 'width:1em;'; // spacer
+    }
+
+    const name = document.createElement('span');
+    name.className = 'br-item-name';
+    name.textContent = doc.name;
+
+    const meta = document.createElement('span');
+    meta.className = 'br-item-meta';
+    meta.textContent = fmtDate(doc.modified);
+
+    row.appendChild(pin);
+    row.appendChild(name);
+    row.appendChild(meta);
+
+    // Disk file indicator
+    if (opts.disk || doc.fromDisk) {
+      const ico = document.createElement('span');
+      ico.textContent = '💾';
+      ico.title = 'Linked to a file on disk';
+      ico.style.cssText = 'font-size:0.75em;flex-shrink:0;opacity:0.7;';
+      row.appendChild(ico);
+    }
+    // Subtle dot for recently opened storage docs
+    if (opts.showRecent && opts.showRecent(doc.id)) {
+      const dot = document.createElement('span');
+      dot.title = 'Recently opened';
+      dot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:var(--heading);flex-shrink:0;';
+      row.appendChild(dot);
+    }
+
+    row.addEventListener('click', () => Editor.open(doc));
+    row.addEventListener('contextmenu', e => { e.preventDefault(); showContextMenu(doc, e); });
+    return row;
+  }
+
+  function fmtDate(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    const today = new Date();
+    if (d.toDateString() === today.toDateString()) {
+      return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    }
+    return d.toLocaleDateString([], {month:'short', day:'numeric'});
+  }
+
+  // ── Context menu ─────────────────────────────────────────────────────────
+
+  let _ctxMenu = null;
+
+  function showContextMenu(doc, e) {
+    hideContextMenu();
+    const menu = document.createElement('div');
+    menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;
+      background:var(--bg-bar);border:1px solid var(--fg-bar);z-index:200;min-width:140px;`;
+    const items = [
+      ['Open',          () => Editor.open(doc)],
+      ['Rename',        () => renameDoc(doc)],
+      ['Export as .txt',() => exportDocFrom(doc, 'txt')],
+      ['Export as .md', () => exportDocFrom(doc, 'md')],
+      ['Stats',         () => { Stats.show(); }],
+      ['Delete',        () => deleteDoc(doc)]
+    ];
+    items.forEach(([label, fn]) => {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.style.cssText = 'display:block;width:100%;text-align:left;padding:6px 14px;border:none;background:none;';
+      btn.style.color = 'var(--fg)';
+      btn.addEventListener('click', () => { hideContextMenu(); fn(); });
+      menu.appendChild(btn);
+    });
+    document.body.appendChild(menu);
+    _ctxMenu = menu;
+  }
+
+  function hideContextMenu() {
+    if (_ctxMenu) { _ctxMenu.remove(); _ctxMenu = null; }
+  }
+
+  // ── Document actions ─────────────────────────────────────────────────────
+
+  async function newDoc() {
+    const name = prompt('Document name:', 'Untitled');
+    if (!name || !name.trim()) return;
+    const doc = { name: name.trim(), content: '', created: Date.now(), modified: Date.now() };
+    await DB.saveDoc(doc);
+    State.docs.push(doc);
+    render();
+    await Editor.open(doc);
+  }
+
+  async function renameDoc(doc) {
+    const name = prompt('Rename to:', doc.name);
+    if (!name || !name.trim() || name.trim() === doc.name) return;
+    doc.name = name.trim();
+    await DB.saveDoc(doc);
+    if (State.doc && State.doc.id === doc.id) {
+      document.getElementById('ed-filename').textContent = doc.name;
+    }
+    render();
+  }
+
+  async function deleteDoc(doc) {
+    const msg = doc.fromDisk
+      ? `Remove "${doc.name}" from Writhdeck?\n\nThe original file on your disk will NOT be deleted — only the copy stored in the browser is removed.`
+      : `Delete "${doc.name}" from browser storage?\n\nThis cannot be undone. The document is stored only in this browser — it is NOT on your disk.`;
+    if (!confirm(msg)) return;
+    await DB.deleteDoc(doc.id);
+    State.docs      = State.docs.filter(d => d.id !== doc.id);
+    State.favorites = State.favorites.filter(id => id !== doc.id);
+    State.recents   = State.recents.filter(id => id !== doc.id);
+    saveFavorites(); saveRecents();
+    if (State.doc && State.doc.id === doc.id) await Editor.close();
+    render();
+  }
+
+  function exportDocFrom(doc, fmt) {
+    const ext  = fmt === 'md' ? '.md' : '.txt';
+    const name = doc.name.replace(/\.[^.]+$/, '') + ext;
+    const blob = new Blob([doc.content || ''], {type:'text/plain'});
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob), download: name
+    });
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ── Shortcut bar ──────────────────────────────────────────────────────────
+
+  function buildShortcutBar() {
+    const bar = document.getElementById('br-bar');
+    bar.innerHTML = '';
+    const shortcuts = [
+      ['n', 'new', newDoc],
+      ...(hasFSA ? [
+        ['w', 'watch folder', openFolder],
+        ['o', 'open file',   openFromDisk]
+      ] : []),
+      ['Ctrl+O', 'import copy', () => document.getElementById('file-import-input').click()],
+      ['s', 'stats', () => Stats.show()],
+      ['c', 'config', () => Settings.show()]
+    ];
+    shortcuts.forEach(([key, label, fn]) => {
+      const sp = document.createElement('span');
+      sp.className = 'br-shortcut';
+      sp.innerHTML = `<span class="br-shortcut-key">${key}</span>:${label}`;
+      sp.addEventListener('click', fn);
+      bar.appendChild(sp);
+    });
+  }
+
+  function iniRow(container) {
+    const row = document.createElement('div');
+    row.className = 'br-item';
+    if (State.doc && State.doc.isIni) row.classList.add('selected');
+
+    const ico = document.createElement('span');
+    ico.style.cssText = 'font-size:0.8em;color:var(--fg-bar);flex-shrink:0;width:1em;';
+    ico.textContent = '⚙';
+
+    const name = document.createElement('span');
+    name.className = 'br-item-name';
+    name.textContent = 'writhdeck.ini';
+    name.style.color = 'var(--fg-bar)';
+
+    row.appendChild(ico);
+    row.appendChild(name);
+    row.addEventListener('click', () => {
+      Editor.open({
+        id: '__ini__',
+        name: 'writhdeck.ini',
+        content: State.iniText || '',
+        isIni: true,
+        virtual: true
+      });
+    });
+    container.appendChild(row);
+  }
+
+  async function openFolder() {
+    if (typeof window.showDirectoryPicker !== 'function') {
+      alert('Directory access requires Chrome, Edge or Brave.\nIf using Brave, check Shields settings.');
+      return;
+    }
+    let handle;
+    try {
+      handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    } catch (e) {
+      if (e.name !== 'AbortError') console.error(e);
+      return;
+    }
+    State.dirHandle = handle;
+    await saveDirHandle();
+    await scanDir();
+    render();
+  }
+
+  async function clearFolder() {
+    if (!confirm(`Remove folder "${State.dirHandle.name}" from Writhdeck?\n\nFiles on disk are not affected.`)) return;
+    await clearDirHandle();
+    render();
+  }
+
+  async function requestFolderPermission() {
+    if (!State.dirHandle) return;
+    try {
+      const perm = await State.dirHandle.requestPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        await scanDir();
+        render();
+      }
+    } catch (_) {}
+  }
+
+  function folderSection(container) {
+    const dirFiles = State.dirFiles;
+    const dirName  = State.dirHandle.name;
+
+    // Header row with folder name + clear button
+    const hdr = document.createElement('div');
+    hdr.className = 'br-section-header';
+    hdr.style.display = 'flex';
+    hdr.style.alignItems = 'center';
+    hdr.style.justifyContent = 'space-between';
+
+    const label = document.createElement('span');
+    label.textContent = `📁 ${dirName}`;
+    hdr.appendChild(label);
+
+    const clearBtn = document.createElement('span');
+    clearBtn.textContent = '✕';
+    clearBtn.title = 'Remove folder';
+    clearBtn.style.cssText = 'cursor:pointer;color:var(--fg-bar);font-size:0.8em;padding:0 4px;';
+    clearBtn.addEventListener('click', e => { e.stopPropagation(); clearFolder(); });
+    hdr.appendChild(clearBtn);
+    container.appendChild(hdr);
+
+    if (!dirFiles.length) {
+      // Check permission state
+      State.dirHandle.queryPermission({ mode: 'readwrite' }).then(perm => {
+        if (perm !== 'granted') {
+          const row = document.createElement('div');
+          row.className = 'br-item';
+          const btn = document.createElement('button');
+          btn.textContent = 'Re-authorize folder access';
+          btn.style.cssText = 'font-size:0.85em;margin:4px 0;';
+          btn.addEventListener('click', requestFolderPermission);
+          row.appendChild(btn);
+          container.appendChild(row);
+        } else {
+          const row = document.createElement('div');
+          row.className = 'br-item';
+          row.style.color = 'var(--fg-bar)';
+          row.style.fontSize = '0.85em';
+          row.textContent = 'No .txt / .md / .tcl files in this folder.';
+          container.appendChild(row);
+        }
+      });
+      return;
+    }
+
+    dirFiles.forEach(doc => {
+      const row = docRow(doc, { dirFile: true });
+      container.appendChild(row);
+    });
+  }
+
+  async function openFromDisk() {
+    if (typeof window.showOpenFilePicker !== 'function') {
+      alert('Direct file access is not available in this browser.\n\nUse the ↑ Import button to load a copy of a file, or switch to Chrome/Edge/Brave.\n\nIf you are using Brave, check that Shields fingerprinting protection is not set to "Strict".');
+      return;
+    }
+    let handles;
+    try {
+      handles = await window.showOpenFilePicker({
+        multiple: true,
+        types: [{ description: 'Text files', accept: { 'text/plain': ['.txt', '.md', '.tcl', '.text'] } }]
+      });
+    } catch (e) {
+      if (e.name !== 'AbortError') console.error(e);
+      return;
+    }
+    for (const fileHandle of handles) {
+      const file    = await fileHandle.getFile();
+      const content = await file.text();
+      // Check if already tracked (same name + fromDisk)
+      const existing = State.docs.find(d => d.fromDisk && d.name === file.name);
+      if (existing) {
+        // Update handle and content
+        existing.fileHandle = fileHandle;
+        existing.content    = content;
+        existing.modified   = Date.now();
+        await DB.saveDoc(existing);
+        await Editor.open(existing);
+      } else {
+        const doc = { name: file.name, content, fromDisk: true, fileHandle, created: Date.now(), modified: Date.now() };
+        await DB.saveDoc(doc);
+        State.docs.push(doc);
+        await Editor.open(doc);
+      }
+    }
+    render();
+  }
+
+  return { render, newDoc, renameDoc, deleteDoc, openFromDisk, openFolder, hideContextMenu, hasFSA };
+})();
+
+
+'use strict';
+const Settings = (() => {
+
+  const COLOR_KEYS = [
+    ['bg',         'Background (dark)'],
+    ['fg',         'Text (dark)'],
+    ['bgBar',      'Bar BG (dark)'],
+    ['fgBar',      'Bar text (dark)'],
+    ['bgSel',      'Selection (dark)'],
+    ['heading',    'Heading (dark)'],
+    ['comment',    'Comment (dark)'],
+    ['markup',     'Markup (dark)'],
+    ['bgAlt',      'Background (light)'],
+    ['fgAlt',      'Text (light)'],
+    ['bgBarAlt',   'Bar BG (light)'],
+    ['fgBarAlt',   'Bar text (light)'],
+    ['bgSelAlt',   'Selection (light)'],
+    ['headingAlt', 'Heading (light)'],
+    ['commentAlt', 'Comment (light)'],
+    ['markupAlt',  'Markup (light)']
+  ];
+
+  // ── Public ────────────────────────────────────────────────────────────────
+
+  function show(tab) {
+    populate();
+    if (tab) switchTab(tab);
+    document.getElementById('settings-dlg').showModal();
+  }
+
+  // ── Populate ──────────────────────────────────────────────────────────────
+
+  function populate() {
+    const s = State.settings;
+
+    // Fill all data-key inputs (Profile, Timer, Misc, Display tabs)
+    document.querySelectorAll('#settings-dlg [data-key]').forEach(el => {
+      const key = el.dataset.key;
+      if (!(key in s)) return;
+      if (el.type === 'checkbox') el.checked = !!s[key];
+      else el.value = s[key];
+    });
+
+    // Scheme selectors (profile + schemes tab)
+    ['scheme-select-profile', 'scheme-select'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      sel.innerHTML = '';
+      getAllSchemeNames().forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = name;
+        if (name === s.scheme) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    });
+
+    buildColorGrid(s.scheme);
+    populateFontList(s.fontFamily);
+    updateFontPreview(s.fontFamily, s.fontSize);
+  }
+
+  function populateFontList(current) {
+    const list = document.getElementById('font-list');
+    list.innerHTML = '';
+    // Detect available fonts via canvas
+    const available = detectFonts([
+      'monospace', 'serif', 'sans-serif',
+      'Courier New', 'Consolas', 'Fira Code', 'JetBrains Mono', 'Source Code Pro',
+      'Liberation Mono', 'DejaVu Sans Mono', 'Ubuntu Mono', 'Inconsolata',
+      'Noto Mono', 'Hack', 'Cascadia Code', 'Menlo', 'Monaco',
+      'Georgia', 'Palatino', 'Times New Roman', 'Arial', 'Helvetica', 'Verdana',
+      'Noto Serif', 'Noto Sans', 'Tahoma', 'Trebuchet MS'
+    ]);
+    available.forEach(font => {
+      const div = document.createElement('div');
+      div.className = 'font-item' + (font === current ? ' selected' : '');
+      div.textContent = font;
+      div.style.fontFamily = font;
+      div.addEventListener('click', () => {
+        document.querySelectorAll('.font-item').forEach(d => d.classList.remove('selected'));
+        div.classList.add('selected');
+        document.getElementById('font-family-input').value = font;
+        updateFontPreview(font);
+      });
+      list.appendChild(div);
+    });
+  }
+
+  function detectFonts(candidates) {
+    const cvs = document.createElement('canvas');
+    cvs.width = 200; cvs.height = 50;
+    const ctx = cvs.getContext('2d');
+    const base = 'monospace';
+    const text = 'abcdefghijklm0123456789';
+    ctx.font = `14px ${base}`;
+    const refW = ctx.measureText(text).width;
+    return candidates.filter(f => {
+      ctx.font = `14px "${f}", ${base}`;
+      return f === 'monospace' || f === 'serif' || f === 'sans-serif'
+        || ctx.measureText(text).width !== refW;
+    });
+  }
+
+  function updateFontPreview(family, size) {
+    const preview = document.getElementById('font-preview');
+    if (!preview) return;
+    const f = family || document.getElementById('font-family-input').value || 'monospace';
+    const sz = size || Number(document.querySelector('[data-key="fontSize"]').value) || 14;
+    preview.style.fontFamily = f;
+    preview.style.fontSize = sz + 'px';
+  }
+
+  function buildColorGrid(schemeName) {
+    const scheme = getScheme(schemeName);
+    const grid = document.getElementById('scheme-colors');
+    grid.innerHTML = '';
+    COLOR_KEYS.forEach(([key, label]) => {
+      const lbl = document.createElement('label');
+      lbl.textContent = label;
+      lbl.style.fontSize = '0.85em';
+      const inp = document.createElement('input');
+      inp.type = 'color';
+      inp.dataset.colorKey = key;
+      inp.value = (scheme[key] || '#888888').slice(0, 7); // color input needs 6-digit hex
+      grid.appendChild(lbl);
+      grid.appendChild(inp);
+    });
+  }
+
+  // ── Apply ─────────────────────────────────────────────────────────────────
+
+  function apply() {
+    const s = State.settings;
+
+    // Read all data-key inputs
+    document.querySelectorAll('#settings-dlg [data-key]').forEach(el => {
+      const key = el.dataset.key;
+      if (el.type === 'checkbox')    s[key] = el.checked;
+      else if (el.type === 'number') s[key] = Number(el.value);
+      else                           s[key] = el.value;
+    });
+
+    // If the active scheme tab selector differs from profile tab selector, prefer schemes tab
+    const schemesSel = document.getElementById('scheme-select');
+    if (schemesSel) s.scheme = schemesSel.value;
+
+    // Persist color edits for custom schemes
+    const schemeName = s.scheme;
+    if (!SCHEMES[schemeName]) {
+      const scheme = { ...getScheme(schemeName) };
+      document.querySelectorAll('#scheme-colors input[data-color-key]').forEach(inp => {
+        scheme[inp.dataset.colorKey] = inp.value;
+      });
+      customSchemes[schemeName] = scheme;
+      saveCustomSchemes();
+    }
+
+    saveSettings();
+    applyTheme();
+    if (State.doc) {
+      Editor.rehighlight();
+      Editor.applyLineNumbers();
+      Editor.updateStatusBar();
+    }
+  }
+
+  // ── Tab switching ─────────────────────────────────────────────────────────
+
+  function switchTab(name) {
+    document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.stab-content').forEach(c => c.classList.remove('active'));
+    const btn = document.querySelector(`.stab[data-tab="${name}"]`);
+    const pane = document.querySelector(`.stab-content[data-tab="${name}"]`);
+    if (btn) btn.classList.add('active');
+    if (pane) pane.classList.add('active');
+  }
+
+  // ── Scheme actions ────────────────────────────────────────────────────────
+
+  function newScheme() {
+    const name = prompt('New scheme name:');
+    if (!name || !name.trim()) return;
+    const trimmed = name.trim();
+    if (getAllSchemeNames().includes(trimmed)) { alert('Name already exists.'); return; }
+    customSchemes[trimmed] = { ...getScheme(State.settings.scheme) };
+    saveCustomSchemes();
+    State.settings.scheme = trimmed;
+    saveSettings();
+    populate();
+    applyTheme();
+  }
+
+  function deleteScheme() {
+    const name = document.getElementById('scheme-select').value;
+    if (SCHEMES[name]) { alert('Cannot delete a built-in scheme.'); return; }
+    if (!confirm(`Delete scheme "${name}"?`)) return;
+    delete customSchemes[name];
+    saveCustomSchemes();
+    State.settings.scheme = 'default';
+    saveSettings();
+    populate();
+    applyTheme();
+  }
+
+  // ── INI import / export ───────────────────────────────────────────────────
+
+  async function importIni(text) {
+    const { settings, schemes } = INI.parseIni(text);
+    Object.assign(State.settings, settings);
+    for (const [n, sc] of Object.entries(schemes)) {
+      customSchemes[n] = SCHEMES[n] ? { ...SCHEMES[n], ...sc } : sc;
+    }
+    await saveSettings();   // re-generates INI text + stores in IDB
+    applyTheme();
+    populate();
+    if (State.doc) { Editor.rehighlight(); Editor.updateStatusBar(); }
+    alert(`Settings imported.\nSchemes found: ${Object.keys(schemes).join(', ') || 'none'}`);
+  }
+
+  function exportIni() {
+    // State.iniText is always kept in sync with IDB — no need to regenerate
+    const text = State.iniText || INI.writeIni(State.settings, { ...SCHEMES, ...customSchemes });
+    const blob = new Blob([text], { type: 'text/plain' });
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob),
+      download: 'writhdeck.ini'
+    });
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ── Export all ────────────────────────────────────────────────────────────
+
+  function exportAll() {
+    State.docs.forEach(doc => {
+      if (!doc.content) return;
+      const blob = new Blob([doc.content], { type: 'text/plain' });
+      const a = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(blob),
+        download: doc.name.replace(/\.[^.]+$/, '') + '.txt'
+      });
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    });
+  }
+
+  function exportZip() {
+    const files = State.docs
+      .filter(d => d.content)
+      .map(d => ({ name: d.name.replace(/\.[^.]+$/, '') + '.txt', content: d.content }));
+    if (!files.length) { alert('No documents to export.'); return; }
+    const blob = new Blob([buildZip(files)], { type: 'application/zip' });
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob),
+      download: 'writhdeck-export.zip'
+    });
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+
+  // Minimal uncompressed ZIP builder (no external dependency)
+  function buildZip(files) {
+    const enc = new TextEncoder();
+
+    function u16(n) { return [(n) & 0xff, (n >> 8) & 0xff]; }
+    function u32(n) { return [(n) & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >> 24) & 0xff]; }
+
+    function crc32(data) {
+      if (!crc32._t) {
+        crc32._t = new Uint32Array(256);
+        for (let i = 0; i < 256; i++) {
+          let c = i;
+          for (let j = 0; j < 8; j++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+          crc32._t[i] = c;
+        }
+      }
+      let crc = 0xffffffff;
+      for (const b of data) crc = (crc32._t[(crc ^ b) & 0xff] ^ (crc >>> 8)) >>> 0;
+      return (crc ^ 0xffffffff) >>> 0;
+    }
+
+    function concat(...arrays) {
+      const len = arrays.reduce((s, a) => s + a.length, 0);
+      const out = new Uint8Array(len);
+      let off = 0;
+      for (const a of arrays) { out.set(a, off); off += a.length; }
+      return out;
+    }
+
+    const DOS_TIME = new Uint8Array([0, 0, 0, 0]); // midnight Jan 1 1980
+
+    const locals = [];    // local file records
+    const centralDir = [];
+    let offset = 0;
+
+    for (const file of files) {
+      const name = enc.encode(file.name);
+      const data = enc.encode(file.content);
+      const crc  = crc32(data);
+      const sz   = data.length;
+
+      const local = concat(
+        new Uint8Array([0x50,0x4b,0x03,0x04, 20,0, 0,0, 0,0]),
+        DOS_TIME,
+        new Uint8Array(u32(crc)),
+        new Uint8Array(u32(sz)),
+        new Uint8Array(u32(sz)),
+        new Uint8Array(u16(name.length)),
+        new Uint8Array([0,0]),
+        name,
+        data
+      );
+
+      const cd = concat(
+        new Uint8Array([0x50,0x4b,0x01,0x02, 20,0, 20,0, 0,0, 0,0]),
+        DOS_TIME,
+        new Uint8Array(u32(crc)),
+        new Uint8Array(u32(sz)),
+        new Uint8Array(u32(sz)),
+        new Uint8Array(u16(name.length)),
+        new Uint8Array([0,0, 0,0, 0,0, 0,0, 0,0,0,0]),
+        new Uint8Array(u32(offset)),
+        name
+      );
+
+      locals.push(local);
+      centralDir.push(cd);
+      offset += local.length;
+    }
+
+    const cdSize = centralDir.reduce((s, c) => s + c.length, 0);
+    const eocd = concat(
+      new Uint8Array([0x50,0x4b,0x05,0x06, 0,0, 0,0]),
+      new Uint8Array(u16(files.length)),
+      new Uint8Array(u16(files.length)),
+      new Uint8Array(u32(cdSize)),
+      new Uint8Array(u32(offset)),
+      new Uint8Array([0,0])
+    );
+
+    return concat(...locals, ...centralDir, eocd);
+  }
+
+  // ── Event wiring ──────────────────────────────────────────────────────────
+
+  function initEvents() {
+    // Tab buttons
+    document.querySelectorAll('.stab').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    // Scheme selector in Schemes tab → rebuild color grid
+    document.getElementById('scheme-select').addEventListener('change', e => {
+      buildColorGrid(e.target.value);
+    });
+
+    // Scheme selector in Profile tab → sync to Schemes tab selector
+    document.getElementById('scheme-select-profile').addEventListener('change', e => {
+      document.getElementById('scheme-select').value = e.target.value;
+      buildColorGrid(e.target.value);
+    });
+
+    // Font size change → update preview
+    document.querySelector('[data-key="fontSize"]').addEventListener('input', () => {
+      updateFontPreview();
+    });
+    document.getElementById('font-family-input').addEventListener('input', () => {
+      updateFontPreview();
+    });
+
+    document.getElementById('settings-apply').addEventListener('click', apply);
+    document.getElementById('settings-close').addEventListener('click', () => {
+      document.getElementById('settings-dlg').close();
+    });
+    document.getElementById('scheme-new-btn').addEventListener('click', newScheme);
+    document.getElementById('scheme-delete-btn').addEventListener('click', deleteScheme);
+    document.getElementById('misc-export-all-btn').addEventListener('click', exportAll);
+    document.getElementById('misc-export-zip-btn').addEventListener('click', exportZip);
+    document.getElementById('misc-ini-export-btn').addEventListener('click', exportIni);
+    document.getElementById('misc-ini-import-btn').addEventListener('click', () => {
+      document.getElementById('ini-import-input').click();
+    });
+    document.getElementById('ini-import-input').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      await importIni(await file.text());
+      e.target.value = '';
+    });
+    // misc-import-btn wired in app.js (shares logic with br-import-btn)
+  }
+
+  return { show, initEvents, switchTab };
+})();
+
+
+'use strict';
+// Main entry point
+
+// ── File info dialog ──────────────────────────────────────────────────────
+
+async function showFileInfo() {
+  const doc = State.doc;
+  if (!doc) return;
+  const body = document.getElementById('info-body');
+  body.innerHTML = '';
+
+  const wc = (doc.content || '').match(/\S+/g)?.length || 0;
+  const cc = (doc.content || '').length;
+
+  // Build storage label with best available path info
+  let storageLabel;
+  if (doc.fromDisk) {
+    let pathDisplay = doc.name;
+    if (doc.dirFile && State.dirHandle && doc.fileHandle) {
+      // resolve() gives the path relative to the watched folder
+      try {
+        const parts = await State.dirHandle.resolve(doc.fileHandle);
+        if (parts) pathDisplay = [State.dirHandle.name, ...parts].join('/');
+      } catch (_) {}
+    } else if (doc.fileHandle) {
+      pathDisplay = `${doc.fileHandle.name} <span style="color:var(--fg-bar);font-size:0.85em">(folder not set — full path unavailable)</span>`;
+    }
+    storageLabel = `<span class="info-storage-disk">Disk file — ${pathDisplay}</span>`;
+  } else {
+    storageLabel = `<span class="info-storage-browser">Browser storage (IndexedDB) — not on your disk</span>`;
+  }
+
+  const rows = [
+    ['Name',     doc.name],
+    ['Storage',  storageLabel],
+    ['Words',    wc.toLocaleString()],
+    ['Chars',    cc.toLocaleString()],
+    ['Created',  doc.created  ? new Date(doc.created).toLocaleString()  : '—'],
+    ['Modified', doc.modified ? new Date(doc.modified).toLocaleString() : '—']
+  ];
+
+  rows.forEach(([label, value]) => {
+    const row = document.createElement('div');
+    row.className = 'info-row';
+    row.innerHTML = `<span class="info-label">${label}</span><span class="info-value">${value}</span>`;
+    body.appendChild(row);
+  });
+
+  document.getElementById('info-dlg').showModal();
+}
+
+// ── Fullscreen ────────────────────────────────────────────────────────────
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+// ── Theme ──────────────────────────────────────────────────────────────────
+
+function applyTheme() {
+  const s  = State.settings;
+  const sc = getScheme(s.scheme);
+  const dark = s.darkMode;
+  const r = document.documentElement.style;
+
+  r.setProperty('--bg',      dark ? sc.bg      : sc.bgAlt);
+  r.setProperty('--fg',      dark ? sc.fg      : sc.fgAlt);
+  r.setProperty('--bg-bar',  dark ? sc.bgBar   : sc.bgBarAlt);
+  r.setProperty('--fg-bar',  dark ? sc.fgBar   : sc.fgBarAlt);
+  r.setProperty('--bg-sel',  dark ? sc.bgSel   : sc.bgSelAlt);
+  r.setProperty('--heading', dark ? sc.heading : sc.headingAlt);
+  r.setProperty('--comment', dark ? sc.comment : sc.commentAlt);
+  r.setProperty('--markup',  dark ? sc.markup  : sc.markupAlt);
+  r.setProperty('--bg2',     dark ? (sc.bg2 || sc.bg) : (sc.bg2Alt || sc.bgAlt));
+
+  r.setProperty('--font-family',  s.fontFamily || 'monospace');
+  r.setProperty('--font-size',    (s.fontSize  || 14) + 'px');
+  r.setProperty('--line-spacing', (s.lineSpacing || 1.5));
+  r.setProperty('--margin-x',     (s.marginX   || 80) + 'px');
+  r.setProperty('--margin-y',     (s.marginY   || 40) + 'px');
+}
+
+// ── File import ────────────────────────────────────────────────────────────
+
+function triggerImport() {
+  document.getElementById('file-import-input').click();
+}
+
+async function importFiles(files) {
+  for (const file of files) {
+    const text = await file.text();
+    const name = file.name;
+    const doc  = { name, content: text, created: Date.now(), modified: Date.now() };
+    await DB.saveDoc(doc);
+    State.docs.push(doc);
+  }
+  Browser.render();
+  // If a single file, open it directly
+  if (files.length === 1) {
+    const last = State.docs[State.docs.length - 1];
+    await Editor.open(last);
+  }
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────────────────
+
+function onKeydown(e) {
+  const ctrl  = e.ctrlKey || e.metaKey;
+  const shift = e.shiftKey;
+  const key   = e.key;
+  const lkey  = key.toLowerCase();
+  const inEditor  = !document.getElementById('editor').hidden;
+  const inBrowser = !document.getElementById('browser').hidden;
+
+  Browser.hideContextMenu();
+
+  // Global shortcuts (work anywhere, no active input focused)
+  const focused = document.activeElement;
+  const inInput = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.tagName === 'SELECT');
+
+  // Dark/light toggle — global
+  if (ctrl && lkey === 'd' && !inInput) {
+    e.preventDefault();
+    State.settings.darkMode = !State.settings.darkMode;
+    saveSettings();
+    applyTheme();
+    if (State.doc) Editor.rehighlight();
+    return;
+  }
+
+  // File import — global
+  if (ctrl && lkey === 'o') {
+    e.preventDefault();
+    triggerImport();
+    return;
+  }
+
+  // F11 — always intercept: TOC toggle in editor, ignored elsewhere
+  if (key === 'F11') {
+    e.preventDefault(); e.stopPropagation();
+    if (inEditor) TOC.toggle();
+    return;
+  }
+
+  // Alt+Enter — fullscreen toggle
+  if (e.altKey && key === 'Enter') {
+    e.preventDefault(); e.stopPropagation();
+    toggleFullscreen();
+    return;
+  }
+
+  // Editor shortcuts
+  if (inEditor) {
+    // Command mode — intercept ALL keys while active
+    if (Editor.isCmdMode()) {
+      e.preventDefault(); e.stopPropagation();
+      Editor.exitCmdMode();
+      switch (lkey) {
+        case 's': Stats.show();    break;
+        case 'i': showFileInfo();  break;
+        case 't': Timer.toggle();  Editor.updateStatusBar(); break;
+        case 'p': Timer.isActive() ? Timer.pause() : Timer.toggle();
+                  Editor.updateStatusBar(); break;
+        case 'q': Editor.close();  break;
+        // any other key: just exit cmd mode (already done above)
+      }
+      return;
+    }
+
+    if (ctrl && lkey === 's')     { e.preventDefault(); e.stopPropagation(); Editor.save();              return; }
+    if (ctrl && lkey === 'q')     { e.preventDefault(); e.stopPropagation(); Editor.close();             return; }
+    if (ctrl && lkey === 'f')     { e.preventDefault(); e.stopPropagation(); Editor.searchOpen(false);   return; }
+    if (ctrl && lkey === 'h')     { e.preventDefault(); e.stopPropagation(); Editor.searchOpen(true);    return; }
+    if (ctrl && lkey === 'g')     { e.preventDefault(); e.stopPropagation(); Editor.gotoLine();          return; }
+    if (ctrl && lkey === 'l')     { e.preventDefault(); e.stopPropagation(); Editor.toggleLineNumbers();  return; }
+    if (e.altKey && lkey === 't') { e.preventDefault(); e.stopPropagation(); Timer.toggle(); Editor.updateStatusBar(); return; }
+
+    // Shortcuts that override browser defaults — only when option is enabled
+    const intercept = State.settings.interceptBrowserShortcuts;
+    if (intercept && ctrl && lkey === 't') { e.preventDefault(); e.stopPropagation(); Editor.toggleTypewriter(); return; }
+    if (lkey === 'escape') {
+      e.preventDefault(); e.stopPropagation();
+      const openDlg = document.querySelector('dialog[open]');
+      if (openDlg) { openDlg.close(); return; }
+      if (!document.getElementById('search-bar').hidden) { Editor.searchClose(); return; }
+      // ESC enters command mode
+      Editor.enterCmdMode();
+      return;
+    }
+    // Hemingway mode
+    if (State.settings.hemingwayMode && (lkey === 'backspace' || lkey === 'delete')) {
+      e.preventDefault(); return;
+    }
+  }
+
+  // Browser shortcuts (no input focused)
+  if (inBrowser && !inInput) {
+    if (lkey === 'n') { e.preventDefault(); Browser.newDoc();        return; }
+    if (lkey === 'o' && Browser.hasFSA) { e.preventDefault(); Browser.openFromDisk(); return; }
+    if (lkey === 'w' && Browser.hasFSA) { e.preventDefault(); Browser.openFolder();   return; }
+    if (lkey === 's') { e.preventDefault(); Stats.show();            return; }
+    if (lkey === 'c') { e.preventDefault(); Settings.show();         return; }
+    // Override browser Ctrl+N → new document (only when option enabled)
+    if (State.settings.interceptBrowserShortcuts && ctrl && lkey === 'n') {
+      e.preventDefault(); e.stopPropagation(); Browser.newDoc(); return;
+    }
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+
+async function init() {
+  await DB.open();
+  await loadState();
+  applyTheme();
+
+  // Restore watched folder if permission still granted (silent — no user gesture needed for query)
+  if (State.dirHandle) {
+    try {
+      const perm = await State.dirHandle.queryPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        await scanDir();
+        // Auto-load writhdeck.ini from the watched folder (silent, no prompt)
+        if (State.dirIniHandle) {
+          try {
+            const f = await State.dirIniHandle.getFile();
+            const { settings, schemes } = INI.parseIni(await f.text());
+            Object.assign(State.settings, settings);
+            for (const [n, sc] of Object.entries(schemes)) {
+              if (!SCHEMES[n]) customSchemes[n] = sc;
+            }
+            await saveSettings();
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
+  }
+
+  Browser.render();
+
+  // First run — no INI yet → save defaults to IDB
+  if (!State.iniText) await saveSettings();
+
+  // Wire editor textarea events
+  const ta = document.getElementById('ed-input');
+  ta.addEventListener('input',  () => Editor.onInput());
+  ta.addEventListener('scroll', () => Editor.syncScroll());
+
+  // Header buttons
+  document.getElementById('br-new-btn').addEventListener('click',    () => Browser.newDoc());
+  document.getElementById('br-import-btn').addEventListener('click', triggerImport);
+  document.getElementById('br-folder-btn').addEventListener('click',  () => Browser.openFolder());
+  document.getElementById('br-opendisk-btn').addEventListener('click', () => Browser.openFromDisk());
+  document.getElementById('ed-close-btn').addEventListener('click',  () => Editor.close());
+  document.getElementById('ed-settings-btn').addEventListener('click', () => Settings.show());
+  document.getElementById('ed-toc-btn').addEventListener('click',    () => TOC.toggle());
+
+  // File import input
+  const fileInput = document.getElementById('file-import-input');
+  fileInput.addEventListener('change', async () => {
+    if (fileInput.files.length) {
+      await importFiles(Array.from(fileInput.files));
+      fileInput.value = ''; // reset so same file can be re-imported
+    }
+  });
+  // Drag and drop on browser panel
+  const browserEl = document.getElementById('browser');
+  browserEl.addEventListener('dragover', e => { e.preventDefault(); browserEl.style.outline = '2px dashed var(--heading)'; });
+  browserEl.addEventListener('dragleave', () => { browserEl.style.outline = ''; });
+  browserEl.addEventListener('drop', async e => {
+    e.preventDefault();
+    browserEl.style.outline = '';
+    const files = Array.from(e.dataTransfer.files).filter(f => /\.(txt|md|tcl|text)$/i.test(f.name));
+    if (files.length) await importFiles(files);
+  });
+
+  // Export menu
+  const exportBtn  = document.getElementById('ed-export-btn');
+  const exportMenu = document.getElementById('export-menu');
+  exportBtn.addEventListener('click', e => { e.stopPropagation(); exportMenu.hidden = !exportMenu.hidden; });
+  exportMenu.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => { exportMenu.hidden = true; Editor.exportDoc(btn.dataset.fmt); });
+  });
+  document.addEventListener('click', () => { exportMenu.hidden = true; });
+
+  // Search bar
+  document.getElementById('search-input').addEventListener('input',  () => Editor.searchUpdate());
+  document.getElementById('search-next').addEventListener('click',   () => Editor.searchNext());
+  document.getElementById('search-prev').addEventListener('click',   () => Editor.searchPrev());
+  document.getElementById('replace-one').addEventListener('click',   () => Editor.replaceOne());
+  document.getElementById('replace-all').addEventListener('click',   () => Editor.replaceAll());
+  document.getElementById('search-close').addEventListener('click',  () => Editor.searchClose());
+  document.getElementById('search-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.shiftKey) Editor.searchPrev();
+    else if (e.key === 'Enter')          Editor.searchNext();
+    else if (e.key === 'Escape')         Editor.searchClose();
+  });
+
+  // Dialog close buttons
+  document.getElementById('info-close').addEventListener('click',      () => document.getElementById('info-dlg').close());
+  document.getElementById('stats-close').addEventListener('click',     () => document.getElementById('stats-dlg').close());
+  document.getElementById('timer-alert-ok').addEventListener('click',  () => document.getElementById('timer-alert-dlg').close());
+
+  // Misc tab import button (shares triggerImport)
+  document.getElementById('misc-import-btn').addEventListener('click', triggerImport);
+
+  // Settings
+  Settings.initEvents();
+
+  // Keyboard — capture phase so we intercept before browser default handlers
+  document.addEventListener('keydown', onKeydown, true);
+
+  // Save cursor + dirty guard on unload
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && State.doc) Editor.saveCursorPos();
+  });
+  window.addEventListener('beforeunload', e => {
+    if (State.dirty) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  // Open last doc if configured
+  if (State.settings.openLastDoc && State.recents.length) {
+    const lastId = State.recents[0];
+    const doc = State.docs.find(d => d.id === lastId);
+    if (doc) await Editor.open(doc);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+</script>
+</body>
+</html>
