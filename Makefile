@@ -12,6 +12,7 @@
 #
 # Typical builds:
 #   make                                              # Standard: full GUI, minimal CLI
+#   make mini                                         # Compact GUI-only, en, no config dialog -> writhdeck-mini.tcl
 #   make LANGUAGES="en" SCHEMES="default"             # Minimal: GUI en + default scheme only
 #   make CLI_LANGUAGES="en fr de es" CLI_SCHEMES="default solarized gruvbox everforest nord alt01"  # Full CLI
 
@@ -32,16 +33,17 @@ SEP       := ===================================================================
 GUI_CONFIG ?= yes
 GUI_CONFIG_SRC := $(if $(filter yes,$(GUI_CONFIG)),src/gui-config.tcl,)
 GUI_SRCS  := src/state.tcl src/config.tcl $(GUI_SCHEME_FILES) src/common.tcl $(GUI_CONFIG_SRC) src/gui.tcl src/tui.tcl src/main.tcl
+MINI_SCHEME_FILES := $(patsubst %,src/schemes/%.tcl,$(AVAILABLE_SCHEMES))
 CLI_SRCS  := src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl src/tui.tcl src/main-cli.tcl
 JIM_SRCS  := src/compat-jim.tcl src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl src/tui.tcl src/main-cli.tcl
 
 COMPACT_SCRIPT := tools/tcl-compact.tcl
 
-.PHONY: all clean compact compact-cli jimtcl sfx .FORCE
+.PHONY: all mini clean compact compact-cli jimtcl sfx .FORCE
 
 JIMSH ?= /opt/jimsh
 
-all: writhdeck.tcl writhdeck-cli.tcl
+all: writhdeck.tcl writhdeck-cli.tcl writhdeck-mini.tcl
 
 writhdeck.tcl: src/boot.tcl $(GUI_SRCS) $(GUI_I18N_FILES) Makefile
 	@rm -f $@
@@ -123,8 +125,22 @@ compact-cli: writhdeck-cli.tcl
 	@tclsh $(COMPACT_SCRIPT) writhdeck-cli.tcl writhdeck-cli-compact.tcl
 	@chmod +x writhdeck-cli-compact.tcl
 
+mini: writhdeck-mini.tcl
+
+writhdeck-mini.tcl: src/boot.tcl src/state.tcl src/config.tcl $(MINI_SCHEME_FILES) \
+                    src/i18n/en.tcl src/common.tcl src/gui.tcl src/tui.tcl src/main.tcl \
+                    $(COMPACT_SCRIPT) Makefile
+	@rm -f writhdeck-mini.tcl writhdeck-mini-raw.tcl
+	@cat src/boot.tcl src/state.tcl src/config.tcl > writhdeck-mini-raw.tcl
+	@for f in $(MINI_SCHEME_FILES); do cat $$f >> writhdeck-mini-raw.tcl; done
+	@cat src/i18n/en.tcl src/common.tcl src/gui.tcl src/tui.tcl src/main.tcl >> writhdeck-mini-raw.tcl
+	@tclsh $(COMPACT_SCRIPT) writhdeck-mini-raw.tcl writhdeck-mini.tcl
+	@rm writhdeck-mini-raw.tcl
+	@chmod +x writhdeck-mini.tcl
+	@echo "Built writhdeck-mini.tcl (GUI+TUI compact, en only, no config dialog)"
+
 clean:
-	rm -f writhdeck.tcl writhdeck-cli.tcl writhdeck-compact.tcl writhdeck-cli-compact.tcl writhdeck-jim.tcl writhdeck-sfx
+	rm -f writhdeck.tcl writhdeck-cli.tcl writhdeck-compact.tcl writhdeck-cli-compact.tcl writhdeck-jim.tcl writhdeck-sfx writhdeck-mini.tcl writhdeck-mini-raw.tcl
 	@echo "Cleaned build artifacts"
 
 .PHONY: test-gui test-cli test test-i18n test-syntax test-langs lint-doc
