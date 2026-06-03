@@ -41,17 +41,18 @@ Update it on every functional change.
 
 After `make`, the generated `writhdeck.tcl` contains these sections (concatenated from source modules):
 
-| Section     | Source module    | Lines     | Content                                                                    |
-| ----------- | ---------------- | --------- | -------------------------------------------------------------------------- |
-| Bootstrap   | `src/boot.tcl`   | 1–80      | Polyglot sh/Tcl, args, Tk detection, `::HOME_DIR`, `tilde-expand`          |
-| State       | `src/state.tcl`  | 81–228    | `.writhdeck.json` persistence, cursors, favorites, recents, daily stats    |
-| Config      | `src/config.tcl` | 229–1033  | INI loading/saving, profiles, schemes, keys, i18n system, theme init       |
-| Common      | `src/common.tcl` | 1034–1238 | `list-docs`, `br-dirs`, `do-backup`, `build-extra-entries`, inline parsers |
-| **GUI**     | `src/gui.tcl`    | 1239–3240 | Wrapped in `if {!$::no_gui}` — browser, editor, dialogs, TOC, split view   |
-| **TUI**     | `src/tui.tcl`    | 3241–4885 | Terminal UI — `tui-init`, `tui-browser`, `tui-editor`, `tui-main`, helpers |
-| Entry point | `src/main.tcl`   | 4886–4917 | Dispatch: `if {$::no_gui}` → TUI, else → GUI                               |
+| Section        | Source module          | Content                                                                         |
+| -------------- | ---------------------- | ------------------------------------------------------------------------------- |
+| Bootstrap      | `src/boot.tcl`         | Polyglot sh/Tcl, args, Tk detection, `::HOME_DIR`, `tilde-expand`               |
+| State          | `src/state.tcl`        | `.writhdeck.json` persistence, cursors, favorites, recents, daily stats         |
+| Config         | `src/config.tcl`       | INI loading/saving, profiles, schemes, keys, i18n system, theme init            |
+| Common         | `src/common.tcl`       | `list-docs`, `br-dirs`, `do-backup`, `build-extra-entries`, inline parsers      |
+| **GUI config** | `src/gui-config.tcl`   | `profile-config-dialog`, `config-tab-switch`, `profile-config-update-profile`   |
+| **GUI**        | `src/gui.tcl`          | Wrapped in `if {!$::no_gui}` — browser, editor, dialogs, TOC, split view        |
+| **TUI**        | `src/tui.tcl`          | Terminal UI — `tui-init`, `tui-browser`, `tui-editor`, `tui-main`, helpers      |
+| Entry point    | `src/main.tcl`         | Dispatch: `if {$::no_gui}` → TUI, else → GUI                                   |
 
-The GUI block (`src/gui.tcl`) is wrapped in `if {!$::no_gui} { ... }` at build time, so CLI builds exclude it entirely.
+Both `src/gui-config.tcl` and `src/gui.tcl` are wrapped in `if {!$::no_gui} { ... }`. `src/gui-config.tcl` is optional — excluded with `make GUI_CONFIG=no` (~700 lines, hides `c` key in browser).
 
 ### Section headers
 

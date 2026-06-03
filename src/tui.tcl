@@ -1758,6 +1758,36 @@ proc tui-editor {filepath {init_state {}}} {
                         puts -nonewline "\033\[2J\033\[H"; flush stdout
                         set wrap_dirty 1
                         set clear_sel 0
+                    } elseif {$key eq "b"} {
+                        set ::tui_cmd_mode 0
+                        set _rsl [expr {$_fswap==2 ? $lines : $split_r_lines}]
+                        set _rsd [expr {$_fswap==2 ? $dirty : $split_r_dirty}]
+                        set _rsf [expr {$_fswap==2 ? $filepath : $split_r_fp}]
+                        tui-split-save-right $split $::ws_n $_rsl $_rsd $_rsf
+                        lassign [tui-size] rows cols
+                        if {$dirty} {
+                            set r [tui-yesnocancel [t ed_save_before_tui] $rows $cols]
+                            if {$r eq "cancel"} {
+                                set clear_sel 0
+                            } else {
+                                if {$r eq "yes"} {
+                                    if {$filepath eq ""} {
+                                        tui-scratchpad-save $rows $cols lines filepath dirty
+                                    } else {
+                                        tui-save-file $filepath $lines
+                                    }
+                                }
+                                if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                                if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
+                                    set ::session_file ""; return
+                                }
+                            }
+                        } else {
+                            if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                            if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
+                                set ::session_file ""; return
+                            }
+                        }
                     } elseif {$key ne ""} {
                         # Any non-empty key exits command mode
                         set ::tui_cmd_mode 0
@@ -1767,7 +1797,7 @@ proc tui-editor {filepath {init_state {}}} {
                     }
                 } elseif {$key eq $::cfg_tui_cmd_mode} {
                     set ::tui_cmd_mode 1
-                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  q: quit  s: stats  w: words"
+                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words"
                     set msg_time [clock seconds]
                     set clear_sel 0
                 } elseif {$key eq $::cfg_tui_close} {
