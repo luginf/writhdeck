@@ -18,7 +18,7 @@
   --bg2:     #1a1a1a;
 
   --font-family:   monospace;
-  --font-size:     14px;
+  --font-size:     18px;
   --line-spacing:  1.5;
   --margin-x:      80px;
   --margin-y:      40px;
@@ -160,10 +160,11 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
   background: var(--bg);
 }
 
-/* Line numbers */
+/* Line numbers — visibility via style.display in JS */
 #ed-linenos {
   flex-shrink: 0;
   width: 40px;
+  display: none;   /* hidden by default */
   background: var(--bg-bar);
   border-right: 1px solid var(--bg2);
   overflow: hidden;
@@ -177,22 +178,21 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
   pointer-events: none;
   white-space: pre;
 }
-#ed-linenos[hidden] { display: none; }
+/* visibility via style.display in JS */
 
 /* Typewriter mode — subtle indicator on status bar */
 #editor.typewriter #ed-bar { border-top: 2px solid var(--heading); }
 
-/* TOC side panel */
+/* TOC side panel — visibility controlled via style.display in JS */
 #toc-panel {
   width: 220px;
   flex-shrink: 0;
-  display: flex;
+  display: none;        /* hidden by default; JS sets display:flex to show */
   flex-direction: column;
   background: var(--bg-bar);
   border-left: 1px solid var(--bg2);
   overflow: hidden;
 }
-#toc-panel[hidden] { display: none; }
 
 #toc-panel-header {
   padding: 6px 12px;
@@ -467,13 +467,13 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
     </div>
   </div>
   <div id="ed-body">
-    <div id="ed-linenos" hidden></div>
+    <div id="ed-linenos"></div>
     <div id="ed-wrap">
       <pre id="ed-highlight" aria-hidden="true"></pre>
       <textarea id="ed-input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
     </div>
     <!-- TOC side panel -->
-    <div id="toc-panel" hidden>
+    <div id="toc-panel">
       <div id="toc-panel-header">Contents</div>
       <div id="toc-list"></div>
     </div>
@@ -813,7 +813,7 @@ const State = {
   settings: {
     scheme: 'default',
     darkMode: true,
-    fontSize: 14,
+    fontSize: 18,
     fontFamily: 'monospace',
     marginX: 80,
     marginY: 40,
@@ -1363,6 +1363,15 @@ const Timer = (() => {
 const TOC = (() => {
   let _visible = false;
 
+  function _show(visible) {
+    const panel = document.getElementById('toc-panel');
+    if (!panel) return;
+    // Use style.display instead of hidden attribute — avoids Firefox UA cascade issues
+    panel.style.display = visible ? 'flex' : 'none';
+    const btn = document.getElementById('ed-toc-btn');
+    if (btn) btn.classList.toggle('active', visible);
+  }
+
   function parse(text, s) {
     const entries = [];
     text.split('\n').forEach((line, idx) => {
@@ -1394,6 +1403,7 @@ const TOC = (() => {
   function render() {
     const ta      = document.getElementById('ed-input');
     const list    = document.getElementById('toc-list');
+    if (!ta || !list) return;
     const entries = parse(ta.value, State.settings);
     list.innerHTML = '';
     if (!entries.length) {
@@ -1420,18 +1430,14 @@ const TOC = (() => {
   }
 
   function toggle() {
-    const panel = document.getElementById('toc-panel');
     _visible = !_visible;
-    panel.hidden = !_visible;
+    _show(_visible);
     if (_visible) render();
-    // Sync TOC button state
-    document.getElementById('ed-toc-btn').classList.toggle('active', _visible);
   }
 
   function hide() {
     _visible = false;
-    document.getElementById('toc-panel').hidden = true;
-    document.getElementById('ed-toc-btn').classList.remove('active');
+    _show(false);
   }
 
   function refresh() { if (_visible) render(); }
@@ -1689,7 +1695,7 @@ const Editor = (() => {
 
   function updateLineNumbers() {
     const el = document.getElementById('ed-linenos');
-    if (!el || el.hidden) return;
+    if (!el || el.style.display === 'none') return;
     const count = (ta().value.match(/\n/g) || []).length + 1;
     el.textContent = Array.from({ length: count }, (_, i) => i + 1).join('\n');
     el.scrollTop = ta().scrollTop;
@@ -1698,8 +1704,8 @@ const Editor = (() => {
   function applyLineNumbers() {
     const el = document.getElementById('ed-linenos');
     if (!el) return;
-    const show = State.settings.lineNumbers;
-    el.hidden = !show;
+    const show = !!State.settings.lineNumbers;
+    el.style.display = show ? 'block' : 'none';
     if (show) updateLineNumbers();
   }
 
@@ -1779,6 +1785,8 @@ const Editor = (() => {
           case 'goal':     return s.wordGoal > 0 ? `${today}/${s.wordGoal}` : '';
           case 'clock':    return clk;
           case 'timer':    return s.timerShow ? Timer.format() : '';
+          case 'space':    return ' ';
+          case 'help_bar': return '';
           default:         return tok;
         }
       }).filter(Boolean).join('  ');
@@ -3040,7 +3048,15 @@ async function init() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  init().catch(err => {
+    console.error('Writhdeck init error:', err);
+    document.body.innerHTML +=
+      `<div style="position:fixed;bottom:0;left:0;right:0;padding:12px;background:#700;color:#fff;font-family:monospace;font-size:12px">
+        Init error: ${err.message || err}. Open DevTools console for details.
+      </div>`;
+  });
+});
 
 </script>
 </body>
