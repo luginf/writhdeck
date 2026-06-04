@@ -1,0 +1,94 @@
+/* WrithDeck website — default color scheme (dark mode) */
+
+:root {
+  --bg:      #1a1a1a;
+  --fg:      #e8e8e8;
+  --bg-bar:  #2a2a2a;
+  --fg-bar:  #aaaaaa;
+  --bg-sel:  #3a5a8a;
+  --heading: #c8a060;
+  --comment: #606060;
+  --markup:  #6aa9d4;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: monospace;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+main {
+  max-width: 600px;
+  width: 100%;
+  padding: 48px 32px;
+}
+
+h1 {
+  color: var(--heading);
+  font-size: 2em;
+  font-weight: bold;
+  margin-bottom: 32px;
+  letter-spacing: 0.02em;
+}
+
+.tagline {
+  color: var(--fg-bar);
+  margin-bottom: 40px;
+  font-size: 0.9em;
+}
+
+nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+nav a {
+  display: inline-block;
+  color: var(--markup);
+  text-decoration: none;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--bg-bar);
+  transition: color 0.1s, border-color 0.1s;
+}
+
+nav a:hover {
+  color: var(--heading);
+  border-color: var(--heading);
+}
+
+nav a .label {
+  color: var(--fg-bar);
+  font-size: 0.8em;
+  margin-left: 12px;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--bg-bar);
+  margin: 32px 0;
+}
+
+footer {
+  color: var(--comment);
+  font-size: 0.8em;
+}
+
+footer a {
+  color: var(--fg-bar);
+  text-decoration: none;
+}
+
+footer a:hover { color: var(--fg); }
