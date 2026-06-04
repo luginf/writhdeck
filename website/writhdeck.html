@@ -18,7 +18,7 @@
   --bg2:     #1a1a1a;
 
   --font-family:   monospace;
-  --font-size:     18px;
+  --font-size:     14px;
   --line-spacing:  1.5;
   --margin-x:      80px;
   --margin-y:      40px;
@@ -160,11 +160,10 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
   background: var(--bg);
 }
 
-/* Line numbers — visibility via style.display in JS */
+/* Line numbers */
 #ed-linenos {
   flex-shrink: 0;
   width: 40px;
-  display: none;   /* hidden by default */
   background: var(--bg-bar);
   border-right: 1px solid var(--bg2);
   overflow: hidden;
@@ -178,21 +177,24 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
   pointer-events: none;
   white-space: pre;
 }
-/* visibility via style.display in JS */
+#ed-linenos[hidden] { display: none; }
 
-/* Typewriter mode — subtle indicator on status bar */
+/* Typewriter mode */
 #editor.typewriter #ed-bar { border-top: 2px solid var(--heading); }
+.hl-dim         { color: var(--comment); }
+.hl-heading.hl-dim { color: var(--heading); opacity: 0.35; }
 
-/* TOC side panel — visibility controlled via style.display in JS */
+/* TOC side panel */
 #toc-panel {
   width: 220px;
   flex-shrink: 0;
-  display: none;        /* hidden by default; JS sets display:flex to show */
+  display: flex;
   flex-direction: column;
   background: var(--bg-bar);
   border-left: 1px solid var(--bg2);
   overflow: hidden;
 }
+#toc-panel[hidden] { display: none; }
 
 #toc-panel-header {
   padding: 6px 12px;
@@ -225,7 +227,7 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
 
 #ed-highlight {
   background: transparent;
-  color: transparent;
+  color: var(--fg);      /* pre rend tout le texte — toujours */
   pointer-events: none;
   user-select: none;
   overflow: hidden;
@@ -233,23 +235,23 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
 
 #ed-input {
   background: transparent;
-  color: var(--fg);
+  color: transparent;    /* textarea transparent — saisie uniquement */
   caret-color: var(--fg);
   resize: none;
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 1;
-  selection-color: var(--bg-sel);
 }
-#ed-input::selection { background: var(--bg-sel); }
+#ed-input::selection { background: var(--bg-sel); color: var(--fg); }
 
 /* highlight spans */
-.hl-heading  { color: var(--heading); font-weight: bold; }
+.hl-heading  { color: var(--heading); }
 .hl-comment  { color: var(--comment); }
 .hl-markup   { color: var(--markup); }
+.hl-search   { background: var(--bg-sel); }
 
-/* Search bar */
-#search-bar {
+/* Search / goto bars */
+#search-bar, #goto-bar {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -258,8 +260,9 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
   flex-shrink: 0;
   flex-wrap: wrap;
 }
-#search-bar[hidden] { display: none; }
+#search-bar[hidden], #goto-bar[hidden] { display: none; }
 #search-input, #replace-input { width: 200px; }
+#goto-input { width: 80px; }
 #search-count { font-size: 0.8em; color: var(--fg-bar); min-width: 80px; }
 
 /* Status bar */
@@ -278,8 +281,8 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
 #ed-bar-center { text-align: center; flex: 1; }
 #ed-bar-right { text-align: right; flex: 1; }
 
-/* Export menu */
-#export-menu {
+
+#ed-menu {
   position: fixed;
   right: 8px;
   top: 40px;
@@ -288,10 +291,24 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
   display: flex;
   flex-direction: column;
   z-index: 100;
+  min-width: 220px;
+  max-height: 80vh;
+  overflow-y: auto;
 }
-#export-menu[hidden] { display: none; }
-#export-menu button { text-align: left; padding: 6px 16px; border: none; }
-#export-menu button:hover { background: var(--bg-sel); color: var(--fg); }
+#ed-menu[hidden] { display: none; }
+#ed-menu button {
+  display: flex; justify-content: space-between; align-items: center;
+  text-align: left; padding: 5px 16px; border: none;
+  font-family: var(--font-family); font-size: var(--font-size);
+}
+#ed-menu button:disabled { opacity: 0.35; pointer-events: none; }
+#ed-menu button:hover:not(:disabled),
+#ed-menu button:focus:not(:disabled) { background: var(--bg-sel); color: var(--fg); outline: none; }
+#ed-menu button .hint { margin-left: 12px; font-size: 0.8em; color: var(--fg-bar); flex-shrink: 0; }
+#ed-menu button:hover .hint,
+#ed-menu button:focus .hint { color: inherit; }
+.more-sep   { height: 1px; background: var(--fg-bar); opacity: 0.3; margin: 3px 0; flex-shrink: 0; }
+.more-label { padding: 3px 16px 1px; font-size: 0.75em; color: var(--fg-bar); text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* ─── Dialogs ───────────────────────────────────────────────────────────── */
 dialog {
@@ -442,8 +459,8 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
   <div id="br-header">
     <span id="br-title">Writhdeck</span>
     <div id="br-header-btns">
-      <button id="br-folder-btn"  title="Watch a folder — all files editable in place (w)">dir</button>
-      <button id="br-opendisk-btn" title="Open a file from disk — edit in place (o)">file</button>
+      <button id="br-folder-btn"  title="Watch a folder — all files editable in place (w)">📁</button>
+      <button id="br-opendisk-btn" title="Open a file from disk — edit in place (o)">📄</button>
       <button id="br-import-btn" title="Import copy of file (Ctrl+O)">↑</button>
       <button id="br-new-btn" title="New document (n)">+</button>
     </div>
@@ -460,20 +477,18 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 <div id="editor" hidden>
   <div id="ed-header">
     <div id="ed-actions">
-      <button id="ed-toc-btn" title="Table of contents (F11)">≡</button>
-      <button id="ed-export-btn" title="Export">↓</button>
-      <button id="ed-settings-btn" title="Settings (c)">⚙</button>
-      <button id="ed-close-btn" title="Back to browser (Ctrl+Q / Esc)">✕</button>
+      <button id="ed-menu-btn" title="Menu">≡</button>
+      <button id="ed-close-btn" title="Back to browser (Ctrl+Q)">✕</button>
     </div>
   </div>
   <div id="ed-body">
-    <div id="ed-linenos"></div>
+    <div id="ed-linenos" hidden></div>
     <div id="ed-wrap">
       <pre id="ed-highlight" aria-hidden="true"></pre>
       <textarea id="ed-input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
     </div>
     <!-- TOC side panel -->
-    <div id="toc-panel">
+    <div id="toc-panel" hidden>
       <div id="toc-panel-header">Contents</div>
       <div id="toc-list"></div>
     </div>
@@ -488,6 +503,11 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
     <button id="replace-all" hidden>All</button>
     <button id="search-close">✕</button>
   </div>
+  <div id="goto-bar" hidden>
+    <label>Line: <input id="goto-input" type="number" min="1" autocomplete="off"></label>
+    <button id="goto-go">Go</button>
+    <button id="goto-close">✕</button>
+  </div>
   <div id="ed-bar">
     <span id="ed-bar-left"></span>
     <span id="ed-bar-center"></span>
@@ -495,10 +515,41 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
   </div>
 </div>
 
-<!-- Export menu -->
-<div id="export-menu" hidden>
-  <button data-fmt="txt">Export as .txt</button>
-  <button data-fmt="md">Export as .md</button>
+<!-- Main editor menu -->
+<div id="ed-menu" hidden tabindex="-1">
+  <button id="ed-more-cmd">⌨ Command mode <span class="hint">Esc / Alt+C</span></button>
+  <div class="more-sep"></div>
+  <div class="more-label">View</div>
+  <button data-cmd="toc">Table of contents <span class="hint">o</span></button>
+  <button data-cmd="dark">Dark / light <span class="hint">d</span></button>
+  <button data-cmd="linenos">Line numbers <span class="hint">n</span></button>
+  <button data-cmd="typewriter">Typewriter <span class="hint">w</span></button>
+  <div class="more-sep"></div>
+  <div class="more-label">Search</div>
+  <button data-cmd="find">Find <span class="hint">f</span></button>
+  <button data-cmd="replace">Find &amp; Replace <span class="hint">r</span></button>
+  <button data-cmd="goto">Go to line <span class="hint">g</span></button>
+  <div class="more-sep"></div>
+  <div class="more-label">Format</div>
+  <button data-markup="h1"></button>
+  <button data-markup="h2"></button>
+  <button data-markup="h3"></button>
+  <button data-markup="comment"></button>
+  <button data-markup="bold"></button>
+  <button data-markup="italic"></button>
+  <button data-markup="underline"></button>
+  <button data-markup="strike"></button>
+  <div class="more-sep"></div>
+  <div class="more-label">Document</div>
+  <button data-cmd="export-txt">Export as .txt <span class="hint">e</span></button>
+  <button data-cmd="export-md">Export as .md</button>
+  <button data-cmd="stats">Statistics <span class="hint">s</span></button>
+  <button data-cmd="info">File info <span class="hint">i</span></button>
+  <div class="more-sep"></div>
+  <div class="more-label">App</div>
+  <button data-cmd="timer">Timer <span class="hint">t</span></button>
+  <button data-cmd="ctx-menu">Right-click menu</button>
+  <button data-cmd="config">Settings <span class="hint">c</span></button>
 </div>
 
 <!-- Settings dialog -->
@@ -575,15 +626,14 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
       <label>Left<input type="text" data-key="statusLeft"></label>
       <label>Center<input type="text" data-key="statusCenter"></label>
       <label>Right<input type="text" data-key="statusRight"></label>
-      <p class="hint">Tokens: filename dirty words chars goal clock timer</p>
+      <p class="hint">Tokens: filename dirty words chars lines line col para pages percent today goal reading clock timer</p>
       <p class="hint" style="margin-top:10px">Editor options</p>
       <label><input type="checkbox" data-key="lineNumbers"> Line numbers (Ctrl+L)</label>
       <p class="hint" style="margin-top:10px">Keyboard shortcuts</p>
       <label><input type="checkbox" data-key="interceptBrowserShortcuts">
         Override browser shortcuts
         <span class="hint" style="display:block;margin-top:2px">
-          Ctrl+T = typewriter &nbsp; Ctrl+N = new doc<br>
-          (browser: new tab / new window — disabled by default)
+          Ctrl+N = new document (instead of browser new window)
         </span>
       </label>
       <p class="hint" style="margin-top:10px">Syntax markers</p>
@@ -813,7 +863,7 @@ const State = {
   settings: {
     scheme: 'default',
     darkMode: true,
-    fontSize: 18,
+    fontSize: 14,
     fontFamily: 'monospace',
     marginX: 80,
     marginY: 40,
@@ -838,7 +888,8 @@ const State = {
     statusCenter: '',
     statusRight: 'goal clock timer',
     lineNumbers: false,
-    interceptBrowserShortcuts: false
+    interceptBrowserShortcuts: true,
+    interceptContextMenu: true
   },
 
   favorites: [],  // [id, ...]
@@ -866,7 +917,10 @@ async function loadState() {
     // Normal path — INI is the source of truth
     const { settings, schemes } = INI.parseIni(iniText);
     Object.assign(State.settings, settings);
-    Object.assign(customSchemes, schemes);
+    // Only load non-built-in schemes: built-in colors come from code, not IDB
+    for (const [n, sc] of Object.entries(schemes)) {
+      if (!SCHEMES[n]) customSchemes[n] = sc;
+    }
     State.customSchemes = { ...customSchemes };
     State.iniText = iniText;
   } else if (oldSettings) {
@@ -1208,7 +1262,7 @@ function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function highlight(text, s) {
+function highlight(text, s, searchTerm, paraStart, paraEnd) {
   // Build regexes from current settings
   const hm = escRx(s.headingMarker);
   const cm = escRx(s.commentMarker);
@@ -1217,22 +1271,26 @@ function highlight(text, s) {
   const um = escRx(s.underlineMarker);
   const sm = escRx(s.strikeMarker);
 
+  const hasPara = paraStart !== undefined && paraEnd !== undefined;
   const lines = text.split('\n');
-  const out = lines.map(line => {
+  const out = lines.map((line, idx) => {
+    const dim = hasPara && (idx < paraStart || idx > paraEnd);
     const esc = escapeHtml(line);
 
     // Heading line
     if (hm && line.startsWith(s.headingMarker)) {
-      return `<span class="hl-heading">${esc}</span>`;
+      return `<span class="hl-heading${dim ? ' hl-dim' : ''}">${esc}</span>`;
     }
     // Markdown headings
     if (s.markdownHeadings && /^#{1,6}\s/.test(line)) {
-      return `<span class="hl-heading">${esc}</span>`;
+      return `<span class="hl-heading${dim ? ' hl-dim' : ''}">${esc}</span>`;
     }
     // Comment line
     if (cm && line.startsWith(s.commentMarker)) {
-      return `<span class="hl-comment">${esc}</span>`;
+      return `<span class="hl-comment${dim ? ' hl-dim' : ''}">${esc}</span>`;
     }
+    // Lines outside paragraph in typewriter mode: plain dim, no inline markup
+    if (dim) return `<span class="hl-dim">${esc}</span>`;
     // Inline markup (apply in order, non-greedy)
     let result = esc;
     if (bm) result = result.replace(new RegExp(escRx(escapeHtml(s.boldMarker)) + '(.+?)' + escRx(escapeHtml(s.boldMarker)), 'g'),
@@ -1247,7 +1305,14 @@ function highlight(text, s) {
   });
 
   // Trailing newline required for correct height in the overlay
-  return out.join('\n') + '\n';
+  if (!searchTerm) return out.join('\n') + '\n';
+
+  // Inject search highlights into text nodes only (skip HTML tags)
+  const termRx = escRx(escapeHtml(searchTerm));
+  return out.map(line => line.replace(/(<[^>]+>)|([^<]+)/g, (_, tag, text) =>
+    tag ? tag : text.replace(new RegExp(termRx, 'gi'),
+      m => `<span class="hl-search">${m}</span>`)
+  )).join('\n') + '\n';
 }
 
 function escRx(s) {
@@ -1400,6 +1465,21 @@ const TOC = (() => {
     return text.split('\n').slice(0, lineIdx).reduce((s, l) => s + l.length + 1, 0);
   }
 
+  function linePixelTop(ta, lineIdx) {
+    const cs = getComputedStyle(ta);
+    const m  = document.createElement('div');
+    m.style.cssText = `position:fixed;top:-9999px;left:-9999px;visibility:hidden;`
+      + `white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;`
+      + `font-family:${cs.fontFamily};font-size:${cs.fontSize};line-height:${cs.lineHeight};`
+      + `padding:${cs.paddingTop} ${cs.paddingRight} 0 ${cs.paddingLeft};`
+      + `width:${ta.clientWidth}px;box-sizing:border-box`;
+    m.textContent = ta.value.split('\n').slice(0, lineIdx).join('\n') + (lineIdx > 0 ? '\n' : '');
+    document.body.appendChild(m);
+    const top = m.offsetHeight;
+    document.body.removeChild(m);
+    return top;
+  }
+
   function render() {
     const ta      = document.getElementById('ed-input');
     const list    = document.getElementById('toc-list');
@@ -1422,8 +1502,7 @@ const TOC = (() => {
         const offset = lineToOffset(ta.value, e.line);
         ta.focus();
         ta.setSelectionRange(offset, offset);
-        const lh = parseFloat(getComputedStyle(ta).lineHeight) || 20;
-        ta.scrollTop = e.line * lh - ta.clientHeight / 3;
+        ta.scrollTop = Math.max(0, linePixelTop(ta, e.line) - ta.clientHeight / 3);
       });
       list.appendChild(div);
     });
@@ -1542,6 +1621,7 @@ const Editor = (() => {
     _typewriter = false;
     document.getElementById('editor').classList.remove('typewriter');
     rehighlight();
+    syncGutter();
     syncScroll();
     applyLineNumbers();
     updateStatusBar();
@@ -1655,7 +1735,38 @@ const Editor = (() => {
   }
 
   function rehighlight() {
-    pre().innerHTML = highlight(ta().value, State.settings);
+    const searchVisible = !document.getElementById('search-bar').hidden;
+    let paraStart, paraEnd;
+    if (_typewriter) {
+      const input = ta();
+      const text  = input.value;
+      const idx   = text.substring(0, input.selectionStart).split('\n').length - 1;
+      const ls    = text.split('\n');
+      const s     = State.settings;
+      const isBoundary = i => {
+        const l = ls[i] || '';
+        return !l.trim()
+          || (s.headingMarker && l.startsWith(s.headingMarker))
+          || (s.markdownHeadings && /^#{1,6}\s/.test(l))
+          || (s.commentMarker && l.startsWith(s.commentMarker));
+      };
+      paraStart = idx; paraEnd = idx;
+      if (!isBoundary(idx)) {
+        while (paraStart > 0 && !isBoundary(paraStart - 1)) paraStart--;
+        while (paraEnd < ls.length - 1 && !isBoundary(paraEnd + 1)) paraEnd++;
+      }
+    }
+    pre().innerHTML = highlight(ta().value, State.settings, searchVisible ? _searchTerm : '', paraStart, paraEnd);
+    syncGutter();
+  }
+
+  function syncGutter() {
+    const input = ta();
+    const hl    = pre();
+    // Measure actual scrollbar width: offsetWidth includes it, clientWidth doesn't
+    const gutter   = input.offsetWidth - input.clientWidth;
+    const baseRight = parseFloat(getComputedStyle(input).paddingRight) || 0;
+    hl.style.paddingRight = (baseRight + gutter) + 'px';
   }
 
   function syncScroll() {
@@ -1684,18 +1795,17 @@ const Editor = (() => {
 
   function typewriterScroll() {
     if (!_typewriter) return;
-    const input = ta();
-    const text  = input.value.substring(0, input.selectionStart);
-    const line  = text.split('\n').length - 1;
-    const lh    = parseFloat(getComputedStyle(input).lineHeight) || 20;
-    input.scrollTop = Math.max(0, line * lh - input.clientHeight / 2 + lh / 2);
+    const input   = ta();
+    const lineIdx = input.value.substring(0, input.selectionStart).split('\n').length - 1;
+    const lh      = parseFloat(getComputedStyle(input).lineHeight) || 20;
+    input.scrollTop = Math.max(0, linePixelTop(input, lineIdx) - input.clientHeight / 2 + lh / 2);
   }
 
   // ── Line numbers ──────────────────────────────────────────────────────────
 
   function updateLineNumbers() {
     const el = document.getElementById('ed-linenos');
-    if (!el || el.style.display === 'none') return;
+    if (!el || el.hidden) return;
     const count = (ta().value.match(/\n/g) || []).length + 1;
     el.textContent = Array.from({ length: count }, (_, i) => i + 1).join('\n');
     el.scrollTop = ta().scrollTop;
@@ -1704,8 +1814,8 @@ const Editor = (() => {
   function applyLineNumbers() {
     const el = document.getElementById('ed-linenos');
     if (!el) return;
-    const show = !!State.settings.lineNumbers;
-    el.style.display = show ? 'block' : 'none';
+    const show = State.settings.lineNumbers;
+    el.hidden = !show;
     if (show) updateLineNumbers();
   }
 
@@ -1719,31 +1829,140 @@ const Editor = (() => {
   // ── Go to line ────────────────────────────────────────────────────────────
 
   function gotoLine() {
-    const raw = prompt('Go to line:');
-    if (!raw) return;
-    const n = parseInt(raw, 10);
+    const bar = document.getElementById('goto-bar');
+    bar.hidden = false;
+    const gi = document.getElementById('goto-input');
+    gi.value = '';
+    gi.focus();
+    gi.select();
+  }
+
+  function gotoLineGo() {
+    const n = parseInt(document.getElementById('goto-input').value, 10);
+    gotoLineClose();
     if (isNaN(n) || n < 1) return;
-    const input  = ta();
-    const lines  = input.value.split('\n');
+    const input   = ta();
+    const lines   = input.value.split('\n');
+    const lineIdx = Math.min(n - 1, lines.length - 1);
     let offset = 0;
-    for (let i = 0; i < Math.min(n - 1, lines.length); i++) {
-      offset += lines[i].length + 1;
-    }
+    for (let i = 0; i < lineIdx; i++) offset += lines[i].length + 1;
     input.focus();
     input.setSelectionRange(offset, offset);
-    const lh = parseFloat(getComputedStyle(input).lineHeight) || 20;
-    input.scrollTop = (n - 1) * lh - input.clientHeight / 3;
+    input.scrollTop = Math.max(0, linePixelTop(input, lineIdx) - input.clientHeight / 3);
+  }
+
+  function gotoLineClose() {
+    document.getElementById('goto-bar').hidden = true;
+    ta().focus();
+  }
+
+  function linePixelTop(input, lineIdx) {
+    const cs = getComputedStyle(input);
+    const m  = document.createElement('div');
+    m.style.cssText = `position:fixed;top:-9999px;left:-9999px;visibility:hidden;`
+      + `white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;`
+      + `font-family:${cs.fontFamily};font-size:${cs.fontSize};line-height:${cs.lineHeight};`
+      + `padding:${cs.paddingTop} ${cs.paddingRight} 0 ${cs.paddingLeft};`
+      + `width:${input.clientWidth}px;box-sizing:border-box`;
+    m.textContent = input.value.split('\n').slice(0, lineIdx).join('\n') + (lineIdx > 0 ? '\n' : '');
+    document.body.appendChild(m);
+    const top = m.offsetHeight;
+    document.body.removeChild(m);
+    return top;
+  }
+
+  // ── Markup helpers ────────────────────────────────────────────────────────
+
+  function applyLineMarker(marker) {
+    if (!marker) return;
+    const input = ta();
+    const s = input.selectionStart, e = input.selectionEnd;
+    const text = input.value;
+    const blockStart = text.lastIndexOf('\n', s - 1) + 1;
+    const raw = text.indexOf('\n', e);
+    const blockEnd = raw === -1 ? text.length : raw;
+    const lines = text.slice(blockStart, blockEnd).split('\n');
+    const allMarked = lines.every(l => l.startsWith(marker));
+    const newLines = allMarked ? lines.map(l => l.slice(marker.length)) : lines.map(l => marker + l);
+    const newBlock = newLines.join('\n');
+    input.value = text.slice(0, blockStart) + newBlock + text.slice(blockEnd);
+    input.setSelectionRange(blockStart, blockStart + newBlock.length);
+    onInput();
+  }
+
+  function applyInlineMarker(marker) {
+    if (!marker) return;
+    const input = ta();
+    const s = input.selectionStart, e = input.selectionEnd;
+    const text = input.value;
+    if (s === e) {
+      input.value = text.slice(0, s) + marker + marker + text.slice(s);
+      input.setSelectionRange(s + marker.length, s + marker.length);
+    } else {
+      const sel = text.slice(s, e);
+      const isWrapped = sel.startsWith(marker) && sel.endsWith(marker) && sel.length > marker.length * 2;
+      if (isWrapped) {
+        const inner = sel.slice(marker.length, -marker.length);
+        input.value = text.slice(0, s) + inner + text.slice(e);
+        input.setSelectionRange(s, s + inner.length);
+      } else {
+        const wrapped = marker + sel + marker;
+        input.value = text.slice(0, s) + wrapped + text.slice(e);
+        input.setSelectionRange(s, s + wrapped.length);
+      }
+    }
+    onInput();
+  }
+
+  function applyHeading(level) {
+    const marker = State.settings.headingMarker;
+    if (!marker) return;
+    const input = ta();
+    const s = input.selectionStart, e = input.selectionEnd;
+    const text = input.value;
+    const blockStart = text.lastIndexOf('\n', s - 1) + 1;
+    const raw = text.indexOf('\n', e);
+    const blockEnd = raw === -1 ? text.length : raw;
+    const prefix = marker.repeat(level);
+    const mEsc   = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    function headingLevel(line) {
+      if (!line.startsWith(marker)) return 0;
+      let n = 1;
+      while (n < 3 && line.startsWith(marker.repeat(n + 1))) n++;
+      return n;
+    }
+    function stripHeading(line) {
+      return line
+        .replace(new RegExp(`^${mEsc}+\\s*`), '')
+        .replace(new RegExp(`\\s*${mEsc}+\\s*$`), '')
+        .trim();
+    }
+
+    const lines = text.slice(blockStart, blockEnd).split('\n');
+    const allAtLevel = lines.every(l => headingLevel(l) === level);
+    const newLines = lines.map(l => {
+      if (allAtLevel) return stripHeading(l);
+      const content = headingLevel(l) > 0 ? stripHeading(l) : l.trim();
+      return content ? `${prefix} ${content} ${prefix}` : `${prefix}  ${prefix}`;
+    });
+    const newBlock = newLines.join('\n');
+    input.value = text.slice(0, blockStart) + newBlock + text.slice(blockEnd);
+    input.setSelectionRange(blockStart, blockStart + newBlock.length);
+    onInput();
   }
 
   // ── Command mode (ESC) ───────────────────────────────────────────────────
 
   function enterCmdMode() {
     _cmdMode = true;
+    document.getElementById('ed-menu-btn').classList.add('active');
     updateStatusBar();
   }
 
   function exitCmdMode() {
     _cmdMode = false;
+    document.getElementById('ed-menu-btn').classList.remove('active');
     updateStatusBar();
   }
 
@@ -1763,10 +1982,9 @@ const Editor = (() => {
 
   function updateStatusBar() {
     if (_cmdMode) {
-      document.getElementById('ed-bar-left').textContent =
-        'ESC: exit  s:stats  i:info  t:timer  p:pause  q:close';
-      document.getElementById('ed-bar-center').textContent = '';
-      document.getElementById('ed-bar-right').textContent  = '';
+      document.getElementById('ed-bar-left').textContent   = 'f:find  r:replace  g:goto  n:linenos  o:toc';
+      document.getElementById('ed-bar-center').textContent = 'd:dark  c:config  e:export  s:stats  i:info';
+      document.getElementById('ed-bar-right').textContent  = 't:timer  p:pause  w:typewriter  m:menu  q:close  ·ESC/Alt+C:exit·';
       return;
     }
     const s = State.settings;
@@ -1780,14 +1998,38 @@ const Editor = (() => {
         switch (tok) {
           case 'filename': return doc ? doc.name : '';
           case 'dirty':    return State.dirty ? '[+]' : '';
-          case 'words':    return `${wc}w`;
-          case 'chars':    return `${(ta().value || '').length}c`;
+          case 'words':    return doc ? `${wc}w` : '';
+          case 'chars':    return doc ? `${(ta().value || '').length}c` : '';
           case 'goal':     return s.wordGoal > 0 ? `${today}/${s.wordGoal}` : '';
           case 'clock':    return clk;
           case 'timer':    return s.timerShow ? Timer.format() : '';
-          case 'space':    return ' ';
-          case 'help_bar': return '';
-          default:         return tok;
+          case 'today':    return doc && today > 0 ? `${today}↑` : '';
+          case 'percent':  return (doc && s.wordGoal > 0) ? `${Math.min(100, Math.round(wc / s.wordGoal * 100))}%` : '';
+          case 'lines':    return doc ? `${(ta().value.match(/\n/g) || []).length + 1}L` : '';
+          case 'line': {
+            if (!doc) return '';
+            const pos    = ta().selectionStart || 0;
+            const before = ta().value.slice(0, pos);
+            return `L${(before.match(/\n/g) || []).length + 1}`;
+          }
+          case 'col': {
+            if (!doc) return '';
+            const pos    = ta().selectionStart || 0;
+            const before = ta().value.slice(0, pos);
+            return `C${pos - before.lastIndexOf('\n')}`;
+          }
+          case 'para': {
+            if (!doc) return '';
+            const count = ta().value.split(/\n{2,}/).filter(p => p.trim()).length;
+            return count ? `${count}§` : '';
+          }
+          case 'pages':   return (doc && wc > 0) ? `${Math.ceil(wc / 250)}p` : '';
+          case 'reading': {
+            if (!doc || !wc) return '';
+            const mins = Math.ceil(wc / 200);
+            return mins < 60 ? `${mins}min` : `${Math.floor(mins / 60)}h${mins % 60 ? (mins % 60) + 'm' : ''}`;
+          }
+          default: return tok;
         }
       }).filter(Boolean).join('  ');
     }
@@ -1840,13 +2082,18 @@ const Editor = (() => {
     ta().focus();
     _matches = []; _matchIdx = -1;
     document.getElementById('search-count').textContent = '';
+    rehighlight(); // retire les surlignages (barre cachée → searchTerm ignoré)
   }
 
   function searchUpdate() {
     _searchTerm = document.getElementById('search-input').value;
     _matches = [];
     _matchIdx = -1;
-    if (!_searchTerm) { document.getElementById('search-count').textContent = ''; return; }
+    if (!_searchTerm) {
+      document.getElementById('search-count').textContent = '';
+      rehighlight();
+      return;
+    }
     const text = ta().value;
     const lower = text.toLowerCase();
     const term  = _searchTerm.toLowerCase();
@@ -1857,6 +2104,7 @@ const Editor = (() => {
     }
     document.getElementById('search-count').textContent = `${_matches.length} match${_matches.length !== 1 ? 'es' : ''}`;
     if (_matches.length) searchNext();
+    rehighlight(); // applique les surlignages
   }
 
   function searchNext() {
@@ -1872,12 +2120,12 @@ const Editor = (() => {
   }
 
   function selectMatch(pos) {
-    ta().focus();
-    ta().setSelectionRange(pos, pos + _searchTerm.length);
-    // Scroll into view
-    const lh = parseFloat(getComputedStyle(ta()).lineHeight) || 20;
-    const lineIdx = ta().value.slice(0, pos).split('\n').length - 1;
-    ta().scrollTop = lineIdx * lh - ta().clientHeight / 3;
+    const input   = ta();
+    const lineIdx = input.value.slice(0, pos).split('\n').length - 1;
+    // Ne pas appeler input.focus() : cela volerait le focus depuis le champ de recherche
+    input.setSelectionRange(pos, pos + _searchTerm.length);
+    input.scrollTop = Math.max(0, linePixelTop(input, lineIdx) - input.clientHeight / 3);
+    syncScroll();
   }
 
   function replaceOne() {
@@ -1916,9 +2164,10 @@ const Editor = (() => {
   }
 
   return {
-    open, close, save, onInput, syncScroll, rehighlight, updateStatusBar, setMsg,
+    open, close, save, onInput, syncScroll, syncGutter, rehighlight, updateStatusBar, setMsg,
     saveCursorPos, applyLineNumbers,
-    toggleTypewriter, toggleLineNumbers, gotoLine,
+    toggleTypewriter, typewriterScroll, toggleLineNumbers, gotoLine, gotoLineGo, gotoLineClose,
+    applyLineMarker, applyInlineMarker, applyHeading,
     enterCmdMode, exitCmdMode, isCmdMode,
     searchOpen, searchClose, searchUpdate, searchNext, searchPrev, replaceOne, replaceAll,
     exportDoc
@@ -2086,10 +2335,26 @@ const Browser = (() => {
 
   // ── Document actions ─────────────────────────────────────────────────────
 
+  function nameExists(name, excludeId) {
+    return State.docs.some(d => d.name === name && d.id !== excludeId);
+  }
+
+  function uniqueName(base) {
+    if (!nameExists(base)) return base;
+    let n = 2;
+    while (nameExists(`${base} (${n})`)) n++;
+    return `${base} (${n})`;
+  }
+
   async function newDoc() {
-    const name = prompt('Document name:', 'Untitled');
+    const name = prompt('Document name:', uniqueName('Untitled'));
     if (!name || !name.trim()) return;
-    const doc = { name: name.trim(), content: '', created: Date.now(), modified: Date.now() };
+    const trimmed = name.trim();
+    if (nameExists(trimmed)) {
+      alert(`A document named "${trimmed}" already exists.`);
+      return;
+    }
+    const doc = { name: trimmed, content: '', created: Date.now(), modified: Date.now() };
     await DB.saveDoc(doc);
     State.docs.push(doc);
     render();
@@ -2099,7 +2364,12 @@ const Browser = (() => {
   async function renameDoc(doc) {
     const name = prompt('Rename to:', doc.name);
     if (!name || !name.trim() || name.trim() === doc.name) return;
-    doc.name = name.trim();
+    const trimmed = name.trim();
+    if (nameExists(trimmed, doc.id)) {
+      alert(`A document named "${trimmed}" already exists.`);
+      return;
+    }
+    doc.name = trimmed;
     await DB.saveDoc(doc);
     if (State.doc && State.doc.id === doc.id) {
       document.getElementById('ed-filename').textContent = doc.name;
@@ -2719,6 +2989,22 @@ const Settings = (() => {
 'use strict';
 // Main entry point
 
+let _edMenu      = null;
+let _openMenuFn  = null;
+let _menuNavLock = false;
+let _edCtxMenu   = null;
+
+function hideEditorCtxMenu() {
+  if (_edCtxMenu) { _edCtxMenu.remove(); _edCtxMenu = null; }
+}
+
+function showMainMenu() {
+  if (!_edMenu || !_openMenuFn) return;
+  _openMenuFn();
+  _edMenu.hidden = true;
+  setTimeout(() => { _edMenu.hidden = false; }, 0);
+}
+
 // ── File info dialog ──────────────────────────────────────────────────────
 
 async function showFileInfo() {
@@ -2836,12 +3122,28 @@ function onKeydown(e) {
 
   Browser.hideContextMenu();
 
+  // Menu arrow navigation — intercept at capture level regardless of focus.
+  if (_edMenu && !_edMenu.hidden && (key === 'ArrowDown' || key === 'ArrowUp')) {
+    e.preventDefault(); e.stopPropagation();
+    if (!_menuNavLock) {
+      _menuNavLock = true;
+      requestAnimationFrame(() => { _menuNavLock = false; });
+      const items = Array.from(_edMenu.querySelectorAll('button:not(:disabled)'));
+      const idx   = items.indexOf(document.activeElement);
+      const next  = key === 'ArrowDown'
+        ? items[(idx + 1) % items.length]
+        : items[(idx - 1 + items.length) % items.length];
+      if (next) next.focus();
+    }
+    return;
+  }
+
   // Global shortcuts (work anywhere, no active input focused)
   const focused = document.activeElement;
   const inInput = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.tagName === 'SELECT');
 
-  // Dark/light toggle — global
-  if (ctrl && lkey === 'd' && !inInput) {
+  // Dark/light toggle — global (works even in editor textarea)
+  if (ctrl && lkey === 'd') {
     e.preventDefault();
     State.settings.darkMode = !State.settings.darkMode;
     saveSettings();
@@ -2878,12 +3180,26 @@ function onKeydown(e) {
       e.preventDefault(); e.stopPropagation();
       Editor.exitCmdMode();
       switch (lkey) {
-        case 's': Stats.show();    break;
-        case 'i': showFileInfo();  break;
+        case 'f': Editor.searchOpen(false);  break;
+        case 'r': Editor.searchOpen(true);   break;
+        case 'g': Editor.gotoLine();         break;
+        case 'n': Editor.toggleLineNumbers(); break;
+        case 'd':
+          State.settings.darkMode = !State.settings.darkMode;
+          saveSettings(); applyTheme();
+          if (State.doc) Editor.rehighlight();
+          break;
+        case 'o': TOC.toggle();              break;
+        case 'c': Settings.show();           break;
+        case 'e': Editor.exportDoc('txt'); break;
+        case 's': Stats.show();              break;
+        case 'i': showFileInfo();            break;
         case 't': Timer.toggle();  Editor.updateStatusBar(); break;
         case 'p': Timer.isActive() ? Timer.pause() : Timer.toggle();
                   Editor.updateStatusBar(); break;
-        case 'q': Editor.close();  break;
+        case 'w': Editor.toggleTypewriter(); break;
+        case 'm': showMainMenu(); break;
+        case 'q': Editor.close();            break;
         // any other key: just exit cmd mode (already done above)
       }
       return;
@@ -2896,15 +3212,16 @@ function onKeydown(e) {
     if (ctrl && lkey === 'g')     { e.preventDefault(); e.stopPropagation(); Editor.gotoLine();          return; }
     if (ctrl && lkey === 'l')     { e.preventDefault(); e.stopPropagation(); Editor.toggleLineNumbers();  return; }
     if (e.altKey && lkey === 't') { e.preventDefault(); e.stopPropagation(); Timer.toggle(); Editor.updateStatusBar(); return; }
+    if (e.altKey && lkey === 'c') { e.preventDefault(); e.stopPropagation(); Editor.enterCmdMode(); return; }
 
-    // Shortcuts that override browser defaults — only when option is enabled
-    const intercept = State.settings.interceptBrowserShortcuts;
-    if (intercept && ctrl && lkey === 't') { e.preventDefault(); e.stopPropagation(); Editor.toggleTypewriter(); return; }
     if (lkey === 'escape') {
       e.preventDefault(); e.stopPropagation();
+      if (_edCtxMenu) { hideEditorCtxMenu(); return; }
+      if (_edMenu && !_edMenu.hidden) { _edMenu.hidden = true; return; }
       const openDlg = document.querySelector('dialog[open]');
       if (openDlg) { openDlg.close(); return; }
       if (!document.getElementById('search-bar').hidden) { Editor.searchClose(); return; }
+      if (!document.getElementById('goto-bar').hidden)   { Editor.gotoLineClose(); return; }
       // ESC enters command mode
       Editor.enterCmdMode();
       return;
@@ -2915,6 +3232,11 @@ function onKeydown(e) {
     }
   }
 
+  // Ctrl+N → new document (overrides browser "new window", requires option)
+  if (State.settings.interceptBrowserShortcuts && ctrl && lkey === 'n' && !inInput) {
+    e.preventDefault(); e.stopPropagation(); Browser.newDoc(); return;
+  }
+
   // Browser shortcuts (no input focused)
   if (inBrowser && !inInput) {
     if (lkey === 'n') { e.preventDefault(); Browser.newDoc();        return; }
@@ -2922,10 +3244,6 @@ function onKeydown(e) {
     if (lkey === 'w' && Browser.hasFSA) { e.preventDefault(); Browser.openFolder();   return; }
     if (lkey === 's') { e.preventDefault(); Stats.show();            return; }
     if (lkey === 'c') { e.preventDefault(); Settings.show();         return; }
-    // Override browser Ctrl+N → new document (only when option enabled)
-    if (State.settings.interceptBrowserShortcuts && ctrl && lkey === 'n') {
-      e.preventDefault(); e.stopPropagation(); Browser.newDoc(); return;
-    }
   }
 }
 
@@ -2952,6 +3270,7 @@ async function init() {
               if (!SCHEMES[n]) customSchemes[n] = sc;
             }
             await saveSettings();
+            applyTheme(); // re-appliquer après maj des settings depuis le dossier
           } catch (_) {}
         }
       }
@@ -2967,22 +3286,23 @@ async function init() {
   const ta = document.getElementById('ed-input');
   ta.addEventListener('input',  () => Editor.onInput());
   ta.addEventListener('scroll', () => Editor.syncScroll());
+  // Update line/col on cursor move (click or keyboard navigation)
+  ta.addEventListener('click',   () => Editor.updateStatusBar());
+  ta.addEventListener('keyup',   () => Editor.updateStatusBar());
 
   // Header buttons
   document.getElementById('br-new-btn').addEventListener('click',    () => Browser.newDoc());
   document.getElementById('br-import-btn').addEventListener('click', triggerImport);
   document.getElementById('br-folder-btn').addEventListener('click',  () => Browser.openFolder());
   document.getElementById('br-opendisk-btn').addEventListener('click', () => Browser.openFromDisk());
-  document.getElementById('ed-close-btn').addEventListener('click',  () => Editor.close());
-  document.getElementById('ed-settings-btn').addEventListener('click', () => Settings.show());
-  document.getElementById('ed-toc-btn').addEventListener('click',    () => TOC.toggle());
+  document.getElementById('ed-close-btn').addEventListener('click', () => Editor.close());
 
   // File import input
   const fileInput = document.getElementById('file-import-input');
   fileInput.addEventListener('change', async () => {
     if (fileInput.files.length) {
       await importFiles(Array.from(fileInput.files));
-      fileInput.value = ''; // reset so same file can be re-imported
+      fileInput.value = '';
     }
   });
   // Drag and drop on browser panel
@@ -2996,14 +3316,184 @@ async function init() {
     if (files.length) await importFiles(files);
   });
 
-  // Export menu
-  const exportBtn  = document.getElementById('ed-export-btn');
-  const exportMenu = document.getElementById('export-menu');
-  exportBtn.addEventListener('click', e => { e.stopPropagation(); exportMenu.hidden = !exportMenu.hidden; });
-  exportMenu.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => { exportMenu.hidden = true; Editor.exportDoc(btn.dataset.fmt); });
+  // Main editor menu (≡ button)
+  const menuBtn  = document.getElementById('ed-menu-btn');
+  const edMenu   = document.getElementById('ed-menu');
+  _edMenu = edMenu;
+
+  function execCmd(cmd) {
+    edMenu.hidden = true;
+    switch (cmd) {
+      case 'toc':        TOC.toggle();              break;
+      case 'dark':
+        State.settings.darkMode = !State.settings.darkMode;
+        saveSettings(); applyTheme();
+        if (State.doc) Editor.rehighlight();
+        break;
+      case 'linenos':    Editor.toggleLineNumbers(); break;
+      case 'typewriter': Editor.toggleTypewriter();  break;
+      case 'find':       Editor.searchOpen(false);   break;
+      case 'replace':    Editor.searchOpen(true);    break;
+      case 'goto':       Editor.gotoLine();          break;
+      case 'export-txt': Editor.exportDoc('txt');    break;
+      case 'export-md':  Editor.exportDoc('md');     break;
+      case 'stats':      Stats.show();               break;
+      case 'info':       showFileInfo();             break;
+      case 'timer':      Timer.toggle(); Editor.updateStatusBar(); break;
+      case 'ctx-menu':
+        State.settings.interceptContextMenu = !State.settings.interceptContextMenu;
+        saveSettings();
+        Editor.setMsg(State.settings.interceptContextMenu ? 'Right-click menu on' : 'Right-click menu off');
+        break;
+      case 'config':     Settings.show();            break;
+    }
+  }
+
+  function openMenu() {
+    const s  = State.settings;
+    const hm = s.headingMarker || '';
+    [1, 2, 3].forEach(lvl => {
+      const btn = edMenu.querySelector(`[data-markup="h${lvl}"]`);
+      const p   = hm.repeat(lvl);
+      btn.innerHTML = hm ? `<span>${p} H${lvl} ${p}</span>` : `<span>H${lvl}</span>`;
+      btn.disabled  = !hm;
+    });
+    [['comment', s.commentMarker, 'Comment (line)'],
+     ['bold',    s.boldMarker,    'Bold'],
+     ['italic',  s.italicMarker,  'Italic'],
+     ['underline', s.underlineMarker, 'Underline'],
+     ['strike',  s.strikeMarker,  'Strike'],
+    ].forEach(([type, marker, label]) => {
+      const btn = edMenu.querySelector(`[data-markup="${type}"]`);
+      btn.innerHTML = marker ? `<span>${marker} ${label}</span>` : `<span>${label}</span>`;
+      btn.disabled  = !marker;
+    });
+    // Update ctx-menu toggle label
+    const ctxBtn = edMenu.querySelector('[data-cmd="ctx-menu"]');
+    if (ctxBtn) ctxBtn.innerHTML = `Right-click menu <span class="hint">${s.interceptContextMenu ? 'on' : 'off'}</span>`;
+    edMenu.hidden = false;
+  }
+  _openMenuFn = openMenu;
+
+  function menuItems() {
+    return Array.from(edMenu.querySelectorAll('button:not(:disabled)'));
+  }
+
+  // Prevent menu button from stealing textarea focus (preserves selection).
+  menuBtn.addEventListener('mousedown', e => e.preventDefault());
+  menuBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (!edMenu.hidden) { edMenu.hidden = true; return; }
+    openMenu();
+    edMenu.hidden = true;
+    setTimeout(() => { edMenu.hidden = false; }, 0);
   });
-  document.addEventListener('click', () => { exportMenu.hidden = true; });
+
+  document.getElementById('ed-more-cmd').addEventListener('click', () => {
+    edMenu.hidden = true;
+    Editor.enterCmdMode();
+  });
+
+  edMenu.querySelectorAll('[data-markup]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      edMenu.hidden = true;
+      const s = State.settings;
+      switch (btn.dataset.markup) {
+        case 'h1':        Editor.applyHeading(1);                      break;
+        case 'h2':        Editor.applyHeading(2);                      break;
+        case 'h3':        Editor.applyHeading(3);                      break;
+        case 'comment':   Editor.applyLineMarker(s.commentMarker);     break;
+        case 'bold':      Editor.applyInlineMarker(s.boldMarker);      break;
+        case 'italic':    Editor.applyInlineMarker(s.italicMarker);    break;
+        case 'underline': Editor.applyInlineMarker(s.underlineMarker); break;
+        case 'strike':    Editor.applyInlineMarker(s.strikeMarker);    break;
+      }
+    });
+  });
+
+  edMenu.querySelectorAll('[data-cmd]').forEach(btn => {
+    btn.addEventListener('click', () => execCmd(btn.dataset.cmd));
+  });
+
+  document.addEventListener('click', () => { edMenu.hidden = true; hideEditorCtxMenu(); });
+
+  // ── Editor right-click context menu ──────────────────────────────────────
+
+  function buildCtxMenu(e) {
+    if (!State.settings.interceptContextMenu) return;
+    e.preventDefault();
+    hideEditorCtxMenu();
+
+    const s   = State.settings;
+    const ta  = document.getElementById('ed-input');
+    const sel = ta.selectionStart !== ta.selectionEnd;
+
+    const menu = document.createElement('div');
+    menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;
+      background:var(--bg-bar);border:1px solid var(--fg-bar);z-index:200;min-width:180px;`;
+
+    function sep() {
+      const d = document.createElement('div');
+      d.style.cssText = 'height:1px;background:var(--fg-bar);opacity:0.3;margin:3px 0;';
+      menu.appendChild(d);
+    }
+
+    function item(label, fn, disabled) {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.disabled = !!disabled;
+      btn.style.cssText = 'display:block;width:100%;text-align:left;padding:5px 14px;' +
+        'border:none;background:none;font-family:var(--font-family);font-size:var(--font-size);color:var(--fg);';
+      btn.addEventListener('mousedown', ev => ev.preventDefault());
+      btn.addEventListener('click', () => { hideEditorCtxMenu(); fn(); });
+      menu.appendChild(btn);
+    }
+
+    // Format
+    const hm = s.headingMarker;
+    if (hm) {
+      item(`${hm} H1 ${hm}`, () => Editor.applyHeading(1));
+      item(`${hm.repeat(2)} H2 ${hm.repeat(2)}`, () => Editor.applyHeading(2));
+      item(`${hm.repeat(3)} H3 ${hm.repeat(3)}`, () => Editor.applyHeading(3));
+    }
+    if (s.commentMarker)   item(`${s.commentMarker} Comment`, () => Editor.applyLineMarker(s.commentMarker));
+    if (s.boldMarker)      item(`${s.boldMarker} Bold`,       () => Editor.applyInlineMarker(s.boldMarker),      !sel);
+    if (s.italicMarker)    item(`${s.italicMarker} Italic`,   () => Editor.applyInlineMarker(s.italicMarker),    !sel);
+    if (s.underlineMarker) item(`${s.underlineMarker} Underline`, () => Editor.applyInlineMarker(s.underlineMarker), !sel);
+    if (s.strikeMarker)    item(`${s.strikeMarker} Strike`,   () => Editor.applyInlineMarker(s.strikeMarker),    !sel);
+
+    sep();
+
+    // Edit
+    item('Cut',   () => document.execCommand('cut'),  !sel);
+    item('Copy',  () => document.execCommand('copy'), !sel);
+    item('Paste', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        ta.focus();
+        document.execCommand('insertText', false, text);
+        Editor.onInput();
+      } catch (_) {}
+    });
+
+    sep();
+
+    // Spell check toggle
+    item(`Spell check: ${ta.spellcheck ? 'on' : 'off'}`, () => { ta.spellcheck = !ta.spellcheck; });
+
+    document.body.appendChild(menu);
+    _edCtxMenu = menu;
+
+    // Clamp to viewport after paint
+    requestAnimationFrame(() => {
+      if (!_edCtxMenu) return;
+      const r = menu.getBoundingClientRect();
+      if (r.right  > window.innerWidth)  menu.style.left = Math.max(0, e.clientX - r.width)  + 'px';
+      if (r.bottom > window.innerHeight) menu.style.top  = Math.max(0, e.clientY - r.height) + 'px';
+    });
+  }
+
+  document.getElementById('ed-input').addEventListener('contextmenu', buildCtxMenu);
 
   // Search bar
   document.getElementById('search-input').addEventListener('input',  () => Editor.searchUpdate());
@@ -3016,6 +3506,14 @@ async function init() {
     if (e.key === 'Enter' && e.shiftKey) Editor.searchPrev();
     else if (e.key === 'Enter')          Editor.searchNext();
     else if (e.key === 'Escape')         Editor.searchClose();
+  });
+
+  // Goto bar
+  document.getElementById('goto-go').addEventListener('click',    () => Editor.gotoLineGo());
+  document.getElementById('goto-close').addEventListener('click', () => Editor.gotoLineClose());
+  document.getElementById('goto-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter')  Editor.gotoLineGo();
+    else if (e.key === 'Escape') Editor.gotoLineClose();
   });
 
   // Dialog close buttons
@@ -3036,6 +3534,12 @@ async function init() {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && State.doc) Editor.saveCursorPos();
   });
+  window.addEventListener('resize', () => {
+    if (State.doc) { Editor.syncGutter(); Editor.syncScroll(); Editor.typewriterScroll(); }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    if (State.doc) { Editor.syncGutter(); Editor.syncScroll(); }
+  });
   window.addEventListener('beforeunload', e => {
     if (State.dirty) { e.preventDefault(); e.returnValue = ''; }
   });
@@ -3048,15 +3552,7 @@ async function init() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  init().catch(err => {
-    console.error('Writhdeck init error:', err);
-    document.body.innerHTML +=
-      `<div style="position:fixed;bottom:0;left:0;right:0;padding:12px;background:#700;color:#fff;font-family:monospace;font-size:12px">
-        Init error: ${err.message || err}. Open DevTools console for details.
-      </div>`;
-  });
-});
+document.addEventListener('DOMContentLoaded', init);
 
 </script>
 </body>
