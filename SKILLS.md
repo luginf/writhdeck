@@ -406,12 +406,55 @@ Voir `src/i18n/README.md` pour le guide complet (format, ajout de langue, format
 - **Presse-papiers interne** : historique des N derniers copier-coller
 - **Statistiques de session** : temps d'écriture, mots ajoutés depuis l'ouverture
 
+- **Correcteur orthographique (spellcheck)** — voir analyse complète ci-dessous.
+
+### Spellcheck — analyse
+
+**Outil recommandé** : `hunspell -a` ou `aspell -a` en mode pipe persistent. Démarrage unique, envoi de mots ligne par ligne, lecture des résultats :
+- `*` = correct
+- `& mot N offset: sugg1, sugg2...` = incorrect avec suggestions
+- `# mot offset` = incorrect sans suggestion
+
+```tcl
+set ::spell_pipe [open "|hunspell -a -d fr_FR" r+]
+chan configure $::spell_pipe -buffering line -encoding utf-8
+gets $::spell_pipe   ;# consomme la ligne de bienvenue "@(#) ..."
+
+proc spell-check-word {word} {
+    puts $::spell_pipe $word
+    gets $::spell_pipe line
+    return [expr {[string index $line 0] eq "*"}]
+}
+```
+
+Affichage : `tag configure spell_error -underline 1 -foreground red` sur le widget Text.
+
+**Alternatives** :
+- `/usr/share/dict/words` chargé en dict Tcl : O(1), zéro dépendance, pas de morphologie, pas de suggestions, dictionnaires FR pauvres.
+- `enchant-2` : même protocole pipe qu'aspell, choisit automatiquement le backend disponible.
+- Windows : aspell/hunspell absents par défaut — dégrader proprement avec message en status bar.
+
+**Deux stratégies d'intégration** :
+- **À la demande** (recommandée, cohérente avec la philosophie WrithDeck) : touche configurable `key_spell`, bascule ON/OFF, passe tout le doc en revue une fois, navigation "erreur suivante". Pas de distraction pendant l'écriture.
+- **Temps réel** : dans le handler `<<Modified>>` (debounce 300ms, déjà utilisé par `highlight-headings`), re-vérifie seulement les lignes modifiées via un cache par ligne — exactement le même mécanisme que `hl_line_cache`.
+
+**Points techniques spécifiques à WrithDeck** :
+1. **Extraction des mots** : ignorer les marqueurs (`# titre`, `// commentaire`, `**gras**`) avant d'envoyer à hunspell — sinon les caractères de markup sont vus comme des mots invalides.
+2. **Langue de saisie ≠ langue d'interface** : `spell_lang` séparé de `cfg_lang` dans l'INI (on peut écrire en FR avec l'UI en EN).
+3. **TUI** : pas de `tag configure` — afficher un compteur d'erreurs dans la status bar ou ignorer.
+4. **Gestion du pipe** : redémarrer si le processus crash ; écriture/lecture non bloquante pour le mode temps réel.
+5. **Scope** : vérifier uniquement le workspace actif (`.ed.t` ou pane focalisé en split).
+
 ### Android — à implémenter
 
 - **Stats depuis le browser** : touche `s` dans BrowserScreen pour afficher les stats d'écriture du fichier sélectionné (dialog ou bottom sheet).
 - **Filtre browser** : taper des lettres filtre les fichiers en temps réel.
 - **Split view tablette** : deux panneaux côte à côte sur tablette (F10 déjà implémenté, split non).
 - **i18n** : interface EN + FR (chaînes actuellement toutes en dur en anglais).
+
+## Récemment implémenté (session 2026-06-04)
+
+- **TOC ancré (panneau droit)** : nouvelle option `toc_pinned = yes` dans `[behaviour]`. F11 bascule ouverture/fermeture du panneau au lieu d'une fenêtre flottante. Le panneau (`.ed.toc`, 180px fixe via `pack propagate 0`) est inséré à droite entre le texte et la scrollbar (`pack .ed.toc -side right -after .ed.sb`). La marge droite de `.ed.t` est réduite à 0 quand le panneau est ouvert (`pack configure .ed.t -padx [list $padx_out 0]` — liste asymétrique Tk 8.5+). La sélection dans le panneau suit le curseur éditeur automatiquement (mis à jour à la fin de `highlight-headings`). Cliquer sur un titre saute à la ligne et rend le focus à l'éditeur sans fermer le panneau. Barre de séparation draggable (5px, curseur `sb_h_double_arrow`) : `<B1-Motion>` recalcule la largeur (`max(80, min(500, start_w - delta_x))`) et applique via `.ed.toc configure -width`. Intégrations : fermeture automatique à l'ouverture du split view (`split-open`) ; recalcul de marge dans `typewriter-toggle` (mode hemingway) et `ini-reload`. Checkbox dans l'onglet Misc du dialogue config. Traduit dans les 6 langues.
 
 ## Récemment implémenté (session 2026-05-21)
 
