@@ -126,6 +126,52 @@ proc heading-level {line} {
     return ""
 }
 
+proc analyse-data {fpath} {
+    # Returns {total nsec sdata} where sdata is a list of {indent level title words pct}.
+    # Returns {} if the file does not exist.
+    if {![file exists $fpath]} { return {} }
+    set sections [analyse-structure $fpath]
+    set total 0
+    foreach sec $sections { incr total [lindex $sec 2] }
+    set result {}
+    foreach sec $sections {
+        lassign $sec title level words
+        if {$words == 0 && $title eq ""} continue
+        set pct [expr {$total > 0 ? round($words * 100.0 / $total) : 0}]
+        set indent [string repeat "  " [expr {max(0, $level - 1)}]]
+        lappend result [list $indent $level $title $words $pct]
+    }
+    return [list $total [llength $result] $result]
+}
+
+proc analyse-structure {fpath} {
+    if {![file exists $fpath]} { return {} }
+    set fd [open $fpath r]
+    chan configure $fd -encoding utf-8
+    set content [read $fd]
+    close $fd
+
+    set sections {}
+    set cur_title ""
+    set cur_level 0
+    set cur_words 0
+
+    foreach line [split $content \n] {
+        set hl [heading-level $line]
+        if {$hl ne ""} {
+            lappend sections [list $cur_title $cur_level $cur_words]
+            lassign $hl title level
+            set cur_title $title
+            set cur_level $level
+            set cur_words 0
+        } else {
+            incr cur_words [llength [regexp -all -inline {\S+} $line]]
+        }
+    }
+    lappend sections [list $cur_title $cur_level $cur_words]
+    return $sections
+}
+
 proc markers-update {} {
     set ::cached_heading_re [heading-re]
     if {$::cfg_comment_marker ne ""} {

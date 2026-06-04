@@ -1368,7 +1368,7 @@ dict set ::i18n en {
     toc_headings       "%d heading%s"
     br_no_docs         "No documents yet. Press n to create one."
     br_help_gui        "h:help  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  c:config  z:reload  %s:sections  q:quit"
-    br_help_tui        "h:%s  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  c:config  w:words  %s:sections  q:quit"
+    br_help_tui        "h:%s  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  a:analyse  c:config  w:words  %s:sections  q:quit"
     br_backed_up       "backup %s -> %s  (%s)"
     br_favorites       "Favorites"
     br_stats_title     "Writing stats"
@@ -1449,6 +1449,7 @@ dict set ::i18n en {
     br_key_delete          "delete"
     br_key_rename          "rename"
     br_key_info            "info"
+    br_key_analyse         "analyse"
     br_key_words           "words"
     br_key_config          "config"
     br_key_reload          "reload"
@@ -1459,6 +1460,7 @@ dict set ::i18n en {
     br_help_writing_stats  "Writing stats"
     br_help_backup         "Backup (copies to backups/ with timestamp)"
     br_help_show_path      "Show full path"
+    br_help_analyse        "Analyse document structure"
     br_help_word_occ       "Word occurrences"
     br_help_delete_file    "Delete"
     br_help_rename_file    "Rename"
@@ -1470,6 +1472,10 @@ dict set ::i18n en {
     br_help_help           "Help"
     br_help_quit_app       "Quit"
     br_key_sections        "sections"
+    br_analyse_title       "Structure"
+    br_analyse_intro       "(intro)"
+    br_analyse_empty       "No content to analyse."
+    br_analyse_total       "Total: %d words  -  %d sections"
     help_writhdeck         "WRITHDECK"
     help_version           "Version"
     help_date_time_sect    "DATE & TIME"
@@ -1556,7 +1562,7 @@ dict set ::i18n de {
     toc_headings       "%d Ueberschrift%s"
     br_no_docs         "Keine Dokumente. Druecke n, um ein Dokument zu erstellen."
     br_help_gui        "h:hilfe  n:neu  t:notizen  f:fav  s:statistiken  b:sicherung  d:loeschen  r:umbenennen  i:info  c:konfiguration  z:neuladen  %s:abschnitte  q:beenden"
-    br_help_tui        "h:%s  n:neu  t:notizen  f:fav  s:statistiken  b:sicherung  d:loeschen  r:umbenennen  i:info  c:konfiguration  w:woerter  %s:abschnitte  q:beenden"
+    br_help_tui        "h:%s  n:neu  t:notizen  f:fav  s:statistiken  b:sicherung  d:loeschen  r:umbenennen  i:info  a:analyse  c:konfiguration  w:woerter  %s:abschnitte  q:beenden"
     br_backed_up       "sicherung %s -> %s  (%s)"
     br_favorites       "Favoriten"
     br_stats_title     "Schreibstatistiken"
@@ -1637,6 +1643,7 @@ dict set ::i18n de {
     br_key_delete          "loeschen"
     br_key_rename          "umbenennen"
     br_key_info            "info"
+    br_key_analyse         "analyse"
     br_key_words           "woerter"
     br_key_config          "konfiguration"
     br_key_reload          "neuladen"
@@ -1647,6 +1654,7 @@ dict set ::i18n de {
     br_help_writing_stats  "Schreibstatistiken"
     br_help_backup         "Sicherung (kopiert in backups/ mit Zeitstempel)"
     br_help_show_path      "Vollstaendigen Pfad anzeigen"
+    br_help_analyse        "Dokumentstruktur analysieren"
     br_help_word_occ       "Wortvorkommnisse"
     br_help_delete_file    "Loeschen"
     br_help_rename_file    "Umbenennen"
@@ -1658,6 +1666,10 @@ dict set ::i18n de {
     br_help_help           "Hilfe"
     br_help_quit_app       "Beenden"
     br_key_sections        "abschnitte"
+    br_analyse_title       "Struktur"
+    br_analyse_intro       "(Einleitung)"
+    br_analyse_empty       "Kein Inhalt zum Analysieren."
+    br_analyse_total       "Gesamt: %d Woerter  -  %d Abschnitte"
     help_writhdeck         "WRITHDECK"
     help_version           "Version"
     help_date_time_sect    "DATUM & UHRZEIT"
@@ -1744,7 +1756,7 @@ dict set ::i18n es {
     toc_headings       "%d encabezado%s"
     br_no_docs         "Sin documentos. Presiona n para crear uno."
     br_help_gui        "h:ayuda  n:nuevo  t:notas  f:fav  s:estadisticas  b:copia  d:eliminar  r:renombrar  i:info  c:configuracion  z:recargar  %s:secciones  q:salir"
-    br_help_tui        "h:%s  n:nuevo  t:notas  f:fav  s:estadisticas  b:copia  d:eliminar  r:renombrar  i:info  c:configuracion  w:palabras  %s:secciones  q:salir"
+    br_help_tui        "h:%s  n:nuevo  t:notas  f:fav  s:estadisticas  b:copia  d:eliminar  r:renombrar  i:info  a:analizar  c:configuracion  w:palabras  %s:secciones  q:salir"
     br_backed_up       "copia %s -> %s  (%s)"
     br_favorites       "Favoritos"
     br_stats_title     "Estadisticas de escritura"
@@ -1825,6 +1837,7 @@ dict set ::i18n es {
     br_key_delete          "eliminar"
     br_key_rename          "renombrar"
     br_key_info            "info"
+    br_key_analyse         "analizar"
     br_key_words           "palabras"
     br_key_config          "configuracion"
     br_key_reload          "recargar"
@@ -1835,6 +1848,7 @@ dict set ::i18n es {
     br_help_writing_stats  "Estadisticas de escritura"
     br_help_backup         "Copia (copia en backups/ con marca de tiempo)"
     br_help_show_path      "Mostrar ruta completa"
+    br_help_analyse        "Analizar estructura del documento"
     br_help_word_occ       "Ocurrencias de palabras"
     br_help_delete_file    "Eliminar"
     br_help_rename_file    "Renombrar"
@@ -1846,6 +1860,10 @@ dict set ::i18n es {
     br_help_help           "Ayuda"
     br_help_quit_app       "Salir"
     br_key_sections        "secciones"
+    br_analyse_title       "Estructura"
+    br_analyse_intro       "(intro)"
+    br_analyse_empty       "No hay contenido para analizar."
+    br_analyse_total       "Total: %d palabras  -  %d secciones"
     help_writhdeck         "WRITHDECK"
     help_version           "Version"
     help_date_time_sect    "FECHA Y HORA"
@@ -1932,7 +1950,7 @@ dict set ::i18n fr {
     toc_headings       "%d titre%s"
     br_no_docs         "Aucun document. Appuyez sur n pour en créer un."
     br_help_gui        "h:aide  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  c:config  z:recharger  %s:sections  q:quitter"
-    br_help_tui        "h:%s  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  c:config  w:mots  %s:sections  q:quitter"
+    br_help_tui        "h:%s  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  a:analyse  c:config  w:mots  %s:sections  q:quitter"
     br_backed_up       "sauvegarde %s -> %s  (%s)"
     br_favorites       "Favoris"
     br_stats_title     "Statistiques d'écriture"
@@ -2013,6 +2031,7 @@ dict set ::i18n fr {
     br_key_delete          "supprimer"
     br_key_rename          "renommer"
     br_key_info            "infos"
+    br_key_analyse         "analyse"
     br_key_words           "mots"
     br_key_config          "config"
     br_key_reload          "recharger"
@@ -2023,6 +2042,7 @@ dict set ::i18n fr {
     br_help_writing_stats  "Statistiques d'écriture"
     br_help_backup         "Sauvegarde (copie dans backups/ avec timestamp)"
     br_help_show_path      "Afficher le chemin complet"
+    br_help_analyse        "Analyser la structure du document"
     br_help_word_occ       "Occurrences de mots"
     br_help_delete_file    "Supprimer"
     br_help_rename_file    "Renommer"
@@ -2034,6 +2054,10 @@ dict set ::i18n fr {
     br_help_help           "Aide"
     br_help_quit_app       "Quitter"
     br_key_sections        "sections"
+    br_analyse_title       "Structure"
+    br_analyse_intro       "(début)"
+    br_analyse_empty       "Aucun contenu à analyser."
+    br_analyse_total       "Total : %d mots  -  %d sections"
     help_writhdeck         "WRITHDECK"
     help_version           "Version"
     help_date_time_sect    "DATE & HEURE"
@@ -2120,7 +2144,7 @@ dict set ::i18n ko {
     toc_headings       "%d개의 제목%s"
     br_no_docs         "문서가 없습니다. n을 눌러서 새 문서를 만드세요."
     br_help_gui        "h:도움말  n:새로운  t:메모장  f:즐겨찾기  s:통계  b:백업  d:삭제  r:이름변경  i:정보  c:설정  z:다시로드  %s:섹션  q:종료"
-    br_help_tui        "h:%s  n:새로운  t:메모장  f:즐겨찾기  s:통계  b:백업  d:삭제  r:이름변경  i:정보  c:설정  w:단어  %s:섹션  q:종료"
+    br_help_tui        "h:%s  n:새로운  t:메모장  f:즐겨찾기  s:통계  b:백업  d:삭제  r:이름변경  i:정보  a:분석  c:설정  w:단어  %s:섹션  q:종료"
     br_backed_up       "백업 %s -> %s  (%s)"
     br_favorites       "즐겨찾기"
     br_stats_title     "작문 통계"
@@ -2201,6 +2225,7 @@ dict set ::i18n ko {
     br_key_delete          "삭제"
     br_key_rename          "이름변경"
     br_key_info            "정보"
+    br_key_analyse         "분석"
     br_key_words           "단어"
     br_key_config          "설정"
     br_key_reload          "다시로드"
@@ -2211,6 +2236,7 @@ dict set ::i18n ko {
     br_help_writing_stats  "작문 통계"
     br_help_backup         "백업 (타임스탬프가 있는 backups/에 복사)"
     br_help_show_path      "전체 경로 표시"
+    br_help_analyse        "문서 구조 분석"
     br_help_word_occ       "단어 발생"
     br_help_delete_file    "삭제"
     br_help_rename_file    "이름 변경"
@@ -2222,6 +2248,10 @@ dict set ::i18n ko {
     br_help_help           "도움말"
     br_help_quit_app       "종료"
     br_key_sections        "섹션"
+    br_analyse_title       "구조"
+    br_analyse_intro       "(서론)"
+    br_analyse_empty       "분석할 내용이 없습니다."
+    br_analyse_total       "합계: %d 단어  -  %d 섹션"
     help_writhdeck         "WRITHDECK"
     help_version           "버전"
     help_date_time_sect    "날짜 및 시간"
@@ -2308,7 +2338,7 @@ dict set ::i18n no {
     toc_headings       "%d overskrift%s"
     br_no_docs         "Ingen dokumenter ennå. Trykk n for å lage en ny."
     br_help_gui        "h:hjelp  n:ny  t:notisbok  f:favoritt  s:statistikk  b:sikkerhetskopi  d:slett  r:gi nytt navn  i:info  c:innstillinger  z:last på nytt  %s:avsnitt  q:avslutt"
-    br_help_tui        "h:%s  n:ny  t:notisbok  f:favoritt  s:statistikk  b:sikkerhetskopi  d:slett  r:gi nytt navn  i:info  c:innstillinger  w:ord  %s:avsnitt  q:avslutt"
+    br_help_tui        "h:%s  n:ny  t:notisbok  f:favoritt  s:statistikk  b:sikkerhetskopi  d:slett  r:gi nytt navn  i:info  a:analyser  c:innstillinger  w:ord  %s:avsnitt  q:avslutt"
     br_backed_up       "sikkerhetskopi %s -> %s  (%s)"
     br_favorites       "Favoritter"
     br_stats_title     "Skrivstatistikk"
@@ -2389,6 +2419,7 @@ dict set ::i18n no {
     br_key_delete          "slett"
     br_key_rename          "gi nytt navn"
     br_key_info            "info"
+    br_key_analyse         "analyser"
     br_key_words           "ord"
     br_key_config          "innstillinger"
     br_key_reload          "last på nytt"
@@ -2399,6 +2430,7 @@ dict set ::i18n no {
     br_help_writing_stats  "Skrivstatistikk"
     br_help_backup         "Sikkerhetskopi (kopier til sikkerhetskopi/ med tidsstempel)"
     br_help_show_path      "Vis fullstendig sti"
+    br_help_analyse        "Analyser dokumentstruktur"
     br_help_word_occ       "Ordforkomster"
     br_help_delete_file    "Slett"
     br_help_rename_file    "Gi nytt navn"
@@ -2410,6 +2442,10 @@ dict set ::i18n no {
     br_help_help           "Hjelp"
     br_help_quit_app       "Avslutt"
     br_key_sections        "avsnitt"
+    br_analyse_title       "Struktur"
+    br_analyse_intro       "(intro)"
+    br_analyse_empty       "Ingen innhold å analysere."
+    br_analyse_total       "Totalt: %d ord  -  %d seksjoner"
     help_writhdeck         "WRITHDECK"
     help_version           "Versjon"
     help_date_time_sect    "DATO OG TID"
@@ -2619,6 +2655,52 @@ proc heading-level {line} {
         return [list [string trim $title] [string length $hashes]]
     }
     return ""
+}
+
+proc analyse-data {fpath} {
+    # Returns {total nsec sdata} where sdata is a list of {indent level title words pct}.
+    # Returns {} if the file does not exist.
+    if {![file exists $fpath]} { return {} }
+    set sections [analyse-structure $fpath]
+    set total 0
+    foreach sec $sections { incr total [lindex $sec 2] }
+    set result {}
+    foreach sec $sections {
+        lassign $sec title level words
+        if {$words == 0 && $title eq ""} continue
+        set pct [expr {$total > 0 ? round($words * 100.0 / $total) : 0}]
+        set indent [string repeat "  " [expr {max(0, $level - 1)}]]
+        lappend result [list $indent $level $title $words $pct]
+    }
+    return [list $total [llength $result] $result]
+}
+
+proc analyse-structure {fpath} {
+    if {![file exists $fpath]} { return {} }
+    set fd [open $fpath r]
+    chan configure $fd -encoding utf-8
+    set content [read $fd]
+    close $fd
+
+    set sections {}
+    set cur_title ""
+    set cur_level 0
+    set cur_words 0
+
+    foreach line [split $content \n] {
+        set hl [heading-level $line]
+        if {$hl ne ""} {
+            lappend sections [list $cur_title $cur_level $cur_words]
+            lassign $hl title level
+            set cur_title $title
+            set cur_level $level
+            set cur_words 0
+        } else {
+            incr cur_words [llength [regexp -all -inline {\S+} $line]]
+        }
+    }
+    lappend sections [list $cur_title $cur_level $cur_words]
+    return $sections
 }
 
 proc markers-update {} {
@@ -3706,6 +3788,7 @@ foreach {char cmd key} {
     d br-delete br_key_delete
     r br-rename br_key_rename
     i br-info-shortcut br_key_info
+    a br-analyse-shortcut br_key_analyse
     w word-occurrences-dialog br_key_words
 } {
     set label "$char:[t $key]"
@@ -3904,6 +3987,14 @@ proc br-info-shortcut {} {
     }
 }
 
+proc br-analyse-shortcut {} {
+    set e [br-selected]
+    if {[llength $e]} {
+        set fpath [file join [lindex $e 1] [lindex $e 2]]
+        analyse-dialog $fpath
+    }
+}
+
 # --- browser dialogs ----------------------------------------------------------
 proc input-dialog {title prompt} {
     set w .dlg
@@ -4015,6 +4106,67 @@ proc file-info-dialog {fpath} {
     update
     grab $w
     focus $w.f.ok
+    tkwait window $w
+}
+
+proc analyse-dialog {fpath} {
+    set data [analyse-data $fpath]
+    if {$data eq {}} { info-dialog "File not found: $fpath"; return }
+    lassign $data total nsec sdata
+
+    set w .adlg
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [t br_analyse_title]
+    wm geometry $w 520x420
+    wm transient $w .
+
+    label $w.hdr -text "[file tail $fpath]" -font [list [lindex $::font 0] [lindex $::font 1] bold] \
+        -bg $::bg_bar -fg $::fg_bar -anchor w -padx 10 -pady 5
+
+    frame $w.f -bg $::bg
+    text $w.f.t -font $::font_sm -bg $::bg -fg $::fg -bd 0 -highlightthickness 0 \
+        -yscrollcommand [list $w.f.sb set] -wrap none -width 66 -height 22 \
+        -selectbackground $::bg_sel -selectforeground $::fg -cursor arrow -padx 10 -pady 6
+    scrollbar $w.f.sb -orient vertical -command [list $w.f.t yview]
+
+    $w.f.t tag configure heading_tag -foreground $::cfg_color_heading
+    $w.f.t tag configure bar_tag     -foreground $::cfg_color_heading
+    $w.f.t tag configure dim_tag     -foreground $::fg_bar
+
+    $w.f.t configure -state normal
+    if {$total == 0} {
+        $w.f.t insert end "\n  [t br_analyse_empty]\n" dim_tag
+    } else {
+        set max_bar 28
+        foreach row $sdata {
+            lassign $row indent level title words pct
+            set bar [string repeat "|" [expr {max(1, round($pct * $max_bar / 100.0))}]]
+            set lbl [expr {$title eq "" ? [t br_analyse_intro] : $title}]
+            set lvl_str [expr {$level > 0 ? "H$level " : "    "}]
+            $w.f.t insert end "\n${indent}${lvl_str}" dim_tag
+            $w.f.t insert end "${lbl}\n" heading_tag
+            $w.f.t insert end "${indent}    ${bar} " bar_tag
+            $w.f.t insert end "${words}w (${pct}%)\n" dim_tag
+        }
+        $w.f.t insert end "\n  [t br_analyse_total $total $nsec]\n" dim_tag
+    }
+    $w.f.t configure -state disabled
+
+    pack $w.f.sb -side right -fill y
+    pack $w.f.t  -side left  -fill both -expand 1
+
+    button $w.ok -text "OK" -font $::font_sm -command [list destroy $w]
+
+    pack $w.hdr -fill x
+    pack $w.f   -fill both -expand 1 -padx 2 -pady 2
+    pack $w.ok  -anchor e -padx 8 -pady 6
+
+    bind $w <Return> [list destroy $w]
+    bind $w <Escape> [list destroy $w]
+    update
+    grab $w
+    focus $w.ok
     tkwait window $w
 }
 
@@ -4294,6 +4446,7 @@ bind .br.mid.lst <b>           { br-backup }
 bind .br.mid.lst <d>           { br-delete }
 bind .br.mid.lst <r>           { br-rename }
 bind .br.mid.lst <i>           { set e [br-selected]; if {[llength $e]} { file-info-dialog [file join [lindex $e 1] [lindex $e 2]] } }
+bind .br.mid.lst <a>           { set e [br-selected]; if {[llength $e]} { analyse-dialog [file join [lindex $e 1] [lindex $e 2]] } }
 bind .br.mid.lst <w>           { set e [br-selected]; if {[llength $e]} { word-occurrences-dialog [file join [lindex $e 1] [lindex $e 2]] } }
 if {[info procs profile-config-dialog] ne ""} {
     bind .br.mid.lst <c>       { profile-config-dialog }
@@ -4541,7 +4694,7 @@ proc gui-status-state {} {
 proc gui-status-update {} {
     if {$::gui_cmd_mode} {
         set ::ed_bar_left ""
-        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words"
+        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words  a: analyse"
         set ::ed_bar_right ""
         return
     }
@@ -5583,6 +5736,13 @@ proc gui-handle-keypress {key} {
             set ::gui_cmd_mode 0
             ed-status
             return 1
+        } elseif {$key eq "a" || $key eq "A"} {
+            if {$::filename ne ""} {
+                analyse-dialog $::filename
+            }
+            set ::gui_cmd_mode 0
+            ed-status
+            return 1
         } elseif {$key eq "q" || $key eq "Q"} {
             set ::gui_cmd_mode 0
             ed-status
@@ -5618,6 +5778,8 @@ proc bind-cmd-mode {w} {
     bind $w <S>     { if {![gui-handle-keypress S]} { %W insert insert S; ed-status }; break }
     bind $w <w>     { if {![gui-handle-keypress w]} { %W insert insert w; ed-status }; break }
     bind $w <W>     { if {![gui-handle-keypress W]} { %W insert insert W; ed-status }; break }
+    bind $w <a>     { if {![gui-handle-keypress a]} { %W insert insert a; ed-status }; break }
+    bind $w <A>     { if {![gui-handle-keypress A]} { %W insert insert A; ed-status }; break }
     bind $w <Alt-t> { if {!$::gui_cmd_mode} { if {$::timer_active} { timer-pause } else { timer-start }; ed-status }; break }
     bind $w <Any-KeyPress> { if {$::gui_cmd_mode} { set k %K; if {$k ne "Escape"} break } }
 }
@@ -5857,6 +6019,7 @@ proc help-dialog {} {
             "s"                                 [t br_help_writing_stats] \
             "b"                                 [t br_help_backup] \
             "i"                                 [t br_help_show_path] \
+            "a"                                 [t br_help_analyse] \
             "w"                                 [t br_help_word_occ] \
             "d"                                 [t br_help_delete_file] \
             "r"                                 [t br_help_rename_file] \
@@ -7384,6 +7547,15 @@ proc tui-browser {} {
                     }
                 }
             }
+            a {
+                if {$cfi >= 0} {
+                    lassign [lindex $entries $cfi] _ dir name
+                    set _path [file join $dir $name]
+                    if {[file isfile $_path]} {
+                        tui-analyse-dialog $_path $rows $cols
+                    }
+                }
+            }
             c {
                 tui-config-dialog $rows $cols
             }
@@ -8200,6 +8372,15 @@ proc tui-editor {filepath {init_state {}}} {
                         puts -nonewline "\033\[2J\033\[H"; flush stdout
                         set wrap_dirty 1
                         set clear_sel 0
+                    } elseif {$key eq "a"} {
+                        lassign [tui-size] rows cols
+                        if {$filepath ne ""} {
+                            tui-analyse-dialog $filepath $rows $cols
+                        }
+                        set ::tui_cmd_mode 0
+                        puts -nonewline "\033\[2J\033\[H"; flush stdout
+                        set wrap_dirty 1
+                        set clear_sel 0
                     } elseif {$key eq "b"} {
                         set ::tui_cmd_mode 0
                         set _rsl [expr {$_fswap==2 ? $lines : $split_r_lines}]
@@ -8239,7 +8420,7 @@ proc tui-editor {filepath {init_state {}}} {
                     }
                 } elseif {$key eq $::cfg_tui_cmd_mode} {
                     set ::tui_cmd_mode 1
-                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words"
+                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words  a: analyse"
                     set msg_time [clock seconds]
                     set clear_sel 0
                 } elseif {$key eq $::cfg_tui_close} {
@@ -8658,6 +8839,71 @@ proc tui-word-occurrences {fpath rows cols} {
                     if {$_k eq $::cfg_tui_help} { break }
                 }
             }
+        }
+    }
+}
+
+proc tui-analyse-dialog {fpath rows cols} {
+    set data [analyse-data $fpath]
+    if {$data eq {}} return
+    lassign $data total nsec sdata
+
+    set all_lines {}
+    lappend all_lines [list "  [t br_analyse_title] -- [file tail $fpath]" 1]
+    lappend all_lines [list "" 0]
+
+    if {$total == 0} {
+        lappend all_lines [list "  [t br_analyse_empty]" 0]
+    } else {
+        set max_bar 25
+        foreach row $sdata {
+            lassign $row indent level title words pct
+            set bar [string repeat "|" [expr {max(1, round($pct * $max_bar / 100.0))}]]
+            set lbl [expr {$title eq "" ? [t br_analyse_intro] : $title}]
+            set lvl_str [expr {$level > 0 ? "H$level" : "   "}]
+            lappend all_lines [list "${indent}  ${lvl_str} ${lbl}" 1]
+            lappend all_lines [list "${indent}      ${bar} ${words}w (${pct}%)" 0]
+            lappend all_lines [list "" 0]
+        }
+        lappend all_lines [list "  [t br_analyse_total $total $nsec]" 0]
+    }
+
+    set _usable [expr {$rows - 4}]
+    set _total  [llength $all_lines]
+    set _scroll 0
+
+    puts -nonewline "\033\[2J\033\[H"; flush stdout
+
+    while 1 {
+        set _max_scroll [expr {max(0, $_total - $_usable)}]
+        if {$_scroll > $_max_scroll} { set _scroll $_max_scroll }
+        if {$_scroll < 0}           { set _scroll 0 }
+
+        puts -nonewline "\033\[H"
+        for {set _i 0} {$_i < $_usable} {incr _i} {
+            set _idx [expr {$_scroll + $_i}]
+            if {$_idx < $_total} {
+                tui-move $_i 0
+                lassign [lindex $all_lines $_idx] _txt _inv
+                if {$_inv} { tui-attr reverse }
+                puts -nonewline "[string range $_txt 0 [expr {$cols - 1}]]\033\[K"
+                if {$_inv} { tui-attr off }
+            } else {
+                tui-move $_i 0
+                puts -nonewline "\033\[K"
+            }
+        }
+        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  q close" "" $cols
+        flush stdout
+
+        set _k ""; while {$_k eq ""} { set _k [tui-getch] }
+        switch -- $_k {
+            q       { break }
+            UP - k  { incr _scroll -1 }
+            DOWN - j { incr _scroll 1 }
+            HOME    { set _scroll 0 }
+            END     { set _scroll [expr {max(0, $_total - $_usable)}] }
+            default { if {$_k eq $::cfg_tui_help} { break } }
         }
     }
 }

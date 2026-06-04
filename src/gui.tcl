@@ -67,6 +67,7 @@ foreach {char cmd key} {
     d br-delete br_key_delete
     r br-rename br_key_rename
     i br-info-shortcut br_key_info
+    a br-analyse-shortcut br_key_analyse
     w word-occurrences-dialog br_key_words
 } {
     set label "$char:[t $key]"
@@ -265,6 +266,14 @@ proc br-info-shortcut {} {
     }
 }
 
+proc br-analyse-shortcut {} {
+    set e [br-selected]
+    if {[llength $e]} {
+        set fpath [file join [lindex $e 1] [lindex $e 2]]
+        analyse-dialog $fpath
+    }
+}
+
 # --- browser dialogs ----------------------------------------------------------
 proc input-dialog {title prompt} {
     set w .dlg
@@ -376,6 +385,67 @@ proc file-info-dialog {fpath} {
     update
     grab $w
     focus $w.f.ok
+    tkwait window $w
+}
+
+proc analyse-dialog {fpath} {
+    set data [analyse-data $fpath]
+    if {$data eq {}} { info-dialog "File not found: $fpath"; return }
+    lassign $data total nsec sdata
+
+    set w .adlg
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [t br_analyse_title]
+    wm geometry $w 520x420
+    wm transient $w .
+
+    label $w.hdr -text "[file tail $fpath]" -font [list [lindex $::font 0] [lindex $::font 1] bold] \
+        -bg $::bg_bar -fg $::fg_bar -anchor w -padx 10 -pady 5
+
+    frame $w.f -bg $::bg
+    text $w.f.t -font $::font_sm -bg $::bg -fg $::fg -bd 0 -highlightthickness 0 \
+        -yscrollcommand [list $w.f.sb set] -wrap none -width 66 -height 22 \
+        -selectbackground $::bg_sel -selectforeground $::fg -cursor arrow -padx 10 -pady 6
+    scrollbar $w.f.sb -orient vertical -command [list $w.f.t yview]
+
+    $w.f.t tag configure heading_tag -foreground $::cfg_color_heading
+    $w.f.t tag configure bar_tag     -foreground $::cfg_color_heading
+    $w.f.t tag configure dim_tag     -foreground $::fg_bar
+
+    $w.f.t configure -state normal
+    if {$total == 0} {
+        $w.f.t insert end "\n  [t br_analyse_empty]\n" dim_tag
+    } else {
+        set max_bar 28
+        foreach row $sdata {
+            lassign $row indent level title words pct
+            set bar [string repeat "|" [expr {max(1, round($pct * $max_bar / 100.0))}]]
+            set lbl [expr {$title eq "" ? [t br_analyse_intro] : $title}]
+            set lvl_str [expr {$level > 0 ? "H$level " : "    "}]
+            $w.f.t insert end "\n${indent}${lvl_str}" dim_tag
+            $w.f.t insert end "${lbl}\n" heading_tag
+            $w.f.t insert end "${indent}    ${bar} " bar_tag
+            $w.f.t insert end "${words}w (${pct}%)\n" dim_tag
+        }
+        $w.f.t insert end "\n  [t br_analyse_total $total $nsec]\n" dim_tag
+    }
+    $w.f.t configure -state disabled
+
+    pack $w.f.sb -side right -fill y
+    pack $w.f.t  -side left  -fill both -expand 1
+
+    button $w.ok -text "OK" -font $::font_sm -command [list destroy $w]
+
+    pack $w.hdr -fill x
+    pack $w.f   -fill both -expand 1 -padx 2 -pady 2
+    pack $w.ok  -anchor e -padx 8 -pady 6
+
+    bind $w <Return> [list destroy $w]
+    bind $w <Escape> [list destroy $w]
+    update
+    grab $w
+    focus $w.ok
     tkwait window $w
 }
 
@@ -655,6 +725,7 @@ bind .br.mid.lst <b>           { br-backup }
 bind .br.mid.lst <d>           { br-delete }
 bind .br.mid.lst <r>           { br-rename }
 bind .br.mid.lst <i>           { set e [br-selected]; if {[llength $e]} { file-info-dialog [file join [lindex $e 1] [lindex $e 2]] } }
+bind .br.mid.lst <a>           { set e [br-selected]; if {[llength $e]} { analyse-dialog [file join [lindex $e 1] [lindex $e 2]] } }
 bind .br.mid.lst <w>           { set e [br-selected]; if {[llength $e]} { word-occurrences-dialog [file join [lindex $e 1] [lindex $e 2]] } }
 if {[info procs profile-config-dialog] ne ""} {
     bind .br.mid.lst <c>       { profile-config-dialog }
@@ -902,7 +973,7 @@ proc gui-status-state {} {
 proc gui-status-update {} {
     if {$::gui_cmd_mode} {
         set ::ed_bar_left ""
-        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words"
+        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words  a: analyse"
         set ::ed_bar_right ""
         return
     }
@@ -1944,6 +2015,13 @@ proc gui-handle-keypress {key} {
             set ::gui_cmd_mode 0
             ed-status
             return 1
+        } elseif {$key eq "a" || $key eq "A"} {
+            if {$::filename ne ""} {
+                analyse-dialog $::filename
+            }
+            set ::gui_cmd_mode 0
+            ed-status
+            return 1
         } elseif {$key eq "q" || $key eq "Q"} {
             set ::gui_cmd_mode 0
             ed-status
@@ -1979,6 +2057,8 @@ proc bind-cmd-mode {w} {
     bind $w <S>     { if {![gui-handle-keypress S]} { %W insert insert S; ed-status }; break }
     bind $w <w>     { if {![gui-handle-keypress w]} { %W insert insert w; ed-status }; break }
     bind $w <W>     { if {![gui-handle-keypress W]} { %W insert insert W; ed-status }; break }
+    bind $w <a>     { if {![gui-handle-keypress a]} { %W insert insert a; ed-status }; break }
+    bind $w <A>     { if {![gui-handle-keypress A]} { %W insert insert A; ed-status }; break }
     bind $w <Alt-t> { if {!$::gui_cmd_mode} { if {$::timer_active} { timer-pause } else { timer-start }; ed-status }; break }
     bind $w <Any-KeyPress> { if {$::gui_cmd_mode} { set k %K; if {$k ne "Escape"} break } }
 }
@@ -2218,6 +2298,7 @@ proc help-dialog {} {
             "s"                                 [t br_help_writing_stats] \
             "b"                                 [t br_help_backup] \
             "i"                                 [t br_help_show_path] \
+            "a"                                 [t br_help_analyse] \
             "w"                                 [t br_help_word_occ] \
             "d"                                 [t br_help_delete_file] \
             "r"                                 [t br_help_rename_file] \

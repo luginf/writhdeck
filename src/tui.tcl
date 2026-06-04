@@ -942,6 +942,15 @@ proc tui-browser {} {
                     }
                 }
             }
+            a {
+                if {$cfi >= 0} {
+                    lassign [lindex $entries $cfi] _ dir name
+                    set _path [file join $dir $name]
+                    if {[file isfile $_path]} {
+                        tui-analyse-dialog $_path $rows $cols
+                    }
+                }
+            }
             c {
                 tui-config-dialog $rows $cols
             }
@@ -1758,6 +1767,15 @@ proc tui-editor {filepath {init_state {}}} {
                         puts -nonewline "\033\[2J\033\[H"; flush stdout
                         set wrap_dirty 1
                         set clear_sel 0
+                    } elseif {$key eq "a"} {
+                        lassign [tui-size] rows cols
+                        if {$filepath ne ""} {
+                            tui-analyse-dialog $filepath $rows $cols
+                        }
+                        set ::tui_cmd_mode 0
+                        puts -nonewline "\033\[2J\033\[H"; flush stdout
+                        set wrap_dirty 1
+                        set clear_sel 0
                     } elseif {$key eq "b"} {
                         set ::tui_cmd_mode 0
                         set _rsl [expr {$_fswap==2 ? $lines : $split_r_lines}]
@@ -1797,7 +1815,7 @@ proc tui-editor {filepath {init_state {}}} {
                     }
                 } elseif {$key eq $::cfg_tui_cmd_mode} {
                     set ::tui_cmd_mode 1
-                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words"
+                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words  a: analyse"
                     set msg_time [clock seconds]
                     set clear_sel 0
                 } elseif {$key eq $::cfg_tui_close} {
@@ -2216,6 +2234,71 @@ proc tui-word-occurrences {fpath rows cols} {
                     if {$_k eq $::cfg_tui_help} { break }
                 }
             }
+        }
+    }
+}
+
+proc tui-analyse-dialog {fpath rows cols} {
+    set data [analyse-data $fpath]
+    if {$data eq {}} return
+    lassign $data total nsec sdata
+
+    set all_lines {}
+    lappend all_lines [list "  [t br_analyse_title] -- [file tail $fpath]" 1]
+    lappend all_lines [list "" 0]
+
+    if {$total == 0} {
+        lappend all_lines [list "  [t br_analyse_empty]" 0]
+    } else {
+        set max_bar 25
+        foreach row $sdata {
+            lassign $row indent level title words pct
+            set bar [string repeat "|" [expr {max(1, round($pct * $max_bar / 100.0))}]]
+            set lbl [expr {$title eq "" ? [t br_analyse_intro] : $title}]
+            set lvl_str [expr {$level > 0 ? "H$level" : "   "}]
+            lappend all_lines [list "${indent}  ${lvl_str} ${lbl}" 1]
+            lappend all_lines [list "${indent}      ${bar} ${words}w (${pct}%)" 0]
+            lappend all_lines [list "" 0]
+        }
+        lappend all_lines [list "  [t br_analyse_total $total $nsec]" 0]
+    }
+
+    set _usable [expr {$rows - 4}]
+    set _total  [llength $all_lines]
+    set _scroll 0
+
+    puts -nonewline "\033\[2J\033\[H"; flush stdout
+
+    while 1 {
+        set _max_scroll [expr {max(0, $_total - $_usable)}]
+        if {$_scroll > $_max_scroll} { set _scroll $_max_scroll }
+        if {$_scroll < 0}           { set _scroll 0 }
+
+        puts -nonewline "\033\[H"
+        for {set _i 0} {$_i < $_usable} {incr _i} {
+            set _idx [expr {$_scroll + $_i}]
+            if {$_idx < $_total} {
+                tui-move $_i 0
+                lassign [lindex $all_lines $_idx] _txt _inv
+                if {$_inv} { tui-attr reverse }
+                puts -nonewline "[string range $_txt 0 [expr {$cols - 1}]]\033\[K"
+                if {$_inv} { tui-attr off }
+            } else {
+                tui-move $_i 0
+                puts -nonewline "\033\[K"
+            }
+        }
+        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  q close" "" $cols
+        flush stdout
+
+        set _k ""; while {$_k eq ""} { set _k [tui-getch] }
+        switch -- $_k {
+            q       { break }
+            UP - k  { incr _scroll -1 }
+            DOWN - j { incr _scroll 1 }
+            HOME    { set _scroll 0 }
+            END     { set _scroll [expr {max(0, $_total - $_usable)}] }
+            default { if {$_k eq $::cfg_tui_help} { break } }
         }
     }
 }

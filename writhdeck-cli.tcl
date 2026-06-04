@@ -1183,7 +1183,7 @@ dict set ::i18n en {
     toc_headings       "%d heading%s"
     br_no_docs         "No documents yet. Press n to create one."
     br_help_gui        "h:help  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  c:config  z:reload  %s:sections  q:quit"
-    br_help_tui        "h:%s  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  c:config  w:words  %s:sections  q:quit"
+    br_help_tui        "h:%s  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  a:analyse  c:config  w:words  %s:sections  q:quit"
     br_backed_up       "backup %s -> %s  (%s)"
     br_favorites       "Favorites"
     br_stats_title     "Writing stats"
@@ -1264,6 +1264,7 @@ dict set ::i18n en {
     br_key_delete          "delete"
     br_key_rename          "rename"
     br_key_info            "info"
+    br_key_analyse         "analyse"
     br_key_words           "words"
     br_key_config          "config"
     br_key_reload          "reload"
@@ -1274,6 +1275,7 @@ dict set ::i18n en {
     br_help_writing_stats  "Writing stats"
     br_help_backup         "Backup (copies to backups/ with timestamp)"
     br_help_show_path      "Show full path"
+    br_help_analyse        "Analyse document structure"
     br_help_word_occ       "Word occurrences"
     br_help_delete_file    "Delete"
     br_help_rename_file    "Rename"
@@ -1285,6 +1287,10 @@ dict set ::i18n en {
     br_help_help           "Help"
     br_help_quit_app       "Quit"
     br_key_sections        "sections"
+    br_analyse_title       "Structure"
+    br_analyse_intro       "(intro)"
+    br_analyse_empty       "No content to analyse."
+    br_analyse_total       "Total: %d words  -  %d sections"
     help_writhdeck         "WRITHDECK"
     help_version           "Version"
     help_date_time_sect    "DATE & TIME"
@@ -1371,7 +1377,7 @@ dict set ::i18n fr {
     toc_headings       "%d titre%s"
     br_no_docs         "Aucun document. Appuyez sur n pour en créer un."
     br_help_gui        "h:aide  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  c:config  z:recharger  %s:sections  q:quitter"
-    br_help_tui        "h:%s  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  c:config  w:mots  %s:sections  q:quitter"
+    br_help_tui        "h:%s  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  a:analyse  c:config  w:mots  %s:sections  q:quitter"
     br_backed_up       "sauvegarde %s -> %s  (%s)"
     br_favorites       "Favoris"
     br_stats_title     "Statistiques d'écriture"
@@ -1452,6 +1458,7 @@ dict set ::i18n fr {
     br_key_delete          "supprimer"
     br_key_rename          "renommer"
     br_key_info            "infos"
+    br_key_analyse         "analyse"
     br_key_words           "mots"
     br_key_config          "config"
     br_key_reload          "recharger"
@@ -1462,6 +1469,7 @@ dict set ::i18n fr {
     br_help_writing_stats  "Statistiques d'écriture"
     br_help_backup         "Sauvegarde (copie dans backups/ avec timestamp)"
     br_help_show_path      "Afficher le chemin complet"
+    br_help_analyse        "Analyser la structure du document"
     br_help_word_occ       "Occurrences de mots"
     br_help_delete_file    "Supprimer"
     br_help_rename_file    "Renommer"
@@ -1473,6 +1481,10 @@ dict set ::i18n fr {
     br_help_help           "Aide"
     br_help_quit_app       "Quitter"
     br_key_sections        "sections"
+    br_analyse_title       "Structure"
+    br_analyse_intro       "(début)"
+    br_analyse_empty       "Aucun contenu à analyser."
+    br_analyse_total       "Total : %d mots  -  %d sections"
     help_writhdeck         "WRITHDECK"
     help_version           "Version"
     help_date_time_sect    "DATE & HEURE"
@@ -1682,6 +1694,52 @@ proc heading-level {line} {
         return [list [string trim $title] [string length $hashes]]
     }
     return ""
+}
+
+proc analyse-data {fpath} {
+    # Returns {total nsec sdata} where sdata is a list of {indent level title words pct}.
+    # Returns {} if the file does not exist.
+    if {![file exists $fpath]} { return {} }
+    set sections [analyse-structure $fpath]
+    set total 0
+    foreach sec $sections { incr total [lindex $sec 2] }
+    set result {}
+    foreach sec $sections {
+        lassign $sec title level words
+        if {$words == 0 && $title eq ""} continue
+        set pct [expr {$total > 0 ? round($words * 100.0 / $total) : 0}]
+        set indent [string repeat "  " [expr {max(0, $level - 1)}]]
+        lappend result [list $indent $level $title $words $pct]
+    }
+    return [list $total [llength $result] $result]
+}
+
+proc analyse-structure {fpath} {
+    if {![file exists $fpath]} { return {} }
+    set fd [open $fpath r]
+    chan configure $fd -encoding utf-8
+    set content [read $fd]
+    close $fd
+
+    set sections {}
+    set cur_title ""
+    set cur_level 0
+    set cur_words 0
+
+    foreach line [split $content \n] {
+        set hl [heading-level $line]
+        if {$hl ne ""} {
+            lappend sections [list $cur_title $cur_level $cur_words]
+            lassign $hl title level
+            set cur_title $title
+            set cur_level $level
+            set cur_words 0
+        } else {
+            incr cur_words [llength [regexp -all -inline {\S+} $line]]
+        }
+    }
+    lappend sections [list $cur_title $cur_level $cur_words]
+    return $sections
 }
 
 proc markers-update {} {
@@ -2810,6 +2868,15 @@ proc tui-browser {} {
                     }
                 }
             }
+            a {
+                if {$cfi >= 0} {
+                    lassign [lindex $entries $cfi] _ dir name
+                    set _path [file join $dir $name]
+                    if {[file isfile $_path]} {
+                        tui-analyse-dialog $_path $rows $cols
+                    }
+                }
+            }
             c {
                 tui-config-dialog $rows $cols
             }
@@ -3626,6 +3693,15 @@ proc tui-editor {filepath {init_state {}}} {
                         puts -nonewline "\033\[2J\033\[H"; flush stdout
                         set wrap_dirty 1
                         set clear_sel 0
+                    } elseif {$key eq "a"} {
+                        lassign [tui-size] rows cols
+                        if {$filepath ne ""} {
+                            tui-analyse-dialog $filepath $rows $cols
+                        }
+                        set ::tui_cmd_mode 0
+                        puts -nonewline "\033\[2J\033\[H"; flush stdout
+                        set wrap_dirty 1
+                        set clear_sel 0
                     } elseif {$key eq "b"} {
                         set ::tui_cmd_mode 0
                         set _rsl [expr {$_fswap==2 ? $lines : $split_r_lines}]
@@ -3665,7 +3741,7 @@ proc tui-editor {filepath {init_state {}}} {
                     }
                 } elseif {$key eq $::cfg_tui_cmd_mode} {
                     set ::tui_cmd_mode 1
-                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words"
+                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words  a: analyse"
                     set msg_time [clock seconds]
                     set clear_sel 0
                 } elseif {$key eq $::cfg_tui_close} {
@@ -4084,6 +4160,71 @@ proc tui-word-occurrences {fpath rows cols} {
                     if {$_k eq $::cfg_tui_help} { break }
                 }
             }
+        }
+    }
+}
+
+proc tui-analyse-dialog {fpath rows cols} {
+    set data [analyse-data $fpath]
+    if {$data eq {}} return
+    lassign $data total nsec sdata
+
+    set all_lines {}
+    lappend all_lines [list "  [t br_analyse_title] -- [file tail $fpath]" 1]
+    lappend all_lines [list "" 0]
+
+    if {$total == 0} {
+        lappend all_lines [list "  [t br_analyse_empty]" 0]
+    } else {
+        set max_bar 25
+        foreach row $sdata {
+            lassign $row indent level title words pct
+            set bar [string repeat "|" [expr {max(1, round($pct * $max_bar / 100.0))}]]
+            set lbl [expr {$title eq "" ? [t br_analyse_intro] : $title}]
+            set lvl_str [expr {$level > 0 ? "H$level" : "   "}]
+            lappend all_lines [list "${indent}  ${lvl_str} ${lbl}" 1]
+            lappend all_lines [list "${indent}      ${bar} ${words}w (${pct}%)" 0]
+            lappend all_lines [list "" 0]
+        }
+        lappend all_lines [list "  [t br_analyse_total $total $nsec]" 0]
+    }
+
+    set _usable [expr {$rows - 4}]
+    set _total  [llength $all_lines]
+    set _scroll 0
+
+    puts -nonewline "\033\[2J\033\[H"; flush stdout
+
+    while 1 {
+        set _max_scroll [expr {max(0, $_total - $_usable)}]
+        if {$_scroll > $_max_scroll} { set _scroll $_max_scroll }
+        if {$_scroll < 0}           { set _scroll 0 }
+
+        puts -nonewline "\033\[H"
+        for {set _i 0} {$_i < $_usable} {incr _i} {
+            set _idx [expr {$_scroll + $_i}]
+            if {$_idx < $_total} {
+                tui-move $_i 0
+                lassign [lindex $all_lines $_idx] _txt _inv
+                if {$_inv} { tui-attr reverse }
+                puts -nonewline "[string range $_txt 0 [expr {$cols - 1}]]\033\[K"
+                if {$_inv} { tui-attr off }
+            } else {
+                tui-move $_i 0
+                puts -nonewline "\033\[K"
+            }
+        }
+        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  q close" "" $cols
+        flush stdout
+
+        set _k ""; while {$_k eq ""} { set _k [tui-getch] }
+        switch -- $_k {
+            q       { break }
+            UP - k  { incr _scroll -1 }
+            DOWN - j { incr _scroll 1 }
+            HOME    { set _scroll 0 }
+            END     { set _scroll [expr {max(0, $_total - $_usable)}] }
+            default { if {$_k eq $::cfg_tui_help} { break } }
         }
     }
 }
