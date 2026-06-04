@@ -75,6 +75,28 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
 #br-title { font-size: 1.1em; font-weight: bold; color: var(--fg); }
 #br-header-btns { display: flex; gap: 4px; }
 #br-new-btn, #br-import-btn { font-size: 1.1em; padding: 0 8px; }
+#br-help-btn { font-size: 0.85em; padding: 0 7px; font-weight: bold; }
+
+#br-help-menu {
+  position: fixed;
+  right: 8px;
+  top: 40px;
+  background: var(--bg-bar);
+  border: 1px solid var(--fg-bar);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  min-width: 160px;
+}
+#br-help-menu[hidden] { display: none; }
+#br-help-menu button,
+#br-help-menu a {
+  display: block; text-align: left; padding: 5px 16px; border: none;
+  font-family: var(--font-family); font-size: var(--font-size);
+  color: var(--fg); background: none; text-decoration: none; cursor: pointer;
+}
+#br-help-menu button:hover,
+#br-help-menu a:hover { background: var(--bg-sel); color: var(--fg); }
 
 #br-list {
   flex: 1;
@@ -463,10 +485,18 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
       <button id="br-opendisk-btn" title="Open a file from disk — edit in place (o)">📄</button>
       <button id="br-import-btn" title="Import copy of file (Ctrl+O)">↑</button>
       <button id="br-new-btn" title="New document (n)">+</button>
+      <button id="br-help-btn" title="Help">?</button>
     </div>
   </div>
   <div id="br-list"></div>
   <div id="br-bar"></div>
+</div>
+
+<!-- Browser help menu -->
+<div id="br-help-menu" hidden>
+  <button id="br-help-readme">README.md</button>
+  <div class="more-sep"></div>
+  <a id="br-help-source" href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">source code ↗</a>
 </div>
 
 <!-- Hidden file inputs -->
@@ -2989,10 +3019,13 @@ const Settings = (() => {
 'use strict';
 // Main entry point
 
+const README_CONTENT = "# Writhdeck\n\nA distraction-free writing app that runs as a single self-contained HTML file \u2014 no server, no install, no internet required. Open `writhdeck.html` directly in any modern browser.\n\n## Features\n\n- **Single-file**: the entire app is one `writhdeck.html` (~130 KB). Copy it anywhere, it just works.\n- **Document browser**: create, rename, delete, and favourite documents stored in IndexedDB. Document names are unique \u2014 duplicates are auto-suggested as `\"Untitled (2)\"` etc.\n- **Disk file support** (Chrome/Edge/Brave): open individual files or watch a folder \u2014 edits go straight back to disk via the File System Access API.\n- **Syntax highlighting overlay**: headings, comments, and inline markers (bold, italic, underline, strikethrough) are coloured in real time without leaving the textarea.\n- **Configurable markers**: choose your own syntax for headings, comments, and each inline style. Enable Markdown-style `#` headings if you prefer.\n- **8 built-in colour schemes** (default, solarized, gruvbox, everforest, nord, + 3 more), dark and light variants, and full custom-scheme support.\n- **Writing timer**: countdown or stopwatch, with optional sound and alert at the end.\n- **Table of contents**: auto-generated from heading lines, shown in a side panel.\n- **Daily word-count stats** with optional daily goal.\n- **Hemingway mode**: disables backspace/delete to keep you writing forward.\n- **Typewriter mode**: keeps the cursor vertically centred; dims text outside the current paragraph so only the active paragraph appears at full colour.\n- **Find & replace** with live match highlighting, goto line, line numbers.\n- **Export** as `.txt` or `.md`.\n- **INI config**: load a `writhdeck.ini` file to share settings across installs.\n- **Status bar**: fully customisable left/centre/right slots with tokens \u2014 see [Status bar tokens](#status-bar-tokens).\n- **`\u2261` menu**: all commands accessible from a single dropdown \u2014 keyboard-navigable (\u2191\u2193 + Enter), with format options (H1\u2013H3, bold, italic\u2026), search, export, settings, and more. Opening the menu preserves any active text selection.\n- **Right-click context menu**: format, cut/copy/paste, and spell-check toggle \u2014 can be toggled on/off from the `\u2261` menu.\n- **Command mode** (`Esc` or `Alt+C`): modal keyboard interface for all editor commands without Ctrl shortcuts.\n\n## Build\n\n```sh\nmake        # produces writhdeck.html\nmake clean  # removes writhdeck.html\n```\n\n`build.py` reads `src/template.html`, inlines `src/style.css` and all JS modules (in the order defined in `JS_ORDER`), and writes the result to stdout. Python 3, no dependencies.\n\n## Keyboard shortcuts\n\n### Global\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+D` | Toggle dark / light mode |\n| `Ctrl+O` | Import file copy |\n| `F11` | Toggle table of contents |\n| `Alt+Enter` | Toggle fullscreen |\n| `Ctrl+N` *(opt)* | New document (overrides browser \"new window\", requires setting) |\n\n### Editor\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+S` | Save |\n| `Ctrl+Q` | Close document |\n| `Ctrl+F` | Find (live match highlighting) |\n| `Ctrl+H` | Find & replace |\n| `Ctrl+G` | Go to line |\n| `Ctrl+L` | Toggle line numbers |\n| `Alt+T` | Toggle timer |\n| `Alt+C` / `Esc` | Enter command mode |\n\n### Command mode (`Alt+C` or `Esc`)\n\nPress the trigger key, then one letter. Works in fullscreen (`Alt+C`).\n\n| Key | Action | Key | Action |\n|---|---|---|---|\n| `f` | Find | `d` | Dark / light |\n| `r` | Find & replace | `o` | Table of contents |\n| `g` | Go to line | `c` | Settings |\n| `n` | Line numbers | `e` | Export as .txt |\n| `w` | Typewriter mode | `s` | Statistics |\n| `t` | Timer | `i` | File info |\n| `p` | Timer pause | `m` | Main menu (\u2261) |\n| `q` | Close document | | |\n\n### Browser (document list)\n\n| Key | Action |\n|---|---|\n| `n` | New document |\n| `o` | Open file from disk |\n| `w` | Watch a folder |\n| `s` | Stats |\n| `c` | Settings |\n\n## Status bar tokens\n\nThe three status bar zones (left / centre / right) are configured as space-separated token strings in Settings \u2192 Profile.\n\n| Token | Example | Description |\n|---|---|---|\n| `filename` | `my-novel.txt` | Current document name |\n| `dirty` | `[+]` | Unsaved changes indicator |\n| `words` | `1 842w` | Word count |\n| `chars` | `10 240c` | Character count |\n| `lines` | `312L` | Total line count |\n| `line` | `L42` | Current cursor line |\n| `col` | `C7` | Current cursor column |\n| `para` | `18\u00a7` | Paragraph count (blank-line separated) |\n| `pages` | `7p` | Estimated pages at 250 w/page |\n| `percent` | `68%` | Progress toward word goal |\n| `today` | `342\u2191` | Words written today (high-water mark) |\n| `goal` | `342/500` | Today's words / goal (hidden if no goal) |\n| `reading` | `9min` | Estimated reading time at 200 w/min |\n| `clock` | `14:32` | Current time |\n| `timer` | `24:07` | Writing timer display |\n| *(anything else)* | literal | Fixed text, separators, etc. |\n\nDefault: Left `filename dirty words` \u00b7 Center *(empty)* \u00b7 Right `goal clock timer`\n\n## Project structure\n\n```\nsrc/\n  template.html   HTML skeleton with {{STYLE}} / {{SCRIPT}} placeholders\n  style.css       All CSS (uses CSS custom properties only, no hardcoded colours)\n  schemes.js      Built-in colour schemes + custom-scheme support\n  db.js           IndexedDB wrapper (promise-based)\n  state.js        App state, load/save helpers\n  ini.js          INI config parser/applier\n  highlight.js    Syntax highlighter + word count\n  timer.js        Writing timer\n  toc.js          Table of contents\n  stats.js        Daily word-count stats\n  editor.js       Editor panel, textarea/overlay sync, find/replace\n  browser.js      Document browser panel, FSA integration\n  settings.js     Settings dialog\n  app.js          Entry point, theme, keyboard router, menus\nbuild.py          Build script\nMakefile          Convenience wrapper around build.py\n```\n\n## Storage\n\nDocuments are stored in IndexedDB (`writhdeck` database, version 1):\n\n- **`documents`** store \u2014 each document: `id`, `name`, `content`, `created`, `modified`.\n- **`meta`** store \u2014 keyed entries: `iniText`, `favorites`, `recents`, `cursors`, `daily`.\n\nNothing is sent to any server.\n\n## Adding a colour scheme\n\nAdd an entry to the `SCHEMES` object in `src/schemes.js`. Each scheme needs 9 dark-mode keys and 9 light-mode (`*Alt`) keys: `bg`, `fg`, `bgBar`, `fgBar`, `bgSel`, `heading`, `comment`, `markup`, `bg2` (+ `Alt` variants). Then run `make`.\n\n## License\n\nCopyright (C) 2026 by Luginfo \u2014 Zero-Clause BSD License\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted. The software is provided \"as is\" without warranty of any kind.\n\n";
+
 let _edMenu      = null;
 let _openMenuFn  = null;
 let _menuNavLock = false;
 let _edCtxMenu   = null;
+let _helpMenu    = null;
 
 function hideEditorCtxMenu() {
   if (_edCtxMenu) { _edCtxMenu.remove(); _edCtxMenu = null; }
@@ -3121,6 +3154,7 @@ function onKeydown(e) {
   const inBrowser = !document.getElementById('browser').hidden;
 
   Browser.hideContextMenu();
+  if (_helpMenu && !_helpMenu.hidden && lkey === 'escape') { _helpMenu.hidden = true; return; }
 
   // Menu arrow navigation — intercept at capture level regardless of focus.
   if (_edMenu && !_edMenu.hidden && (key === 'ArrowDown' || key === 'ArrowUp')) {
@@ -3297,6 +3331,29 @@ async function init() {
   document.getElementById('br-opendisk-btn').addEventListener('click', () => Browser.openFromDisk());
   document.getElementById('ed-close-btn').addEventListener('click', () => Editor.close());
 
+  // Help menu (? button)
+  const helpBtn  = document.getElementById('br-help-btn');
+  const helpMenu = document.getElementById('br-help-menu');
+  _helpMenu = helpMenu;
+
+  helpBtn.addEventListener('mousedown', e => e.preventDefault());
+  helpBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    helpMenu.hidden = !helpMenu.hidden;
+  });
+
+  document.getElementById('br-help-readme').addEventListener('click', async () => {
+    helpMenu.hidden = true;
+    let doc = State.docs.find(d => d.name === 'README.md');
+    if (!doc) {
+      doc = { name: 'README.md', content: README_CONTENT, created: Date.now(), modified: Date.now() };
+      await DB.saveDoc(doc);
+      State.docs.push(doc);
+      Browser.render();
+    }
+    await Editor.open(doc);
+  });
+
   // File import input
   const fileInput = document.getElementById('file-import-input');
   fileInput.addEventListener('change', async () => {
@@ -3415,7 +3472,7 @@ async function init() {
     btn.addEventListener('click', () => execCmd(btn.dataset.cmd));
   });
 
-  document.addEventListener('click', () => { edMenu.hidden = true; hideEditorCtxMenu(); });
+  document.addEventListener('click', () => { edMenu.hidden = true; helpMenu.hidden = true; hideEditorCtxMenu(); });
 
   // ── Editor right-click context menu ──────────────────────────────────────
 
