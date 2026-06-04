@@ -501,6 +501,7 @@ proc profile-config-dialog {} {
         fhemingway config_hemingway_mode      profile_config_hemingway
         fshrink   config_split_shrink_margin  profile_config_split_shrink
         fcrestore config_cursor_restore       profile_config_cursor_restore
+        ftocpin   config_toc_pinned           profile_config_toc_pinned
     } {
         frame $w.tab_misc.behaviour_sec.$fname -bg $::bg
         pack  $w.tab_misc.behaviour_sec.$fname -fill x -padx 12 -pady 3
@@ -515,11 +516,12 @@ proc profile-config-dialog {} {
 
     # Load behaviour values
     $w.tab_misc.behaviour_sec.fdocs.entry insert 0 $::cfg_docs_dir
-    set ::profile_config_browser      $::cfg_browser
-    set ::profile_config_watch_file   $::cfg_watch_file
-    set ::profile_config_hemingway    $::cfg_hemingway_mode
-    set ::profile_config_split_shrink $::cfg_split_shrink_margin
+    set ::profile_config_browser        $::cfg_browser
+    set ::profile_config_watch_file     $::cfg_watch_file
+    set ::profile_config_hemingway      $::cfg_hemingway_mode
+    set ::profile_config_split_shrink   $::cfg_split_shrink_margin
     set ::profile_config_cursor_restore $::cfg_cursor_restore
+    set ::profile_config_toc_pinned     $::cfg_toc_pinned
 
     # --- Display tab content ---
     frame $w.tab_display.statusbar_sec -relief ridge -borderwidth 2 -bg $::bg
@@ -714,6 +716,7 @@ proc profile-config-dialog {} {
             set hemingway   $::profile_config_hemingway
             set split_shrink $::profile_config_split_shrink
             set cursor_restore $::profile_config_cursor_restore
+            set toc_pinned $::profile_config_toc_pinned
             set status_l  [.profile_config.tab_display.statusbar_sec.fleft.entry get]
             set status_c  [.profile_config.tab_display.statusbar_sec.fcenter.entry get]
             set status_r  [.profile_config.tab_display.statusbar_sec.fright.entry get]
@@ -757,6 +760,7 @@ proc profile-config-dialog {} {
             set ::cfg_hemingway_mode    $hemingway
             set ::cfg_split_shrink_margin $split_shrink
             set ::cfg_cursor_restore    $cursor_restore
+            set ::cfg_toc_pinned        $toc_pinned
             if {$heading_m ne ""} { set ::cfg_heading_marker $heading_m }
             set ::cfg_comment_marker        [marker-val $comment_m]
             set ::cfg_bold_marker           [marker-val $bold_m]

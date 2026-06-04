@@ -178,6 +178,7 @@ dict set ::i18n de {
     config_hemingway_mode        "Hemingway-Modus (kein Loschen):"
     config_split_shrink_margin   "Rand in geteilter Ansicht verkleinern:"
     config_cursor_restore        "Cursorposition wiederherstellen:"
+    config_toc_pinned            "Inhaltsverzeichnis anheften (rechts):"
     profile_config_line_spacing  "Zeilenabstand (%):"
     profile_config_bar_height    "Leistenhohe:"
     profile_config_line_numbers  "Zeilennummern:"

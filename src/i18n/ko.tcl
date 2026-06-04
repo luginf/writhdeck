@@ -178,6 +178,7 @@ dict set ::i18n ko {
     config_hemingway_mode        "헤밍웨이 모드 (삭제 불가):"
     config_split_shrink_margin   "분할 보기에서 여백 축소:"
     config_cursor_restore        "커서 위치 복원:"
+    config_toc_pinned            "목차 패널 고정 (오른쪽):"
     profile_config_line_spacing  "줄 간격 (%):"
     profile_config_bar_height    "바 높이:"
     profile_config_line_numbers  "줄 번호:"

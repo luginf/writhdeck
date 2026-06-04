@@ -826,6 +826,7 @@ set ::search_term  ""
 set ::search_count ""
 set ::search_ed    ".ed.t"
 set ::toc_ed       ".ed.t"
+set ::toc_panel_open 0
 
 frame .ed.sf -bg $bg_bar
 label .ed.sf.lbl -text " Find: " -bg $bg_bar -fg $fg_bar -font $font_sm
@@ -1403,6 +1404,7 @@ proc apply-theme {} {
         catch { .ed.pw.${side}.t tag configure focus_dim -foreground $c_comment }
     }
     catch { .ed.t tag configure focus_dim -foreground $c_comment }
+    toc-panel-theme
 }
 
 proc ws-check-inactive-dirty {} {
@@ -1568,6 +1570,7 @@ proc highlight-headings {} {
                 apply-inline $ln $line strikethrough $::cached_strikethrough_re $::cached_strikethrough_mlen 1 }
         }
     }
+    if {$::toc_panel_open} { toc-panel-refresh }
 }
 
 proc toc-collect {} {
@@ -1597,7 +1600,155 @@ proc toc-collect {} {
     return $result
 }
 
+# --- pinned TOC panel ---------------------------------------------------------
+
+proc toc-panel-update-margin {on} {
+    if {$::split_mode} return
+    set mw [expr {$::cfg_margin_width * ($::typewriter_mode && $::cfg_hemingway_mode ? 2 : 1)}]
+    set padx_out [expr {$mw - $mw / 3}]
+    if {$on} {
+        catch { pack configure .ed.t -padx [list $padx_out 0] }
+    } else {
+        catch { pack configure .ed.t -padx $padx_out }
+    }
+}
+
+proc toc-panel-fill {headings} {
+    set lst .ed.toc.lst
+    $lst delete 0 end
+    if {![llength $headings]} {
+        $lst insert end " [t toc_no_headings]"
+        return
+    }
+    foreach item $headings {
+        lassign $item ln title level
+        set indent [string repeat "  " [expr {$level - 1}]]
+        $lst insert end " ${indent}${title}"
+    }
+}
+
+proc toc-panel-select-near-cursor {} {
+    if {![winfo exists .ed.toc.lst]} return
+    set headings [toc-collect]
+    if {![llength $headings]} return
+    set curline [lindex [split [$::toc_ed index insert] .] 0]
+    set presel 0
+    set idx 0
+    foreach item $headings {
+        if {[lindex $item 0] <= $curline} { set presel $idx }
+        incr idx
+    }
+    .ed.toc.lst selection clear 0 end
+    .ed.toc.lst selection set $presel
+    .ed.toc.lst see $presel
+}
+
+proc toc-panel-refresh {} {
+    if {!$::toc_panel_open} return
+    if {![winfo exists .ed.toc.lst]} return
+    set ::toc_ed [active-ed]
+    if {$::split_ws2_mode && $::toc_ed eq ".ed.pw.r.t"} {
+        set ::toc_fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
+    } else {
+        set ::toc_fn $::filename
+    }
+    toc-panel-fill [toc-collect]
+    toc-panel-select-near-cursor
+}
+
+proc toc-panel-jump {} {
+    if {![winfo exists .ed.toc.lst]} return
+    set sel [.ed.toc.lst curselection]
+    if {![llength $sel]} return
+    set headings [toc-collect]
+    set selIdx [lindex $sel 0]
+    if {$selIdx >= [llength $headings]} return
+    lassign [lindex $headings $selIdx] ln title
+    dict set ::session_headings $::toc_fn $selIdx
+    $::toc_ed mark set insert $ln.0
+    $::toc_ed see insert
+    focus $::toc_ed
+}
+
+proc toc-panel-open {} {
+    set ::toc_ed [active-ed]
+    if {$::split_ws2_mode && $::toc_ed eq ".ed.pw.r.t"} {
+        set ::toc_fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
+    } else {
+        set ::toc_fn $::filename
+    }
+    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ c_heading _ _
+
+    frame .ed.toc -bg $bg_bar -bd 0 -width 180
+    pack propagate .ed.toc 0
+
+    frame .ed.toc.sep -bg $fg_bar -width 5 -cursor sb_h_double_arrow
+    pack .ed.toc.sep -side left -fill y
+    bind .ed.toc.sep <ButtonPress-1>  {
+        set ::_toc_drag_x %X
+        set ::_toc_drag_w [winfo width .ed.toc]
+    }
+    bind .ed.toc.sep <B1-Motion> {
+        set _w [expr {max(80, min(500, $::_toc_drag_w - (%X - $::_toc_drag_x)))}]
+        .ed.toc configure -width $_w
+    }
+
+    frame .ed.toc.inner -bg $bg_bar
+    pack .ed.toc.inner -fill both -expand 1
+
+    label .ed.toc.inner.hdr -text [t toc_title] \
+        -bg $bg_bar -fg $fg_bar -font $::font_sm -anchor w -padx 6 -pady 4
+    pack .ed.toc.inner.hdr -side top -fill x
+
+    scrollbar .ed.toc.sb -orient vertical \
+        -command {.ed.toc.lst yview} \
+        -bg $bg_bar -troughcolor $bg
+    listbox .ed.toc.lst \
+        -font $::font_sm -bg $bg -fg $c_heading \
+        -selectbackground $bg_sel -selectforeground $fg \
+        -activestyle none -borderwidth 0 -highlightthickness 0 \
+        -relief flat -width 0 -height 0 \
+        -yscrollcommand {.ed.toc.sb set}
+    pack .ed.toc.sb  -in .ed.toc.inner -side right -fill y
+    pack .ed.toc.lst -in .ed.toc.inner -fill both -expand 1
+
+    pack .ed.toc -side right -fill y -after .ed.sb
+
+    bind .ed.toc.lst <ButtonRelease-1>     toc-panel-jump
+    bind .ed.toc.lst <Return>              toc-panel-jump
+    bind .ed.toc.lst <$::cfg_key_toc>      toc-panel-close
+    bind .ed.toc.lst <Escape>              { focus $::toc_ed }
+
+    set ::toc_panel_open 1
+    toc-panel-update-margin 1
+    toc-panel-fill [toc-collect]
+    toc-panel-select-near-cursor
+}
+
+proc toc-panel-close {} {
+    catch { destroy .ed.toc }
+    set ::toc_panel_open 0
+    toc-panel-update-margin 0
+    catch { focus $::toc_ed }
+}
+
+proc toc-panel-theme {} {
+    if {!$::toc_panel_open} return
+    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ c_heading _ _
+    catch { .ed.toc configure -bg $bg_bar }
+    catch { .ed.toc.sep configure -bg $fg_bar }
+    catch { .ed.toc.inner configure -bg $bg_bar }
+    catch { .ed.toc.inner.hdr configure -bg $bg_bar -fg $fg_bar }
+    catch { .ed.toc.sb configure -bg $bg_bar -troughcolor $bg }
+    catch { .ed.toc.lst configure -bg $bg -fg $c_heading \
+                -selectbackground $bg_sel -selectforeground $fg }
+}
+
 proc toc-show {} {
+    if {$::cfg_toc_pinned} {
+        if {$::toc_panel_open} { toc-panel-close } else { toc-panel-open }
+        return
+    }
     set ::toc_ed [active-ed]
     if {$::split_ws2_mode && $::toc_ed eq ".ed.pw.r.t"} {
         set ::toc_fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
@@ -2170,6 +2321,7 @@ proc typewriter-toggle {} {
         set _sp [expr {$_sp * ($::typewriter_mode ? 2 : 1)}]
         catch { .ed.t configure -padx [expr {$_mw/3}] -pady [expr {$_mh/3}] }
         catch { pack configure .ed.t -padx [expr {$_mw - $_mw/3}] -pady [expr {$_mh - $_mh/3}] }
+        if {$::toc_panel_open} { toc-panel-update-margin 1 }
         foreach side {l r} {
             set _sp_in [expr {$_sp/3}]; set _sp_out [expr {$_sp - $_sp/3}]
             catch { .ed.pw.${side}.t configure -padx $_sp_in -pady [expr {$_mh/3}] }
@@ -2274,6 +2426,7 @@ proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2 bg2} {
 }
 
 proc split-open {} {
+    if {$::toc_panel_open} { toc-panel-close }
     wm geometry . [winfo width .]x[winfo height .]
     lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ _ _ bg2
     set sp1 [.ed.t cget -spacing1]
@@ -2595,6 +2748,7 @@ proc ini-reload {} {
     catch { pack configure .ed.t \
         -padx [expr {$::cfg_margin_width - $::cfg_margin_width/3}] \
         -pady [expr {$::cfg_margin_height - $::cfg_margin_height/3}] }
+    if {[info exists ::toc_panel_open] && $::toc_panel_open} { toc-panel-update-margin 1 }
     catch { .ed.t tag configure heading -font [list $::cfg_font_family $::cfg_font_size bold] }
     foreach side {l r} {
         catch { .ed.pw.${side}.t configure -font $f }

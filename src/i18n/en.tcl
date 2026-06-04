@@ -178,6 +178,7 @@ dict set ::i18n en {
     config_hemingway_mode        "Hemingway mode (no delete):"
     config_split_shrink_margin   "Shrink margin in split view:"
     config_cursor_restore        "Restore cursor position:"
+    config_toc_pinned            "Pin TOC to right panel:"
     profile_config_line_spacing  "Line spacing (%):"
     profile_config_bar_height    "Bar height:"
     profile_config_line_numbers  "Line numbers:"

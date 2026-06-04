@@ -178,6 +178,7 @@ dict set ::i18n no {
     config_hemingway_mode        "Hemingway-modus (ingen sletting):"
     config_split_shrink_margin   "Krymp margin i delt visning:"
     config_cursor_restore        "Gjenopprett markrorposisjon:"
+    config_toc_pinned            "Fest TOC-panel (hoeyre):"
     profile_config_line_spacing  "Linjeavstand (%):"
     profile_config_bar_height    "Linjehory de:"
     profile_config_line_numbers  "Linjenumre:"

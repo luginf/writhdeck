@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260527b"
+set ::version          "v20260604"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -416,6 +416,7 @@ set ::cfg_browser              1
 set ::cfg_console_center_alert 1
 set ::cfg_line_numbers   0
 set ::cfg_cursor_restore 1
+set ::cfg_toc_pinned     0
 set ::cfg_block_cursor_gui     1
 set ::cfg_block_cursor_console 1
 set ::cfg_blink_cursor         0
@@ -745,6 +746,7 @@ proc ini-load {} {
                 console_center_alert { set ::cfg_console_center_alert [string is true $v] }
                 line_numbers     { set ::cfg_line_numbers   [string is true $v] }
                 cursor_restore   { set ::cfg_cursor_restore [string is true $v] }
+                toc_pinned       { set ::cfg_toc_pinned    [string is true $v] }
                 block_cursor         { set ::cfg_block_cursor_gui     [string is true $v]
                                        set ::cfg_block_cursor_console [string is true $v] }
                 block_cursor_gui     { set ::cfg_block_cursor_gui     [string is true $v] }
@@ -843,6 +845,7 @@ proc ini-save {} {
     puts $fh "console_center_alert = [expr {$::cfg_console_center_alert ? "yes" : "no"}]"
     puts $fh "line_numbers         = [expr {$::cfg_line_numbers         ? "yes" : "no"}]"
     puts $fh "cursor_restore       = [expr {$::cfg_cursor_restore       ? "yes" : "no"}]"
+    puts $fh "toc_pinned           = [expr {$::cfg_toc_pinned           ? "yes" : "no"}]"
     puts $fh "block_cursor_gui     = [expr {$::cfg_block_cursor_gui     ? "yes" : "no"}]"
     puts $fh "block_cursor_console = [expr {$::cfg_block_cursor_console ? "yes" : "no"}]"
     puts $fh "blink_cursor         = [expr {$::cfg_blink_cursor         ? "yes" : "no"}]"
@@ -1538,6 +1541,7 @@ dict set ::i18n en {
     config_hemingway_mode        "Hemingway mode (no delete):"
     config_split_shrink_margin   "Shrink margin in split view:"
     config_cursor_restore        "Restore cursor position:"
+    config_toc_pinned            "Pin TOC to right panel:"
     profile_config_line_spacing  "Line spacing (%):"
     profile_config_bar_height    "Bar height:"
     profile_config_line_numbers  "Line numbers:"
@@ -1725,6 +1729,7 @@ dict set ::i18n de {
     config_hemingway_mode        "Hemingway-Modus (kein Loschen):"
     config_split_shrink_margin   "Rand in geteilter Ansicht verkleinern:"
     config_cursor_restore        "Cursorposition wiederherstellen:"
+    config_toc_pinned            "Inhaltsverzeichnis anheften (rechts):"
     profile_config_line_spacing  "Zeilenabstand (%):"
     profile_config_bar_height    "Leistenhohe:"
     profile_config_line_numbers  "Zeilennummern:"
@@ -1912,6 +1917,7 @@ dict set ::i18n es {
     config_hemingway_mode        "Modo Hemingway (sin borrar):"
     config_split_shrink_margin   "Reducir margen en vista dividida:"
     config_cursor_restore        "Restaurar posicion del cursor:"
+    config_toc_pinned            "Fijar tabla de contenidos (derecha):"
     profile_config_line_spacing  "Interlineado (%):"
     profile_config_bar_height    "Altura de barra:"
     profile_config_line_numbers  "Numeros de linea:"
@@ -2099,6 +2105,7 @@ dict set ::i18n fr {
     config_hemingway_mode        "Mode Hemingway (sans suppression) :"
     config_split_shrink_margin   "Reduire marge en vue split :"
     config_cursor_restore        "Restaurer position curseur :"
+    config_toc_pinned            "Ancrer table des matieres (droite) :"
     profile_config_line_spacing  "Interligne (%) :"
     profile_config_bar_height    "Hauteur barre :"
     profile_config_line_numbers  "Numeros de ligne :"
@@ -2286,6 +2293,7 @@ dict set ::i18n ko {
     config_hemingway_mode        "헤밍웨이 모드 (삭제 불가):"
     config_split_shrink_margin   "분할 보기에서 여백 축소:"
     config_cursor_restore        "커서 위치 복원:"
+    config_toc_pinned            "목차 패널 고정 (오른쪽):"
     profile_config_line_spacing  "줄 간격 (%):"
     profile_config_bar_height    "바 높이:"
     profile_config_line_numbers  "줄 번호:"
@@ -2473,6 +2481,7 @@ dict set ::i18n no {
     config_hemingway_mode        "Hemingway-modus (ingen sletting):"
     config_split_shrink_margin   "Krymp margin i delt visning:"
     config_cursor_restore        "Gjenopprett markrorposisjon:"
+    config_toc_pinned            "Fest TOC-panel (hoeyre):"
     profile_config_line_spacing  "Linjeavstand (%):"
     profile_config_bar_height    "Linjehory de:"
     profile_config_line_numbers  "Linjenumre:"
@@ -3297,6 +3306,7 @@ proc profile-config-dialog {} {
         fhemingway config_hemingway_mode      profile_config_hemingway
         fshrink   config_split_shrink_margin  profile_config_split_shrink
         fcrestore config_cursor_restore       profile_config_cursor_restore
+        ftocpin   config_toc_pinned           profile_config_toc_pinned
     } {
         frame $w.tab_misc.behaviour_sec.$fname -bg $::bg
         pack  $w.tab_misc.behaviour_sec.$fname -fill x -padx 12 -pady 3
@@ -3311,11 +3321,12 @@ proc profile-config-dialog {} {
 
     # Load behaviour values
     $w.tab_misc.behaviour_sec.fdocs.entry insert 0 $::cfg_docs_dir
-    set ::profile_config_browser      $::cfg_browser
-    set ::profile_config_watch_file   $::cfg_watch_file
-    set ::profile_config_hemingway    $::cfg_hemingway_mode
-    set ::profile_config_split_shrink $::cfg_split_shrink_margin
+    set ::profile_config_browser        $::cfg_browser
+    set ::profile_config_watch_file     $::cfg_watch_file
+    set ::profile_config_hemingway      $::cfg_hemingway_mode
+    set ::profile_config_split_shrink   $::cfg_split_shrink_margin
     set ::profile_config_cursor_restore $::cfg_cursor_restore
+    set ::profile_config_toc_pinned     $::cfg_toc_pinned
 
     # --- Display tab content ---
     frame $w.tab_display.statusbar_sec -relief ridge -borderwidth 2 -bg $::bg
@@ -3510,6 +3521,7 @@ proc profile-config-dialog {} {
             set hemingway   $::profile_config_hemingway
             set split_shrink $::profile_config_split_shrink
             set cursor_restore $::profile_config_cursor_restore
+            set toc_pinned $::profile_config_toc_pinned
             set status_l  [.profile_config.tab_display.statusbar_sec.fleft.entry get]
             set status_c  [.profile_config.tab_display.statusbar_sec.fcenter.entry get]
             set status_r  [.profile_config.tab_display.statusbar_sec.fright.entry get]
@@ -3553,6 +3565,7 @@ proc profile-config-dialog {} {
             set ::cfg_hemingway_mode    $hemingway
             set ::cfg_split_shrink_margin $split_shrink
             set ::cfg_cursor_restore    $cursor_restore
+            set ::cfg_toc_pinned        $toc_pinned
             if {$heading_m ne ""} { set ::cfg_heading_marker $heading_m }
             set ::cfg_comment_marker        [marker-val $comment_m]
             set ::cfg_bold_marker           [marker-val $bold_m]
@@ -4452,6 +4465,7 @@ set ::search_term  ""
 set ::search_count ""
 set ::search_ed    ".ed.t"
 set ::toc_ed       ".ed.t"
+set ::toc_panel_open 0
 
 frame .ed.sf -bg $bg_bar
 label .ed.sf.lbl -text " Find: " -bg $bg_bar -fg $fg_bar -font $font_sm
@@ -5029,6 +5043,7 @@ proc apply-theme {} {
         catch { .ed.pw.${side}.t tag configure focus_dim -foreground $c_comment }
     }
     catch { .ed.t tag configure focus_dim -foreground $c_comment }
+    toc-panel-theme
 }
 
 proc ws-check-inactive-dirty {} {
@@ -5194,6 +5209,7 @@ proc highlight-headings {} {
                 apply-inline $ln $line strikethrough $::cached_strikethrough_re $::cached_strikethrough_mlen 1 }
         }
     }
+    if {$::toc_panel_open} { toc-panel-refresh }
 }
 
 proc toc-collect {} {
@@ -5223,7 +5239,155 @@ proc toc-collect {} {
     return $result
 }
 
+# --- pinned TOC panel ---------------------------------------------------------
+
+proc toc-panel-update-margin {on} {
+    if {$::split_mode} return
+    set mw [expr {$::cfg_margin_width * ($::typewriter_mode && $::cfg_hemingway_mode ? 2 : 1)}]
+    set padx_out [expr {$mw - $mw / 3}]
+    if {$on} {
+        catch { pack configure .ed.t -padx [list $padx_out 0] }
+    } else {
+        catch { pack configure .ed.t -padx $padx_out }
+    }
+}
+
+proc toc-panel-fill {headings} {
+    set lst .ed.toc.lst
+    $lst delete 0 end
+    if {![llength $headings]} {
+        $lst insert end " [t toc_no_headings]"
+        return
+    }
+    foreach item $headings {
+        lassign $item ln title level
+        set indent [string repeat "  " [expr {$level - 1}]]
+        $lst insert end " ${indent}${title}"
+    }
+}
+
+proc toc-panel-select-near-cursor {} {
+    if {![winfo exists .ed.toc.lst]} return
+    set headings [toc-collect]
+    if {![llength $headings]} return
+    set curline [lindex [split [$::toc_ed index insert] .] 0]
+    set presel 0
+    set idx 0
+    foreach item $headings {
+        if {[lindex $item 0] <= $curline} { set presel $idx }
+        incr idx
+    }
+    .ed.toc.lst selection clear 0 end
+    .ed.toc.lst selection set $presel
+    .ed.toc.lst see $presel
+}
+
+proc toc-panel-refresh {} {
+    if {!$::toc_panel_open} return
+    if {![winfo exists .ed.toc.lst]} return
+    set ::toc_ed [active-ed]
+    if {$::split_ws2_mode && $::toc_ed eq ".ed.pw.r.t"} {
+        set ::toc_fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
+    } else {
+        set ::toc_fn $::filename
+    }
+    toc-panel-fill [toc-collect]
+    toc-panel-select-near-cursor
+}
+
+proc toc-panel-jump {} {
+    if {![winfo exists .ed.toc.lst]} return
+    set sel [.ed.toc.lst curselection]
+    if {![llength $sel]} return
+    set headings [toc-collect]
+    set selIdx [lindex $sel 0]
+    if {$selIdx >= [llength $headings]} return
+    lassign [lindex $headings $selIdx] ln title
+    dict set ::session_headings $::toc_fn $selIdx
+    $::toc_ed mark set insert $ln.0
+    $::toc_ed see insert
+    focus $::toc_ed
+}
+
+proc toc-panel-open {} {
+    set ::toc_ed [active-ed]
+    if {$::split_ws2_mode && $::toc_ed eq ".ed.pw.r.t"} {
+        set ::toc_fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
+    } else {
+        set ::toc_fn $::filename
+    }
+    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ c_heading _ _
+
+    frame .ed.toc -bg $bg_bar -bd 0 -width 180
+    pack propagate .ed.toc 0
+
+    frame .ed.toc.sep -bg $fg_bar -width 5 -cursor sb_h_double_arrow
+    pack .ed.toc.sep -side left -fill y
+    bind .ed.toc.sep <ButtonPress-1>  {
+        set ::_toc_drag_x %X
+        set ::_toc_drag_w [winfo width .ed.toc]
+    }
+    bind .ed.toc.sep <B1-Motion> {
+        set _w [expr {max(80, min(500, $::_toc_drag_w - (%X - $::_toc_drag_x)))}]
+        .ed.toc configure -width $_w
+    }
+
+    frame .ed.toc.inner -bg $bg_bar
+    pack .ed.toc.inner -fill both -expand 1
+
+    label .ed.toc.inner.hdr -text [t toc_title] \
+        -bg $bg_bar -fg $fg_bar -font $::font_sm -anchor w -padx 6 -pady 4
+    pack .ed.toc.inner.hdr -side top -fill x
+
+    scrollbar .ed.toc.sb -orient vertical \
+        -command {.ed.toc.lst yview} \
+        -bg $bg_bar -troughcolor $bg
+    listbox .ed.toc.lst \
+        -font $::font_sm -bg $bg -fg $c_heading \
+        -selectbackground $bg_sel -selectforeground $fg \
+        -activestyle none -borderwidth 0 -highlightthickness 0 \
+        -relief flat -width 0 -height 0 \
+        -yscrollcommand {.ed.toc.sb set}
+    pack .ed.toc.sb  -in .ed.toc.inner -side right -fill y
+    pack .ed.toc.lst -in .ed.toc.inner -fill both -expand 1
+
+    pack .ed.toc -side right -fill y -after .ed.sb
+
+    bind .ed.toc.lst <ButtonRelease-1>     toc-panel-jump
+    bind .ed.toc.lst <Return>              toc-panel-jump
+    bind .ed.toc.lst <$::cfg_key_toc>      toc-panel-close
+    bind .ed.toc.lst <Escape>              { focus $::toc_ed }
+
+    set ::toc_panel_open 1
+    toc-panel-update-margin 1
+    toc-panel-fill [toc-collect]
+    toc-panel-select-near-cursor
+}
+
+proc toc-panel-close {} {
+    catch { destroy .ed.toc }
+    set ::toc_panel_open 0
+    toc-panel-update-margin 0
+    catch { focus $::toc_ed }
+}
+
+proc toc-panel-theme {} {
+    if {!$::toc_panel_open} return
+    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ c_heading _ _
+    catch { .ed.toc configure -bg $bg_bar }
+    catch { .ed.toc.sep configure -bg $fg_bar }
+    catch { .ed.toc.inner configure -bg $bg_bar }
+    catch { .ed.toc.inner.hdr configure -bg $bg_bar -fg $fg_bar }
+    catch { .ed.toc.sb configure -bg $bg_bar -troughcolor $bg }
+    catch { .ed.toc.lst configure -bg $bg -fg $c_heading \
+                -selectbackground $bg_sel -selectforeground $fg }
+}
+
 proc toc-show {} {
+    if {$::cfg_toc_pinned} {
+        if {$::toc_panel_open} { toc-panel-close } else { toc-panel-open }
+        return
+    }
     set ::toc_ed [active-ed]
     if {$::split_ws2_mode && $::toc_ed eq ".ed.pw.r.t"} {
         set ::toc_fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
@@ -5796,6 +5960,7 @@ proc typewriter-toggle {} {
         set _sp [expr {$_sp * ($::typewriter_mode ? 2 : 1)}]
         catch { .ed.t configure -padx [expr {$_mw/3}] -pady [expr {$_mh/3}] }
         catch { pack configure .ed.t -padx [expr {$_mw - $_mw/3}] -pady [expr {$_mh - $_mh/3}] }
+        if {$::toc_panel_open} { toc-panel-update-margin 1 }
         foreach side {l r} {
             set _sp_in [expr {$_sp/3}]; set _sp_out [expr {$_sp - $_sp/3}]
             catch { .ed.pw.${side}.t configure -padx $_sp_in -pady [expr {$_mh/3}] }
@@ -5900,6 +6065,7 @@ proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2 bg2} {
 }
 
 proc split-open {} {
+    if {$::toc_panel_open} { toc-panel-close }
     wm geometry . [winfo width .]x[winfo height .]
     lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ _ _ bg2
     set sp1 [.ed.t cget -spacing1]
@@ -6221,6 +6387,7 @@ proc ini-reload {} {
     catch { pack configure .ed.t \
         -padx [expr {$::cfg_margin_width - $::cfg_margin_width/3}] \
         -pady [expr {$::cfg_margin_height - $::cfg_margin_height/3}] }
+    if {[info exists ::toc_panel_open] && $::toc_panel_open} { toc-panel-update-margin 1 }
     catch { .ed.t tag configure heading -font [list $::cfg_font_family $::cfg_font_size bold] }
     foreach side {l r} {
         catch { .ed.pw.${side}.t configure -font $f }

@@ -369,6 +369,7 @@ set ::cfg_browser              1
 set ::cfg_console_center_alert 1
 set ::cfg_line_numbers   0
 set ::cfg_cursor_restore 1
+set ::cfg_toc_pinned     0
 set ::cfg_block_cursor_gui     1
 set ::cfg_block_cursor_console 1
 set ::cfg_blink_cursor         0
@@ -698,6 +699,7 @@ proc ini-load {} {
                 console_center_alert { set ::cfg_console_center_alert [string is true $v] }
                 line_numbers     { set ::cfg_line_numbers   [string is true $v] }
                 cursor_restore   { set ::cfg_cursor_restore [string is true $v] }
+                toc_pinned       { set ::cfg_toc_pinned    [string is true $v] }
                 block_cursor         { set ::cfg_block_cursor_gui     [string is true $v]
                                        set ::cfg_block_cursor_console [string is true $v] }
                 block_cursor_gui     { set ::cfg_block_cursor_gui     [string is true $v] }
@@ -796,6 +798,7 @@ proc ini-save {} {
     puts $fh "console_center_alert = [expr {$::cfg_console_center_alert ? "yes" : "no"}]"
     puts $fh "line_numbers         = [expr {$::cfg_line_numbers         ? "yes" : "no"}]"
     puts $fh "cursor_restore       = [expr {$::cfg_cursor_restore       ? "yes" : "no"}]"
+    puts $fh "toc_pinned           = [expr {$::cfg_toc_pinned           ? "yes" : "no"}]"
     puts $fh "block_cursor_gui     = [expr {$::cfg_block_cursor_gui     ? "yes" : "no"}]"
     puts $fh "block_cursor_console = [expr {$::cfg_block_cursor_console ? "yes" : "no"}]"
     puts $fh "blink_cursor         = [expr {$::cfg_blink_cursor         ? "yes" : "no"}]"
@@ -1353,6 +1356,7 @@ dict set ::i18n en {
     config_hemingway_mode        "Hemingway mode (no delete):"
     config_split_shrink_margin   "Shrink margin in split view:"
     config_cursor_restore        "Restore cursor position:"
+    config_toc_pinned            "Pin TOC to right panel:"
     profile_config_line_spacing  "Line spacing (%):"
     profile_config_bar_height    "Bar height:"
     profile_config_line_numbers  "Line numbers:"
@@ -1540,6 +1544,7 @@ dict set ::i18n fr {
     config_hemingway_mode        "Mode Hemingway (sans suppression) :"
     config_split_shrink_margin   "Reduire marge en vue split :"
     config_cursor_restore        "Restaurer position curseur :"
+    config_toc_pinned            "Ancrer table des matieres (droite) :"
     profile_config_line_spacing  "Interligne (%) :"
     profile_config_bar_height    "Hauteur barre :"
     profile_config_line_numbers  "Numeros de ligne :"
