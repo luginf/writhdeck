@@ -458,6 +458,25 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 .toc-item.level-2 { padding-left: 22px; color: var(--fg-bar); }
 .toc-item.level-3 { padding-left: 32px; color: var(--fg-bar); font-size: 0.8em; }
 
+/* About */
+#about-dlg { width: 380px; }
+#about-header {
+  display: flex; justify-content: flex-end;
+  padding: 4px 8px; background: var(--bg-bar);
+}
+#about-body {
+  padding: 16px 20px; font-size: 0.9em; display: flex; flex-direction: column; gap: 8px;
+}
+#about-body p { margin: 0; line-height: 1.5; }
+.about-title { font-size: 1.15em; font-weight: bold; color: var(--heading); text-align: center; }
+#about-body code { font-family: var(--font-family); color: var(--heading); }
+#about-body a { color: var(--markup); }
+#about-logo { display: block; margin: 0 auto 12px; background: #fff; border-radius: 10px; padding: 6px; border: 1px solid var(--fg-bar); }
+#br-help-logo-wrap { display: flex; justify-content: center; padding: 10px 0 6px; background: var(--bg-bar); }
+#br-help-logo { background: #fff; border-radius: 8px; padding: 4px; border: 1px solid var(--fg-bar); cursor: pointer; }
+.about-version { color: var(--fg-bar); font-size: 0.85em; margin-top: 4px !important; }
+#about-footer { padding: 8px 12px; background: var(--bg-bar); display: flex; justify-content: flex-end; }
+
 /* Info */
 #info-dlg { width: 380px; }
 #info-header {
@@ -470,6 +489,23 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 .info-value { color: var(--fg); word-break: break-all; }
 .info-storage-disk    { color: var(--heading); }
 .info-storage-browser { color: var(--markup); }
+
+/* Analyse */
+#analyse-dlg { width: 480px; }
+#analyse-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; background: var(--bg-bar);
+}
+#analyse-body { padding: 8px 16px 4px; font-size: 0.9em; max-height: 68vh; overflow-y: auto; }
+.analyse-row { padding: 6px 0; border-bottom: 1px solid var(--bg-bar); }
+.analyse-row:last-child { border-bottom: none; }
+.analyse-title { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; overflow: hidden; }
+.analyse-title-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.analyse-level { font-size: 0.72em; color: var(--fg-bar); background: var(--bg-bar); padding: 1px 4px; border-radius: 2px; flex-shrink: 0; font-family: monospace; }
+.analyse-bar-wrap { display: flex; align-items: center; gap: 8px; }
+.analyse-bar { height: 5px; min-width: 2px; border-radius: 3px; background: var(--heading); flex-shrink: 0; }
+.analyse-stats { color: var(--fg-bar); font-size: 0.82em; white-space: nowrap; }
+.analyse-footer { padding: 8px 0 4px; color: var(--fg-bar); font-size: 0.82em; }
 
 /* Stats */
 #stats-dlg { width: 400px; }
@@ -510,10 +546,34 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 
 <!-- Browser help menu -->
 <div id="br-help-menu" hidden>
+  <div id="br-help-logo-wrap">
+    <img id="br-help-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAQAAABIkb+zAAAAw3pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjabVBRDsMgCP3nFDuCAiIeh65dshvs+EOlTdv0JT6BR54IbL/vB14dmBm4VJUmkhzcuKF5oGnCBufEgwckJM8vdTgE9BL5TTPVEPJez4fBvMyjcjLSdwjLVWgc/nozioeoT4QerGHUwohwCjkMzOIrTev5C8uWrtB5oBPV4X2Y3HOuvr21eJEQN8qUnIlkDkD9CJB5IINLb/QG89bOhfZJfCFPe9oBf+ptWSIIGeL0AAABI2lDQ1BJQ0MgcHJvZmlsZQAAeJydkL9Kw1AUxn+pWkXq5J9BHDLo2NFMDlaFICjEWMHqlCYpFpMYkpTiG/gm+jAdBMGHcFRw9rvRwcEsXjh8Pw7nfN+9F1p2Eqbl/D6kWVW4fm9wObiyF99os8A6HXaCsMx7nndC4/l8xTL60jVezXN/nnYUl6F0psrCvKjA2hM70yo3rGLttu8fih/EdpRmkfhJvB2lkWGz66fJJPzxNLfpxNnFuemrtnA55hQPmyETxiRUdKWZOkc47EpdCgLuKQmlCbF6U81U3IhKObkciPoi3aYhb7PO85QylMdYXibhjlSeJg/zv99rH2f1prUxy4MiqFtzqtZoBO+PsDKA1WdYvm7IWvr9toYZp5755xu/APYmUGsqZCvqAAAOW2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNC40LjAtRXhpdjIiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iCiAgICB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIgogICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICAgeG1sbnM6R0lNUD0iaHR0cDovL3d3dy5naW1wLm9yZy94bXAvIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgIHhtcE1NOkRvY3VtZW50SUQ9ImdpbXA6ZG9jaWQ6Z2ltcDplZjBhMzc3Yi0wZDI4LTQwZWEtOTBkMi1kZmZhNDQ2NzdjYmUiCiAgIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OTIwMzQ1ZTAtMTBkMS00NmI3LWE3MjYtYTU2M2I1YmZjYjZjIgogICB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6NDY4NjQzNWItMWY0MS00MmQ4LWI2ZDgtZjYyZTEwODhiZDcwIgogICBkYzpGb3JtYXQ9ImltYWdlL3BuZyIKICAgR0lNUDpBUEk9IjIuMCIKICAgR0lNUDpQbGF0Zm9ybT0iTGludXgiCiAgIEdJTVA6VGltZVN0YW1wPSIxNzgwNjk0MDM0MzYyNzU0IgogICBHSU1QOlZlcnNpb249IjIuMTAuMzYiCiAgIHRpZmY6T3JpZW50YXRpb249IjEiCiAgIHhtcDpDcmVhdG9yVG9vbD0iR0lNUCAyLjEwIgogICB4bXA6TWV0YWRhdGFEYXRlPSIyMDI2OjA2OjA1VDIzOjEzOjU0KzAyOjAwIgogICB4bXA6TW9kaWZ5RGF0ZT0iMjAyNjowNjowNVQyMzoxMzo1NCswMjowMCI+CiAgIDx4bXBNTTpIaXN0b3J5PgogICAgPHJkZjpTZXE+CiAgICAgPHJkZjpsaQogICAgICBzdEV2dDphY3Rpb249InNhdmVkIgogICAgICBzdEV2dDpjaGFuZ2VkPSIvIgogICAgICBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjE0Yjc3ZjU1LTBhOTQtNDY1OC1iZDZjLWY0ODVkZjNhOGY0ZSIKICAgICAgc3RFdnQ6c29mdHdhcmVBZ2VudD0iR2ltcCAyLjEwIChMaW51eCkiCiAgICAgIHN0RXZ0OndoZW49IjIwMjYtMDUtMTFUMDk6Mjk6MjcrMDI6MDAiLz4KICAgICA8cmRmOmxpCiAgICAgIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiCiAgICAgIHN0RXZ0OmNoYW5nZWQ9Ii8iCiAgICAgIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6Nzc1NGU1NzQtZDlmOS00N2M0LWIxZGUtZTUwZGNhN2Y2ZDRjIgogICAgICBzdEV2dDpzb2Z0d2FyZUFnZW50PSJHaW1wIDIuMTAgKExpbnV4KSIKICAgICAgc3RFdnQ6d2hlbj0iMjAyNi0wNi0wNVQyMzoxMzo1NCswMjowMCIvPgogICAgPC9yZGY6U2VxPgogICA8L3htcE1NOkhpc3Rvcnk+CiAgPC9yZGY6RGVzY3JpcHRpb24+CiA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgCjw/eHBhY2tldCBlbmQ9InciPz7YPx0fAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH6gYFFQ02o2wdmQAAA8xJREFUeNrtW2tuwyAMLohT5Hw9Vs7Xc+wHQgnBb5uQSWHSprYMvs/4hZ1+Pu94xzvesXKk6AW3nfr0930ogR42DbPOjaKS4qBrIW17BI0UAd4DY9t9JNI66MtU6DngTQRiTfBmAs+SvZrA02SvIvBE2SsI3C37bf99paExPQs+nohg+6f/AJ/aPT8D/rbb4DMncCd8a/aa18Jvku93OV5t+7bTCXpaB/8M7PA6V//DYcj3Xj8wAR2vaHmPo8zM1XVjlL0EQ1qvPiN4zc6Jh8/p5PVKwkEZdR+SvZRI4bX/rJmSJdt8eG6fJlDwZSPLfDIO3BZ+aM3XrJAj4EolePXpkNf5feuPdJ8ij4nQZx5C9IoQBei9HOP9JcGnzWlOgqKJYRj/p8glV7e8+hybCcrzfY5Y8cgfrunwqjaSlnu56545IoJy3r/flDozPnkjbIBPH0ao948rfccJyBWor6ByAtA5kWyDTp0MnljEwEdsQJZ/4hmShC4FHw9ftACL13jpJBy+tOAJvD4GFav+a+P0CC0mXc9WuUs8Nvda6zIJAv6FKiGMFq4+lYZu//NqOSKcy6/suAFbBVeiDDjOFdxCQAOFK5T4umRlhtQ49bFlooGRODa38TnyCQTOVQ3efG+PAxoavy+l3x7fM8WIYRL2Tv6iE8ANNCLu3nACfRnMfnVcaAN93W1uGJxCgEr3NFm/bJcyQ/q+audyL9RXnI+/cwjkSK3sa81VWWbAR66U3kePGtCzAs3v8pR4H6RJ9fzeqczyQZJI0Yc5TWfumJXjDrvJ3tYgbO6V91/9jGK/WmA1OLso4Pr3BBWCPEvdtnXArCT0FIr86g2pCqR8jcjMNB1NJSwFw1oWaaYZk3PK18hWNwYXFv3XFMljy04baFreF3qPo539mEK/dhnByZrZ8p7lrMuS8QSafK+F9rNh+zyRTsWyTLZnD9TPgK6Q46xZ8ldeaKqXPysZfkUcH520xxjKxLNUv5tv5zroxxlYKegca8FMFO+VjzkL1AfzpRTycyka9TnDkmaNEfkVtWPWuEmqbAVB0CoQ1iej1ilW2TUth9+lHmSlgOGdZwxL1gYrCn6jTUPHsyU9fMYGqMIs9mlsJ54vCeQodwZdaLyxWFLRyHLXxhWtmt73ZmwnISvIGE4ANlHMKubCVxM4ro3tJNrv0Xw9speXw5JW+vJH+qwKpCvBJ70CSWOmBb6+fzDpi3C2+4Cl/RH6XUpPTdTau0kRvsJntr5ScPg3uu8EH0bA0gOIcbihJ8BL0/INjSUqFPtg5Tve8Q5q/AGEcnBTH2q81QAAAABJRU5ErkJggg==" alt="Writhdeck">
+  </div>
+  <div class="more-sep"></div>
+  <button id="br-help-about">About</button>
+  <div class="more-sep"></div>
   <button id="br-help-readme">README.md</button>
   <div class="more-sep"></div>
   <a id="br-help-source" href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">source code ↗</a>
 </div>
+
+<!-- About dialog -->
+<dialog id="about-dlg">
+  <div id="about-header">
+    <button id="about-close">✕</button>
+  </div>
+  <div id="about-body">
+    <img id="about-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAQAAABIkb+zAAAAw3pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjabVBRDsMgCP3nFDuCAiIeh65dshvs+EOlTdv0JT6BR54IbL/vB14dmBm4VJUmkhzcuKF5oGnCBufEgwckJM8vdTgE9BL5TTPVEPJez4fBvMyjcjLSdwjLVWgc/nozioeoT4QerGHUwohwCjkMzOIrTev5C8uWrtB5oBPV4X2Y3HOuvr21eJEQN8qUnIlkDkD9CJB5IINLb/QG89bOhfZJfCFPe9oBf+ptWSIIGeL0AAABI2lDQ1BJQ0MgcHJvZmlsZQAAeJydkL9Kw1AUxn+pWkXq5J9BHDLo2NFMDlaFICjEWMHqlCYpFpMYkpTiG/gm+jAdBMGHcFRw9rvRwcEsXjh8Pw7nfN+9F1p2Eqbl/D6kWVW4fm9wObiyF99os8A6HXaCsMx7nndC4/l8xTL60jVezXN/nnYUl6F0psrCvKjA2hM70yo3rGLttu8fih/EdpRmkfhJvB2lkWGz66fJJPzxNLfpxNnFuemrtnA55hQPmyETxiRUdKWZOkc47EpdCgLuKQmlCbF6U81U3IhKObkciPoi3aYhb7PO85QylMdYXibhjlSeJg/zv99rH2f1prUxy4MiqFtzqtZoBO+PsDKA1WdYvm7IWvr9toYZp5755xu/APYmUGsqZCvqAAAOW2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNC40LjAtRXhpdjIiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iCiAgICB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIgogICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICAgeG1sbnM6R0lNUD0iaHR0cDovL3d3dy5naW1wLm9yZy94bXAvIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgIHhtcE1NOkRvY3VtZW50SUQ9ImdpbXA6ZG9jaWQ6Z2ltcDplZjBhMzc3Yi0wZDI4LTQwZWEtOTBkMi1kZmZhNDQ2NzdjYmUiCiAgIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OTIwMzQ1ZTAtMTBkMS00NmI3LWE3MjYtYTU2M2I1YmZjYjZjIgogICB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6NDY4NjQzNWItMWY0MS00MmQ4LWI2ZDgtZjYyZTEwODhiZDcwIgogICBkYzpGb3JtYXQ9ImltYWdlL3BuZyIKICAgR0lNUDpBUEk9IjIuMCIKICAgR0lNUDpQbGF0Zm9ybT0iTGludXgiCiAgIEdJTVA6VGltZVN0YW1wPSIxNzgwNjk0MDM0MzYyNzU0IgogICBHSU1QOlZlcnNpb249IjIuMTAuMzYiCiAgIHRpZmY6T3JpZW50YXRpb249IjEiCiAgIHhtcDpDcmVhdG9yVG9vbD0iR0lNUCAyLjEwIgogICB4bXA6TWV0YWRhdGFEYXRlPSIyMDI2OjA2OjA1VDIzOjEzOjU0KzAyOjAwIgogICB4bXA6TW9kaWZ5RGF0ZT0iMjAyNjowNjowNVQyMzoxMzo1NCswMjowMCI+CiAgIDx4bXBNTTpIaXN0b3J5PgogICAgPHJkZjpTZXE+CiAgICAgPHJkZjpsaQogICAgICBzdEV2dDphY3Rpb249InNhdmVkIgogICAgICBzdEV2dDpjaGFuZ2VkPSIvIgogICAgICBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjE0Yjc3ZjU1LTBhOTQtNDY1OC1iZDZjLWY0ODVkZjNhOGY0ZSIKICAgICAgc3RFdnQ6c29mdHdhcmVBZ2VudD0iR2ltcCAyLjEwIChMaW51eCkiCiAgICAgIHN0RXZ0OndoZW49IjIwMjYtMDUtMTFUMDk6Mjk6MjcrMDI6MDAiLz4KICAgICA8cmRmOmxpCiAgICAgIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiCiAgICAgIHN0RXZ0OmNoYW5nZWQ9Ii8iCiAgICAgIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6Nzc1NGU1NzQtZDlmOS00N2M0LWIxZGUtZTUwZGNhN2Y2ZDRjIgogICAgICBzdEV2dDpzb2Z0d2FyZUFnZW50PSJHaW1wIDIuMTAgKExpbnV4KSIKICAgICAgc3RFdnQ6d2hlbj0iMjAyNi0wNi0wNVQyMzoxMzo1NCswMjowMCIvPgogICAgPC9yZGY6U2VxPgogICA8L3htcE1NOkhpc3Rvcnk+CiAgPC9yZGY6RGVzY3JpcHRpb24+CiA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgCjw/eHBhY2tldCBlbmQ9InciPz7YPx0fAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH6gYFFQ02o2wdmQAAA8xJREFUeNrtW2tuwyAMLohT5Hw9Vs7Xc+wHQgnBb5uQSWHSprYMvs/4hZ1+Pu94xzvesXKk6AW3nfr0930ogR42DbPOjaKS4qBrIW17BI0UAd4DY9t9JNI66MtU6DngTQRiTfBmAs+SvZrA02SvIvBE2SsI3C37bf99paExPQs+nohg+6f/AJ/aPT8D/rbb4DMncCd8a/aa18Jvku93OV5t+7bTCXpaB/8M7PA6V//DYcj3Xj8wAR2vaHmPo8zM1XVjlL0EQ1qvPiN4zc6Jh8/p5PVKwkEZdR+SvZRI4bX/rJmSJdt8eG6fJlDwZSPLfDIO3BZ+aM3XrJAj4EolePXpkNf5feuPdJ8ij4nQZx5C9IoQBei9HOP9JcGnzWlOgqKJYRj/p8glV7e8+hybCcrzfY5Y8cgfrunwqjaSlnu56545IoJy3r/flDozPnkjbIBPH0ao948rfccJyBWor6ByAtA5kWyDTp0MnljEwEdsQJZ/4hmShC4FHw9ftACL13jpJBy+tOAJvD4GFav+a+P0CC0mXc9WuUs8Nvda6zIJAv6FKiGMFq4+lYZu//NqOSKcy6/suAFbBVeiDDjOFdxCQAOFK5T4umRlhtQ49bFlooGRODa38TnyCQTOVQ3efG+PAxoavy+l3x7fM8WIYRL2Tv6iE8ANNCLu3nACfRnMfnVcaAN93W1uGJxCgEr3NFm/bJcyQ/q+audyL9RXnI+/cwjkSK3sa81VWWbAR66U3kePGtCzAs3v8pR4H6RJ9fzeqczyQZJI0Yc5TWfumJXjDrvJ3tYgbO6V91/9jGK/WmA1OLso4Pr3BBWCPEvdtnXArCT0FIr86g2pCqR8jcjMNB1NJSwFw1oWaaYZk3PK18hWNwYXFv3XFMljy04baFreF3qPo539mEK/dhnByZrZ8p7lrMuS8QSafK+F9rNh+zyRTsWyTLZnD9TPgK6Q46xZ8ldeaKqXPysZfkUcH520xxjKxLNUv5tv5zroxxlYKegca8FMFO+VjzkL1AfzpRTycyka9TnDkmaNEfkVtWPWuEmqbAVB0CoQ1iej1ilW2TUth9+lHmSlgOGdZwxL1gYrCn6jTUPHsyU9fMYGqMIs9mlsJ54vCeQodwZdaLyxWFLRyHLXxhWtmt73ZmwnISvIGE4ANlHMKubCVxM4ro3tJNrv0Xw9speXw5JW+vJH+qwKpCvBJ70CSWOmBb6+fzDpi3C2+4Cl/RH6XUpPTdTau0kRvsJntr5ScPg3uu8EH0bA0gOIcbihJ8BL0/INjSUqFPtg5Tve8Q5q/AGEcnBTH2q81QAAAABJRU5ErkJggg==" alt="Writhdeck logo">
+    <p class="about-title">About Writhdeck</p>
+    <p>Writhdeck is a distraction-free writing environment for long-form text — novels, essays, notes, scripts.</p>
+    <p>All your documents live in your browser (IndexedDB) — nothing is sent to any server. You can also edit files directly on disk.</p>
+    <p>It features a custom colour-syntax overlay, typewriter focus mode, a session timer, daily word goals, and a fully keyboard-driven interface. Compatible with the Writhdeck desktop app via shared <code>.ini</code> settings.</p>
+    <p class="about-version">Build: 2026-06-05 — Open source — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
+  </div>
+  <div id="about-footer">
+    <button id="about-ok">Close</button>
+  </div>
+</dialog>
 
 <!-- Hidden file inputs -->
 <input type="file" id="file-import-input" accept=".txt,.md,.tcl,.text" hidden multiple>
@@ -718,6 +778,15 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
     <button id="info-close">✕</button>
   </div>
   <div id="info-body"></div>
+</dialog>
+
+<!-- Analyse dialog -->
+<dialog id="analyse-dlg">
+  <div id="analyse-header">
+    <span id="analyse-title">Structure</span>
+    <button id="analyse-close">✕</button>
+  </div>
+  <div id="analyse-body"></div>
 </dialog>
 
 <!-- Stats dialog -->
@@ -2409,7 +2478,8 @@ const Browser = (() => {
       background:var(--bg-bar);border:1px solid var(--fg-bar);z-index:200;min-width:140px;`;
     const items = [
       ['Open',          () => Editor.open(doc)],
-      ['Info',          () => document.dispatchEvent(new CustomEvent('writhdeck-show-info', { detail: doc }))],
+      ['Info',          () => document.dispatchEvent(new CustomEvent('writhdeck-show-info',    { detail: doc }))],
+      ['Analyse',       () => document.dispatchEvent(new CustomEvent('writhdeck-show-analyse', { detail: doc }))],
       ['Rename',        () => renameDoc(doc)],
       ['Export as .txt',() => exportDocFrom(doc, 'txt')],
       ['Export as .md', () => exportDocFrom(doc, 'md')],
@@ -3161,6 +3231,126 @@ async function showFileInfo(docArg) {
   document.getElementById('info-dlg').showModal();
 }
 
+// ── Structure analyse dialog ──────────────────────────────────────────────
+
+async function showAnalyse(docArg) {
+  const doc = docArg || State.doc;
+  if (!doc) return;
+
+  let content = doc.content;
+  if (content == null) {
+    if (doc.fileHandle) {
+      try {
+        const file = await doc.fileHandle.getFile();
+        content = await file.text();
+      } catch(_) { content = ''; }
+    } else if (doc.id && typeof doc.id === 'number') {
+      const full = await DB.getDoc(doc.id);
+      content = full ? full.content : '';
+    } else {
+      content = '';
+    }
+  }
+
+  const s = State.settings;
+
+  function parseHeading(line) {
+    if (s.headingMarker && line.startsWith(s.headingMarker)) {
+      let n = 1;
+      while (n < 3 && line.startsWith(s.headingMarker.repeat(n + 1))) n++;
+      const mEsc = escRx(s.headingMarker);
+      const title = line
+        .replace(new RegExp('^' + mEsc + '+\\s*'), '')
+        .replace(new RegExp('\\s*' + mEsc + '+\\s*$'), '')
+        .trim();
+      return { level: n, title: title || line.trim() };
+    }
+    if (s.markdownHeadings) {
+      const m = line.match(/^(#{1,6})\s+(.*)/);
+      if (m) return { level: m[1].length, title: m[2].trim() };
+    }
+    return null;
+  }
+
+  const sections = [];
+  let curTitle = null, curLevel = 0, curWords = 0;
+
+  content.split('\n').forEach(line => {
+    const h = parseHeading(line);
+    if (h) {
+      sections.push({ title: curTitle, level: curLevel, words: curWords });
+      curTitle = h.title; curLevel = h.level; curWords = 0;
+    } else {
+      curWords += (line.match(/\S+/g) || []).length;
+    }
+  });
+  sections.push({ title: curTitle, level: curLevel, words: curWords });
+
+  const total = sections.reduce((acc, sec) => acc + sec.words, 0);
+
+  document.getElementById('analyse-title').textContent = `Structure — ${doc.name}`;
+  const body = document.getElementById('analyse-body');
+  body.innerHTML = '';
+
+  if (total === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'padding:12px 0;color:var(--fg-bar)';
+    empty.textContent = 'No content to analyse.';
+    body.appendChild(empty);
+    document.getElementById('analyse-dlg').showModal();
+    return;
+  }
+
+  const maxBar = 240; // px — max bar width at 100%
+  sections.forEach(sec => {
+    if (sec.words === 0 && sec.title === null) return;
+    const pct = total > 0 ? Math.round(sec.words / total * 100) : 0;
+    const barW = Math.max(2, Math.round(pct / 100 * maxBar));
+    const indent = sec.level > 1 ? (sec.level - 1) * 14 : 0;
+    const label = sec.title || '(début)';
+
+    const row = document.createElement('div');
+    row.className = 'analyse-row';
+    row.style.paddingLeft = indent + 'px';
+
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'analyse-title';
+    if (sec.level > 0) {
+      const lvl = document.createElement('span');
+      lvl.className = 'analyse-level';
+      lvl.textContent = 'H' + sec.level;
+      titleDiv.appendChild(lvl);
+    }
+    const txt = document.createElement('span');
+    txt.className = 'analyse-title-text';
+    txt.textContent = label;
+    titleDiv.appendChild(txt);
+    row.appendChild(titleDiv);
+
+    const barWrap = document.createElement('div');
+    barWrap.className = 'analyse-bar-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'analyse-bar';
+    bar.style.width = barW + 'px';
+    const stats = document.createElement('span');
+    stats.className = 'analyse-stats';
+    stats.textContent = sec.words.toLocaleString() + 'w · ' + pct + '%';
+    barWrap.appendChild(bar);
+    barWrap.appendChild(stats);
+    row.appendChild(barWrap);
+
+    body.appendChild(row);
+  });
+
+  const sectionCount = sections.filter(sec => sec.title !== null).length;
+  const footer = document.createElement('div');
+  footer.className = 'analyse-footer';
+  footer.textContent = `Total : ${total.toLocaleString()} mots · ${sectionCount} section${sectionCount !== 1 ? 's' : ''}`;
+  body.appendChild(footer);
+
+  document.getElementById('analyse-dlg').showModal();
+}
+
 // ── Fullscreen ────────────────────────────────────────────────────────────
 
 function toggleFullscreen() {
@@ -3678,9 +3868,17 @@ async function init() {
   });
 
   // Dialog close buttons
-  document.getElementById('info-close').addEventListener('click',      () => document.getElementById('info-dlg').close());
-  document.getElementById('stats-close').addEventListener('click',     () => document.getElementById('stats-dlg').close());
+  document.getElementById('info-close').addEventListener('click',     () => document.getElementById('info-dlg').close());
+  document.getElementById('analyse-close').addEventListener('click',  () => document.getElementById('analyse-dlg').close());
+  document.getElementById('stats-close').addEventListener('click',    () => document.getElementById('stats-dlg').close());
   document.getElementById('timer-alert-ok').addEventListener('click',  () => document.getElementById('timer-alert-dlg').close());
+  document.getElementById('about-close').addEventListener('click',    () => document.getElementById('about-dlg').close());
+  document.getElementById('about-ok').addEventListener('click',       () => document.getElementById('about-dlg').close());
+
+  // About button and logo in help menu
+  const openAbout = () => { helpMenu.hidden = true; document.getElementById('about-dlg').showModal(); };
+  document.getElementById('br-help-about').addEventListener('click', openAbout);
+  document.getElementById('br-help-logo').addEventListener('click', openAbout);
 
   // Misc tab import button (shares triggerImport)
   document.getElementById('misc-import-btn').addEventListener('click', triggerImport);
@@ -3688,8 +3886,9 @@ async function init() {
   // Settings
   Settings.initEvents();
 
-  // File info from browser context menu
-  document.addEventListener('writhdeck-show-info', e => showFileInfo(e.detail));
+  // File info / analyse from browser context menu
+  document.addEventListener('writhdeck-show-info',    e => showFileInfo(e.detail));
+  document.addEventListener('writhdeck-show-analyse', e => showAnalyse(e.detail));
 
   // Command mode clicks from status bar buttons
   document.addEventListener('writhdeck-cmd', e => {
