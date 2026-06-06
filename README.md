@@ -21,9 +21,18 @@ WrithDeck is a distraction-free text editor designed for writers using a dedicat
 - Modal command mode (ESC key) for quick access to timer, stats, and word occurrences
 - ~5,000 lines of Tcl/Tk, generated from modular source files
 
-Whether you're writing on a Raspberry Pi Zero with an E-ink screen, on an Android tablet, over SSH, or on your desktop, WrithDeck stays lightweight and lets you focus on your text.
+Whether you're writing on a Raspberry Pi Zero with an E-ink screen, on an Android tablet, over SSH, on your desktop or from a browser, WrithDeck stays lightweight and lets you focus on your text.
 
 ![WrithDeck Screenshot 01](media/writhdeck_screen01.png)
+
+
+## Other versions
+
+- [Try it online!](https://luginf.github.io/writhdeck/)
+- [Android version (work in progress)](https://github.com/luginf/writhdeck-android)
+- [ESP32 version (work in progress)](https://github.com/luginf/writhdeck-esp32)
+
+
 
 ## Installation
 
