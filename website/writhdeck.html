@@ -75,7 +75,9 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
 #br-title { font-size: 1.1em; font-weight: bold; color: var(--fg); }
 #br-header-btns { display: flex; gap: 4px; }
 #br-new-btn, #br-import-btn { font-size: 1.1em; padding: 0 8px; }
-#br-help-btn { font-size: 0.85em; padding: 0 7px; font-weight: bold; }
+#br-help-details { display: inline-flex; align-items: center; }
+#br-help-btn { font-size: 0.85em; padding: 0 7px; font-weight: bold; list-style: none; cursor: pointer; }
+#br-help-btn::-webkit-details-marker { display: none; }
 
 #br-help-menu {
   position: fixed;
@@ -88,7 +90,7 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
   z-index: 100;
   min-width: 160px;
 }
-#br-help-menu[hidden] { display: none; }
+#br-help-details:not([open]) #br-help-menu { display: none; }
 #br-help-menu button,
 #br-help-menu a {
   display: block; text-align: left; padding: 5px 16px; border: none;
@@ -266,6 +268,12 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
   z-index: 1;
 }
 #ed-input::selection { background: var(--bg-sel); color: var(--fg); }
+.block-cursor #ed-input { caret-color: transparent; }
+@keyframes hl-cursor-blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+@keyframes caret-show { to { caret-color: var(--fg); } }
+.hl-cursor { background: var(--fg); color: var(--bg); animation: hl-cursor-blink 1s step-end infinite; }
+#editor.no-blink .hl-cursor { animation: none; opacity: 1; }
+#editor.no-blink:not(.block-cursor) #ed-input { animation: caret-show 1ms forwards; }
 
 /* highlight spans */
 .hl-heading  { color: var(--heading); }
@@ -506,6 +514,19 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 .analyse-bar { height: 5px; min-width: 2px; border-radius: 3px; background: var(--heading); flex-shrink: 0; }
 .analyse-stats { color: var(--fg-bar); font-size: 0.82em; white-space: nowrap; }
 .analyse-footer { padding: 8px 0 4px; color: var(--fg-bar); font-size: 0.82em; }
+#analyse-words-btn { font-size: 0.75em; padding: 1px 6px; margin-right: 4px; }
+
+/* Word occurrences */
+#words-dlg { width: 340px; }
+#words-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; background: var(--bg-bar);
+}
+#words-body { padding: 6px 12px; font-size: 0.85em; max-height: 65vh; overflow-y: auto; }
+.words-table { width: 100%; border-collapse: collapse; }
+.words-table th, .words-table td { padding: 3px 8px; text-align: left; }
+.words-table th { color: var(--fg-bar); border-bottom: 1px solid var(--bg-bar); position: sticky; top: 0; background: var(--bg); }
+.words-table td:last-child { text-align: right; color: var(--fg-bar); }
 
 /* Stats */
 #stats-dlg { width: 400px; }
@@ -537,24 +558,23 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
       <button id="br-opendisk-btn" title="Open a file from disk — edit in place (o)">📄</button>
       <button id="br-import-btn" title="Import copy of file (Ctrl+O)">↑</button>
       <button id="br-new-btn" title="New document (n)">+</button>
-      <button id="br-help-btn" title="Help">?</button>
-    </div>
-  </div>
-  <div id="br-list"></div>
-  <div id="br-bar"></div>
-</div>
-
-<!-- Browser help menu -->
-<div id="br-help-menu" hidden>
+      <details id="br-help-details">
+        <summary id="br-help-btn" title="Help">?</summary>
+        <div id="br-help-menu">
   <div id="br-help-logo-wrap">
     <img id="br-help-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAQAAABIkb+zAAAAw3pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjabVBRDsMgCP3nFDuCAiIeh65dshvs+EOlTdv0JT6BR54IbL/vB14dmBm4VJUmkhzcuKF5oGnCBufEgwckJM8vdTgE9BL5TTPVEPJez4fBvMyjcjLSdwjLVWgc/nozioeoT4QerGHUwohwCjkMzOIrTev5C8uWrtB5oBPV4X2Y3HOuvr21eJEQN8qUnIlkDkD9CJB5IINLb/QG89bOhfZJfCFPe9oBf+ptWSIIGeL0AAABI2lDQ1BJQ0MgcHJvZmlsZQAAeJydkL9Kw1AUxn+pWkXq5J9BHDLo2NFMDlaFICjEWMHqlCYpFpMYkpTiG/gm+jAdBMGHcFRw9rvRwcEsXjh8Pw7nfN+9F1p2Eqbl/D6kWVW4fm9wObiyF99os8A6HXaCsMx7nndC4/l8xTL60jVezXN/nnYUl6F0psrCvKjA2hM70yo3rGLttu8fih/EdpRmkfhJvB2lkWGz66fJJPzxNLfpxNnFuemrtnA55hQPmyETxiRUdKWZOkc47EpdCgLuKQmlCbF6U81U3IhKObkciPoi3aYhb7PO85QylMdYXibhjlSeJg/zv99rH2f1prUxy4MiqFtzqtZoBO+PsDKA1WdYvm7IWvr9toYZp5755xu/APYmUGsqZCvqAAAOW2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNC40LjAtRXhpdjIiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iCiAgICB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIgogICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICAgeG1sbnM6R0lNUD0iaHR0cDovL3d3dy5naW1wLm9yZy94bXAvIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgIHhtcE1NOkRvY3VtZW50SUQ9ImdpbXA6ZG9jaWQ6Z2ltcDplZjBhMzc3Yi0wZDI4LTQwZWEtOTBkMi1kZmZhNDQ2NzdjYmUiCiAgIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OTIwMzQ1ZTAtMTBkMS00NmI3LWE3MjYtYTU2M2I1YmZjYjZjIgogICB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6NDY4NjQzNWItMWY0MS00MmQ4LWI2ZDgtZjYyZTEwODhiZDcwIgogICBkYzpGb3JtYXQ9ImltYWdlL3BuZyIKICAgR0lNUDpBUEk9IjIuMCIKICAgR0lNUDpQbGF0Zm9ybT0iTGludXgiCiAgIEdJTVA6VGltZVN0YW1wPSIxNzgwNjk0MDM0MzYyNzU0IgogICBHSU1QOlZlcnNpb249IjIuMTAuMzYiCiAgIHRpZmY6T3JpZW50YXRpb249IjEiCiAgIHhtcDpDcmVhdG9yVG9vbD0iR0lNUCAyLjEwIgogICB4bXA6TWV0YWRhdGFEYXRlPSIyMDI2OjA2OjA1VDIzOjEzOjU0KzAyOjAwIgogICB4bXA6TW9kaWZ5RGF0ZT0iMjAyNjowNjowNVQyMzoxMzo1NCswMjowMCI+CiAgIDx4bXBNTTpIaXN0b3J5PgogICAgPHJkZjpTZXE+CiAgICAgPHJkZjpsaQogICAgICBzdEV2dDphY3Rpb249InNhdmVkIgogICAgICBzdEV2dDpjaGFuZ2VkPSIvIgogICAgICBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjE0Yjc3ZjU1LTBhOTQtNDY1OC1iZDZjLWY0ODVkZjNhOGY0ZSIKICAgICAgc3RFdnQ6c29mdHdhcmVBZ2VudD0iR2ltcCAyLjEwIChMaW51eCkiCiAgICAgIHN0RXZ0OndoZW49IjIwMjYtMDUtMTFUMDk6Mjk6MjcrMDI6MDAiLz4KICAgICA8cmRmOmxpCiAgICAgIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiCiAgICAgIHN0RXZ0OmNoYW5nZWQ9Ii8iCiAgICAgIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6Nzc1NGU1NzQtZDlmOS00N2M0LWIxZGUtZTUwZGNhN2Y2ZDRjIgogICAgICBzdEV2dDpzb2Z0d2FyZUFnZW50PSJHaW1wIDIuMTAgKExpbnV4KSIKICAgICAgc3RFdnQ6d2hlbj0iMjAyNi0wNi0wNVQyMzoxMzo1NCswMjowMCIvPgogICAgPC9yZGY6U2VxPgogICA8L3htcE1NOkhpc3Rvcnk+CiAgPC9yZGY6RGVzY3JpcHRpb24+CiA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgCjw/eHBhY2tldCBlbmQ9InciPz7YPx0fAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH6gYFFQ02o2wdmQAAA8xJREFUeNrtW2tuwyAMLohT5Hw9Vs7Xc+wHQgnBb5uQSWHSprYMvs/4hZ1+Pu94xzvesXKk6AW3nfr0930ogR42DbPOjaKS4qBrIW17BI0UAd4DY9t9JNI66MtU6DngTQRiTfBmAs+SvZrA02SvIvBE2SsI3C37bf99paExPQs+nohg+6f/AJ/aPT8D/rbb4DMncCd8a/aa18Jvku93OV5t+7bTCXpaB/8M7PA6V//DYcj3Xj8wAR2vaHmPo8zM1XVjlL0EQ1qvPiN4zc6Jh8/p5PVKwkEZdR+SvZRI4bX/rJmSJdt8eG6fJlDwZSPLfDIO3BZ+aM3XrJAj4EolePXpkNf5feuPdJ8ij4nQZx5C9IoQBei9HOP9JcGnzWlOgqKJYRj/p8glV7e8+hybCcrzfY5Y8cgfrunwqjaSlnu56545IoJy3r/flDozPnkjbIBPH0ao948rfccJyBWor6ByAtA5kWyDTp0MnljEwEdsQJZ/4hmShC4FHw9ftACL13jpJBy+tOAJvD4GFav+a+P0CC0mXc9WuUs8Nvda6zIJAv6FKiGMFq4+lYZu//NqOSKcy6/suAFbBVeiDDjOFdxCQAOFK5T4umRlhtQ49bFlooGRODa38TnyCQTOVQ3efG+PAxoavy+l3x7fM8WIYRL2Tv6iE8ANNCLu3nACfRnMfnVcaAN93W1uGJxCgEr3NFm/bJcyQ/q+audyL9RXnI+/cwjkSK3sa81VWWbAR66U3kePGtCzAs3v8pR4H6RJ9fzeqczyQZJI0Yc5TWfumJXjDrvJ3tYgbO6V91/9jGK/WmA1OLso4Pr3BBWCPEvdtnXArCT0FIr86g2pCqR8jcjMNB1NJSwFw1oWaaYZk3PK18hWNwYXFv3XFMljy04baFreF3qPo539mEK/dhnByZrZ8p7lrMuS8QSafK+F9rNh+zyRTsWyTLZnD9TPgK6Q46xZ8ldeaKqXPysZfkUcH520xxjKxLNUv5tv5zroxxlYKegca8FMFO+VjzkL1AfzpRTycyka9TnDkmaNEfkVtWPWuEmqbAVB0CoQ1iej1ilW2TUth9+lHmSlgOGdZwxL1gYrCn6jTUPHsyU9fMYGqMIs9mlsJ54vCeQodwZdaLyxWFLRyHLXxhWtmt73ZmwnISvIGE4ANlHMKubCVxM4ro3tJNrv0Xw9speXw5JW+vJH+qwKpCvBJ70CSWOmBb6+fzDpi3C2+4Cl/RH6XUpPTdTau0kRvsJntr5ScPg3uu8EH0bA0gOIcbihJ8BL0/INjSUqFPtg5Tve8Q5q/AGEcnBTH2q81QAAAABJRU5ErkJggg==" alt="Writhdeck">
   </div>
-  <div class="more-sep"></div>
   <button id="br-help-about">About</button>
   <div class="more-sep"></div>
   <button id="br-help-readme">README.md</button>
   <div class="more-sep"></div>
   <a id="br-help-source" href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">source code ↗</a>
+        </div>
+      </details>
+    </div>
+  </div>
+  <div id="br-list"></div>
+  <div id="br-bar"></div>
 </div>
 
 <!-- About dialog -->
@@ -568,7 +588,7 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
     <p>Writhdeck is a distraction-free writing environment for long-form text — novels, essays, notes, scripts.</p>
     <p>All your documents live in your browser (IndexedDB) — nothing is sent to any server. You can also edit files directly on disk.</p>
     <p>It features a custom colour-syntax overlay, typewriter focus mode, a session timer, daily word goals, and a fully keyboard-driven interface. Compatible with the Writhdeck desktop app via shared <code>.ini</code> settings.</p>
-    <p class="about-version">Build: 2026-06-05 — Open source — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
+    <p class="about-version">Build: 2026-06-06 — Open source — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
   </div>
   <div id="about-footer">
     <button id="about-ok">Close</button>
@@ -622,7 +642,7 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 </div>
 
 <!-- Main editor menu -->
-<div id="ed-menu" hidden tabindex="-1">
+<div id="ed-menu" hidden>
   <button id="ed-more-cmd">⌨ Command mode <span class="hint">Esc / Alt+C</span></button>
   <div class="more-sep"></div>
   <div class="more-label">View</div>
@@ -650,10 +670,13 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
   <button data-cmd="export-txt">Export as .txt <span class="hint">e</span></button>
   <button data-cmd="export-md">Export as .md</button>
   <button data-cmd="stats">Statistics <span class="hint">s</span></button>
+  <button data-cmd="analyse">Analyse <span class="hint">a</span></button>
+  <button data-cmd="word-occ">Word occurrences</button>
   <button data-cmd="info">File info <span class="hint">i</span></button>
   <div class="more-sep"></div>
   <div class="more-label">App</div>
   <button data-cmd="timer">Timer <span class="hint">t</span></button>
+  <button data-cmd="block-cursor">Block cursor</button>
   <button data-cmd="ctx-menu">Right-click menu</button>
   <button data-cmd="config">Settings <span class="hint">c</span></button>
 </div>
@@ -735,6 +758,8 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
       <p class="hint">Tokens: filename dirty words chars lines line col para pages percent today goal reading clock timer</p>
       <p class="hint" style="margin-top:10px">Editor options</p>
       <label><input type="checkbox" data-key="lineNumbers"> Line numbers (Ctrl+L)</label>
+      <label><input type="checkbox" data-key="blockCursor"> Block cursor</label>
+      <label><input type="checkbox" data-key="blinkCursor"> Blinking cursor</label>
       <p class="hint" style="margin-top:10px">Keyboard shortcuts</p>
       <label><input type="checkbox" data-key="interceptBrowserShortcuts">
         Override browser shortcuts
@@ -784,9 +809,19 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 <dialog id="analyse-dlg">
   <div id="analyse-header">
     <span id="analyse-title">Structure</span>
+    <button id="analyse-words-btn" title="Word occurrences">abc</button>
     <button id="analyse-close">✕</button>
   </div>
   <div id="analyse-body"></div>
+</dialog>
+
+<!-- Word occurrences dialog -->
+<dialog id="words-dlg">
+  <div id="words-header">
+    <span id="words-title">Word occurrences</span>
+    <button id="words-close">✕</button>
+  </div>
+  <div id="words-body"></div>
 </dialog>
 
 <!-- Stats dialog -->
@@ -1004,6 +1039,8 @@ const State = {
     statusCenter: '',
     statusRight: 'goal clock timer',
     lineNumbers: false,
+    blockCursor: false,
+    blinkCursor: false,
     interceptBrowserShortcuts: true,
     interceptContextMenu: true
   },
@@ -1142,11 +1179,11 @@ function isFavorite(id) { return State.favorites.includes(id); }
 
 // ── Daily stats — high-water mark ─────────────────────────────────────────
 
-function updateDaily(id, wordCount) {
+function updateDaily(id, added) {
   const today = new Date().toISOString().slice(0, 10);
   if (!State.daily[id]) State.daily[id] = {};
   const prev = State.daily[id][today] || 0;
-  if (wordCount > prev) { State.daily[id][today] = wordCount; saveDaily(); }
+  if (added > prev) { State.daily[id][today] = added; saveDaily(); }
 }
 
 function todayWords(id) {
@@ -1190,7 +1227,11 @@ const INI_TO_SETTINGS = {
   status_right:         ['statusRight',      'str'],
   cursor_restore:             ['cursorRestore',             'bool'],
   line_numbers:               ['lineNumbers',               'bool'],
+  block_cursor:               ['blockCursor',               'bool'],
+  blink_cursor:               ['blinkCursor',               'bool'],
   intercept_browser_shortcuts:['interceptBrowserShortcuts', 'bool'],
+  intercept_context_menu:     ['interceptContextMenu',      'bool'],
+  open_last_doc:              ['openLastDoc',               'bool'],
 };
 
 const SETTINGS_TO_INI = Object.fromEntries(
@@ -1244,7 +1285,7 @@ function parseIni(text) {
   let section    = '';
   let curScheme  = '';
   let curProfile = '';
-  const TOPLEVEL = new Set(['editor', 'behaviour', 'keys', 'timer', 'misc', 'tui_colors', 'display']);
+  const TOPLEVEL = new Set(['editor', 'behaviour', 'keys', 'timer', 'misc', 'tui_colors', 'display', 'web']);
 
   for (const rawLine of text.split('\n')) {
     const line = rawLine.trim();
@@ -1329,8 +1370,16 @@ function writeIni(s, allSchemes) {
   out += `hemingway_mode  = ${b(s.hemingwayMode)}` + nl;
   out += `cursor_restore               = ${b(s.cursorRestore !== false)}` + nl;
   out += `line_numbers                 = ${b(s.lineNumbers)}` + nl;
-  out += `intercept_browser_shortcuts  = ${b(s.interceptBrowserShortcuts)}` + nl;
+  out += `block_cursor                 = ${b(s.blockCursor)}` + nl;
+  out += `blink_cursor                 = ${b(s.blinkCursor)}` + nl;
   out += `dark_mode       = ${b(s.darkMode)}` + nl;
+  out += nl;
+
+  out += '= web =' + nl + '[web]' + nl;
+  out += `% Options specific to the web version — ignored by the desktop version` + nl;
+  out += `open_last_doc                = ${b(s.openLastDoc)}` + nl;
+  out += `intercept_browser_shortcuts  = ${b(s.interceptBrowserShortcuts)}` + nl;
+  out += `intercept_context_menu       = ${b(s.interceptContextMenu !== false)}` + nl;
   out += nl;
 
   out += '= timer =' + nl;
@@ -1379,7 +1428,21 @@ function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function highlight(text, s, searchTerm, paraStart, paraEnd) {
+// Inject a block-cursor span at original-text column `col` inside HTML `html`.
+// HTML tags are skipped; HTML entities count as one original character each.
+function injectCursorAt(html, col) {
+  let rem = col;
+  let done = false;
+  const result = html.replace(/(<[^>]+>)|(&[^;]+;)|([\s\S])/g, (m, tag, ent, ch) => {
+    if (done || tag) return m;
+    if (rem-- > 0) return m;
+    done = true;
+    return `<span class="hl-cursor">${m}</span>`;
+  });
+  return done ? result : result + '<span class="hl-cursor"> </span>';
+}
+
+function highlight(text, s, searchTerm, paraStart, paraEnd, cursorPos) {
   // Build regexes from current settings
   const hm = escRx(s.headingMarker);
   const cm = escRx(s.commentMarker);
@@ -1390,35 +1453,51 @@ function highlight(text, s, searchTerm, paraStart, paraEnd) {
 
   const hasPara = paraStart !== undefined && paraEnd !== undefined;
   const lines = text.split('\n');
+
+  // Compute cursor line/col from absolute offset
+  let cursorLine = -1, cursorCol = -1;
+  if (cursorPos !== undefined) {
+    let off = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (cursorPos <= off + lines[i].length) { cursorLine = i; cursorCol = cursorPos - off; break; }
+      off += lines[i].length + 1;
+    }
+    if (cursorLine === -1) { cursorLine = lines.length - 1; cursorCol = lines[lines.length - 1].length; }
+  }
+
   const out = lines.map((line, idx) => {
     const dim = hasPara && (idx < paraStart || idx > paraEnd);
     const esc = escapeHtml(line);
 
+    let lineHtml;
     // Heading line
     if (hm && line.startsWith(s.headingMarker)) {
-      return `<span class="hl-heading${dim ? ' hl-dim' : ''}">${esc}</span>`;
-    }
+      lineHtml = `<span class="hl-heading${dim ? ' hl-dim' : ''}">${esc}</span>`;
     // Markdown headings
-    if (s.markdownHeadings && /^#{1,6}\s/.test(line)) {
-      return `<span class="hl-heading${dim ? ' hl-dim' : ''}">${esc}</span>`;
-    }
+    } else if (s.markdownHeadings && /^#{1,6}\s/.test(line)) {
+      lineHtml = `<span class="hl-heading${dim ? ' hl-dim' : ''}">${esc}</span>`;
     // Comment line
-    if (cm && line.startsWith(s.commentMarker)) {
-      return `<span class="hl-comment${dim ? ' hl-dim' : ''}">${esc}</span>`;
-    }
+    } else if (cm && line.startsWith(s.commentMarker)) {
+      lineHtml = `<span class="hl-comment${dim ? ' hl-dim' : ''}">${esc}</span>`;
     // Lines outside paragraph in typewriter mode: plain dim, no inline markup
-    if (dim) return `<span class="hl-dim">${esc}</span>`;
-    // Inline markup (apply in order, non-greedy)
-    let result = esc;
-    if (bm) result = result.replace(new RegExp(escRx(escapeHtml(s.boldMarker)) + '(.+?)' + escRx(escapeHtml(s.boldMarker)), 'g'),
-      (_, inner) => `<span class="hl-markup">${escapeHtml(s.boldMarker)}${inner}${escapeHtml(s.boldMarker)}</span>`);
-    if (im) result = result.replace(new RegExp(escRx(escapeHtml(s.italicMarker)) + '(.+?)' + escRx(escapeHtml(s.italicMarker)), 'g'),
-      (_, inner) => `<span class="hl-markup">${escapeHtml(s.italicMarker)}${inner}${escapeHtml(s.italicMarker)}</span>`);
-    if (um) result = result.replace(new RegExp(escRx(escapeHtml(s.underlineMarker)) + '(.+?)' + escRx(escapeHtml(s.underlineMarker)), 'g'),
-      (_, inner) => `<span class="hl-markup">${escapeHtml(s.underlineMarker)}${inner}${escapeHtml(s.underlineMarker)}</span>`);
-    if (sm) result = result.replace(new RegExp(escRx(escapeHtml(s.strikeMarker)) + '(.+?)' + escRx(escapeHtml(s.strikeMarker)), 'g'),
-      (_, inner) => `<span class="hl-markup">${escapeHtml(s.strikeMarker)}${inner}${escapeHtml(s.strikeMarker)}</span>`);
-    return result;
+    } else if (dim) {
+      lineHtml = `<span class="hl-dim">${esc}</span>`;
+    } else {
+      // Inline markup (apply in order, non-greedy)
+      let result = esc;
+      if (bm) result = result.replace(new RegExp(escRx(escapeHtml(s.boldMarker)) + '(.+?)' + escRx(escapeHtml(s.boldMarker)), 'g'),
+        (_, inner) => `<span class="hl-markup">${escapeHtml(s.boldMarker)}${inner}${escapeHtml(s.boldMarker)}</span>`);
+      if (im) result = result.replace(new RegExp(escRx(escapeHtml(s.italicMarker)) + '(.+?)' + escRx(escapeHtml(s.italicMarker)), 'g'),
+        (_, inner) => `<span class="hl-markup">${escapeHtml(s.italicMarker)}${inner}${escapeHtml(s.italicMarker)}</span>`);
+      if (um) result = result.replace(new RegExp(escRx(escapeHtml(s.underlineMarker)) + '(.+?)' + escRx(escapeHtml(s.underlineMarker)), 'g'),
+        (_, inner) => `<span class="hl-markup">${escapeHtml(s.underlineMarker)}${inner}${escapeHtml(s.underlineMarker)}</span>`);
+      if (sm) result = result.replace(new RegExp(escRx(escapeHtml(s.strikeMarker)) + '(.+?)' + escRx(escapeHtml(s.strikeMarker)), 'g'),
+        (_, inner) => `<span class="hl-markup">${escapeHtml(s.strikeMarker)}${inner}${escapeHtml(s.strikeMarker)}</span>`);
+      lineHtml = result;
+    }
+
+    if (idx === cursorLine) lineHtml = injectCursorAt(lineHtml, cursorCol);
+    return lineHtml;
   });
 
   // Trailing newline required for correct height in the overlay
@@ -1700,11 +1779,13 @@ const Editor = (() => {
   let _cmdNavIdx      = -1;
   const _CMD_LIST = [
     ['f','find'], ['r','replace'], ['g','goto'], ['n','linenos'], ['o','toc'],
-    ['d','dark'],  ['c','config'], ['e','export'], ['s','stats'], ['i','info'],
-    ['t','timer'], ['p','pause'], ['w','typewriter'], ['m','menu'], ['q','close'],
+    ['d','dark'],  ['c','config'], ['e','export'], ['s','stats'], ['a','analyse'],
+    ['i','info'],  ['t','timer'], ['p','pause'], ['w','typewriter'], ['m','menu'], ['q','close'],
   ];
-  let _typewriter     = false;
-  let _wc = 0;
+  let _typewriter       = false;
+  let _wc               = 0;
+  let _sessionBaseline  = -1;  // total words in doc minus today's prior additions (set on open)
+  let _sessionMaxToday  = 0;   // high-water mark of words added today this session
 
   // ── Open / close ──────────────────────────────────────────────────────────
 
@@ -1751,6 +1832,13 @@ const Editor = (() => {
     input.focus();
     _wc = wordCount(input.value);
 
+    // Session baseline: words that existed before today's contribution
+    if (!doc.isIni) {
+      const priorToday = doc.id ? todayWords(doc.id) : 0;
+      _sessionBaseline = _wc - priorToday;
+      _sessionMaxToday = priorToday;
+    }
+
     startAutosave();
     startClock();
     if (!doc.virtual) pushRecent(doc.id);
@@ -1766,7 +1854,9 @@ const Editor = (() => {
     stopAutosave();
     stopClock();
     TOC.hide();
-    _cmdMode    = false;
+    _cmdMode          = false;
+    _sessionBaseline  = -1;
+    _sessionMaxToday  = 0;
     State.doc   = null;
     State.dirty = false;
     document.title = 'Writhdeck';
@@ -1834,9 +1924,13 @@ const Editor = (() => {
     const idx = State.docs.findIndex(d => d.id === State.doc.id);
     if (idx >= 0) State.docs[idx] = State.doc;
 
-    // Update daily stats
+    // Update daily stats (track words added today, not total)
     _wc = wordCount(State.doc.content);
-    updateDaily(State.doc.id, _wc);
+    if (_sessionBaseline >= 0) {
+      const added = Math.max(0, _wc - _sessionBaseline);
+      if (added > _sessionMaxToday) _sessionMaxToday = added;
+      updateDaily(State.doc.id, _sessionMaxToday);
+    }
 
     updateStatusBar();
   }
@@ -1879,7 +1973,8 @@ const Editor = (() => {
         while (paraEnd < ls.length - 1 && !isBoundary(paraEnd + 1)) paraEnd++;
       }
     }
-    pre().innerHTML = highlight(ta().value, State.settings, searchVisible ? _searchTerm : '', paraStart, paraEnd);
+    const cursorPos = State.settings.blockCursor ? ta().selectionStart : undefined;
+    pre().innerHTML = highlight(ta().value, State.settings, searchVisible ? _searchTerm : '', paraStart, paraEnd, cursorPos);
     syncGutter();
   }
 
@@ -2008,7 +2103,9 @@ const Editor = (() => {
     const allMarked = lines.every(l => l.startsWith(marker));
     const newLines = allMarked ? lines.map(l => l.slice(marker.length)) : lines.map(l => marker + l);
     const newBlock = newLines.join('\n');
-    input.value = text.slice(0, blockStart) + newBlock + text.slice(blockEnd);
+    input.focus();
+    input.setSelectionRange(blockStart, blockEnd);
+    document.execCommand('insertText', false, newBlock);
     input.setSelectionRange(blockStart, blockStart + newBlock.length);
     onInput();
   }
@@ -2018,19 +2115,23 @@ const Editor = (() => {
     const input = ta();
     const s = input.selectionStart, e = input.selectionEnd;
     const text = input.value;
+    input.focus();
     if (s === e) {
-      input.value = text.slice(0, s) + marker + marker + text.slice(s);
+      input.setSelectionRange(s, s);
+      document.execCommand('insertText', false, marker + marker);
       input.setSelectionRange(s + marker.length, s + marker.length);
     } else {
       const sel = text.slice(s, e);
       const isWrapped = sel.startsWith(marker) && sel.endsWith(marker) && sel.length > marker.length * 2;
       if (isWrapped) {
         const inner = sel.slice(marker.length, -marker.length);
-        input.value = text.slice(0, s) + inner + text.slice(e);
+        input.setSelectionRange(s, e);
+        document.execCommand('insertText', false, inner);
         input.setSelectionRange(s, s + inner.length);
       } else {
         const wrapped = marker + sel + marker;
-        input.value = text.slice(0, s) + wrapped + text.slice(e);
+        input.setSelectionRange(s, e);
+        document.execCommand('insertText', false, wrapped);
         input.setSelectionRange(s, s + wrapped.length);
       }
     }
@@ -2070,7 +2171,9 @@ const Editor = (() => {
       return content ? `${prefix} ${content} ${prefix}` : `${prefix}  ${prefix}`;
     });
     const newBlock = newLines.join('\n');
-    input.value = text.slice(0, blockStart) + newBlock + text.slice(blockEnd);
+    input.focus();
+    input.setSelectionRange(blockStart, blockEnd);
+    document.execCommand('insertText', false, newBlock);
     input.setSelectionRange(blockStart, blockStart + newBlock.length);
     onInput();
   }
@@ -2147,7 +2250,11 @@ const Editor = (() => {
     const s = State.settings;
     const doc = State.doc;
     const wc = doc ? wordCount(ta().value) : 0;
-    const today = doc ? todayWords(doc.id) : 0;
+    if (doc && _sessionBaseline >= 0) {
+      const cur = Math.max(0, wc - _sessionBaseline);
+      if (cur > _sessionMaxToday) _sessionMaxToday = cur;
+    }
+    const today = doc ? (_sessionBaseline >= 0 ? _sessionMaxToday : todayWords(doc.id)) : 0;
     const clk = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 
     function buildZone(spec) {
@@ -2471,6 +2578,32 @@ const Browser = (() => {
 
   let _ctxMenu = null;
 
+  function showIniContextMenu(e, openIni) {
+    hideContextMenu();
+    const menu = document.createElement('div');
+    menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;
+      background:var(--bg-bar);border:1px solid var(--fg-bar);z-index:200;min-width:160px;`;
+    const items = [
+      ['Open', openIni],
+      ['Export writhdeck.ini', () => Settings.exportIni()],
+      ['Reset to defaults', async () => {
+        if (!confirm('Reset all settings to defaults?')) return;
+        await DB.setMeta('iniText', null);
+        location.reload();
+      }]
+    ];
+    items.forEach(([label, fn]) => {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.style.cssText = 'display:block;width:100%;text-align:left;padding:6px 14px;border:none;background:none;';
+      btn.style.color = label === 'Reset to defaults' ? 'var(--heading)' : 'var(--fg)';
+      btn.addEventListener('click', () => { hideContextMenu(); fn(); });
+      menu.appendChild(btn);
+    });
+    document.body.appendChild(menu);
+    _ctxMenu = menu;
+  }
+
   function showContextMenu(doc, e) {
     hideContextMenu();
     const menu = document.createElement('div');
@@ -2614,15 +2747,12 @@ const Browser = (() => {
 
     row.appendChild(ico);
     row.appendChild(name);
-    row.addEventListener('click', () => {
-      Editor.open({
-        id: '__ini__',
-        name: 'writhdeck.ini',
-        content: State.iniText || '',
-        isIni: true,
-        virtual: true
-      });
+    const openIni = () => Editor.open({
+      id: '__ini__', name: 'writhdeck.ini',
+      content: State.iniText || '', isIni: true, virtual: true
     });
+    row.addEventListener('click', openIni);
+    row.addEventListener('contextmenu', e => { e.preventDefault(); showIniContextMenu(e, openIni); });
     container.appendChild(row);
   }
 
@@ -3157,7 +3287,7 @@ const Settings = (() => {
     // misc-import-btn wired in app.js (shares logic with br-import-btn)
   }
 
-  return { show, initEvents, switchTab };
+  return { show, initEvents, switchTab, exportIni };
 })();
 
 
@@ -3166,11 +3296,12 @@ const Settings = (() => {
 
 const README_CONTENT = "# Writhdeck\n\nA distraction-free writing app that runs as a single self-contained HTML file \u2014 no server, no install, no internet required. Open `writhdeck.html` directly in any modern browser.\n\n## Features\n\n- **Single-file**: the entire app is one `writhdeck.html` (~146 KB). Copy it anywhere, it just works.\n- **Document browser**: create, rename, delete, and favourite documents stored in IndexedDB. Document names are unique \u2014 duplicates are auto-suggested as `\"Untitled (2)\"` etc.\n- **Disk file support** (Chrome/Edge/Brave): open individual files or watch a folder \u2014 edits go straight back to disk via the File System Access API.\n- **Syntax highlighting overlay**: headings, comments, and inline markers (bold, italic, underline, strikethrough) are coloured in real time without leaving the textarea.\n- **Configurable markers**: choose your own syntax for headings, comments, and each inline style. Enable Markdown-style `#` headings if you prefer.\n- **8 built-in colour schemes** (default, solarized, gruvbox, everforest, nord, + 3 more), dark and light variants, and full custom-scheme support.\n- **Writing timer**: countdown or stopwatch, with optional sound and alert at the end.\n- **Table of contents**: auto-generated from heading lines, shown in a side panel.\n- **Daily word-count stats** with optional daily goal.\n- **Hemingway mode**: disables backspace/delete to keep you writing forward.\n- **Typewriter mode**: keeps the cursor vertically centred; dims text outside the current paragraph so only the active paragraph appears at full colour.\n- **Find & replace** with live match highlighting, goto line, line numbers.\n- **Export** as `.txt` or `.md`.\n- **INI config**: load a `writhdeck.ini` file to share settings across installs.\n- **Status bar**: fully customisable left/centre/right slots with tokens \u2014 see [Status bar tokens](#status-bar-tokens).\n- **`\u2261` menu**: all commands accessible from a single dropdown \u2014 keyboard-navigable (\u2191\u2193 + Enter), with format options (H1\u2013H3, bold, italic\u2026), search, export, settings, and more. Opening the menu preserves any active text selection.\n- **Right-click context menu**: format, cut/copy/paste, and spell-check toggle (editor); Open / Info / Rename / Export / Delete (browser document list).\n- **Command mode** (`Esc` or `Alt+C`): interactive status bar showing all commands as clickable buttons. Navigate with `\u2190`/`\u2192`, confirm with `Enter`, or click with the mouse.\n\n## Build\n\n```sh\nmake        # produces writhdeck.html (~146 KB)\nmake clean  # removes writhdeck.html\n```\n\n`build.py` reads `src/template.html`, inlines `src/style.css` and all JS modules (in the order defined in `JS_ORDER`), and writes the result to stdout. Python 3, no dependencies.\n\n## Keyboard shortcuts\n\n### Global\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+D` | Toggle dark / light mode |\n| `Ctrl+O` | Import file copy |\n| `F11` | Toggle table of contents |\n| `Alt+Enter` | Toggle fullscreen |\n| `Ctrl+N` *(opt)* | New document (overrides browser \"new window\", requires setting) |\n\n### Editor\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+S` | Save |\n| `Ctrl+Q` | Close document |\n| `Ctrl+F` | Find (live match highlighting) |\n| `Ctrl+H` | Find & replace |\n| `Ctrl+G` | Go to line |\n| `Ctrl+L` | Toggle line numbers |\n| `Alt+T` | Toggle timer |\n| `Alt+C` / `Esc` | Enter command mode |\n\n### Command mode (`Alt+C` or `Esc`)\n\nThe status bar becomes an interactive row of command buttons. Works in fullscreen (`Alt+C`).\n\n| Input | Action |\n|---|---|\n| `\u2190` / `\u2192` | Move selection between commands |\n| `Enter` | Execute selected command |\n| *letter* | Execute command directly (e.g. `f` = Find) |\n| Mouse click | Execute command directly |\n\n| Key | Action | Key | Action |\n|---|---|---|---|\n| `f` | Find | `d` | Dark / light |\n| `r` | Find & replace | `o` | Table of contents |\n| `g` | Go to line | `c` | Settings |\n| `n` | Line numbers | `e` | Export as .txt |\n| `w` | Typewriter mode | `s` | Statistics |\n| `t` | Timer | `i` | File info |\n| `p` | Timer pause | `m` | Main menu (\u2261) |\n| `q` | Close document | | |\n\n### Browser (document list)\n\n| Key | Action |\n|---|---|\n| `\u2191` / `\u2193` | Navigate document list |\n| `Enter` | Open selected document |\n| `n` | New document |\n| `o` | Open file from disk |\n| `w` | Watch a folder |\n| `s` | Stats |\n| `c` | Settings |\n\n## Status bar tokens\n\nThe three status bar zones (left / centre / right) are configured as space-separated token strings in Settings \u2192 Profile.\n\n| Token | Example | Description |\n|---|---|---|\n| `filename` | `my-novel.txt` | Current document name |\n| `dirty` | `[+]` | Unsaved changes indicator |\n| `words` | `1 842w` | Word count |\n| `chars` | `10 240c` | Character count |\n| `lines` | `312L` | Total line count |\n| `line` | `L42` | Current cursor line |\n| `col` | `C7` | Current cursor column |\n| `para` | `18\u00a7` | Paragraph count (blank-line separated) |\n| `pages` | `7p` | Estimated pages at 250 w/page |\n| `percent` | `68%` | Progress toward word goal |\n| `today` | `342\u2191` | Words written today (high-water mark) |\n| `goal` | `342/500` | Today's words / goal (hidden if no goal) |\n| `reading` | `9min` | Estimated reading time at 200 w/min |\n| `clock` | `14:32` | Current time |\n| `timer` | `24:07` | Writing timer display |\n| `space` | ` ` | Single space (explicit separator) |\n| *(anything else)* | literal | Fixed text, separators, etc. |\n\nDefault: Left `filename dirty words` \u00b7 Center *(empty)* \u00b7 Right `goal clock timer`\n\n## Project structure\n\n```\nsrc/\n  template.html   HTML skeleton with {{STYLE}} / {{SCRIPT}} placeholders\n  style.css       All CSS (uses CSS custom properties only, no hardcoded colours)\n  schemes.js      Built-in colour schemes + custom-scheme support\n  db.js           IndexedDB wrapper (promise-based)\n  state.js        App state, load/save helpers\n  ini.js          INI config parser/applier\n  highlight.js    Syntax highlighter + word count\n  timer.js        Writing timer\n  toc.js          Table of contents\n  stats.js        Daily word-count stats\n  editor.js       Editor panel, textarea/overlay sync, find/replace\n  browser.js      Document browser panel, FSA integration\n  settings.js     Settings dialog\n  app.js          Entry point, theme, keyboard router, menus\nbuild.py          Build script\nMakefile          Convenience wrapper around build.py\n```\n\n## Storage\n\nDocuments are stored in IndexedDB (`writhdeck` database, version 1):\n\n- **`documents`** store \u2014 each document: `id`, `name`, `content`, `created`, `modified`.\n- **`meta`** store \u2014 keyed entries: `iniText`, `favorites`, `recents`, `cursors`, `daily`.\n\nNothing is sent to any server.\n\n## Adding a colour scheme\n\nAdd an entry to the `SCHEMES` object in `src/schemes.js`. Each scheme needs 9 dark-mode keys and 9 light-mode (`*Alt`) keys: `bg`, `fg`, `bgBar`, `fgBar`, `bgSel`, `heading`, `comment`, `markup`, `bg2` (+ `Alt` variants). Then run `make`.\n\n## License\n\nCopyright (C) 2026 by Luginfo \u2014 Zero-Clause BSD License\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted. The software is provided \"as is\" without warranty of any kind.\n\n";
 
-let _edMenu      = null;
-let _openMenuFn  = null;
-let _menuNavLock = false;
-let _edCtxMenu   = null;
-let _helpMenu    = null;
+let _edMenu          = null;
+let _openMenuFn      = null;
+let _menuNavLock     = false;
+let _edCtxMenu       = null;
+let _helpDetails     = null;
+let _menuActionTime  = 0;
 
 function hideEditorCtxMenu() {
   if (_edCtxMenu) { _edCtxMenu.remove(); _edCtxMenu = null; }
@@ -3229,6 +3360,54 @@ async function showFileInfo(docArg) {
   });
 
   document.getElementById('info-dlg').showModal();
+}
+
+// ── Word occurrences dialog ───────────────────────────────────────────────
+
+async function showWordOcc(docArg) {
+  const doc = docArg || State.doc;
+  if (!doc) return;
+
+  let content = doc.content;
+  if (content == null) {
+    if (doc.fileHandle) {
+      try { const f = await doc.fileHandle.getFile(); content = await f.text(); }
+      catch(_) { content = ''; }
+    } else if (doc.id && typeof doc.id === 'number') {
+      const full = await DB.getDoc(doc.id);
+      content = full ? full.content : '';
+    } else { content = ''; }
+  }
+
+  const counts = {};
+  const words = content.toLowerCase().match(/[\wÀ-ɏ]+/g) || [];
+  words.forEach(w => { if (w.length >= 3) counts[w] = (counts[w] || 0) + 1; });
+
+  const sorted = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+  const body = document.getElementById('words-body');
+  body.innerHTML = '';
+
+  if (!sorted.length) {
+    const empty = document.createElement('p');
+    empty.style.cssText = 'color:var(--fg-bar);padding:12px 0';
+    empty.textContent = 'No words found.';
+    body.appendChild(empty);
+  } else {
+    const table = document.createElement('table');
+    table.className = 'words-table';
+    table.innerHTML = '<tr><th>Word</th><th>#</th></tr>';
+    sorted.forEach(([word, count]) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${word}</td><td>${count}</td>`;
+      table.appendChild(tr);
+    });
+    body.appendChild(table);
+  }
+
+  document.getElementById('words-title').textContent = `Word occurrences — ${doc.name}`;
+  document.getElementById('words-dlg').showModal();
 }
 
 // ── Structure analyse dialog ──────────────────────────────────────────────
@@ -3348,6 +3527,10 @@ async function showAnalyse(docArg) {
   footer.textContent = `Total : ${total.toLocaleString()} mots · ${sectionCount} section${sectionCount !== 1 ? 's' : ''}`;
   body.appendChild(footer);
 
+  document.getElementById('analyse-words-btn').onclick = () => {
+    document.getElementById('analyse-dlg').close();
+    showWordOcc(doc);
+  };
   document.getElementById('analyse-dlg').showModal();
 }
 
@@ -3384,6 +3567,9 @@ function applyTheme() {
   r.setProperty('--line-spacing', (s.lineSpacing || 1.5));
   r.setProperty('--margin-x',     (s.marginX   || 80) + 'px');
   r.setProperty('--margin-y',     (s.marginY   || 40) + 'px');
+
+  document.getElementById('editor').classList.toggle('block-cursor', !!s.blockCursor);
+  document.getElementById('editor').classList.toggle('no-blink', s.blinkCursor === false);
 }
 
 // ── File import ────────────────────────────────────────────────────────────
@@ -3419,22 +3605,45 @@ function onKeydown(e) {
   const inBrowser = !document.getElementById('browser').hidden;
 
   Browser.hideContextMenu();
-  if (_helpMenu && !_helpMenu.hidden && lkey === 'escape') { _helpMenu.hidden = true; return; }
+  if (_helpDetails && _helpDetails.open && lkey === 'escape') { _helpDetails.open = false; return; }
 
-  // Menu arrow navigation — intercept at capture level regardless of focus.
-  if (_edMenu && !_edMenu.hidden && (key === 'ArrowDown' || key === 'ArrowUp')) {
-    e.preventDefault(); e.stopPropagation();
-    if (!_menuNavLock) {
-      _menuNavLock = true;
-      requestAnimationFrame(() => { _menuNavLock = false; });
-      const items = Array.from(_edMenu.querySelectorAll('button:not(:disabled)'));
-      const idx   = items.indexOf(document.activeElement);
-      const next  = key === 'ArrowDown'
-        ? items[(idx + 1) % items.length]
-        : items[(idx - 1 + items.length) % items.length];
-      if (next) next.focus();
+  // Menu keyboard handling — intercept at capture level regardless of focus.
+  if (_edMenu && !_edMenu.hidden) {
+    if (key === 'ArrowDown' || key === 'ArrowUp') {
+      e.preventDefault(); e.stopPropagation();
+      if (!_menuNavLock) {
+        _menuNavLock = true;
+        requestAnimationFrame(() => { _menuNavLock = false; });
+        const items = Array.from(_edMenu.querySelectorAll('button:not(:disabled)'));
+        const idx   = items.indexOf(document.activeElement);
+        const next  = key === 'ArrowDown'
+          ? items[(idx + 1) % items.length]
+          : items[(idx - 1 + items.length) % items.length];
+        if (next) next.focus();
+      }
+      return;
     }
-    return;
+    // Enter — activate focused button
+    if (key === 'Enter') {
+      const focused = document.activeElement;
+      if (focused && _edMenu.contains(focused)) {
+        e.preventDefault(); e.stopPropagation();
+        focused.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+        return;
+      }
+    }
+    // Letter shortcut — activate button whose hint matches
+    if (!ctrl && !e.altKey && lkey.length === 1) {
+      const match = Array.from(_edMenu.querySelectorAll('button:not(:disabled)')).find(b => {
+        const hint = b.querySelector('.hint');
+        return hint && hint.textContent.trim() === lkey;
+      });
+      if (match) {
+        e.preventDefault(); e.stopPropagation();
+        match.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+        return;
+      }
+    }
   }
 
   // Global shortcuts (work anywhere, no active input focused)
@@ -3503,6 +3712,7 @@ function onKeydown(e) {
         case 'c': Settings.show();           break;
         case 'e': Editor.exportDoc('txt'); break;
         case 's': Stats.show();              break;
+        case 'a': showAnalyse();             break;
         case 'i': showFileInfo();            break;
         case 't': Timer.toggle();  Editor.updateStatusBar(); break;
         case 'p': Timer.isActive() ? Timer.pause() : Timer.toggle();
@@ -3523,6 +3733,7 @@ function onKeydown(e) {
     if (ctrl && lkey === 'l')     { e.preventDefault(); e.stopPropagation(); Editor.toggleLineNumbers();  return; }
     if (e.altKey && lkey === 't') { e.preventDefault(); e.stopPropagation(); Timer.toggle(); Editor.updateStatusBar(); return; }
     if (e.altKey && lkey === 'c') { e.preventDefault(); e.stopPropagation(); Editor.enterCmdMode(); return; }
+    if (e.altKey && lkey === 'm') { e.preventDefault(); e.stopPropagation(); showMainMenu(); return; }
 
     if (lkey === 'escape') {
       e.preventDefault(); e.stopPropagation();
@@ -3615,8 +3826,8 @@ async function init() {
   ta.addEventListener('input',  () => Editor.onInput());
   ta.addEventListener('scroll', () => Editor.syncScroll());
   // Update line/col on cursor move (click or keyboard navigation)
-  ta.addEventListener('click',   () => Editor.updateStatusBar());
-  ta.addEventListener('keyup',   () => Editor.updateStatusBar());
+  ta.addEventListener('click',   () => { Editor.updateStatusBar(); if (State.settings.blockCursor) Editor.rehighlight(); });
+  ta.addEventListener('keyup',   () => { Editor.updateStatusBar(); if (State.settings.blockCursor) Editor.rehighlight(); });
 
   // Header buttons
   document.getElementById('br-new-btn').addEventListener('click',    () => Browser.newDoc());
@@ -3625,19 +3836,12 @@ async function init() {
   document.getElementById('br-opendisk-btn').addEventListener('click', () => Browser.openFromDisk());
   document.getElementById('ed-close-btn').addEventListener('click', () => Editor.close());
 
-  // Help menu (? button)
-  const helpBtn  = document.getElementById('br-help-btn');
-  const helpMenu = document.getElementById('br-help-menu');
-  _helpMenu = helpMenu;
-
-  helpBtn.addEventListener('mousedown', e => e.preventDefault());
-  helpBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    helpMenu.hidden = !helpMenu.hidden;
-  });
+  // Help menu (? button) — native <details> toggle, no JS click handler needed
+  const helpDetails = document.getElementById('br-help-details');
+  _helpDetails = helpDetails;
 
   document.getElementById('br-help-readme').addEventListener('click', async () => {
-    helpMenu.hidden = true;
+    helpDetails.open = false;
     let doc = State.docs.find(d => d.name === 'README.md');
     if (!doc) {
       doc = { name: 'README.md', content: README_CONTENT, created: Date.now(), modified: Date.now() };
@@ -3689,8 +3893,16 @@ async function init() {
       case 'export-txt': Editor.exportDoc('txt');    break;
       case 'export-md':  Editor.exportDoc('md');     break;
       case 'stats':      Stats.show();               break;
+      case 'analyse':    showAnalyse();              break;
+      case 'word-occ':   showWordOcc();              break;
       case 'info':       showFileInfo();             break;
       case 'timer':      Timer.toggle(); Editor.updateStatusBar(); break;
+      case 'block-cursor':
+        State.settings.blockCursor = !State.settings.blockCursor;
+        saveSettings();
+        applyTheme();
+        if (State.doc) Editor.rehighlight();
+        break;
       case 'ctx-menu':
         State.settings.interceptContextMenu = !State.settings.interceptContextMenu;
         saveSettings();
@@ -3719,9 +3931,11 @@ async function init() {
       btn.innerHTML = marker ? `<span>${marker} ${label}</span>` : `<span>${label}</span>`;
       btn.disabled  = !marker;
     });
-    // Update ctx-menu toggle label
+    // Update toggle labels
     const ctxBtn = edMenu.querySelector('[data-cmd="ctx-menu"]');
     if (ctxBtn) ctxBtn.innerHTML = `Right-click menu <span class="hint">${s.interceptContextMenu ? 'on' : 'off'}</span>`;
+    const bcBtn = edMenu.querySelector('[data-cmd="block-cursor"]');
+    if (bcBtn) bcBtn.innerHTML = `Block cursor <span class="hint">${s.blockCursor ? 'on' : 'off'}</span>`;
     edMenu.hidden = false;
   }
   _openMenuFn = openMenu;
@@ -3740,13 +3954,24 @@ async function init() {
     setTimeout(() => { edMenu.hidden = false; }, 0);
   });
 
-  document.getElementById('ed-more-cmd').addEventListener('click', () => {
+  function menuGuard() {
+    const now = Date.now();
+    if (now - _menuActionTime < 150) return false;
+    _menuActionTime = now;
+    return true;
+  }
+
+  document.getElementById('ed-more-cmd').addEventListener('mousedown', e => {
+    if (!menuGuard()) return;
+    e.preventDefault();
     edMenu.hidden = true;
     Editor.enterCmdMode();
   });
 
   edMenu.querySelectorAll('[data-markup]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('mousedown', e => {
+      if (!menuGuard()) return;
+      e.preventDefault();
       edMenu.hidden = true;
       const s = State.settings;
       switch (btn.dataset.markup) {
@@ -3763,10 +3988,14 @@ async function init() {
   });
 
   edMenu.querySelectorAll('[data-cmd]').forEach(btn => {
-    btn.addEventListener('click', () => execCmd(btn.dataset.cmd));
+    btn.addEventListener('mousedown', e => {
+      if (!menuGuard()) return;
+      e.preventDefault();
+      execCmd(btn.dataset.cmd);
+    });
   });
 
-  document.addEventListener('click', () => { edMenu.hidden = true; helpMenu.hidden = true; hideEditorCtxMenu(); });
+  document.addEventListener('click', e => { edMenu.hidden = true; if (!helpDetails.contains(e.target)) helpDetails.open = false; hideEditorCtxMenu(); });
 
   // ── Editor right-click context menu ──────────────────────────────────────
 
@@ -3870,13 +4099,14 @@ async function init() {
   // Dialog close buttons
   document.getElementById('info-close').addEventListener('click',     () => document.getElementById('info-dlg').close());
   document.getElementById('analyse-close').addEventListener('click',  () => document.getElementById('analyse-dlg').close());
+  document.getElementById('words-close').addEventListener('click',    () => document.getElementById('words-dlg').close());
   document.getElementById('stats-close').addEventListener('click',    () => document.getElementById('stats-dlg').close());
   document.getElementById('timer-alert-ok').addEventListener('click',  () => document.getElementById('timer-alert-dlg').close());
   document.getElementById('about-close').addEventListener('click',    () => document.getElementById('about-dlg').close());
   document.getElementById('about-ok').addEventListener('click',       () => document.getElementById('about-dlg').close());
 
   // About button and logo in help menu
-  const openAbout = () => { helpMenu.hidden = true; document.getElementById('about-dlg').showModal(); };
+  const openAbout = () => { helpDetails.open = false; document.getElementById('about-dlg').showModal(); };
   document.getElementById('br-help-about').addEventListener('click', openAbout);
   document.getElementById('br-help-logo').addEventListener('click', openAbout);
 
@@ -3908,6 +4138,7 @@ async function init() {
       case 'c': Settings.show();           break;
       case 'e': Editor.exportDoc('txt');   break;
       case 's': Stats.show();              break;
+      case 'a': showAnalyse();             break;
       case 'i': showFileInfo();            break;
       case 't': Timer.toggle();  Editor.updateStatusBar(); break;
       case 'p': Timer.isActive() ? Timer.pause() : Timer.toggle();
