@@ -75,6 +75,30 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
 #br-title { font-size: 1.1em; font-weight: bold; color: var(--fg); }
 #br-header-btns { display: flex; gap: 4px; }
 #br-new-btn, #br-import-btn { font-size: 1.1em; padding: 0 8px; }
+#br-help-details { display: inline-flex; align-items: center; }
+#br-help-btn { font-size: 0.85em; padding: 0 7px; font-weight: bold; list-style: none; cursor: pointer; }
+#br-help-btn::-webkit-details-marker { display: none; }
+
+#br-help-menu {
+  position: fixed;
+  right: 8px;
+  top: 40px;
+  background: var(--bg-bar);
+  border: 1px solid var(--fg-bar);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  min-width: 160px;
+}
+#br-help-details:not([open]) #br-help-menu { display: none; }
+#br-help-menu button,
+#br-help-menu a {
+  display: block; text-align: left; padding: 5px 16px; border: none;
+  font-family: var(--font-family); font-size: var(--font-size);
+  color: var(--fg); background: none; text-decoration: none; cursor: pointer;
+}
+#br-help-menu button:hover,
+#br-help-menu a:hover { background: var(--bg-sel); color: var(--fg); }
 
 #br-list {
   flex: 1;
@@ -98,6 +122,7 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
   gap: 8px;
 }
 .br-item:hover { background: var(--bg-bar); }
+.br-item.br-focused { box-shadow: inset 3px 0 0 var(--heading); background: var(--bg-bar); color: var(--fg); }
 .br-item.selected { background: var(--bg-sel); color: var(--fg); }
 .br-item-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .br-item-meta { font-size: 0.75em; color: var(--fg-bar); white-space: nowrap; }
@@ -180,8 +205,10 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
 }
 /* visibility via style.display in JS */
 
-/* Typewriter mode — subtle indicator on status bar */
+/* Typewriter mode */
 #editor.typewriter #ed-bar { border-top: 2px solid var(--heading); }
+.hl-dim         { color: var(--comment); }
+.hl-heading.hl-dim { color: var(--heading); opacity: 0.35; }
 
 /* TOC side panel — visibility controlled via style.display in JS */
 #toc-panel {
@@ -225,7 +252,7 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
 
 #ed-highlight {
   background: transparent;
-  color: transparent;
+  color: var(--fg);      /* pre rend tout le texte — toujours */
   pointer-events: none;
   user-select: none;
   overflow: hidden;
@@ -233,23 +260,29 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
 
 #ed-input {
   background: transparent;
-  color: var(--fg);
+  color: transparent;    /* textarea transparent — saisie uniquement */
   caret-color: var(--fg);
   resize: none;
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 1;
-  selection-color: var(--bg-sel);
 }
-#ed-input::selection { background: var(--bg-sel); }
+#ed-input::selection { background: var(--bg-sel); color: var(--fg); }
+.block-cursor #ed-input { caret-color: transparent; }
+@keyframes hl-cursor-blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+@keyframes caret-show { to { caret-color: var(--fg); } }
+.hl-cursor { background: var(--fg); color: var(--bg); animation: hl-cursor-blink 1s step-end infinite; }
+#editor.no-blink .hl-cursor { animation: none; opacity: 1; }
+#editor.no-blink:not(.block-cursor) #ed-input { animation: caret-show 1ms forwards; }
 
 /* highlight spans */
-.hl-heading  { color: var(--heading); font-weight: bold; }
+.hl-heading  { color: var(--heading); }
 .hl-comment  { color: var(--comment); }
 .hl-markup   { color: var(--markup); }
+.hl-search   { background: var(--bg-sel); }
 
-/* Search bar */
-#search-bar {
+/* Search / goto bars */
+#search-bar, #goto-bar {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -258,8 +291,9 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
   flex-shrink: 0;
   flex-wrap: wrap;
 }
-#search-bar[hidden] { display: none; }
+#search-bar[hidden], #goto-bar[hidden] { display: none; }
 #search-input, #replace-input { width: 200px; }
+#goto-input { width: 80px; }
 #search-count { font-size: 0.8em; color: var(--fg-bar); min-width: 80px; }
 
 /* Status bar */
@@ -278,8 +312,23 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
 #ed-bar-center { text-align: center; flex: 1; }
 #ed-bar-right { text-align: right; flex: 1; }
 
-/* Export menu */
-#export-menu {
+/* Command mode — full-width button row */
+#ed-bar.cmd-mode #ed-bar-left   { flex: 1; display: flex; flex-wrap: wrap; gap: 2px; align-items: center; }
+#ed-bar.cmd-mode #ed-bar-center,
+#ed-bar.cmd-mode #ed-bar-right  { flex: 0; min-width: 0; }
+.cmd-btn {
+  background: none; border: none;
+  color: var(--fg-bar); font: inherit;
+  padding: 1px 5px; cursor: pointer; border-radius: 3px;
+  white-space: nowrap;
+}
+.cmd-btn:hover { background: var(--bg2); color: var(--fg); }
+.cmd-btn.active { color: var(--heading); text-decoration: underline; }
+.cmd-btn b { font-weight: bold; }
+.cmd-exit { opacity: 0.5; padding-left: 6px; }
+
+
+#ed-menu {
   position: fixed;
   right: 8px;
   top: 40px;
@@ -288,10 +337,24 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
   display: flex;
   flex-direction: column;
   z-index: 100;
+  min-width: 220px;
+  max-height: 80vh;
+  overflow-y: auto;
 }
-#export-menu[hidden] { display: none; }
-#export-menu button { text-align: left; padding: 6px 16px; border: none; }
-#export-menu button:hover { background: var(--bg-sel); color: var(--fg); }
+#ed-menu[hidden] { display: none; }
+#ed-menu button {
+  display: flex; justify-content: space-between; align-items: center;
+  text-align: left; padding: 5px 16px; border: none;
+  font-family: var(--font-family); font-size: var(--font-size);
+}
+#ed-menu button:disabled { opacity: 0.35; pointer-events: none; }
+#ed-menu button:hover:not(:disabled),
+#ed-menu button:focus:not(:disabled) { background: var(--bg-sel); color: var(--fg); outline: none; }
+#ed-menu button .hint { margin-left: 12px; font-size: 0.8em; color: var(--fg-bar); flex-shrink: 0; }
+#ed-menu button:hover .hint,
+#ed-menu button:focus .hint { color: inherit; }
+.more-sep   { height: 1px; background: var(--fg-bar); opacity: 0.3; margin: 3px 0; flex-shrink: 0; }
+.more-label { padding: 3px 16px 1px; font-size: 0.75em; color: var(--fg-bar); text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* ─── Dialogs ───────────────────────────────────────────────────────────── */
 dialog {
@@ -403,6 +466,25 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 .toc-item.level-2 { padding-left: 22px; color: var(--fg-bar); }
 .toc-item.level-3 { padding-left: 32px; color: var(--fg-bar); font-size: 0.8em; }
 
+/* About */
+#about-dlg { width: 380px; }
+#about-header {
+  display: flex; justify-content: flex-end;
+  padding: 4px 8px; background: var(--bg-bar);
+}
+#about-body {
+  padding: 16px 20px; font-size: 0.9em; display: flex; flex-direction: column; gap: 8px;
+}
+#about-body p { margin: 0; line-height: 1.5; }
+.about-title { font-size: 1.15em; font-weight: bold; color: var(--heading); text-align: center; }
+#about-body code { font-family: var(--font-family); color: var(--heading); }
+#about-body a { color: var(--markup); }
+#about-logo { display: block; margin: 0 auto 12px; background: #fff; border-radius: 10px; padding: 6px; border: 1px solid var(--fg-bar); }
+#br-help-logo-wrap { display: flex; justify-content: center; padding: 10px 0 6px; background: var(--bg-bar); }
+#br-help-logo { background: #fff; border-radius: 8px; padding: 4px; border: 1px solid var(--fg-bar); cursor: pointer; }
+.about-version { color: var(--fg-bar); font-size: 0.85em; margin-top: 4px !important; }
+#about-footer { padding: 8px 12px; background: var(--bg-bar); display: flex; justify-content: flex-end; }
+
 /* Info */
 #info-dlg { width: 380px; }
 #info-header {
@@ -415,6 +497,36 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 .info-value { color: var(--fg); word-break: break-all; }
 .info-storage-disk    { color: var(--heading); }
 .info-storage-browser { color: var(--markup); }
+
+/* Analyse */
+#analyse-dlg { width: 480px; }
+#analyse-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; background: var(--bg-bar);
+}
+#analyse-body { padding: 8px 16px 4px; font-size: 0.9em; max-height: 68vh; overflow-y: auto; }
+.analyse-row { padding: 6px 0; border-bottom: 1px solid var(--bg-bar); }
+.analyse-row:last-child { border-bottom: none; }
+.analyse-title { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; overflow: hidden; }
+.analyse-title-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.analyse-level { font-size: 0.72em; color: var(--fg-bar); background: var(--bg-bar); padding: 1px 4px; border-radius: 2px; flex-shrink: 0; font-family: monospace; }
+.analyse-bar-wrap { display: flex; align-items: center; gap: 8px; }
+.analyse-bar { height: 5px; min-width: 2px; border-radius: 3px; background: var(--heading); flex-shrink: 0; }
+.analyse-stats { color: var(--fg-bar); font-size: 0.82em; white-space: nowrap; }
+.analyse-footer { padding: 8px 0 4px; color: var(--fg-bar); font-size: 0.82em; }
+#analyse-words-btn { font-size: 0.75em; padding: 1px 6px; margin-right: 4px; }
+
+/* Word occurrences */
+#words-dlg { width: 340px; }
+#words-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; background: var(--bg-bar);
+}
+#words-body { padding: 6px 12px; font-size: 0.85em; max-height: 65vh; overflow-y: auto; }
+.words-table { width: 100%; border-collapse: collapse; }
+.words-table th, .words-table td { padding: 3px 8px; text-align: left; }
+.words-table th { color: var(--fg-bar); border-bottom: 1px solid var(--bg-bar); position: sticky; top: 0; background: var(--bg); }
+.words-table td:last-child { text-align: right; color: var(--fg-bar); }
 
 /* Stats */
 #stats-dlg { width: 400px; }
@@ -442,15 +554,46 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
   <div id="br-header">
     <span id="br-title">Writhdeck</span>
     <div id="br-header-btns">
-      <button id="br-folder-btn"  title="Watch a folder — all files editable in place (w)">dir</button>
-      <button id="br-opendisk-btn" title="Open a file from disk — edit in place (o)">file</button>
+      <button id="br-folder-btn"  title="Watch a folder — all files editable in place (w)">📁</button>
+      <button id="br-opendisk-btn" title="Open a file from disk — edit in place (o)">📄</button>
       <button id="br-import-btn" title="Import copy of file (Ctrl+O)">↑</button>
       <button id="br-new-btn" title="New document (n)">+</button>
+      <details id="br-help-details">
+        <summary id="br-help-btn" title="Help">?</summary>
+        <div id="br-help-menu">
+  <div id="br-help-logo-wrap">
+    <img id="br-help-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAQAAABIkb+zAAAAw3pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjabVBRDsMgCP3nFDuCAiIeh65dshvs+EOlTdv0JT6BR54IbL/vB14dmBm4VJUmkhzcuKF5oGnCBufEgwckJM8vdTgE9BL5TTPVEPJez4fBvMyjcjLSdwjLVWgc/nozioeoT4QerGHUwohwCjkMzOIrTev5C8uWrtB5oBPV4X2Y3HOuvr21eJEQN8qUnIlkDkD9CJB5IINLb/QG89bOhfZJfCFPe9oBf+ptWSIIGeL0AAABI2lDQ1BJQ0MgcHJvZmlsZQAAeJydkL9Kw1AUxn+pWkXq5J9BHDLo2NFMDlaFICjEWMHqlCYpFpMYkpTiG/gm+jAdBMGHcFRw9rvRwcEsXjh8Pw7nfN+9F1p2Eqbl/D6kWVW4fm9wObiyF99os8A6HXaCsMx7nndC4/l8xTL60jVezXN/nnYUl6F0psrCvKjA2hM70yo3rGLttu8fih/EdpRmkfhJvB2lkWGz66fJJPzxNLfpxNnFuemrtnA55hQPmyETxiRUdKWZOkc47EpdCgLuKQmlCbF6U81U3IhKObkciPoi3aYhb7PO85QylMdYXibhjlSeJg/zv99rH2f1prUxy4MiqFtzqtZoBO+PsDKA1WdYvm7IWvr9toYZp5755xu/APYmUGsqZCvqAAAOW2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNC40LjAtRXhpdjIiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iCiAgICB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIgogICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICAgeG1sbnM6R0lNUD0iaHR0cDovL3d3dy5naW1wLm9yZy94bXAvIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgIHhtcE1NOkRvY3VtZW50SUQ9ImdpbXA6ZG9jaWQ6Z2ltcDplZjBhMzc3Yi0wZDI4LTQwZWEtOTBkMi1kZmZhNDQ2NzdjYmUiCiAgIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OTIwMzQ1ZTAtMTBkMS00NmI3LWE3MjYtYTU2M2I1YmZjYjZjIgogICB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6NDY4NjQzNWItMWY0MS00MmQ4LWI2ZDgtZjYyZTEwODhiZDcwIgogICBkYzpGb3JtYXQ9ImltYWdlL3BuZyIKICAgR0lNUDpBUEk9IjIuMCIKICAgR0lNUDpQbGF0Zm9ybT0iTGludXgiCiAgIEdJTVA6VGltZVN0YW1wPSIxNzgwNjk0MDM0MzYyNzU0IgogICBHSU1QOlZlcnNpb249IjIuMTAuMzYiCiAgIHRpZmY6T3JpZW50YXRpb249IjEiCiAgIHhtcDpDcmVhdG9yVG9vbD0iR0lNUCAyLjEwIgogICB4bXA6TWV0YWRhdGFEYXRlPSIyMDI2OjA2OjA1VDIzOjEzOjU0KzAyOjAwIgogICB4bXA6TW9kaWZ5RGF0ZT0iMjAyNjowNjowNVQyMzoxMzo1NCswMjowMCI+CiAgIDx4bXBNTTpIaXN0b3J5PgogICAgPHJkZjpTZXE+CiAgICAgPHJkZjpsaQogICAgICBzdEV2dDphY3Rpb249InNhdmVkIgogICAgICBzdEV2dDpjaGFuZ2VkPSIvIgogICAgICBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjE0Yjc3ZjU1LTBhOTQtNDY1OC1iZDZjLWY0ODVkZjNhOGY0ZSIKICAgICAgc3RFdnQ6c29mdHdhcmVBZ2VudD0iR2ltcCAyLjEwIChMaW51eCkiCiAgICAgIHN0RXZ0OndoZW49IjIwMjYtMDUtMTFUMDk6Mjk6MjcrMDI6MDAiLz4KICAgICA8cmRmOmxpCiAgICAgIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiCiAgICAgIHN0RXZ0OmNoYW5nZWQ9Ii8iCiAgICAgIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6Nzc1NGU1NzQtZDlmOS00N2M0LWIxZGUtZTUwZGNhN2Y2ZDRjIgogICAgICBzdEV2dDpzb2Z0d2FyZUFnZW50PSJHaW1wIDIuMTAgKExpbnV4KSIKICAgICAgc3RFdnQ6d2hlbj0iMjAyNi0wNi0wNVQyMzoxMzo1NCswMjowMCIvPgogICAgPC9yZGY6U2VxPgogICA8L3htcE1NOkhpc3Rvcnk+CiAgPC9yZGY6RGVzY3JpcHRpb24+CiA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgCjw/eHBhY2tldCBlbmQ9InciPz7YPx0fAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH6gYFFQ02o2wdmQAAA8xJREFUeNrtW2tuwyAMLohT5Hw9Vs7Xc+wHQgnBb5uQSWHSprYMvs/4hZ1+Pu94xzvesXKk6AW3nfr0930ogR42DbPOjaKS4qBrIW17BI0UAd4DY9t9JNI66MtU6DngTQRiTfBmAs+SvZrA02SvIvBE2SsI3C37bf99paExPQs+nohg+6f/AJ/aPT8D/rbb4DMncCd8a/aa18Jvku93OV5t+7bTCXpaB/8M7PA6V//DYcj3Xj8wAR2vaHmPo8zM1XVjlL0EQ1qvPiN4zc6Jh8/p5PVKwkEZdR+SvZRI4bX/rJmSJdt8eG6fJlDwZSPLfDIO3BZ+aM3XrJAj4EolePXpkNf5feuPdJ8ij4nQZx5C9IoQBei9HOP9JcGnzWlOgqKJYRj/p8glV7e8+hybCcrzfY5Y8cgfrunwqjaSlnu56545IoJy3r/flDozPnkjbIBPH0ao948rfccJyBWor6ByAtA5kWyDTp0MnljEwEdsQJZ/4hmShC4FHw9ftACL13jpJBy+tOAJvD4GFav+a+P0CC0mXc9WuUs8Nvda6zIJAv6FKiGMFq4+lYZu//NqOSKcy6/suAFbBVeiDDjOFdxCQAOFK5T4umRlhtQ49bFlooGRODa38TnyCQTOVQ3efG+PAxoavy+l3x7fM8WIYRL2Tv6iE8ANNCLu3nACfRnMfnVcaAN93W1uGJxCgEr3NFm/bJcyQ/q+audyL9RXnI+/cwjkSK3sa81VWWbAR66U3kePGtCzAs3v8pR4H6RJ9fzeqczyQZJI0Yc5TWfumJXjDrvJ3tYgbO6V91/9jGK/WmA1OLso4Pr3BBWCPEvdtnXArCT0FIr86g2pCqR8jcjMNB1NJSwFw1oWaaYZk3PK18hWNwYXFv3XFMljy04baFreF3qPo539mEK/dhnByZrZ8p7lrMuS8QSafK+F9rNh+zyRTsWyTLZnD9TPgK6Q46xZ8ldeaKqXPysZfkUcH520xxjKxLNUv5tv5zroxxlYKegca8FMFO+VjzkL1AfzpRTycyka9TnDkmaNEfkVtWPWuEmqbAVB0CoQ1iej1ilW2TUth9+lHmSlgOGdZwxL1gYrCn6jTUPHsyU9fMYGqMIs9mlsJ54vCeQodwZdaLyxWFLRyHLXxhWtmt73ZmwnISvIGE4ANlHMKubCVxM4ro3tJNrv0Xw9speXw5JW+vJH+qwKpCvBJ70CSWOmBb6+fzDpi3C2+4Cl/RH6XUpPTdTau0kRvsJntr5ScPg3uu8EH0bA0gOIcbihJ8BL0/INjSUqFPtg5Tve8Q5q/AGEcnBTH2q81QAAAABJRU5ErkJggg==" alt="Writhdeck">
+  </div>
+  <button id="br-help-about">About</button>
+  <div class="more-sep"></div>
+  <button id="br-help-readme">README.md</button>
+  <div class="more-sep"></div>
+  <a id="br-help-source" href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">source code ↗</a>
+        </div>
+      </details>
     </div>
   </div>
   <div id="br-list"></div>
   <div id="br-bar"></div>
 </div>
+
+<!-- About dialog -->
+<dialog id="about-dlg">
+  <div id="about-header">
+    <button id="about-close">✕</button>
+  </div>
+  <div id="about-body">
+    <img id="about-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAQAAABIkb+zAAAAw3pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjabVBRDsMgCP3nFDuCAiIeh65dshvs+EOlTdv0JT6BR54IbL/vB14dmBm4VJUmkhzcuKF5oGnCBufEgwckJM8vdTgE9BL5TTPVEPJez4fBvMyjcjLSdwjLVWgc/nozioeoT4QerGHUwohwCjkMzOIrTev5C8uWrtB5oBPV4X2Y3HOuvr21eJEQN8qUnIlkDkD9CJB5IINLb/QG89bOhfZJfCFPe9oBf+ptWSIIGeL0AAABI2lDQ1BJQ0MgcHJvZmlsZQAAeJydkL9Kw1AUxn+pWkXq5J9BHDLo2NFMDlaFICjEWMHqlCYpFpMYkpTiG/gm+jAdBMGHcFRw9rvRwcEsXjh8Pw7nfN+9F1p2Eqbl/D6kWVW4fm9wObiyF99os8A6HXaCsMx7nndC4/l8xTL60jVezXN/nnYUl6F0psrCvKjA2hM70yo3rGLttu8fih/EdpRmkfhJvB2lkWGz66fJJPzxNLfpxNnFuemrtnA55hQPmyETxiRUdKWZOkc47EpdCgLuKQmlCbF6U81U3IhKObkciPoi3aYhb7PO85QylMdYXibhjlSeJg/zv99rH2f1prUxy4MiqFtzqtZoBO+PsDKA1WdYvm7IWvr9toYZp5755xu/APYmUGsqZCvqAAAOW2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNC40LjAtRXhpdjIiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iCiAgICB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIgogICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICAgeG1sbnM6R0lNUD0iaHR0cDovL3d3dy5naW1wLm9yZy94bXAvIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgIHhtcE1NOkRvY3VtZW50SUQ9ImdpbXA6ZG9jaWQ6Z2ltcDplZjBhMzc3Yi0wZDI4LTQwZWEtOTBkMi1kZmZhNDQ2NzdjYmUiCiAgIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OTIwMzQ1ZTAtMTBkMS00NmI3LWE3MjYtYTU2M2I1YmZjYjZjIgogICB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6NDY4NjQzNWItMWY0MS00MmQ4LWI2ZDgtZjYyZTEwODhiZDcwIgogICBkYzpGb3JtYXQ9ImltYWdlL3BuZyIKICAgR0lNUDpBUEk9IjIuMCIKICAgR0lNUDpQbGF0Zm9ybT0iTGludXgiCiAgIEdJTVA6VGltZVN0YW1wPSIxNzgwNjk0MDM0MzYyNzU0IgogICBHSU1QOlZlcnNpb249IjIuMTAuMzYiCiAgIHRpZmY6T3JpZW50YXRpb249IjEiCiAgIHhtcDpDcmVhdG9yVG9vbD0iR0lNUCAyLjEwIgogICB4bXA6TWV0YWRhdGFEYXRlPSIyMDI2OjA2OjA1VDIzOjEzOjU0KzAyOjAwIgogICB4bXA6TW9kaWZ5RGF0ZT0iMjAyNjowNjowNVQyMzoxMzo1NCswMjowMCI+CiAgIDx4bXBNTTpIaXN0b3J5PgogICAgPHJkZjpTZXE+CiAgICAgPHJkZjpsaQogICAgICBzdEV2dDphY3Rpb249InNhdmVkIgogICAgICBzdEV2dDpjaGFuZ2VkPSIvIgogICAgICBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjE0Yjc3ZjU1LTBhOTQtNDY1OC1iZDZjLWY0ODVkZjNhOGY0ZSIKICAgICAgc3RFdnQ6c29mdHdhcmVBZ2VudD0iR2ltcCAyLjEwIChMaW51eCkiCiAgICAgIHN0RXZ0OndoZW49IjIwMjYtMDUtMTFUMDk6Mjk6MjcrMDI6MDAiLz4KICAgICA8cmRmOmxpCiAgICAgIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiCiAgICAgIHN0RXZ0OmNoYW5nZWQ9Ii8iCiAgICAgIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6Nzc1NGU1NzQtZDlmOS00N2M0LWIxZGUtZTUwZGNhN2Y2ZDRjIgogICAgICBzdEV2dDpzb2Z0d2FyZUFnZW50PSJHaW1wIDIuMTAgKExpbnV4KSIKICAgICAgc3RFdnQ6d2hlbj0iMjAyNi0wNi0wNVQyMzoxMzo1NCswMjowMCIvPgogICAgPC9yZGY6U2VxPgogICA8L3htcE1NOkhpc3Rvcnk+CiAgPC9yZGY6RGVzY3JpcHRpb24+CiA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgCjw/eHBhY2tldCBlbmQ9InciPz7YPx0fAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH6gYFFQ02o2wdmQAAA8xJREFUeNrtW2tuwyAMLohT5Hw9Vs7Xc+wHQgnBb5uQSWHSprYMvs/4hZ1+Pu94xzvesXKk6AW3nfr0930ogR42DbPOjaKS4qBrIW17BI0UAd4DY9t9JNI66MtU6DngTQRiTfBmAs+SvZrA02SvIvBE2SsI3C37bf99paExPQs+nohg+6f/AJ/aPT8D/rbb4DMncCd8a/aa18Jvku93OV5t+7bTCXpaB/8M7PA6V//DYcj3Xj8wAR2vaHmPo8zM1XVjlL0EQ1qvPiN4zc6Jh8/p5PVKwkEZdR+SvZRI4bX/rJmSJdt8eG6fJlDwZSPLfDIO3BZ+aM3XrJAj4EolePXpkNf5feuPdJ8ij4nQZx5C9IoQBei9HOP9JcGnzWlOgqKJYRj/p8glV7e8+hybCcrzfY5Y8cgfrunwqjaSlnu56545IoJy3r/flDozPnkjbIBPH0ao948rfccJyBWor6ByAtA5kWyDTp0MnljEwEdsQJZ/4hmShC4FHw9ftACL13jpJBy+tOAJvD4GFav+a+P0CC0mXc9WuUs8Nvda6zIJAv6FKiGMFq4+lYZu//NqOSKcy6/suAFbBVeiDDjOFdxCQAOFK5T4umRlhtQ49bFlooGRODa38TnyCQTOVQ3efG+PAxoavy+l3x7fM8WIYRL2Tv6iE8ANNCLu3nACfRnMfnVcaAN93W1uGJxCgEr3NFm/bJcyQ/q+audyL9RXnI+/cwjkSK3sa81VWWbAR66U3kePGtCzAs3v8pR4H6RJ9fzeqczyQZJI0Yc5TWfumJXjDrvJ3tYgbO6V91/9jGK/WmA1OLso4Pr3BBWCPEvdtnXArCT0FIr86g2pCqR8jcjMNB1NJSwFw1oWaaYZk3PK18hWNwYXFv3XFMljy04baFreF3qPo539mEK/dhnByZrZ8p7lrMuS8QSafK+F9rNh+zyRTsWyTLZnD9TPgK6Q46xZ8ldeaKqXPysZfkUcH520xxjKxLNUv5tv5zroxxlYKegca8FMFO+VjzkL1AfzpRTycyka9TnDkmaNEfkVtWPWuEmqbAVB0CoQ1iej1ilW2TUth9+lHmSlgOGdZwxL1gYrCn6jTUPHsyU9fMYGqMIs9mlsJ54vCeQodwZdaLyxWFLRyHLXxhWtmt73ZmwnISvIGE4ANlHMKubCVxM4ro3tJNrv0Xw9speXw5JW+vJH+qwKpCvBJ70CSWOmBb6+fzDpi3C2+4Cl/RH6XUpPTdTau0kRvsJntr5ScPg3uu8EH0bA0gOIcbihJ8BL0/INjSUqFPtg5Tve8Q5q/AGEcnBTH2q81QAAAABJRU5ErkJggg==" alt="Writhdeck logo">
+    <p class="about-title">About Writhdeck</p>
+    <p>Writhdeck is a distraction-free writing environment for long-form text — novels, essays, notes, scripts.</p>
+    <p>All your documents live in your browser (IndexedDB) — nothing is sent to any server. You can also edit files directly on disk.</p>
+    <p>It features a custom colour-syntax overlay, typewriter focus mode, a session timer, daily word goals, and a fully keyboard-driven interface. Compatible with the Writhdeck desktop app via shared <code>.ini</code> settings.</p>
+    <p class="about-version">Build: 2026-06-06 — Open source — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
+  </div>
+  <div id="about-footer">
+    <button id="about-ok">Close</button>
+  </div>
+</dialog>
 
 <!-- Hidden file inputs -->
 <input type="file" id="file-import-input" accept=".txt,.md,.tcl,.text" hidden multiple>
@@ -460,10 +603,8 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 <div id="editor" hidden>
   <div id="ed-header">
     <div id="ed-actions">
-      <button id="ed-toc-btn" title="Table of contents (F11)">≡</button>
-      <button id="ed-export-btn" title="Export">↓</button>
-      <button id="ed-settings-btn" title="Settings (c)">⚙</button>
-      <button id="ed-close-btn" title="Back to browser (Ctrl+Q / Esc)">✕</button>
+      <button id="ed-menu-btn" title="Menu">≡</button>
+      <button id="ed-close-btn" title="Back to browser (Ctrl+Q)">✕</button>
     </div>
   </div>
   <div id="ed-body">
@@ -488,6 +629,11 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
     <button id="replace-all" hidden>All</button>
     <button id="search-close">✕</button>
   </div>
+  <div id="goto-bar" hidden>
+    <label>Line: <input id="goto-input" type="number" min="1" autocomplete="off"></label>
+    <button id="goto-go">Go</button>
+    <button id="goto-close">✕</button>
+  </div>
   <div id="ed-bar">
     <span id="ed-bar-left"></span>
     <span id="ed-bar-center"></span>
@@ -495,10 +641,44 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
   </div>
 </div>
 
-<!-- Export menu -->
-<div id="export-menu" hidden>
-  <button data-fmt="txt">Export as .txt</button>
-  <button data-fmt="md">Export as .md</button>
+<!-- Main editor menu -->
+<div id="ed-menu" hidden>
+  <button id="ed-more-cmd">⌨ Command mode <span class="hint">Esc / Alt+C</span></button>
+  <div class="more-sep"></div>
+  <div class="more-label">View</div>
+  <button data-cmd="toc">Table of contents <span class="hint">o</span></button>
+  <button data-cmd="dark">Dark / light <span class="hint">d</span></button>
+  <button data-cmd="linenos">Line numbers <span class="hint">n</span></button>
+  <button data-cmd="typewriter">Typewriter <span class="hint">w</span></button>
+  <div class="more-sep"></div>
+  <div class="more-label">Search</div>
+  <button data-cmd="find">Find <span class="hint">f</span></button>
+  <button data-cmd="replace">Find &amp; Replace <span class="hint">r</span></button>
+  <button data-cmd="goto">Go to line <span class="hint">g</span></button>
+  <div class="more-sep"></div>
+  <div class="more-label">Format</div>
+  <button data-markup="h1"></button>
+  <button data-markup="h2"></button>
+  <button data-markup="h3"></button>
+  <button data-markup="comment"></button>
+  <button data-markup="bold"></button>
+  <button data-markup="italic"></button>
+  <button data-markup="underline"></button>
+  <button data-markup="strike"></button>
+  <div class="more-sep"></div>
+  <div class="more-label">Document</div>
+  <button data-cmd="export-txt">Export as .txt <span class="hint">e</span></button>
+  <button data-cmd="export-md">Export as .md</button>
+  <button data-cmd="stats">Statistics <span class="hint">s</span></button>
+  <button data-cmd="analyse">Analyse <span class="hint">a</span></button>
+  <button data-cmd="word-occ">Word occurrences</button>
+  <button data-cmd="info">File info <span class="hint">i</span></button>
+  <div class="more-sep"></div>
+  <div class="more-label">App</div>
+  <button data-cmd="timer">Timer <span class="hint">t</span></button>
+  <button data-cmd="block-cursor">Block cursor</button>
+  <button data-cmd="ctx-menu">Right-click menu</button>
+  <button data-cmd="config">Settings <span class="hint">c</span></button>
 </div>
 
 <!-- Settings dialog -->
@@ -575,15 +755,16 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
       <label>Left<input type="text" data-key="statusLeft"></label>
       <label>Center<input type="text" data-key="statusCenter"></label>
       <label>Right<input type="text" data-key="statusRight"></label>
-      <p class="hint">Tokens: filename dirty words chars goal clock timer</p>
+      <p class="hint">Tokens: filename dirty words chars lines line col para pages percent today goal reading clock timer</p>
       <p class="hint" style="margin-top:10px">Editor options</p>
       <label><input type="checkbox" data-key="lineNumbers"> Line numbers (Ctrl+L)</label>
+      <label><input type="checkbox" data-key="blockCursor"> Block cursor</label>
+      <label><input type="checkbox" data-key="blinkCursor"> Blinking cursor</label>
       <p class="hint" style="margin-top:10px">Keyboard shortcuts</p>
       <label><input type="checkbox" data-key="interceptBrowserShortcuts">
         Override browser shortcuts
         <span class="hint" style="display:block;margin-top:2px">
-          Ctrl+T = typewriter &nbsp; Ctrl+N = new doc<br>
-          (browser: new tab / new window — disabled by default)
+          Ctrl+N = new document (instead of browser new window)
         </span>
       </label>
       <p class="hint" style="margin-top:10px">Syntax markers</p>
@@ -611,6 +792,7 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
   <div id="settings-footer">
     <button id="settings-apply">Apply</button>
     <button id="settings-close">Close</button>
+    <button id="settings-reset" style="margin-left:auto;color:var(--comment)">Reset to defaults</button>
   </div>
 </dialog>
 
@@ -621,6 +803,25 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
     <button id="info-close">✕</button>
   </div>
   <div id="info-body"></div>
+</dialog>
+
+<!-- Analyse dialog -->
+<dialog id="analyse-dlg">
+  <div id="analyse-header">
+    <span id="analyse-title">Structure</span>
+    <button id="analyse-words-btn" title="Word occurrences">abc</button>
+    <button id="analyse-close">✕</button>
+  </div>
+  <div id="analyse-body"></div>
+</dialog>
+
+<!-- Word occurrences dialog -->
+<dialog id="words-dlg">
+  <div id="words-header">
+    <span id="words-title">Word occurrences</span>
+    <button id="words-close">✕</button>
+  </div>
+  <div id="words-body"></div>
 </dialog>
 
 <!-- Stats dialog -->
@@ -819,7 +1020,7 @@ const State = {
     marginY: 40,
     lineSpacing: 1.5,
     headingMarker: '=',
-    commentMarker: '%',
+    commentMarker: '% ',
     boldMarker: '**',
     italicMarker: '//',
     underlineMarker: '__',
@@ -838,7 +1039,10 @@ const State = {
     statusCenter: '',
     statusRight: 'goal clock timer',
     lineNumbers: false,
-    interceptBrowserShortcuts: false
+    blockCursor: false,
+    blinkCursor: false,
+    interceptBrowserShortcuts: true,
+    interceptContextMenu: true
   },
 
   favorites: [],  // [id, ...]
@@ -866,7 +1070,10 @@ async function loadState() {
     // Normal path — INI is the source of truth
     const { settings, schemes } = INI.parseIni(iniText);
     Object.assign(State.settings, settings);
-    Object.assign(customSchemes, schemes);
+    // Only load non-built-in schemes: built-in colors come from code, not IDB
+    for (const [n, sc] of Object.entries(schemes)) {
+      if (!SCHEMES[n]) customSchemes[n] = sc;
+    }
     State.customSchemes = { ...customSchemes };
     State.iniText = iniText;
   } else if (oldSettings) {
@@ -972,11 +1179,11 @@ function isFavorite(id) { return State.favorites.includes(id); }
 
 // ── Daily stats — high-water mark ─────────────────────────────────────────
 
-function updateDaily(id, wordCount) {
+function updateDaily(id, added) {
   const today = new Date().toISOString().slice(0, 10);
   if (!State.daily[id]) State.daily[id] = {};
   const prev = State.daily[id][today] || 0;
-  if (wordCount > prev) { State.daily[id][today] = wordCount; saveDaily(); }
+  if (added > prev) { State.daily[id][today] = added; saveDaily(); }
 }
 
 function todayWords(id) {
@@ -1020,7 +1227,11 @@ const INI_TO_SETTINGS = {
   status_right:         ['statusRight',      'str'],
   cursor_restore:             ['cursorRestore',             'bool'],
   line_numbers:               ['lineNumbers',               'bool'],
+  block_cursor:               ['blockCursor',               'bool'],
+  blink_cursor:               ['blinkCursor',               'bool'],
   intercept_browser_shortcuts:['interceptBrowserShortcuts', 'bool'],
+  intercept_context_menu:     ['interceptContextMenu',      'bool'],
+  open_last_doc:              ['openLastDoc',               'bool'],
 };
 
 const SETTINGS_TO_INI = Object.fromEntries(
@@ -1060,9 +1271,10 @@ function parseBool(v) {
   return /^(yes|1|true|on)$/i.test(String(v).trim());
 }
 
-// Strips inline comments (# or % preceded by whitespace)
+// Strips inline comments (# preceded by whitespace). % is line-start-only.
+// Leading whitespace trimmed; trailing preserved so '% ' marker round-trips correctly.
 function stripComment(v) {
-  return v.replace(/\s+[#%].*$/, '').trim();
+  return v.replace(/\s+#.*$/, '').replace(/^\s+/, '');
 }
 
 // ── Parser ────────────────────────────────────────────────────────────────
@@ -1073,7 +1285,7 @@ function parseIni(text) {
   let section    = '';
   let curScheme  = '';
   let curProfile = '';
-  const TOPLEVEL = new Set(['editor', 'behaviour', 'keys', 'timer', 'misc', 'tui_colors', 'display']);
+  const TOPLEVEL = new Set(['editor', 'behaviour', 'keys', 'timer', 'misc', 'tui_colors', 'display', 'web']);
 
   for (const rawLine of text.split('\n')) {
     const line = rawLine.trim();
@@ -1146,7 +1358,7 @@ function writeIni(s, allSchemes) {
   out += `line_spacing   = ${s.lineSpacing || 100}` + nl;
   out += `word_goal      = ${s.wordGoal  || 0}` + nl;
   out += `heading_marker       = ${s.headingMarker   || '='}` + nl;
-  out += `comment_marker       = ${s.commentMarker   || '%'}` + nl;
+  out += `comment_marker       = ${s.commentMarker   || '% '}` + nl;
   out += `bold_marker          = ${s.boldMarker      || '**'}` + nl;
   out += `italic_marker        = ${s.italicMarker    || '//'}` + nl;
   out += `underline_marker     = ${s.underlineMarker || '__'}` + nl;
@@ -1158,8 +1370,16 @@ function writeIni(s, allSchemes) {
   out += `hemingway_mode  = ${b(s.hemingwayMode)}` + nl;
   out += `cursor_restore               = ${b(s.cursorRestore !== false)}` + nl;
   out += `line_numbers                 = ${b(s.lineNumbers)}` + nl;
-  out += `intercept_browser_shortcuts  = ${b(s.interceptBrowserShortcuts)}` + nl;
+  out += `block_cursor                 = ${b(s.blockCursor)}` + nl;
+  out += `blink_cursor                 = ${b(s.blinkCursor)}` + nl;
   out += `dark_mode       = ${b(s.darkMode)}` + nl;
+  out += nl;
+
+  out += '= web =' + nl + '[web]' + nl;
+  out += `% Options specific to the web version — ignored by the desktop version` + nl;
+  out += `open_last_doc                = ${b(s.openLastDoc)}` + nl;
+  out += `intercept_browser_shortcuts  = ${b(s.interceptBrowserShortcuts)}` + nl;
+  out += `intercept_context_menu       = ${b(s.interceptContextMenu !== false)}` + nl;
   out += nl;
 
   out += '= timer =' + nl;
@@ -1208,7 +1428,21 @@ function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function highlight(text, s) {
+// Inject a block-cursor span at original-text column `col` inside HTML `html`.
+// HTML tags are skipped; HTML entities count as one original character each.
+function injectCursorAt(html, col) {
+  let rem = col;
+  let done = false;
+  const result = html.replace(/(<[^>]+>)|(&[^;]+;)|([\s\S])/g, (m, tag, ent, ch) => {
+    if (done || tag) return m;
+    if (rem-- > 0) return m;
+    done = true;
+    return `<span class="hl-cursor">${m}</span>`;
+  });
+  return done ? result : result + '<span class="hl-cursor"> </span>';
+}
+
+function highlight(text, s, searchTerm, paraStart, paraEnd, cursorPos) {
   // Build regexes from current settings
   const hm = escRx(s.headingMarker);
   const cm = escRx(s.commentMarker);
@@ -1217,37 +1451,64 @@ function highlight(text, s) {
   const um = escRx(s.underlineMarker);
   const sm = escRx(s.strikeMarker);
 
+  const hasPara = paraStart !== undefined && paraEnd !== undefined;
   const lines = text.split('\n');
-  const out = lines.map(line => {
+
+  // Compute cursor line/col from absolute offset
+  let cursorLine = -1, cursorCol = -1;
+  if (cursorPos !== undefined) {
+    let off = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (cursorPos <= off + lines[i].length) { cursorLine = i; cursorCol = cursorPos - off; break; }
+      off += lines[i].length + 1;
+    }
+    if (cursorLine === -1) { cursorLine = lines.length - 1; cursorCol = lines[lines.length - 1].length; }
+  }
+
+  const out = lines.map((line, idx) => {
+    const dim = hasPara && (idx < paraStart || idx > paraEnd);
     const esc = escapeHtml(line);
 
+    let lineHtml;
     // Heading line
     if (hm && line.startsWith(s.headingMarker)) {
-      return `<span class="hl-heading">${esc}</span>`;
-    }
+      lineHtml = `<span class="hl-heading${dim ? ' hl-dim' : ''}">${esc}</span>`;
     // Markdown headings
-    if (s.markdownHeadings && /^#{1,6}\s/.test(line)) {
-      return `<span class="hl-heading">${esc}</span>`;
-    }
+    } else if (s.markdownHeadings && /^#{1,6}\s/.test(line)) {
+      lineHtml = `<span class="hl-heading${dim ? ' hl-dim' : ''}">${esc}</span>`;
     // Comment line
-    if (cm && line.startsWith(s.commentMarker)) {
-      return `<span class="hl-comment">${esc}</span>`;
+    } else if (cm && line.startsWith(s.commentMarker)) {
+      lineHtml = `<span class="hl-comment${dim ? ' hl-dim' : ''}">${esc}</span>`;
+    // Lines outside paragraph in typewriter mode: plain dim, no inline markup
+    } else if (dim) {
+      lineHtml = `<span class="hl-dim">${esc}</span>`;
+    } else {
+      // Inline markup (apply in order, non-greedy)
+      let result = esc;
+      if (bm) result = result.replace(new RegExp(escRx(escapeHtml(s.boldMarker)) + '(.+?)' + escRx(escapeHtml(s.boldMarker)), 'g'),
+        (_, inner) => `<span class="hl-markup">${escapeHtml(s.boldMarker)}${inner}${escapeHtml(s.boldMarker)}</span>`);
+      if (im) result = result.replace(new RegExp(escRx(escapeHtml(s.italicMarker)) + '(.+?)' + escRx(escapeHtml(s.italicMarker)), 'g'),
+        (_, inner) => `<span class="hl-markup">${escapeHtml(s.italicMarker)}${inner}${escapeHtml(s.italicMarker)}</span>`);
+      if (um) result = result.replace(new RegExp(escRx(escapeHtml(s.underlineMarker)) + '(.+?)' + escRx(escapeHtml(s.underlineMarker)), 'g'),
+        (_, inner) => `<span class="hl-markup">${escapeHtml(s.underlineMarker)}${inner}${escapeHtml(s.underlineMarker)}</span>`);
+      if (sm) result = result.replace(new RegExp(escRx(escapeHtml(s.strikeMarker)) + '(.+?)' + escRx(escapeHtml(s.strikeMarker)), 'g'),
+        (_, inner) => `<span class="hl-markup">${escapeHtml(s.strikeMarker)}${inner}${escapeHtml(s.strikeMarker)}</span>`);
+      lineHtml = result;
     }
-    // Inline markup (apply in order, non-greedy)
-    let result = esc;
-    if (bm) result = result.replace(new RegExp(escRx(escapeHtml(s.boldMarker)) + '(.+?)' + escRx(escapeHtml(s.boldMarker)), 'g'),
-      (_, inner) => `<span class="hl-markup">${escapeHtml(s.boldMarker)}${inner}${escapeHtml(s.boldMarker)}</span>`);
-    if (im) result = result.replace(new RegExp(escRx(escapeHtml(s.italicMarker)) + '(.+?)' + escRx(escapeHtml(s.italicMarker)), 'g'),
-      (_, inner) => `<span class="hl-markup">${escapeHtml(s.italicMarker)}${inner}${escapeHtml(s.italicMarker)}</span>`);
-    if (um) result = result.replace(new RegExp(escRx(escapeHtml(s.underlineMarker)) + '(.+?)' + escRx(escapeHtml(s.underlineMarker)), 'g'),
-      (_, inner) => `<span class="hl-markup">${escapeHtml(s.underlineMarker)}${inner}${escapeHtml(s.underlineMarker)}</span>`);
-    if (sm) result = result.replace(new RegExp(escRx(escapeHtml(s.strikeMarker)) + '(.+?)' + escRx(escapeHtml(s.strikeMarker)), 'g'),
-      (_, inner) => `<span class="hl-markup">${escapeHtml(s.strikeMarker)}${inner}${escapeHtml(s.strikeMarker)}</span>`);
-    return result;
+
+    if (idx === cursorLine) lineHtml = injectCursorAt(lineHtml, cursorCol);
+    return lineHtml;
   });
 
   // Trailing newline required for correct height in the overlay
-  return out.join('\n') + '\n';
+  if (!searchTerm) return out.join('\n') + '\n';
+
+  // Inject search highlights into text nodes only (skip HTML tags)
+  const termRx = escRx(escapeHtml(searchTerm));
+  return out.map(line => line.replace(/(<[^>]+>)|([^<]+)/g, (_, tag, text) =>
+    tag ? tag : text.replace(new RegExp(termRx, 'gi'),
+      m => `<span class="hl-search">${m}</span>`)
+  )).join('\n') + '\n';
 }
 
 function escRx(s) {
@@ -1400,6 +1661,21 @@ const TOC = (() => {
     return text.split('\n').slice(0, lineIdx).reduce((s, l) => s + l.length + 1, 0);
   }
 
+  function linePixelTop(ta, lineIdx) {
+    const cs = getComputedStyle(ta);
+    const m  = document.createElement('div');
+    m.style.cssText = `position:fixed;top:-9999px;left:-9999px;visibility:hidden;`
+      + `white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;`
+      + `font-family:${cs.fontFamily};font-size:${cs.fontSize};line-height:${cs.lineHeight};`
+      + `padding:${cs.paddingTop} ${cs.paddingRight} 0 ${cs.paddingLeft};`
+      + `width:${ta.clientWidth}px;box-sizing:border-box`;
+    m.textContent = ta.value.split('\n').slice(0, lineIdx).join('\n') + (lineIdx > 0 ? '\n' : '');
+    document.body.appendChild(m);
+    const top = m.offsetHeight;
+    document.body.removeChild(m);
+    return top;
+  }
+
   function render() {
     const ta      = document.getElementById('ed-input');
     const list    = document.getElementById('toc-list');
@@ -1422,8 +1698,7 @@ const TOC = (() => {
         const offset = lineToOffset(ta.value, e.line);
         ta.focus();
         ta.setSelectionRange(offset, offset);
-        const lh = parseFloat(getComputedStyle(ta).lineHeight) || 20;
-        ta.scrollTop = e.line * lh - ta.clientHeight / 3;
+        ta.scrollTop = Math.max(0, linePixelTop(ta, e.line) - ta.clientHeight / 3);
       });
       list.appendChild(div);
     });
@@ -1501,8 +1776,16 @@ const Editor = (() => {
   let _clockId        = null;
   let _tocRefresh     = null;
   let _cmdMode        = false;
-  let _typewriter     = false;
-  let _wc = 0;
+  let _cmdNavIdx      = -1;
+  const _CMD_LIST = [
+    ['f','find'], ['r','replace'], ['g','goto'], ['n','linenos'], ['o','toc'],
+    ['d','dark'],  ['c','config'], ['e','export'], ['s','stats'], ['a','analyse'],
+    ['i','info'],  ['t','timer'], ['p','pause'], ['w','typewriter'], ['m','menu'], ['q','close'],
+  ];
+  let _typewriter       = false;
+  let _wc               = 0;
+  let _sessionBaseline  = -1;  // total words in doc minus today's prior additions (set on open)
+  let _sessionMaxToday  = 0;   // high-water mark of words added today this session
 
   // ── Open / close ──────────────────────────────────────────────────────────
 
@@ -1542,11 +1825,19 @@ const Editor = (() => {
     _typewriter = false;
     document.getElementById('editor').classList.remove('typewriter');
     rehighlight();
+    syncGutter();
     syncScroll();
     applyLineNumbers();
     updateStatusBar();
     input.focus();
     _wc = wordCount(input.value);
+
+    // Session baseline: words that existed before today's contribution
+    if (!doc.isIni) {
+      const priorToday = doc.id ? todayWords(doc.id) : 0;
+      _sessionBaseline = _wc - priorToday;
+      _sessionMaxToday = priorToday;
+    }
 
     startAutosave();
     startClock();
@@ -1563,7 +1854,9 @@ const Editor = (() => {
     stopAutosave();
     stopClock();
     TOC.hide();
-    _cmdMode    = false;
+    _cmdMode          = false;
+    _sessionBaseline  = -1;
+    _sessionMaxToday  = 0;
     State.doc   = null;
     State.dirty = false;
     document.title = 'Writhdeck';
@@ -1631,9 +1924,13 @@ const Editor = (() => {
     const idx = State.docs.findIndex(d => d.id === State.doc.id);
     if (idx >= 0) State.docs[idx] = State.doc;
 
-    // Update daily stats
+    // Update daily stats (track words added today, not total)
     _wc = wordCount(State.doc.content);
-    updateDaily(State.doc.id, _wc);
+    if (_sessionBaseline >= 0) {
+      const added = Math.max(0, _wc - _sessionBaseline);
+      if (added > _sessionMaxToday) _sessionMaxToday = added;
+      updateDaily(State.doc.id, _sessionMaxToday);
+    }
 
     updateStatusBar();
   }
@@ -1655,7 +1952,39 @@ const Editor = (() => {
   }
 
   function rehighlight() {
-    pre().innerHTML = highlight(ta().value, State.settings);
+    const searchVisible = !document.getElementById('search-bar').hidden;
+    let paraStart, paraEnd;
+    if (_typewriter) {
+      const input = ta();
+      const text  = input.value;
+      const idx   = text.substring(0, input.selectionStart).split('\n').length - 1;
+      const ls    = text.split('\n');
+      const s     = State.settings;
+      const isBoundary = i => {
+        const l = ls[i] || '';
+        return !l.trim()
+          || (s.headingMarker && l.startsWith(s.headingMarker))
+          || (s.markdownHeadings && /^#{1,6}\s/.test(l))
+          || (s.commentMarker && l.startsWith(s.commentMarker));
+      };
+      paraStart = idx; paraEnd = idx;
+      if (!isBoundary(idx)) {
+        while (paraStart > 0 && !isBoundary(paraStart - 1)) paraStart--;
+        while (paraEnd < ls.length - 1 && !isBoundary(paraEnd + 1)) paraEnd++;
+      }
+    }
+    const cursorPos = State.settings.blockCursor ? ta().selectionStart : undefined;
+    pre().innerHTML = highlight(ta().value, State.settings, searchVisible ? _searchTerm : '', paraStart, paraEnd, cursorPos);
+    syncGutter();
+  }
+
+  function syncGutter() {
+    const input = ta();
+    const hl    = pre();
+    // Measure actual scrollbar width: offsetWidth includes it, clientWidth doesn't
+    const gutter   = input.offsetWidth - input.clientWidth;
+    const baseRight = parseFloat(getComputedStyle(input).paddingRight) || 0;
+    hl.style.paddingRight = (baseRight + gutter) + 'px';
   }
 
   function syncScroll() {
@@ -1684,11 +2013,10 @@ const Editor = (() => {
 
   function typewriterScroll() {
     if (!_typewriter) return;
-    const input = ta();
-    const text  = input.value.substring(0, input.selectionStart);
-    const line  = text.split('\n').length - 1;
-    const lh    = parseFloat(getComputedStyle(input).lineHeight) || 20;
-    input.scrollTop = Math.max(0, line * lh - input.clientHeight / 2 + lh / 2);
+    const input   = ta();
+    const lineIdx = input.value.substring(0, input.selectionStart).split('\n').length - 1;
+    const lh      = parseFloat(getComputedStyle(input).lineHeight) || 20;
+    input.scrollTop = Math.max(0, linePixelTop(input, lineIdx) - input.clientHeight / 2 + lh / 2);
   }
 
   // ── Line numbers ──────────────────────────────────────────────────────────
@@ -1719,35 +2047,170 @@ const Editor = (() => {
   // ── Go to line ────────────────────────────────────────────────────────────
 
   function gotoLine() {
-    const raw = prompt('Go to line:');
-    if (!raw) return;
-    const n = parseInt(raw, 10);
+    const bar = document.getElementById('goto-bar');
+    bar.hidden = false;
+    const gi = document.getElementById('goto-input');
+    gi.value = '';
+    gi.focus();
+    gi.select();
+  }
+
+  function gotoLineGo() {
+    const n = parseInt(document.getElementById('goto-input').value, 10);
+    gotoLineClose();
     if (isNaN(n) || n < 1) return;
-    const input  = ta();
-    const lines  = input.value.split('\n');
+    const input   = ta();
+    const lines   = input.value.split('\n');
+    const lineIdx = Math.min(n - 1, lines.length - 1);
     let offset = 0;
-    for (let i = 0; i < Math.min(n - 1, lines.length); i++) {
-      offset += lines[i].length + 1;
-    }
+    for (let i = 0; i < lineIdx; i++) offset += lines[i].length + 1;
     input.focus();
     input.setSelectionRange(offset, offset);
-    const lh = parseFloat(getComputedStyle(input).lineHeight) || 20;
-    input.scrollTop = (n - 1) * lh - input.clientHeight / 3;
+    input.scrollTop = Math.max(0, linePixelTop(input, lineIdx) - input.clientHeight / 3);
+  }
+
+  function gotoLineClose() {
+    document.getElementById('goto-bar').hidden = true;
+    ta().focus();
+  }
+
+  function linePixelTop(input, lineIdx) {
+    const cs = getComputedStyle(input);
+    const m  = document.createElement('div');
+    m.style.cssText = `position:fixed;top:-9999px;left:-9999px;visibility:hidden;`
+      + `white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;`
+      + `font-family:${cs.fontFamily};font-size:${cs.fontSize};line-height:${cs.lineHeight};`
+      + `padding:${cs.paddingTop} ${cs.paddingRight} 0 ${cs.paddingLeft};`
+      + `width:${input.clientWidth}px;box-sizing:border-box`;
+    m.textContent = input.value.split('\n').slice(0, lineIdx).join('\n') + (lineIdx > 0 ? '\n' : '');
+    document.body.appendChild(m);
+    const top = m.offsetHeight;
+    document.body.removeChild(m);
+    return top;
+  }
+
+  // ── Markup helpers ────────────────────────────────────────────────────────
+
+  function applyLineMarker(marker) {
+    if (!marker) return;
+    const input = ta();
+    const s = input.selectionStart, e = input.selectionEnd;
+    const text = input.value;
+    const blockStart = text.lastIndexOf('\n', s - 1) + 1;
+    const raw = text.indexOf('\n', e);
+    const blockEnd = raw === -1 ? text.length : raw;
+    const lines = text.slice(blockStart, blockEnd).split('\n');
+    const allMarked = lines.every(l => l.startsWith(marker));
+    const newLines = allMarked ? lines.map(l => l.slice(marker.length)) : lines.map(l => marker + l);
+    const newBlock = newLines.join('\n');
+    input.focus();
+    input.setSelectionRange(blockStart, blockEnd);
+    document.execCommand('insertText', false, newBlock);
+    input.setSelectionRange(blockStart, blockStart + newBlock.length);
+    onInput();
+  }
+
+  function applyInlineMarker(marker) {
+    if (!marker) return;
+    const input = ta();
+    const s = input.selectionStart, e = input.selectionEnd;
+    const text = input.value;
+    input.focus();
+    if (s === e) {
+      input.setSelectionRange(s, s);
+      document.execCommand('insertText', false, marker + marker);
+      input.setSelectionRange(s + marker.length, s + marker.length);
+    } else {
+      const sel = text.slice(s, e);
+      const isWrapped = sel.startsWith(marker) && sel.endsWith(marker) && sel.length > marker.length * 2;
+      if (isWrapped) {
+        const inner = sel.slice(marker.length, -marker.length);
+        input.setSelectionRange(s, e);
+        document.execCommand('insertText', false, inner);
+        input.setSelectionRange(s, s + inner.length);
+      } else {
+        const wrapped = marker + sel + marker;
+        input.setSelectionRange(s, e);
+        document.execCommand('insertText', false, wrapped);
+        input.setSelectionRange(s, s + wrapped.length);
+      }
+    }
+    onInput();
+  }
+
+  function applyHeading(level) {
+    const marker = State.settings.headingMarker;
+    if (!marker) return;
+    const input = ta();
+    const s = input.selectionStart, e = input.selectionEnd;
+    const text = input.value;
+    const blockStart = text.lastIndexOf('\n', s - 1) + 1;
+    const raw = text.indexOf('\n', e);
+    const blockEnd = raw === -1 ? text.length : raw;
+    const prefix = marker.repeat(level);
+    const mEsc   = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    function headingLevel(line) {
+      if (!line.startsWith(marker)) return 0;
+      let n = 1;
+      while (n < 3 && line.startsWith(marker.repeat(n + 1))) n++;
+      return n;
+    }
+    function stripHeading(line) {
+      return line
+        .replace(new RegExp(`^${mEsc}+\\s*`), '')
+        .replace(new RegExp(`\\s*${mEsc}+\\s*$`), '')
+        .trim();
+    }
+
+    const lines = text.slice(blockStart, blockEnd).split('\n');
+    const allAtLevel = lines.every(l => headingLevel(l) === level);
+    const newLines = lines.map(l => {
+      if (allAtLevel) return stripHeading(l);
+      const content = headingLevel(l) > 0 ? stripHeading(l) : l.trim();
+      return content ? `${prefix} ${content} ${prefix}` : `${prefix}  ${prefix}`;
+    });
+    const newBlock = newLines.join('\n');
+    input.focus();
+    input.setSelectionRange(blockStart, blockEnd);
+    document.execCommand('insertText', false, newBlock);
+    input.setSelectionRange(blockStart, blockStart + newBlock.length);
+    onInput();
   }
 
   // ── Command mode (ESC) ───────────────────────────────────────────────────
 
   function enterCmdMode() {
-    _cmdMode = true;
+    _cmdMode   = true;
+    _cmdNavIdx = -1;
+    document.getElementById('ed-bar').classList.add('cmd-mode');
+    document.getElementById('ed-menu-btn').classList.add('active');
     updateStatusBar();
   }
 
   function exitCmdMode() {
-    _cmdMode = false;
+    _cmdMode   = false;
+    _cmdNavIdx = -1;
+    document.getElementById('ed-bar').classList.remove('cmd-mode');
+    document.getElementById('ed-menu-btn').classList.remove('active');
     updateStatusBar();
   }
 
   function isCmdMode() { return _cmdMode; }
+
+  function cmdNavMove(delta) {
+    if (!_cmdMode) return;
+    const n = _CMD_LIST.length;
+    _cmdNavIdx = _cmdNavIdx === -1
+      ? (delta > 0 ? 0 : n - 1)
+      : (_cmdNavIdx + delta + n) % n;
+    updateStatusBar();
+  }
+
+  function getCmdNavKey() {
+    if (_cmdNavIdx < 0 || _cmdNavIdx >= _CMD_LIST.length) return null;
+    return _CMD_LIST[_cmdNavIdx][0];
+  }
 
   // ── Messages ──────────────────────────────────────────────────────────────
 
@@ -1763,8 +2226,23 @@ const Editor = (() => {
 
   function updateStatusBar() {
     if (_cmdMode) {
-      document.getElementById('ed-bar-left').textContent =
-        'ESC: exit  s:stats  i:info  t:timer  p:pause  q:close';
+      const bar = document.getElementById('ed-bar-left');
+      bar.innerHTML = '';
+      _CMD_LIST.forEach(([key, label], i) => {
+        const btn = document.createElement('button');
+        btn.className = 'cmd-btn' + (i === _cmdNavIdx ? ' active' : '');
+        btn.dataset.cmd = key;
+        btn.innerHTML = `<b>${key}</b>:${label}`;
+        btn.addEventListener('mousedown', e => {
+          e.preventDefault();
+          document.dispatchEvent(new CustomEvent('writhdeck-cmd', { detail: key }));
+        });
+        bar.appendChild(btn);
+      });
+      const exit = document.createElement('span');
+      exit.className = 'cmd-exit';
+      exit.textContent = '·ESC/Alt+C·';
+      bar.appendChild(exit);
       document.getElementById('ed-bar-center').textContent = '';
       document.getElementById('ed-bar-right').textContent  = '';
       return;
@@ -1772,7 +2250,11 @@ const Editor = (() => {
     const s = State.settings;
     const doc = State.doc;
     const wc = doc ? wordCount(ta().value) : 0;
-    const today = doc ? todayWords(doc.id) : 0;
+    if (doc && _sessionBaseline >= 0) {
+      const cur = Math.max(0, wc - _sessionBaseline);
+      if (cur > _sessionMaxToday) _sessionMaxToday = cur;
+    }
+    const today = doc ? (_sessionBaseline >= 0 ? _sessionMaxToday : todayWords(doc.id)) : 0;
     const clk = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 
     function buildZone(spec) {
@@ -1780,11 +2262,37 @@ const Editor = (() => {
         switch (tok) {
           case 'filename': return doc ? doc.name : '';
           case 'dirty':    return State.dirty ? '[+]' : '';
-          case 'words':    return `${wc}w`;
-          case 'chars':    return `${(ta().value || '').length}c`;
+          case 'words':    return doc ? `${wc}w` : '';
+          case 'chars':    return doc ? `${(ta().value || '').length}c` : '';
           case 'goal':     return s.wordGoal > 0 ? `${today}/${s.wordGoal}` : '';
           case 'clock':    return clk;
           case 'timer':    return s.timerShow ? Timer.format() : '';
+          case 'today':    return doc && today > 0 ? `${today}↑` : '';
+          case 'percent':  return (doc && s.wordGoal > 0) ? `${Math.min(100, Math.round(wc / s.wordGoal * 100))}%` : '';
+          case 'lines':    return doc ? `${(ta().value.match(/\n/g) || []).length + 1}L` : '';
+          case 'line': {
+            if (!doc) return '';
+            const pos    = ta().selectionStart || 0;
+            const before = ta().value.slice(0, pos);
+            return `L${(before.match(/\n/g) || []).length + 1}`;
+          }
+          case 'col': {
+            if (!doc) return '';
+            const pos    = ta().selectionStart || 0;
+            const before = ta().value.slice(0, pos);
+            return `C${pos - before.lastIndexOf('\n')}`;
+          }
+          case 'para': {
+            if (!doc) return '';
+            const count = ta().value.split(/\n{2,}/).filter(p => p.trim()).length;
+            return count ? `${count}§` : '';
+          }
+          case 'pages':   return (doc && wc > 0) ? `${Math.ceil(wc / 250)}p` : '';
+          case 'reading': {
+            if (!doc || !wc) return '';
+            const mins = Math.ceil(wc / 200);
+            return mins < 60 ? `${mins}min` : `${Math.floor(mins / 60)}h${mins % 60 ? (mins % 60) + 'm' : ''}`;
+          }
           case 'space':    return ' ';
           case 'help_bar': return '';
           default:         return tok;
@@ -1825,13 +2333,20 @@ const Editor = (() => {
   let _matchIdx   = -1;
 
   function searchOpen(withReplace = false) {
-    const bar = document.getElementById('search-bar');
+    const bar   = document.getElementById('search-bar');
+    const input = document.getElementById('search-input');
+    // Ctrl+F while find bar is open → close
+    if (!bar.hidden && !withReplace && document.getElementById('replace-row').hidden) {
+      searchClose();
+      return;
+    }
     bar.hidden = false;
     document.getElementById('replace-row').hidden   = !withReplace;
     document.getElementById('replace-one').hidden   = !withReplace;
     document.getElementById('replace-all').hidden   = !withReplace;
-    document.getElementById('search-input').focus();
-    if (_searchTerm) document.getElementById('search-input').value = _searchTerm;
+    if (_searchTerm) { input.value = _searchTerm; }
+    input.focus();
+    input.select();
     searchUpdate();
   }
 
@@ -1840,13 +2355,18 @@ const Editor = (() => {
     ta().focus();
     _matches = []; _matchIdx = -1;
     document.getElementById('search-count').textContent = '';
+    rehighlight(); // retire les surlignages (barre cachée → searchTerm ignoré)
   }
 
   function searchUpdate() {
     _searchTerm = document.getElementById('search-input').value;
     _matches = [];
     _matchIdx = -1;
-    if (!_searchTerm) { document.getElementById('search-count').textContent = ''; return; }
+    if (!_searchTerm) {
+      document.getElementById('search-count').textContent = '';
+      rehighlight();
+      return;
+    }
     const text = ta().value;
     const lower = text.toLowerCase();
     const term  = _searchTerm.toLowerCase();
@@ -1857,6 +2377,7 @@ const Editor = (() => {
     }
     document.getElementById('search-count').textContent = `${_matches.length} match${_matches.length !== 1 ? 'es' : ''}`;
     if (_matches.length) searchNext();
+    rehighlight(); // applique les surlignages
   }
 
   function searchNext() {
@@ -1872,12 +2393,12 @@ const Editor = (() => {
   }
 
   function selectMatch(pos) {
-    ta().focus();
-    ta().setSelectionRange(pos, pos + _searchTerm.length);
-    // Scroll into view
-    const lh = parseFloat(getComputedStyle(ta()).lineHeight) || 20;
-    const lineIdx = ta().value.slice(0, pos).split('\n').length - 1;
-    ta().scrollTop = lineIdx * lh - ta().clientHeight / 3;
+    const input   = ta();
+    const lineIdx = input.value.slice(0, pos).split('\n').length - 1;
+    // Ne pas appeler input.focus() : cela volerait le focus depuis le champ de recherche
+    input.setSelectionRange(pos, pos + _searchTerm.length);
+    input.scrollTop = Math.max(0, linePixelTop(input, lineIdx) - input.clientHeight / 3);
+    syncScroll();
   }
 
   function replaceOne() {
@@ -1916,10 +2437,11 @@ const Editor = (() => {
   }
 
   return {
-    open, close, save, onInput, syncScroll, rehighlight, updateStatusBar, setMsg,
+    open, close, save, onInput, syncScroll, syncGutter, rehighlight, updateStatusBar, setMsg,
     saveCursorPos, applyLineNumbers,
-    toggleTypewriter, toggleLineNumbers, gotoLine,
-    enterCmdMode, exitCmdMode, isCmdMode,
+    toggleTypewriter, typewriterScroll, toggleLineNumbers, gotoLine, gotoLineGo, gotoLineClose,
+    applyLineMarker, applyInlineMarker, applyHeading,
+    enterCmdMode, exitCmdMode, isCmdMode, cmdNavMove, getCmdNavKey,
     searchOpen, searchClose, searchUpdate, searchNext, searchPrev, replaceOne, replaceAll,
     exportDoc
   };
@@ -1990,7 +2512,8 @@ const Browser = (() => {
 
   function docRow(doc, opts) {
     const row = document.createElement('div');
-    row.className = 'br-item';
+    row.className = 'br-item br-nav-item';
+    row.tabIndex = -1;
     if (State.doc && State.doc.id === doc.id) row.classList.add('selected');
 
     // No pin for folder files (they are ephemeral, not in IDB)
@@ -2055,6 +2578,32 @@ const Browser = (() => {
 
   let _ctxMenu = null;
 
+  function showIniContextMenu(e, openIni) {
+    hideContextMenu();
+    const menu = document.createElement('div');
+    menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;
+      background:var(--bg-bar);border:1px solid var(--fg-bar);z-index:200;min-width:160px;`;
+    const items = [
+      ['Open', openIni],
+      ['Export writhdeck.ini', () => Settings.exportIni()],
+      ['Reset to defaults', async () => {
+        if (!confirm('Reset all settings to defaults?')) return;
+        await DB.setMeta('iniText', null);
+        location.reload();
+      }]
+    ];
+    items.forEach(([label, fn]) => {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.style.cssText = 'display:block;width:100%;text-align:left;padding:6px 14px;border:none;background:none;';
+      btn.style.color = label === 'Reset to defaults' ? 'var(--heading)' : 'var(--fg)';
+      btn.addEventListener('click', () => { hideContextMenu(); fn(); });
+      menu.appendChild(btn);
+    });
+    document.body.appendChild(menu);
+    _ctxMenu = menu;
+  }
+
   function showContextMenu(doc, e) {
     hideContextMenu();
     const menu = document.createElement('div');
@@ -2062,6 +2611,8 @@ const Browser = (() => {
       background:var(--bg-bar);border:1px solid var(--fg-bar);z-index:200;min-width:140px;`;
     const items = [
       ['Open',          () => Editor.open(doc)],
+      ['Info',          () => document.dispatchEvent(new CustomEvent('writhdeck-show-info',    { detail: doc }))],
+      ['Analyse',       () => document.dispatchEvent(new CustomEvent('writhdeck-show-analyse', { detail: doc }))],
       ['Rename',        () => renameDoc(doc)],
       ['Export as .txt',() => exportDocFrom(doc, 'txt')],
       ['Export as .md', () => exportDocFrom(doc, 'md')],
@@ -2086,10 +2637,26 @@ const Browser = (() => {
 
   // ── Document actions ─────────────────────────────────────────────────────
 
+  function nameExists(name, excludeId) {
+    return State.docs.some(d => d.name === name && d.id !== excludeId);
+  }
+
+  function uniqueName(base) {
+    if (!nameExists(base)) return base;
+    let n = 2;
+    while (nameExists(`${base} (${n})`)) n++;
+    return `${base} (${n})`;
+  }
+
   async function newDoc() {
-    const name = prompt('Document name:', 'Untitled');
+    const name = prompt('Document name:', uniqueName('Untitled'));
     if (!name || !name.trim()) return;
-    const doc = { name: name.trim(), content: '', created: Date.now(), modified: Date.now() };
+    const trimmed = name.trim();
+    if (nameExists(trimmed)) {
+      alert(`A document named "${trimmed}" already exists.`);
+      return;
+    }
+    const doc = { name: trimmed, content: '', created: Date.now(), modified: Date.now() };
     await DB.saveDoc(doc);
     State.docs.push(doc);
     render();
@@ -2099,7 +2666,12 @@ const Browser = (() => {
   async function renameDoc(doc) {
     const name = prompt('Rename to:', doc.name);
     if (!name || !name.trim() || name.trim() === doc.name) return;
-    doc.name = name.trim();
+    const trimmed = name.trim();
+    if (nameExists(trimmed, doc.id)) {
+      alert(`A document named "${trimmed}" already exists.`);
+      return;
+    }
+    doc.name = trimmed;
     await DB.saveDoc(doc);
     if (State.doc && State.doc.id === doc.id) {
       document.getElementById('ed-filename').textContent = doc.name;
@@ -2160,7 +2732,8 @@ const Browser = (() => {
 
   function iniRow(container) {
     const row = document.createElement('div');
-    row.className = 'br-item';
+    row.className = 'br-item br-nav-item';
+    row.tabIndex = -1;
     if (State.doc && State.doc.isIni) row.classList.add('selected');
 
     const ico = document.createElement('span');
@@ -2174,15 +2747,12 @@ const Browser = (() => {
 
     row.appendChild(ico);
     row.appendChild(name);
-    row.addEventListener('click', () => {
-      Editor.open({
-        id: '__ini__',
-        name: 'writhdeck.ini',
-        content: State.iniText || '',
-        isIni: true,
-        virtual: true
-      });
+    const openIni = () => Editor.open({
+      id: '__ini__', name: 'writhdeck.ini',
+      content: State.iniText || '', isIni: true, virtual: true
     });
+    row.addEventListener('click', openIni);
+    row.addEventListener('contextmenu', e => { e.preventDefault(); showIniContextMenu(e, openIni); });
     container.appendChild(row);
   }
 
@@ -2695,6 +3265,11 @@ const Settings = (() => {
     document.getElementById('settings-close').addEventListener('click', () => {
       document.getElementById('settings-dlg').close();
     });
+    document.getElementById('settings-reset').addEventListener('click', async () => {
+      if (!confirm('Reset all settings to defaults? This cannot be undone.')) return;
+      await DB.setMeta('iniText', null);
+      location.reload();
+    });
     document.getElementById('scheme-new-btn').addEventListener('click', newScheme);
     document.getElementById('scheme-delete-btn').addEventListener('click', deleteScheme);
     document.getElementById('misc-export-all-btn').addEventListener('click', exportAll);
@@ -2712,17 +3287,37 @@ const Settings = (() => {
     // misc-import-btn wired in app.js (shares logic with br-import-btn)
   }
 
-  return { show, initEvents, switchTab };
+  return { show, initEvents, switchTab, exportIni };
 })();
 
 
 'use strict';
 // Main entry point
 
+const README_CONTENT = "# Writhdeck\n\nA distraction-free writing app that runs as a single self-contained HTML file \u2014 no server, no install, no internet required. Open `writhdeck.html` directly in any modern browser.\n\n## Features\n\n- **Single-file**: the entire app is one `writhdeck.html` (~146 KB). Copy it anywhere, it just works.\n- **Document browser**: create, rename, delete, and favourite documents stored in IndexedDB. Document names are unique \u2014 duplicates are auto-suggested as `\"Untitled (2)\"` etc.\n- **Disk file support** (Chrome/Edge/Brave): open individual files or watch a folder \u2014 edits go straight back to disk via the File System Access API.\n- **Syntax highlighting overlay**: headings, comments, and inline markers (bold, italic, underline, strikethrough) are coloured in real time without leaving the textarea.\n- **Configurable markers**: choose your own syntax for headings, comments, and each inline style. Enable Markdown-style `#` headings if you prefer.\n- **8 built-in colour schemes** (default, solarized, gruvbox, everforest, nord, + 3 more), dark and light variants, and full custom-scheme support.\n- **Writing timer**: countdown or stopwatch, with optional sound and alert at the end.\n- **Table of contents**: auto-generated from heading lines, shown in a side panel.\n- **Daily word-count stats** with optional daily goal.\n- **Hemingway mode**: disables backspace/delete to keep you writing forward.\n- **Typewriter mode**: keeps the cursor vertically centred; dims text outside the current paragraph so only the active paragraph appears at full colour.\n- **Find & replace** with live match highlighting, goto line, line numbers.\n- **Export** as `.txt` or `.md`.\n- **INI config**: load a `writhdeck.ini` file to share settings across installs.\n- **Status bar**: fully customisable left/centre/right slots with tokens \u2014 see [Status bar tokens](#status-bar-tokens).\n- **`\u2261` menu**: all commands accessible from a single dropdown \u2014 keyboard-navigable (\u2191\u2193 + Enter), with format options (H1\u2013H3, bold, italic\u2026), search, export, settings, and more. Opening the menu preserves any active text selection.\n- **Right-click context menu**: format, cut/copy/paste, and spell-check toggle (editor); Open / Info / Rename / Export / Delete (browser document list).\n- **Command mode** (`Esc` or `Alt+C`): interactive status bar showing all commands as clickable buttons. Navigate with `\u2190`/`\u2192`, confirm with `Enter`, or click with the mouse.\n\n## Build\n\n```sh\nmake        # produces writhdeck.html (~146 KB)\nmake clean  # removes writhdeck.html\n```\n\n`build.py` reads `src/template.html`, inlines `src/style.css` and all JS modules (in the order defined in `JS_ORDER`), and writes the result to stdout. Python 3, no dependencies.\n\n## Keyboard shortcuts\n\n### Global\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+D` | Toggle dark / light mode |\n| `Ctrl+O` | Import file copy |\n| `F11` | Toggle table of contents |\n| `Alt+Enter` | Toggle fullscreen |\n| `Ctrl+N` *(opt)* | New document (overrides browser \"new window\", requires setting) |\n\n### Editor\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+S` | Save |\n| `Ctrl+Q` | Close document |\n| `Ctrl+F` | Find (live match highlighting) |\n| `Ctrl+H` | Find & replace |\n| `Ctrl+G` | Go to line |\n| `Ctrl+L` | Toggle line numbers |\n| `Alt+T` | Toggle timer |\n| `Alt+C` / `Esc` | Enter command mode |\n\n### Command mode (`Alt+C` or `Esc`)\n\nThe status bar becomes an interactive row of command buttons. Works in fullscreen (`Alt+C`).\n\n| Input | Action |\n|---|---|\n| `\u2190` / `\u2192` | Move selection between commands |\n| `Enter` | Execute selected command |\n| *letter* | Execute command directly (e.g. `f` = Find) |\n| Mouse click | Execute command directly |\n\n| Key | Action | Key | Action |\n|---|---|---|---|\n| `f` | Find | `d` | Dark / light |\n| `r` | Find & replace | `o` | Table of contents |\n| `g` | Go to line | `c` | Settings |\n| `n` | Line numbers | `e` | Export as .txt |\n| `w` | Typewriter mode | `s` | Statistics |\n| `t` | Timer | `i` | File info |\n| `p` | Timer pause | `m` | Main menu (\u2261) |\n| `q` | Close document | | |\n\n### Browser (document list)\n\n| Key | Action |\n|---|---|\n| `\u2191` / `\u2193` | Navigate document list |\n| `Enter` | Open selected document |\n| `n` | New document |\n| `o` | Open file from disk |\n| `w` | Watch a folder |\n| `s` | Stats |\n| `c` | Settings |\n\n## Status bar tokens\n\nThe three status bar zones (left / centre / right) are configured as space-separated token strings in Settings \u2192 Profile.\n\n| Token | Example | Description |\n|---|---|---|\n| `filename` | `my-novel.txt` | Current document name |\n| `dirty` | `[+]` | Unsaved changes indicator |\n| `words` | `1 842w` | Word count |\n| `chars` | `10 240c` | Character count |\n| `lines` | `312L` | Total line count |\n| `line` | `L42` | Current cursor line |\n| `col` | `C7` | Current cursor column |\n| `para` | `18\u00a7` | Paragraph count (blank-line separated) |\n| `pages` | `7p` | Estimated pages at 250 w/page |\n| `percent` | `68%` | Progress toward word goal |\n| `today` | `342\u2191` | Words written today (high-water mark) |\n| `goal` | `342/500` | Today's words / goal (hidden if no goal) |\n| `reading` | `9min` | Estimated reading time at 200 w/min |\n| `clock` | `14:32` | Current time |\n| `timer` | `24:07` | Writing timer display |\n| `space` | ` ` | Single space (explicit separator) |\n| *(anything else)* | literal | Fixed text, separators, etc. |\n\nDefault: Left `filename dirty words` \u00b7 Center *(empty)* \u00b7 Right `goal clock timer`\n\n## Project structure\n\n```\nsrc/\n  template.html   HTML skeleton with {{STYLE}} / {{SCRIPT}} placeholders\n  style.css       All CSS (uses CSS custom properties only, no hardcoded colours)\n  schemes.js      Built-in colour schemes + custom-scheme support\n  db.js           IndexedDB wrapper (promise-based)\n  state.js        App state, load/save helpers\n  ini.js          INI config parser/applier\n  highlight.js    Syntax highlighter + word count\n  timer.js        Writing timer\n  toc.js          Table of contents\n  stats.js        Daily word-count stats\n  editor.js       Editor panel, textarea/overlay sync, find/replace\n  browser.js      Document browser panel, FSA integration\n  settings.js     Settings dialog\n  app.js          Entry point, theme, keyboard router, menus\nbuild.py          Build script\nMakefile          Convenience wrapper around build.py\n```\n\n## Storage\n\nDocuments are stored in IndexedDB (`writhdeck` database, version 1):\n\n- **`documents`** store \u2014 each document: `id`, `name`, `content`, `created`, `modified`.\n- **`meta`** store \u2014 keyed entries: `iniText`, `favorites`, `recents`, `cursors`, `daily`.\n\nNothing is sent to any server.\n\n## Adding a colour scheme\n\nAdd an entry to the `SCHEMES` object in `src/schemes.js`. Each scheme needs 9 dark-mode keys and 9 light-mode (`*Alt`) keys: `bg`, `fg`, `bgBar`, `fgBar`, `bgSel`, `heading`, `comment`, `markup`, `bg2` (+ `Alt` variants). Then run `make`.\n\n## License\n\nCopyright (C) 2026 by Luginfo \u2014 Zero-Clause BSD License\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted. The software is provided \"as is\" without warranty of any kind.\n\n";
+
+let _edMenu          = null;
+let _openMenuFn      = null;
+let _menuNavLock     = false;
+let _edCtxMenu       = null;
+let _helpDetails     = null;
+let _menuActionTime  = 0;
+
+function hideEditorCtxMenu() {
+  if (_edCtxMenu) { _edCtxMenu.remove(); _edCtxMenu = null; }
+}
+
+function showMainMenu() {
+  if (!_edMenu || !_openMenuFn) return;
+  _openMenuFn();
+  _edMenu.hidden = true;
+  setTimeout(() => { _edMenu.hidden = false; }, 0);
+}
+
 // ── File info dialog ──────────────────────────────────────────────────────
 
-async function showFileInfo() {
-  const doc = State.doc;
+async function showFileInfo(docArg) {
+  const doc = docArg || State.doc;
   if (!doc) return;
   const body = document.getElementById('info-body');
   body.innerHTML = '';
@@ -2767,6 +3362,178 @@ async function showFileInfo() {
   document.getElementById('info-dlg').showModal();
 }
 
+// ── Word occurrences dialog ───────────────────────────────────────────────
+
+async function showWordOcc(docArg) {
+  const doc = docArg || State.doc;
+  if (!doc) return;
+
+  let content = doc.content;
+  if (content == null) {
+    if (doc.fileHandle) {
+      try { const f = await doc.fileHandle.getFile(); content = await f.text(); }
+      catch(_) { content = ''; }
+    } else if (doc.id && typeof doc.id === 'number') {
+      const full = await DB.getDoc(doc.id);
+      content = full ? full.content : '';
+    } else { content = ''; }
+  }
+
+  const counts = {};
+  const words = content.toLowerCase().match(/[\wÀ-ɏ]+/g) || [];
+  words.forEach(w => { if (w.length >= 3) counts[w] = (counts[w] || 0) + 1; });
+
+  const sorted = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+  const body = document.getElementById('words-body');
+  body.innerHTML = '';
+
+  if (!sorted.length) {
+    const empty = document.createElement('p');
+    empty.style.cssText = 'color:var(--fg-bar);padding:12px 0';
+    empty.textContent = 'No words found.';
+    body.appendChild(empty);
+  } else {
+    const table = document.createElement('table');
+    table.className = 'words-table';
+    table.innerHTML = '<tr><th>Word</th><th>#</th></tr>';
+    sorted.forEach(([word, count]) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${word}</td><td>${count}</td>`;
+      table.appendChild(tr);
+    });
+    body.appendChild(table);
+  }
+
+  document.getElementById('words-title').textContent = `Word occurrences — ${doc.name}`;
+  document.getElementById('words-dlg').showModal();
+}
+
+// ── Structure analyse dialog ──────────────────────────────────────────────
+
+async function showAnalyse(docArg) {
+  const doc = docArg || State.doc;
+  if (!doc) return;
+
+  let content = doc.content;
+  if (content == null) {
+    if (doc.fileHandle) {
+      try {
+        const file = await doc.fileHandle.getFile();
+        content = await file.text();
+      } catch(_) { content = ''; }
+    } else if (doc.id && typeof doc.id === 'number') {
+      const full = await DB.getDoc(doc.id);
+      content = full ? full.content : '';
+    } else {
+      content = '';
+    }
+  }
+
+  const s = State.settings;
+
+  function parseHeading(line) {
+    if (s.headingMarker && line.startsWith(s.headingMarker)) {
+      let n = 1;
+      while (n < 3 && line.startsWith(s.headingMarker.repeat(n + 1))) n++;
+      const mEsc = escRx(s.headingMarker);
+      const title = line
+        .replace(new RegExp('^' + mEsc + '+\\s*'), '')
+        .replace(new RegExp('\\s*' + mEsc + '+\\s*$'), '')
+        .trim();
+      return { level: n, title: title || line.trim() };
+    }
+    if (s.markdownHeadings) {
+      const m = line.match(/^(#{1,6})\s+(.*)/);
+      if (m) return { level: m[1].length, title: m[2].trim() };
+    }
+    return null;
+  }
+
+  const sections = [];
+  let curTitle = null, curLevel = 0, curWords = 0;
+
+  content.split('\n').forEach(line => {
+    const h = parseHeading(line);
+    if (h) {
+      sections.push({ title: curTitle, level: curLevel, words: curWords });
+      curTitle = h.title; curLevel = h.level; curWords = 0;
+    } else {
+      curWords += (line.match(/\S+/g) || []).length;
+    }
+  });
+  sections.push({ title: curTitle, level: curLevel, words: curWords });
+
+  const total = sections.reduce((acc, sec) => acc + sec.words, 0);
+
+  document.getElementById('analyse-title').textContent = `Structure — ${doc.name}`;
+  const body = document.getElementById('analyse-body');
+  body.innerHTML = '';
+
+  if (total === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'padding:12px 0;color:var(--fg-bar)';
+    empty.textContent = 'No content to analyse.';
+    body.appendChild(empty);
+    document.getElementById('analyse-dlg').showModal();
+    return;
+  }
+
+  const maxBar = 240; // px — max bar width at 100%
+  sections.forEach(sec => {
+    if (sec.words === 0 && sec.title === null) return;
+    const pct = total > 0 ? Math.round(sec.words / total * 100) : 0;
+    const barW = Math.max(2, Math.round(pct / 100 * maxBar));
+    const indent = sec.level > 1 ? (sec.level - 1) * 14 : 0;
+    const label = sec.title || '(début)';
+
+    const row = document.createElement('div');
+    row.className = 'analyse-row';
+    row.style.paddingLeft = indent + 'px';
+
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'analyse-title';
+    if (sec.level > 0) {
+      const lvl = document.createElement('span');
+      lvl.className = 'analyse-level';
+      lvl.textContent = 'H' + sec.level;
+      titleDiv.appendChild(lvl);
+    }
+    const txt = document.createElement('span');
+    txt.className = 'analyse-title-text';
+    txt.textContent = label;
+    titleDiv.appendChild(txt);
+    row.appendChild(titleDiv);
+
+    const barWrap = document.createElement('div');
+    barWrap.className = 'analyse-bar-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'analyse-bar';
+    bar.style.width = barW + 'px';
+    const stats = document.createElement('span');
+    stats.className = 'analyse-stats';
+    stats.textContent = sec.words.toLocaleString() + 'w · ' + pct + '%';
+    barWrap.appendChild(bar);
+    barWrap.appendChild(stats);
+    row.appendChild(barWrap);
+
+    body.appendChild(row);
+  });
+
+  const sectionCount = sections.filter(sec => sec.title !== null).length;
+  const footer = document.createElement('div');
+  footer.className = 'analyse-footer';
+  footer.textContent = `Total : ${total.toLocaleString()} mots · ${sectionCount} section${sectionCount !== 1 ? 's' : ''}`;
+  body.appendChild(footer);
+
+  document.getElementById('analyse-words-btn').onclick = () => {
+    document.getElementById('analyse-dlg').close();
+    showWordOcc(doc);
+  };
+  document.getElementById('analyse-dlg').showModal();
+}
+
 // ── Fullscreen ────────────────────────────────────────────────────────────
 
 function toggleFullscreen() {
@@ -2800,6 +3567,9 @@ function applyTheme() {
   r.setProperty('--line-spacing', (s.lineSpacing || 1.5));
   r.setProperty('--margin-x',     (s.marginX   || 80) + 'px');
   r.setProperty('--margin-y',     (s.marginY   || 40) + 'px');
+
+  document.getElementById('editor').classList.toggle('block-cursor', !!s.blockCursor);
+  document.getElementById('editor').classList.toggle('no-blink', s.blinkCursor === false);
 }
 
 // ── File import ────────────────────────────────────────────────────────────
@@ -2835,13 +3605,53 @@ function onKeydown(e) {
   const inBrowser = !document.getElementById('browser').hidden;
 
   Browser.hideContextMenu();
+  if (_helpDetails && _helpDetails.open && lkey === 'escape') { _helpDetails.open = false; return; }
+
+  // Menu keyboard handling — intercept at capture level regardless of focus.
+  if (_edMenu && !_edMenu.hidden) {
+    if (key === 'ArrowDown' || key === 'ArrowUp') {
+      e.preventDefault(); e.stopPropagation();
+      if (!_menuNavLock) {
+        _menuNavLock = true;
+        requestAnimationFrame(() => { _menuNavLock = false; });
+        const items = Array.from(_edMenu.querySelectorAll('button:not(:disabled)'));
+        const idx   = items.indexOf(document.activeElement);
+        const next  = key === 'ArrowDown'
+          ? items[(idx + 1) % items.length]
+          : items[(idx - 1 + items.length) % items.length];
+        if (next) next.focus();
+      }
+      return;
+    }
+    // Enter — activate focused button
+    if (key === 'Enter') {
+      const focused = document.activeElement;
+      if (focused && _edMenu.contains(focused)) {
+        e.preventDefault(); e.stopPropagation();
+        focused.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+        return;
+      }
+    }
+    // Letter shortcut — activate button whose hint matches
+    if (!ctrl && !e.altKey && lkey.length === 1) {
+      const match = Array.from(_edMenu.querySelectorAll('button:not(:disabled)')).find(b => {
+        const hint = b.querySelector('.hint');
+        return hint && hint.textContent.trim() === lkey;
+      });
+      if (match) {
+        e.preventDefault(); e.stopPropagation();
+        match.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+        return;
+      }
+    }
+  }
 
   // Global shortcuts (work anywhere, no active input focused)
   const focused = document.activeElement;
   const inInput = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.tagName === 'SELECT');
 
-  // Dark/light toggle — global
-  if (ctrl && lkey === 'd' && !inInput) {
+  // Dark/light toggle — global (works even in editor textarea)
+  if (ctrl && lkey === 'd') {
     e.preventDefault();
     State.settings.darkMode = !State.settings.darkMode;
     saveSettings();
@@ -2876,14 +3686,40 @@ function onKeydown(e) {
     // Command mode — intercept ALL keys while active
     if (Editor.isCmdMode()) {
       e.preventDefault(); e.stopPropagation();
+      if (key === 'ArrowRight' || key === 'ArrowLeft') {
+        Editor.cmdNavMove(key === 'ArrowRight' ? 1 : -1);
+        return;
+      }
+      if (key === 'Enter') {
+        const cmd = Editor.getCmdNavKey();
+        if (cmd) {
+          document.dispatchEvent(new CustomEvent('writhdeck-cmd', { detail: cmd }));
+          return;
+        }
+      }
       Editor.exitCmdMode();
       switch (lkey) {
-        case 's': Stats.show();    break;
-        case 'i': showFileInfo();  break;
+        case 'f': Editor.searchOpen(false);  break;
+        case 'r': Editor.searchOpen(true);   break;
+        case 'g': Editor.gotoLine();         break;
+        case 'n': Editor.toggleLineNumbers(); break;
+        case 'd':
+          State.settings.darkMode = !State.settings.darkMode;
+          saveSettings(); applyTheme();
+          if (State.doc) Editor.rehighlight();
+          break;
+        case 'o': TOC.toggle();              break;
+        case 'c': Settings.show();           break;
+        case 'e': Editor.exportDoc('txt'); break;
+        case 's': Stats.show();              break;
+        case 'a': showAnalyse();             break;
+        case 'i': showFileInfo();            break;
         case 't': Timer.toggle();  Editor.updateStatusBar(); break;
         case 'p': Timer.isActive() ? Timer.pause() : Timer.toggle();
                   Editor.updateStatusBar(); break;
-        case 'q': Editor.close();  break;
+        case 'w': Editor.toggleTypewriter(); break;
+        case 'm': showMainMenu(); break;
+        case 'q': Editor.close();            break;
         // any other key: just exit cmd mode (already done above)
       }
       return;
@@ -2896,15 +3732,17 @@ function onKeydown(e) {
     if (ctrl && lkey === 'g')     { e.preventDefault(); e.stopPropagation(); Editor.gotoLine();          return; }
     if (ctrl && lkey === 'l')     { e.preventDefault(); e.stopPropagation(); Editor.toggleLineNumbers();  return; }
     if (e.altKey && lkey === 't') { e.preventDefault(); e.stopPropagation(); Timer.toggle(); Editor.updateStatusBar(); return; }
+    if (e.altKey && lkey === 'c') { e.preventDefault(); e.stopPropagation(); Editor.enterCmdMode(); return; }
+    if (e.altKey && lkey === 'm') { e.preventDefault(); e.stopPropagation(); showMainMenu(); return; }
 
-    // Shortcuts that override browser defaults — only when option is enabled
-    const intercept = State.settings.interceptBrowserShortcuts;
-    if (intercept && ctrl && lkey === 't') { e.preventDefault(); e.stopPropagation(); Editor.toggleTypewriter(); return; }
     if (lkey === 'escape') {
       e.preventDefault(); e.stopPropagation();
+      if (_edCtxMenu) { hideEditorCtxMenu(); return; }
+      if (_edMenu && !_edMenu.hidden) { _edMenu.hidden = true; return; }
       const openDlg = document.querySelector('dialog[open]');
       if (openDlg) { openDlg.close(); return; }
       if (!document.getElementById('search-bar').hidden) { Editor.searchClose(); return; }
+      if (!document.getElementById('goto-bar').hidden)   { Editor.gotoLineClose(); return; }
       // ESC enters command mode
       Editor.enterCmdMode();
       return;
@@ -2915,17 +3753,36 @@ function onKeydown(e) {
     }
   }
 
+  // Ctrl+N → new document (overrides browser "new window", requires option)
+  if (State.settings.interceptBrowserShortcuts && ctrl && lkey === 'n' && !inInput) {
+    e.preventDefault(); e.stopPropagation(); Browser.newDoc(); return;
+  }
+
   // Browser shortcuts (no input focused)
   if (inBrowser && !inInput) {
+    if (key === 'ArrowDown' || key === 'ArrowUp') {
+      e.preventDefault();
+      const items = Array.from(document.querySelectorAll('#br-list .br-nav-item'));
+      if (!items.length) return;
+      const cur = document.querySelector('#br-list .br-nav-item.br-focused');
+      const idx = cur ? items.indexOf(cur) : -1;
+      const next = idx === -1
+        ? (key === 'ArrowDown' ? 0 : items.length - 1)
+        : key === 'ArrowDown' ? (idx + 1) % items.length : (idx - 1 + items.length) % items.length;
+      if (cur) cur.classList.remove('br-focused');
+      items[next].classList.add('br-focused');
+      items[next].scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    if (key === 'Enter') {
+      const cur = document.querySelector('#br-list .br-nav-item.br-focused');
+      if (cur) { e.preventDefault(); cur.click(); return; }
+    }
     if (lkey === 'n') { e.preventDefault(); Browser.newDoc();        return; }
     if (lkey === 'o' && Browser.hasFSA) { e.preventDefault(); Browser.openFromDisk(); return; }
     if (lkey === 'w' && Browser.hasFSA) { e.preventDefault(); Browser.openFolder();   return; }
     if (lkey === 's') { e.preventDefault(); Stats.show();            return; }
     if (lkey === 'c') { e.preventDefault(); Settings.show();         return; }
-    // Override browser Ctrl+N → new document (only when option enabled)
-    if (State.settings.interceptBrowserShortcuts && ctrl && lkey === 'n') {
-      e.preventDefault(); e.stopPropagation(); Browser.newDoc(); return;
-    }
   }
 }
 
@@ -2952,6 +3809,7 @@ async function init() {
               if (!SCHEMES[n]) customSchemes[n] = sc;
             }
             await saveSettings();
+            applyTheme(); // re-appliquer après maj des settings depuis le dossier
           } catch (_) {}
         }
       }
@@ -2967,22 +3825,39 @@ async function init() {
   const ta = document.getElementById('ed-input');
   ta.addEventListener('input',  () => Editor.onInput());
   ta.addEventListener('scroll', () => Editor.syncScroll());
+  // Update line/col on cursor move (click or keyboard navigation)
+  ta.addEventListener('click',   () => { Editor.updateStatusBar(); if (State.settings.blockCursor) Editor.rehighlight(); });
+  ta.addEventListener('keyup',   () => { Editor.updateStatusBar(); if (State.settings.blockCursor) Editor.rehighlight(); });
 
   // Header buttons
   document.getElementById('br-new-btn').addEventListener('click',    () => Browser.newDoc());
   document.getElementById('br-import-btn').addEventListener('click', triggerImport);
   document.getElementById('br-folder-btn').addEventListener('click',  () => Browser.openFolder());
   document.getElementById('br-opendisk-btn').addEventListener('click', () => Browser.openFromDisk());
-  document.getElementById('ed-close-btn').addEventListener('click',  () => Editor.close());
-  document.getElementById('ed-settings-btn').addEventListener('click', () => Settings.show());
-  document.getElementById('ed-toc-btn').addEventListener('click',    () => TOC.toggle());
+  document.getElementById('ed-close-btn').addEventListener('click', () => Editor.close());
+
+  // Help menu (? button) — native <details> toggle, no JS click handler needed
+  const helpDetails = document.getElementById('br-help-details');
+  _helpDetails = helpDetails;
+
+  document.getElementById('br-help-readme').addEventListener('click', async () => {
+    helpDetails.open = false;
+    let doc = State.docs.find(d => d.name === 'README.md');
+    if (!doc) {
+      doc = { name: 'README.md', content: README_CONTENT, created: Date.now(), modified: Date.now() };
+      await DB.saveDoc(doc);
+      State.docs.push(doc);
+      Browser.render();
+    }
+    await Editor.open(doc);
+  });
 
   // File import input
   const fileInput = document.getElementById('file-import-input');
   fileInput.addEventListener('change', async () => {
     if (fileInput.files.length) {
       await importFiles(Array.from(fileInput.files));
-      fileInput.value = ''; // reset so same file can be re-imported
+      fileInput.value = '';
     }
   });
   // Drag and drop on browser panel
@@ -2996,14 +3871,209 @@ async function init() {
     if (files.length) await importFiles(files);
   });
 
-  // Export menu
-  const exportBtn  = document.getElementById('ed-export-btn');
-  const exportMenu = document.getElementById('export-menu');
-  exportBtn.addEventListener('click', e => { e.stopPropagation(); exportMenu.hidden = !exportMenu.hidden; });
-  exportMenu.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => { exportMenu.hidden = true; Editor.exportDoc(btn.dataset.fmt); });
+  // Main editor menu (≡ button)
+  const menuBtn  = document.getElementById('ed-menu-btn');
+  const edMenu   = document.getElementById('ed-menu');
+  _edMenu = edMenu;
+
+  function execCmd(cmd) {
+    edMenu.hidden = true;
+    switch (cmd) {
+      case 'toc':        TOC.toggle();              break;
+      case 'dark':
+        State.settings.darkMode = !State.settings.darkMode;
+        saveSettings(); applyTheme();
+        if (State.doc) Editor.rehighlight();
+        break;
+      case 'linenos':    Editor.toggleLineNumbers(); break;
+      case 'typewriter': Editor.toggleTypewriter();  break;
+      case 'find':       Editor.searchOpen(false);   break;
+      case 'replace':    Editor.searchOpen(true);    break;
+      case 'goto':       Editor.gotoLine();          break;
+      case 'export-txt': Editor.exportDoc('txt');    break;
+      case 'export-md':  Editor.exportDoc('md');     break;
+      case 'stats':      Stats.show();               break;
+      case 'analyse':    showAnalyse();              break;
+      case 'word-occ':   showWordOcc();              break;
+      case 'info':       showFileInfo();             break;
+      case 'timer':      Timer.toggle(); Editor.updateStatusBar(); break;
+      case 'block-cursor':
+        State.settings.blockCursor = !State.settings.blockCursor;
+        saveSettings();
+        applyTheme();
+        if (State.doc) Editor.rehighlight();
+        break;
+      case 'ctx-menu':
+        State.settings.interceptContextMenu = !State.settings.interceptContextMenu;
+        saveSettings();
+        Editor.setMsg(State.settings.interceptContextMenu ? 'Right-click menu on' : 'Right-click menu off');
+        break;
+      case 'config':     Settings.show();            break;
+    }
+  }
+
+  function openMenu() {
+    const s  = State.settings;
+    const hm = s.headingMarker || '';
+    [1, 2, 3].forEach(lvl => {
+      const btn = edMenu.querySelector(`[data-markup="h${lvl}"]`);
+      const p   = hm.repeat(lvl);
+      btn.innerHTML = hm ? `<span>${p} H${lvl} ${p}</span>` : `<span>H${lvl}</span>`;
+      btn.disabled  = !hm;
+    });
+    [['comment', s.commentMarker, 'Comment (line)'],
+     ['bold',    s.boldMarker,    'Bold'],
+     ['italic',  s.italicMarker,  'Italic'],
+     ['underline', s.underlineMarker, 'Underline'],
+     ['strike',  s.strikeMarker,  'Strike'],
+    ].forEach(([type, marker, label]) => {
+      const btn = edMenu.querySelector(`[data-markup="${type}"]`);
+      btn.innerHTML = marker ? `<span>${marker} ${label}</span>` : `<span>${label}</span>`;
+      btn.disabled  = !marker;
+    });
+    // Update toggle labels
+    const ctxBtn = edMenu.querySelector('[data-cmd="ctx-menu"]');
+    if (ctxBtn) ctxBtn.innerHTML = `Right-click menu <span class="hint">${s.interceptContextMenu ? 'on' : 'off'}</span>`;
+    const bcBtn = edMenu.querySelector('[data-cmd="block-cursor"]');
+    if (bcBtn) bcBtn.innerHTML = `Block cursor <span class="hint">${s.blockCursor ? 'on' : 'off'}</span>`;
+    edMenu.hidden = false;
+  }
+  _openMenuFn = openMenu;
+
+  function menuItems() {
+    return Array.from(edMenu.querySelectorAll('button:not(:disabled)'));
+  }
+
+  // Prevent menu button from stealing textarea focus (preserves selection).
+  menuBtn.addEventListener('mousedown', e => e.preventDefault());
+  menuBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (!edMenu.hidden) { edMenu.hidden = true; return; }
+    openMenu();
+    edMenu.hidden = true;
+    setTimeout(() => { edMenu.hidden = false; }, 0);
   });
-  document.addEventListener('click', () => { exportMenu.hidden = true; });
+
+  function menuGuard() {
+    const now = Date.now();
+    if (now - _menuActionTime < 150) return false;
+    _menuActionTime = now;
+    return true;
+  }
+
+  document.getElementById('ed-more-cmd').addEventListener('mousedown', e => {
+    if (!menuGuard()) return;
+    e.preventDefault();
+    edMenu.hidden = true;
+    Editor.enterCmdMode();
+  });
+
+  edMenu.querySelectorAll('[data-markup]').forEach(btn => {
+    btn.addEventListener('mousedown', e => {
+      if (!menuGuard()) return;
+      e.preventDefault();
+      edMenu.hidden = true;
+      const s = State.settings;
+      switch (btn.dataset.markup) {
+        case 'h1':        Editor.applyHeading(1);                      break;
+        case 'h2':        Editor.applyHeading(2);                      break;
+        case 'h3':        Editor.applyHeading(3);                      break;
+        case 'comment':   Editor.applyLineMarker(s.commentMarker);     break;
+        case 'bold':      Editor.applyInlineMarker(s.boldMarker);      break;
+        case 'italic':    Editor.applyInlineMarker(s.italicMarker);    break;
+        case 'underline': Editor.applyInlineMarker(s.underlineMarker); break;
+        case 'strike':    Editor.applyInlineMarker(s.strikeMarker);    break;
+      }
+    });
+  });
+
+  edMenu.querySelectorAll('[data-cmd]').forEach(btn => {
+    btn.addEventListener('mousedown', e => {
+      if (!menuGuard()) return;
+      e.preventDefault();
+      execCmd(btn.dataset.cmd);
+    });
+  });
+
+  document.addEventListener('click', e => { edMenu.hidden = true; if (!helpDetails.contains(e.target)) helpDetails.open = false; hideEditorCtxMenu(); });
+
+  // ── Editor right-click context menu ──────────────────────────────────────
+
+  function buildCtxMenu(e) {
+    if (!State.settings.interceptContextMenu) return;
+    e.preventDefault();
+    hideEditorCtxMenu();
+
+    const s   = State.settings;
+    const ta  = document.getElementById('ed-input');
+    const sel = ta.selectionStart !== ta.selectionEnd;
+
+    const menu = document.createElement('div');
+    menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;
+      background:var(--bg-bar);border:1px solid var(--fg-bar);z-index:200;min-width:180px;`;
+
+    function sep() {
+      const d = document.createElement('div');
+      d.style.cssText = 'height:1px;background:var(--fg-bar);opacity:0.3;margin:3px 0;';
+      menu.appendChild(d);
+    }
+
+    function item(label, fn, disabled) {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.disabled = !!disabled;
+      btn.style.cssText = 'display:block;width:100%;text-align:left;padding:5px 14px;' +
+        'border:none;background:none;font-family:var(--font-family);font-size:var(--font-size);color:var(--fg);';
+      btn.addEventListener('mousedown', ev => ev.preventDefault());
+      btn.addEventListener('click', () => { hideEditorCtxMenu(); fn(); });
+      menu.appendChild(btn);
+    }
+
+    // Format
+    const hm = s.headingMarker;
+    if (hm) {
+      item(`${hm} H1 ${hm}`, () => Editor.applyHeading(1));
+      item(`${hm.repeat(2)} H2 ${hm.repeat(2)}`, () => Editor.applyHeading(2));
+      item(`${hm.repeat(3)} H3 ${hm.repeat(3)}`, () => Editor.applyHeading(3));
+    }
+    if (s.commentMarker)   item(`${s.commentMarker} Comment`, () => Editor.applyLineMarker(s.commentMarker));
+    if (s.boldMarker)      item(`${s.boldMarker} Bold`,       () => Editor.applyInlineMarker(s.boldMarker),      !sel);
+    if (s.italicMarker)    item(`${s.italicMarker} Italic`,   () => Editor.applyInlineMarker(s.italicMarker),    !sel);
+    if (s.underlineMarker) item(`${s.underlineMarker} Underline`, () => Editor.applyInlineMarker(s.underlineMarker), !sel);
+    if (s.strikeMarker)    item(`${s.strikeMarker} Strike`,   () => Editor.applyInlineMarker(s.strikeMarker),    !sel);
+
+    sep();
+
+    // Edit
+    item('Cut',   () => document.execCommand('cut'),  !sel);
+    item('Copy',  () => document.execCommand('copy'), !sel);
+    item('Paste', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        ta.focus();
+        document.execCommand('insertText', false, text);
+        Editor.onInput();
+      } catch (_) {}
+    });
+
+    sep();
+
+    // Spell check toggle
+    item(`Spell check: ${ta.spellcheck ? 'on' : 'off'}`, () => { ta.spellcheck = !ta.spellcheck; });
+
+    document.body.appendChild(menu);
+    _edCtxMenu = menu;
+
+    // Clamp to viewport after paint
+    requestAnimationFrame(() => {
+      if (!_edCtxMenu) return;
+      const r = menu.getBoundingClientRect();
+      if (r.right  > window.innerWidth)  menu.style.left = Math.max(0, e.clientX - r.width)  + 'px';
+      if (r.bottom > window.innerHeight) menu.style.top  = Math.max(0, e.clientY - r.height) + 'px';
+    });
+  }
+
+  document.getElementById('ed-input').addEventListener('contextmenu', buildCtxMenu);
 
   // Search bar
   document.getElementById('search-input').addEventListener('input',  () => Editor.searchUpdate());
@@ -3018,10 +4088,27 @@ async function init() {
     else if (e.key === 'Escape')         Editor.searchClose();
   });
 
+  // Goto bar
+  document.getElementById('goto-go').addEventListener('click',    () => Editor.gotoLineGo());
+  document.getElementById('goto-close').addEventListener('click', () => Editor.gotoLineClose());
+  document.getElementById('goto-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter')  Editor.gotoLineGo();
+    else if (e.key === 'Escape') Editor.gotoLineClose();
+  });
+
   // Dialog close buttons
-  document.getElementById('info-close').addEventListener('click',      () => document.getElementById('info-dlg').close());
-  document.getElementById('stats-close').addEventListener('click',     () => document.getElementById('stats-dlg').close());
+  document.getElementById('info-close').addEventListener('click',     () => document.getElementById('info-dlg').close());
+  document.getElementById('analyse-close').addEventListener('click',  () => document.getElementById('analyse-dlg').close());
+  document.getElementById('words-close').addEventListener('click',    () => document.getElementById('words-dlg').close());
+  document.getElementById('stats-close').addEventListener('click',    () => document.getElementById('stats-dlg').close());
   document.getElementById('timer-alert-ok').addEventListener('click',  () => document.getElementById('timer-alert-dlg').close());
+  document.getElementById('about-close').addEventListener('click',    () => document.getElementById('about-dlg').close());
+  document.getElementById('about-ok').addEventListener('click',       () => document.getElementById('about-dlg').close());
+
+  // About button and logo in help menu
+  const openAbout = () => { helpDetails.open = false; document.getElementById('about-dlg').showModal(); };
+  document.getElementById('br-help-about').addEventListener('click', openAbout);
+  document.getElementById('br-help-logo').addEventListener('click', openAbout);
 
   // Misc tab import button (shares triggerImport)
   document.getElementById('misc-import-btn').addEventListener('click', triggerImport);
@@ -3029,12 +4116,51 @@ async function init() {
   // Settings
   Settings.initEvents();
 
+  // File info / analyse from browser context menu
+  document.addEventListener('writhdeck-show-info',    e => showFileInfo(e.detail));
+  document.addEventListener('writhdeck-show-analyse', e => showAnalyse(e.detail));
+
+  // Command mode clicks from status bar buttons
+  document.addEventListener('writhdeck-cmd', e => {
+    if (!Editor.isCmdMode()) return;
+    Editor.exitCmdMode();
+    switch (e.detail) {
+      case 'f': Editor.searchOpen(false);  break;
+      case 'r': Editor.searchOpen(true);   break;
+      case 'g': Editor.gotoLine();         break;
+      case 'n': Editor.toggleLineNumbers(); break;
+      case 'd':
+        State.settings.darkMode = !State.settings.darkMode;
+        saveSettings(); applyTheme();
+        if (State.doc) Editor.rehighlight();
+        break;
+      case 'o': TOC.toggle();              break;
+      case 'c': Settings.show();           break;
+      case 'e': Editor.exportDoc('txt');   break;
+      case 's': Stats.show();              break;
+      case 'a': showAnalyse();             break;
+      case 'i': showFileInfo();            break;
+      case 't': Timer.toggle();  Editor.updateStatusBar(); break;
+      case 'p': Timer.isActive() ? Timer.pause() : Timer.toggle();
+                Editor.updateStatusBar(); break;
+      case 'w': Editor.toggleTypewriter(); break;
+      case 'm': showMainMenu();            break;
+      case 'q': Editor.close();            break;
+    }
+  });
+
   // Keyboard — capture phase so we intercept before browser default handlers
   document.addEventListener('keydown', onKeydown, true);
 
   // Save cursor + dirty guard on unload
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && State.doc) Editor.saveCursorPos();
+  });
+  window.addEventListener('resize', () => {
+    if (State.doc) { Editor.syncGutter(); Editor.syncScroll(); Editor.typewriterScroll(); }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    if (State.doc) { Editor.syncGutter(); Editor.syncScroll(); }
   });
   window.addEventListener('beforeunload', e => {
     if (State.dirty) { e.preventDefault(); e.returnValue = ''; }

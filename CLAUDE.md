@@ -105,10 +105,10 @@ Dépôt séparé, **pure Kotlin + Jetpack Compose** (pas de Tcl/JNI). Build : `.
 
 ---
 
-@CLAUDE.browser.md
-@CLAUDE.editor.md
-@CLAUDE.config.md
-@CLAUDE.themes.md
-@CLAUDE.timer.md
-@CLAUDE.tui.md
-@CLAUDE.build.md
+@.claude/CLAUDE.browser.md
+@.claude/CLAUDE.editor.md
+@.claude/CLAUDE.config.md
+@.claude/CLAUDE.themes.md
+@.claude/CLAUDE.timer.md
+@.claude/CLAUDE.tui.md
+@.claude/CLAUDE.build.md
