@@ -21,7 +21,7 @@ Current browser keys (12 total): h (help), n (new), t (scratchpad), f (favorite)
 
 ## Profile configuration dialog
 
-Accessible via `c` key in browser. Invoked by `profile-config-dialog` proc. **Five tabs: Profile, Fonts, Timer, Misc, Display.** Defined in `src/gui-config.tcl` (optional module — excluded with `make GUI_CONFIG=no`).
+Accessible via `c` key in browser. Invoked by `profile-config-dialog` proc. **Six tabs, in this order: Profile, Display, Fonts, Schemes, Timer, Misc.** Defined in `src/gui-config.tcl` (optional module — excluded with `make GUI_CONFIG=no`).
 
 - **Profile tab**: Global settings (default profile/scheme/language); per-profile: margin width/height, word goal, dark mode, line spacing (%), bar height, line numbers, block cursor, blinking cursor
 - **Fonts tab**: Per-profile font family (entry + available fonts listbox with scrollbar), font preview label (initialized with current font/size on open and on profile switch), font size spinbox
@@ -30,7 +30,7 @@ Accessible via `c` key in browser. Invoked by `profile-config-dialog` proc. **Fi
 - **Display tab**: Status bar zones (left/center/right entries); Editor section (heading marker); Markup section (comment/bold/italic/underline/strikethrough markers, markdown headings)
 - **Apply button**: Packed before tab content via `pack -before` so it stays visible at top; saves all tabs to globals + `ini-save`, applies theme, triggers `br-reload`
 
-Tab switching via `config-tab-switch {w tab}` — `pack forget` all frames, `pack` the active one, update button appearance. Tabs: `profile`, `fonts`, `timer`, `misc`, `display`.
+Tab switching via `config-tab-switch {w tab}` — `pack forget` all frames, `pack` the active one, update button appearance. Tabs (in display order): `profile`, `display`, `fonts`, `schemes`, `timer`, `misc`.
 
 Per-profile configuration stored in `::cfg_profiles` dict (keys: `font_family`, `font_size`, `margin_width`, `margin_height`, `word_goal`, `dark_mode`, `line_spacing`, `bar_height`, `line_numbers`, `block_cursor_gui`, `blink_cursor`). Values persist via `.writhdeck.json`.
 

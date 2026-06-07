@@ -88,18 +88,18 @@ proc config-tab-switch {w tab} {
     if {$tab eq "profile"} {
         pack $w.tab_profile -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.profile configure -fg $::fg -bg $::bg_sel
-    } elseif {$tab eq "fonts"} {
-        pack $w.tab_fonts -fill both -expand 1 -padx 8 -pady 8
-        $w.tabs.fonts configure -fg $::fg -bg $::bg_sel
-    } elseif {$tab eq "timer"} {
-        pack $w.tab_timer -fill both -expand 1 -padx 8 -pady 8
-        $w.tabs.timer configure -fg $::fg -bg $::bg_sel
     } elseif {$tab eq "display"} {
         pack $w.tab_display -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.display configure -fg $::fg -bg $::bg_sel
+    } elseif {$tab eq "fonts"} {
+        pack $w.tab_fonts -fill both -expand 1 -padx 8 -pady 8
+        $w.tabs.fonts configure -fg $::fg -bg $::bg_sel
     } elseif {$tab eq "schemes"} {
         pack $w.tab_schemes -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.schemes configure -fg $::fg -bg $::bg_sel
+    } elseif {$tab eq "timer"} {
+        pack $w.tab_timer -fill both -expand 1 -padx 8 -pady 8
+        $w.tabs.timer configure -fg $::fg -bg $::bg_sel
     } else {
         pack $w.tab_misc -fill both -expand 1 -padx 8 -pady 8
         $w.tabs.misc configure -fg $::fg -bg $::bg_sel
@@ -135,22 +135,22 @@ proc profile-config-dialog {} {
     pack $w.tabs -fill x -padx 8 -pady {8 0}
     button $w.tabs.profile -text [t config_tab_profile] -font $::font_sm -fg $::fg -bg $::bg_sel \
         -command "config-tab-switch $w profile" -borderwidth 1 -relief raised -padx 12 -pady 4
+    button $w.tabs.display -text [t config_tab_display] -font $::font_sm -fg $::fg_bar -bg $::bg \
+        -command "config-tab-switch $w display" -borderwidth 1 -relief raised -padx 12 -pady 4
     button $w.tabs.fonts -text [t config_tab_fonts] -font $::font_sm -fg $::fg_bar -bg $::bg \
         -command "config-tab-switch $w fonts" -borderwidth 1 -relief raised -padx 12 -pady 4
+    button $w.tabs.schemes -text [t config_tab_schemes] -font $::font_sm -fg $::fg_bar -bg $::bg \
+        -command "config-tab-switch $w schemes" -borderwidth 1 -relief raised -padx 12 -pady 4
     button $w.tabs.timer -text [t config_tab_timer] -font $::font_sm -fg $::fg_bar -bg $::bg \
         -command "config-tab-switch $w timer" -borderwidth 1 -relief raised -padx 12 -pady 4
     button $w.tabs.misc -text [t config_tab_misc] -font $::font_sm -fg $::fg_bar -bg $::bg \
         -command "config-tab-switch $w misc" -borderwidth 1 -relief raised -padx 12 -pady 4
-    button $w.tabs.display -text [t config_tab_display] -font $::font_sm -fg $::fg_bar -bg $::bg \
-        -command "config-tab-switch $w display" -borderwidth 1 -relief raised -padx 12 -pady 4
-    button $w.tabs.schemes -text [t config_tab_schemes] -font $::font_sm -fg $::fg_bar -bg $::bg \
-        -command "config-tab-switch $w schemes" -borderwidth 1 -relief raised -padx 12 -pady 4
     pack $w.tabs.profile -side left -padx 2
+    pack $w.tabs.display -side left -padx 2
     pack $w.tabs.fonts -side left -padx 2
+    pack $w.tabs.schemes -side left -padx 2
     pack $w.tabs.timer -side left -padx 2
     pack $w.tabs.misc -side left -padx 2
-    pack $w.tabs.display -side left -padx 2
-    pack $w.tabs.schemes -side left -padx 2
 
     # --- Tab content frames ---
     frame $w.tab_profile -bg $::bg
