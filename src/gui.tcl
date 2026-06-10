@@ -1788,6 +1788,7 @@ proc toc-panel-open {} {
     bind .ed.toc.lst <ButtonRelease-1>     toc-panel-jump
     bind .ed.toc.lst <Return>              toc-panel-jump
     bind .ed.toc.lst <$::cfg_key_toc>      toc-panel-close
+    bind .ed.toc.lst <$::cfg_key_toc_pinned> toc-panel-close
     bind .ed.toc.lst <Escape>              { focus $::toc_ed }
 
     set ::toc_panel_open 1
@@ -1815,9 +1816,13 @@ proc toc-panel-theme {} {
                 -selectbackground $bg_sel -selectforeground $fg }
 }
 
+proc toc-panel-toggle {} {
+    if {$::toc_panel_open} { toc-panel-close } else { toc-panel-open }
+}
+
 proc toc-show {} {
     if {$::cfg_toc_pinned} {
-        if {$::toc_panel_open} { toc-panel-close } else { toc-panel-open }
+        toc-panel-toggle
         return
     }
     set ::toc_ed [active-ed]
@@ -1891,6 +1896,7 @@ proc toc-jump {w headings} {
 }
 
 bind .ed.t <$::cfg_key_toc>          { toc-show;   break }
+bind .ed.t <$::cfg_key_toc_pinned>   { toc-panel-toggle; break }
 bind .br.mid.lst <$::cfg_key_toc>   { br-toc-show; break }
 bind .ed.t <$::cfg_key_line_numbers> { ln-toggle;  break }
 
@@ -2492,6 +2498,7 @@ proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2 bg2} {
         bind $t <$_k> "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break"
     }
     bind $t <$::cfg_key_toc>            { toc-show; break }
+    bind $t <$::cfg_key_toc_pinned>     { toc-panel-toggle; break }
     bind $t <$::cfg_key_line_numbers>   { ln-toggle; break }
     bind $t <$::cfg_key_fullscreen>     { toggle-fullscreen; break }
     bind $t <$::cfg_key_split>          { split-toggle; break }
@@ -2624,6 +2631,7 @@ proc split-ws2-open {} {
     bind .ed.pw.r.t <$::cfg_key_replace>     { replace-open; break }
     bind .ed.pw.r.t <$::cfg_key_open>        { open-file-dialog; break }
     bind .ed.pw.r.t <$::cfg_key_toc>         { toc-show; break }
+    bind .ed.pw.r.t <$::cfg_key_toc_pinned>  { toc-panel-toggle; break }
     bind .ed.pw.r.t <$::cfg_key_line_numbers> { ln-toggle; break }
     bind .ed.pw.r.t <$::cfg_key_fullscreen>  { toggle-fullscreen; break }
     bind .ed.pw.r.t <$::cfg_key_typewriter>  { typewriter-toggle; break }

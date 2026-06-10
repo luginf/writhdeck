@@ -180,6 +180,8 @@ dict set ::i18n fr {
     config_docs_dir              "Dossier documents extra :"
     config_browse                "Parcourir"
     config_browser_startup       "Navigateur au demarrage :"
+    config_browser_filter        "Filtre de fichiers (navigateur) :"
+    config_browser_show_all      "Afficher tous les fichiers (ignorer filtre) :"
     config_watch_file            "Surveiller modifications externes :"
     config_hemingway_mode        "Mode Hemingway (sans suppression) :"
     config_split_shrink_margin   "Reduire marge en vue split :"

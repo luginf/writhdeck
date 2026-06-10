@@ -180,6 +180,8 @@ dict set ::i18n de {
     config_docs_dir              "Zusaetzl. Dokumentenordner:"
     config_browse                "Durchsuchen"
     config_browser_startup       "Browser beim Start anzeigen:"
+    config_browser_filter        "Dateifilter (Browser):"
+    config_browser_show_all      "Alle Dateien anzeigen (Filter ignorieren):"
     config_watch_file            "Externe Anderungen uberwachen:"
     config_hemingway_mode        "Hemingway-Modus (kein Loschen):"
     config_split_shrink_margin   "Rand in geteilter Ansicht verkleinern:"

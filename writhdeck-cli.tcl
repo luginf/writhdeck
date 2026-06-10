@@ -339,6 +339,8 @@ set ::cfg_bg_bar         "#2a2a2a"
 set ::cfg_fg_bar         "#aaaaaa"
 set ::cfg_bg_sel         "#3a5a8a"
 set ::cfg_docs_dir       ""
+set ::cfg_browser_filter "*.txt *.t2t *.md"
+set ::cfg_browser_show_all 0
 set ::cfg_console_margin_cols    6
 set ::cfg_console_margin_rows    4
 set ::cfg_heading_marker    "="
@@ -398,6 +400,7 @@ set ::cfg_key_paste        "Control-v"
 set ::cfg_key_select_all   "Control-a"
 set ::cfg_key_sticky_sel   "Control-k"
 set ::cfg_key_toc          "F11"
+set ::cfg_key_toc_pinned   "Control-Shift-F11"
 set ::cfg_key_line_numbers "Control-l"
 set ::cfg_key_redo         "Control-y"
 set ::cfg_key_typewriter   "Control-t"
@@ -696,6 +699,8 @@ proc ini-load {} {
                 dark_mode            { set ::cfg_dark_mode [string is true $v] }
                 key_dark_toggle      { set ::cfg_key_dark_toggle   $v }
                 browser              { set ::cfg_browser              [string is true $v] }
+                browser_filter       { set ::cfg_browser_filter       $v }
+                browser_show_all     { set ::cfg_browser_show_all     [string is true $v] }
                 console_center_alert { set ::cfg_console_center_alert [string is true $v] }
                 line_numbers     { set ::cfg_line_numbers   [string is true $v] }
                 cursor_restore   { set ::cfg_cursor_restore [string is true $v] }
@@ -727,6 +732,7 @@ proc ini-load {} {
                 key_select_all   { set ::cfg_key_select_all   $v }
                 key_sticky_sel   { set ::cfg_key_sticky_sel   $v }
                 key_toc          { set ::cfg_key_toc          $v }
+                key_toc_pinned   { set ::cfg_key_toc_pinned   $v }
                 key_line_numbers { set ::cfg_key_line_numbers $v }
                 key_redo         { set ::cfg_key_redo         $v }
                 key_typewriter   { set ::cfg_key_typewriter   $v }
@@ -791,6 +797,11 @@ proc ini-save {} {
     puts $fh "= behaviour ="
     puts $fh "\[behaviour\]"
     puts $fh "browser              = [expr {$::cfg_browser              ? "yes" : "no"}]"
+    puts $fh "% browser_filter: space-separated glob patterns for files shown in the browser"
+    puts $fh "% (empty = show all files)"
+    puts $fh "browser_filter       = $::cfg_browser_filter"
+    puts $fh "% browser_show_all: bypass browser_filter and show all files"
+    puts $fh "browser_show_all     = [expr {$::cfg_browser_show_all     ? "yes" : "no"}]"
     puts $fh "watch_file           = [expr {$::cfg_watch_file           ? "yes" : "no"}]"
     puts $fh "hemingway_mode       = [expr {$::cfg_hemingway_mode       ? "yes" : "no"}]"
     puts $fh "markdown_headings    = [expr {$::cfg_markdown_headings    ? "yes" : "no"}]"
@@ -869,6 +880,7 @@ proc ini-save {} {
     puts $fh "key_select_all   = $::cfg_key_select_all"
     puts $fh "key_sticky_sel   = $::cfg_key_sticky_sel"
     puts $fh "key_toc          = $::cfg_key_toc"
+    puts $fh "key_toc_pinned   = $::cfg_key_toc_pinned"
     puts $fh "key_line_numbers = $::cfg_key_line_numbers"
     puts $fh "key_redo         = $::cfg_key_redo"
     puts $fh "key_typewriter   = $::cfg_key_typewriter"
@@ -1358,6 +1370,8 @@ dict set ::i18n en {
     config_docs_dir              "Extra documents folder:"
     config_browse                "Browse"
     config_browser_startup       "Show browser on start:"
+    config_browser_filter        "Browser file filter:"
+    config_browser_show_all      "Show all files (ignore filter):"
     config_watch_file            "Watch for external changes:"
     config_hemingway_mode        "Hemingway mode (no delete):"
     config_split_shrink_margin   "Shrink margin in split view:"
@@ -1552,6 +1566,8 @@ dict set ::i18n fr {
     config_docs_dir              "Dossier documents extra :"
     config_browse                "Parcourir"
     config_browser_startup       "Navigateur au demarrage :"
+    config_browser_filter        "Filtre de fichiers (navigateur) :"
+    config_browser_show_all      "Afficher tous les fichiers (ignorer filtre) :"
     config_watch_file            "Surveiller modifications externes :"
     config_hemingway_mode        "Mode Hemingway (sans suppression) :"
     config_split_shrink_margin   "Reduire marge en vue split :"
@@ -1601,9 +1617,17 @@ set ::bg2    $bg2
 # --- utils --------------------------------------------------------------------
 proc list-docs {dir} {
     set pairs {}
+    set patterns [expr {$::cfg_browser_show_all ? {} : [regexp -all -inline {\S+} $::cfg_browser_filter]}]
     foreach f [glob -nocomplain -directory $dir -tails *] {
         set full [file join $dir $f]
         if {[file isfile $full] && ![string match .* $f]} {
+            if {[llength $patterns]} {
+                set match 0
+                foreach pat $patterns {
+                    if {[string match -nocase $pat $f]} { set match 1; break }
+                }
+                if {!$match} continue
+            }
             lappend pairs [list [file mtime $full] $f]
         }
     }

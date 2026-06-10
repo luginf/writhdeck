@@ -31,9 +31,17 @@ set ::bg2    $bg2
 # --- utils --------------------------------------------------------------------
 proc list-docs {dir} {
     set pairs {}
+    set patterns [expr {$::cfg_browser_show_all ? {} : [regexp -all -inline {\S+} $::cfg_browser_filter]}]
     foreach f [glob -nocomplain -directory $dir -tails *] {
         set full [file join $dir $f]
         if {[file isfile $full] && ![string match .* $f]} {
+            if {[llength $patterns]} {
+                set match 0
+                foreach pat $patterns {
+                    if {[string match -nocase $pat $f]} { set match 1; break }
+                }
+                if {!$match} continue
+            }
             lappend pairs [list [file mtime $full] $f]
         }
     }

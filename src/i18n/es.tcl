@@ -180,6 +180,8 @@ dict set ::i18n es {
     config_docs_dir              "Carpeta extra de documentos:"
     config_browse                "Explorar"
     config_browser_startup       "Mostrar navegador al inicio:"
+    config_browser_filter        "Filtro de archivos (navegador):"
+    config_browser_show_all      "Mostrar todos los archivos (ignorar filtro):"
     config_watch_file            "Vigilar cambios externos:"
     config_hemingway_mode        "Modo Hemingway (sin borrar):"
     config_split_shrink_margin   "Reducir margen en vista dividida:"

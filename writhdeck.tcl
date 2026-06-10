@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260604"
+set ::version          "v20260610"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -386,6 +386,8 @@ set ::cfg_bg_bar         "#2a2a2a"
 set ::cfg_fg_bar         "#aaaaaa"
 set ::cfg_bg_sel         "#3a5a8a"
 set ::cfg_docs_dir       ""
+set ::cfg_browser_filter "*.txt *.t2t *.md"
+set ::cfg_browser_show_all 0
 set ::cfg_console_margin_cols    6
 set ::cfg_console_margin_rows    4
 set ::cfg_heading_marker    "="
@@ -445,6 +447,7 @@ set ::cfg_key_paste        "Control-v"
 set ::cfg_key_select_all   "Control-a"
 set ::cfg_key_sticky_sel   "Control-k"
 set ::cfg_key_toc          "F11"
+set ::cfg_key_toc_pinned   "Control-Shift-F11"
 set ::cfg_key_line_numbers "Control-l"
 set ::cfg_key_redo         "Control-y"
 set ::cfg_key_typewriter   "Control-t"
@@ -743,6 +746,8 @@ proc ini-load {} {
                 dark_mode            { set ::cfg_dark_mode [string is true $v] }
                 key_dark_toggle      { set ::cfg_key_dark_toggle   $v }
                 browser              { set ::cfg_browser              [string is true $v] }
+                browser_filter       { set ::cfg_browser_filter       $v }
+                browser_show_all     { set ::cfg_browser_show_all     [string is true $v] }
                 console_center_alert { set ::cfg_console_center_alert [string is true $v] }
                 line_numbers     { set ::cfg_line_numbers   [string is true $v] }
                 cursor_restore   { set ::cfg_cursor_restore [string is true $v] }
@@ -774,6 +779,7 @@ proc ini-load {} {
                 key_select_all   { set ::cfg_key_select_all   $v }
                 key_sticky_sel   { set ::cfg_key_sticky_sel   $v }
                 key_toc          { set ::cfg_key_toc          $v }
+                key_toc_pinned   { set ::cfg_key_toc_pinned   $v }
                 key_line_numbers { set ::cfg_key_line_numbers $v }
                 key_redo         { set ::cfg_key_redo         $v }
                 key_typewriter   { set ::cfg_key_typewriter   $v }
@@ -838,6 +844,11 @@ proc ini-save {} {
     puts $fh "= behaviour ="
     puts $fh "\[behaviour\]"
     puts $fh "browser              = [expr {$::cfg_browser              ? "yes" : "no"}]"
+    puts $fh "% browser_filter: space-separated glob patterns for files shown in the browser"
+    puts $fh "% (empty = show all files)"
+    puts $fh "browser_filter       = $::cfg_browser_filter"
+    puts $fh "% browser_show_all: bypass browser_filter and show all files"
+    puts $fh "browser_show_all     = [expr {$::cfg_browser_show_all     ? "yes" : "no"}]"
     puts $fh "watch_file           = [expr {$::cfg_watch_file           ? "yes" : "no"}]"
     puts $fh "hemingway_mode       = [expr {$::cfg_hemingway_mode       ? "yes" : "no"}]"
     puts $fh "markdown_headings    = [expr {$::cfg_markdown_headings    ? "yes" : "no"}]"
@@ -916,6 +927,7 @@ proc ini-save {} {
     puts $fh "key_select_all   = $::cfg_key_select_all"
     puts $fh "key_sticky_sel   = $::cfg_key_sticky_sel"
     puts $fh "key_toc          = $::cfg_key_toc"
+    puts $fh "key_toc_pinned   = $::cfg_key_toc_pinned"
     puts $fh "key_line_numbers = $::cfg_key_line_numbers"
     puts $fh "key_redo         = $::cfg_key_redo"
     puts $fh "key_typewriter   = $::cfg_key_typewriter"
@@ -1543,6 +1555,8 @@ dict set ::i18n en {
     config_docs_dir              "Extra documents folder:"
     config_browse                "Browse"
     config_browser_startup       "Show browser on start:"
+    config_browser_filter        "Browser file filter:"
+    config_browser_show_all      "Show all files (ignore filter):"
     config_watch_file            "Watch for external changes:"
     config_hemingway_mode        "Hemingway mode (no delete):"
     config_split_shrink_margin   "Shrink margin in split view:"
@@ -1737,6 +1751,8 @@ dict set ::i18n de {
     config_docs_dir              "Zusaetzl. Dokumentenordner:"
     config_browse                "Durchsuchen"
     config_browser_startup       "Browser beim Start anzeigen:"
+    config_browser_filter        "Dateifilter (Browser):"
+    config_browser_show_all      "Alle Dateien anzeigen (Filter ignorieren):"
     config_watch_file            "Externe Anderungen uberwachen:"
     config_hemingway_mode        "Hemingway-Modus (kein Loschen):"
     config_split_shrink_margin   "Rand in geteilter Ansicht verkleinern:"
@@ -1931,6 +1947,8 @@ dict set ::i18n es {
     config_docs_dir              "Carpeta extra de documentos:"
     config_browse                "Explorar"
     config_browser_startup       "Mostrar navegador al inicio:"
+    config_browser_filter        "Filtro de archivos (navegador):"
+    config_browser_show_all      "Mostrar todos los archivos (ignorar filtro):"
     config_watch_file            "Vigilar cambios externos:"
     config_hemingway_mode        "Modo Hemingway (sin borrar):"
     config_split_shrink_margin   "Reducir margen en vista dividida:"
@@ -2125,6 +2143,8 @@ dict set ::i18n fr {
     config_docs_dir              "Dossier documents extra :"
     config_browse                "Parcourir"
     config_browser_startup       "Navigateur au demarrage :"
+    config_browser_filter        "Filtre de fichiers (navigateur) :"
+    config_browser_show_all      "Afficher tous les fichiers (ignorer filtre) :"
     config_watch_file            "Surveiller modifications externes :"
     config_hemingway_mode        "Mode Hemingway (sans suppression) :"
     config_split_shrink_margin   "Reduire marge en vue split :"
@@ -2319,6 +2339,8 @@ dict set ::i18n ko {
     config_docs_dir              "추가 문서 폴더:"
     config_browse                "찾아보기"
     config_browser_startup       "시작 시 브라우저 표시:"
+    config_browser_filter        "파일 필터 (브라우저):"
+    config_browser_show_all      "모든 파일 표시 (필터 무시):"
     config_watch_file            "외부 변경 감시:"
     config_hemingway_mode        "헤밍웨이 모드 (삭제 불가):"
     config_split_shrink_margin   "분할 보기에서 여백 축소:"
@@ -2513,6 +2535,8 @@ dict set ::i18n no {
     config_docs_dir              "Ekstra dokumentmappe:"
     config_browse                "Bla gjennom"
     config_browser_startup       "Vis nettleser ved oppstart:"
+    config_browser_filter        "Filfilter (nettleser):"
+    config_browser_show_all      "Vis alle filer (ignorer filter):"
     config_watch_file            "Se etter eksterne endringer:"
     config_hemingway_mode        "Hemingway-modus (ingen sletting):"
     config_split_shrink_margin   "Krymp margin i delt visning:"
@@ -2562,9 +2586,17 @@ set ::bg2    $bg2
 # --- utils --------------------------------------------------------------------
 proc list-docs {dir} {
     set pairs {}
+    set patterns [expr {$::cfg_browser_show_all ? {} : [regexp -all -inline {\S+} $::cfg_browser_filter]}]
     foreach f [glob -nocomplain -directory $dir -tails *] {
         set full [file join $dir $f]
         if {[file isfile $full] && ![string match .* $f]} {
+            if {[llength $patterns]} {
+                set match 0
+                foreach pat $patterns {
+                    if {[string match -nocase $pat $f]} { set match 1; break }
+                }
+                if {!$match} continue
+            }
             lappend pairs [list [file mtime $full] $f]
         }
     }
@@ -3381,8 +3413,18 @@ proc profile-config-dialog {} {
     pack $w.tab_misc.behaviour_sec.fdocs.entry -side left -fill x -expand 1 -padx {4 4}
     pack $w.tab_misc.behaviour_sec.fdocs.btn  -side left
 
+    # browser file filter row (entry)
+    frame $w.tab_misc.behaviour_sec.ffilter -bg $::bg
+    pack  $w.tab_misc.behaviour_sec.ffilter -fill x -padx 12 -pady 4
+    label $w.tab_misc.behaviour_sec.ffilter.lbl -text [t config_browser_filter] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+    entry $w.tab_misc.behaviour_sec.ffilter.entry -width 32 -font $::font_sm -bg $::bg_bar -fg $::fg \
+        -insertbackground $::fg -selectbackground $::bg_sel -selectforeground $::fg
+    pack $w.tab_misc.behaviour_sec.ffilter.lbl -side left
+    pack $w.tab_misc.behaviour_sec.ffilter.entry -side left -fill x -expand 1 -padx {4 4}
+
     # Boolean behaviour options
     foreach {fname key var} {
+        fshowall  config_browser_show_all     profile_config_browser_show_all
         fbrowser  config_browser_startup      profile_config_browser
         fwatch    config_watch_file           profile_config_watch_file
         fhemingway config_hemingway_mode      profile_config_hemingway
@@ -3403,6 +3445,8 @@ proc profile-config-dialog {} {
 
     # Load behaviour values
     $w.tab_misc.behaviour_sec.fdocs.entry insert 0 $::cfg_docs_dir
+    $w.tab_misc.behaviour_sec.ffilter.entry insert 0 $::cfg_browser_filter
+    set ::profile_config_browser_show_all $::cfg_browser_show_all
     set ::profile_config_browser        $::cfg_browser
     set ::profile_config_watch_file     $::cfg_watch_file
     set ::profile_config_hemingway      $::cfg_hemingway_mode
@@ -3598,6 +3642,8 @@ proc profile-config-dialog {} {
             set autosave_en  $::profile_config_autosave_enabled
             set autosave_int [.profile_config.tab_misc.autosave_sec.interval.spin get]
             set docs_dir    [.profile_config.tab_misc.behaviour_sec.fdocs.entry get]
+            set browser_filter [.profile_config.tab_misc.behaviour_sec.ffilter.entry get]
+            set browser_show_all $::profile_config_browser_show_all
             set browser     $::profile_config_browser
             set watch_file  $::profile_config_watch_file
             set hemingway   $::profile_config_hemingway
@@ -3642,6 +3688,8 @@ proc profile-config-dialog {} {
             set ::cfg_autosave_enabled  $autosave_en
             set ::cfg_autosave_interval $autosave_int
             set ::cfg_docs_dir          $docs_dir
+            set ::cfg_browser_filter    $browser_filter
+            set ::cfg_browser_show_all  $browser_show_all
             set ::cfg_browser           $browser
             set ::cfg_watch_file        $watch_file
             set ::cfg_hemingway_mode    $hemingway
@@ -5509,6 +5557,7 @@ proc toc-panel-open {} {
     bind .ed.toc.lst <ButtonRelease-1>     toc-panel-jump
     bind .ed.toc.lst <Return>              toc-panel-jump
     bind .ed.toc.lst <$::cfg_key_toc>      toc-panel-close
+    bind .ed.toc.lst <$::cfg_key_toc_pinned> toc-panel-close
     bind .ed.toc.lst <Escape>              { focus $::toc_ed }
 
     set ::toc_panel_open 1
@@ -5536,9 +5585,13 @@ proc toc-panel-theme {} {
                 -selectbackground $bg_sel -selectforeground $fg }
 }
 
+proc toc-panel-toggle {} {
+    if {$::toc_panel_open} { toc-panel-close } else { toc-panel-open }
+}
+
 proc toc-show {} {
     if {$::cfg_toc_pinned} {
-        if {$::toc_panel_open} { toc-panel-close } else { toc-panel-open }
+        toc-panel-toggle
         return
     }
     set ::toc_ed [active-ed]
@@ -5612,6 +5665,7 @@ proc toc-jump {w headings} {
 }
 
 bind .ed.t <$::cfg_key_toc>          { toc-show;   break }
+bind .ed.t <$::cfg_key_toc_pinned>   { toc-panel-toggle; break }
 bind .br.mid.lst <$::cfg_key_toc>   { br-toc-show; break }
 bind .ed.t <$::cfg_key_line_numbers> { ln-toggle;  break }
 
@@ -6213,6 +6267,7 @@ proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2 bg2} {
         bind $t <$_k> "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break"
     }
     bind $t <$::cfg_key_toc>            { toc-show; break }
+    bind $t <$::cfg_key_toc_pinned>     { toc-panel-toggle; break }
     bind $t <$::cfg_key_line_numbers>   { ln-toggle; break }
     bind $t <$::cfg_key_fullscreen>     { toggle-fullscreen; break }
     bind $t <$::cfg_key_split>          { split-toggle; break }
@@ -6345,6 +6400,7 @@ proc split-ws2-open {} {
     bind .ed.pw.r.t <$::cfg_key_replace>     { replace-open; break }
     bind .ed.pw.r.t <$::cfg_key_open>        { open-file-dialog; break }
     bind .ed.pw.r.t <$::cfg_key_toc>         { toc-show; break }
+    bind .ed.pw.r.t <$::cfg_key_toc_pinned>  { toc-panel-toggle; break }
     bind .ed.pw.r.t <$::cfg_key_line_numbers> { ln-toggle; break }
     bind .ed.pw.r.t <$::cfg_key_fullscreen>  { toggle-fullscreen; break }
     bind .ed.pw.r.t <$::cfg_key_typewriter>  { typewriter-toggle; break }
