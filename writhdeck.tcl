@@ -386,7 +386,7 @@ set ::cfg_bg_bar         "#2a2a2a"
 set ::cfg_fg_bar         "#aaaaaa"
 set ::cfg_bg_sel         "#3a5a8a"
 set ::cfg_docs_dir       ""
-set ::cfg_browser_filter "*.txt *.t2t *.md"
+set ::cfg_browser_filter "*.txt *.t2t *.md *.ini"
 set ::cfg_browser_show_all 0
 set ::cfg_console_margin_cols    6
 set ::cfg_console_margin_rows    4
