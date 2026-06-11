@@ -24,4 +24,8 @@ Hand-rolled JSON (no external parser):
 
 **`ini-save` format** — comments use `%`; section titles use WrithDeck heading syntax `= title =` so they appear in the F11 TOC when the INI is opened in the editor. The `= title =` lines are silently ignored by the parser (no match for `[section]` or `key = value` patterns). Sections: `editor`, `behaviour`, `timer` (subsection), `misc`, `tui_colors`, `keys`, `profiles`, `schemes` — plus one heading per named profile/scheme block.
 
-**Boolean values** — `ini-save` writes `yes`/`no` for all 17 boolean settings using `[expr {$::cfg_xxx ? "yes" : "no"}]`. All forms are accepted on load via `string is true $v`: `yes`, `no`, `1`, `0`, `true`, `false`, `on`, `off`.
+**Boolean values** — `ini-save` writes `yes`/`no` for all 20 boolean settings using `[expr {$::cfg_xxx ? "yes" : "no"}]`. All forms are accepted on load via `string is true $v`: `yes`, `no`, `1`, `0`, `true`, `false`, `on`, `off`.
+
+**Browser filter (`[behaviour]`)** — `browser_filter` (default `*.txt *.t2t *.md *.ini`, space-separated glob patterns; empty = show all) and `browser_show_all` (boolean, default `no`, bypasses `browser_filter` entirely) control which files `list-docs` shows. Both are written with explanatory `%` comments above their values.
+
+**`key_toc_pinned` (`[keys]`)** — default `Control-Shift-F11`; toggles the pinned TOC side panel (`toc-panel-toggle`) independently of `key_toc` (F11).

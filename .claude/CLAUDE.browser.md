@@ -26,7 +26,7 @@ Accessible via `c` key in browser. Invoked by `profile-config-dialog` proc. **Si
 - **Profile tab**: Global settings (default profile/scheme/language); per-profile: margin width/height, word goal, dark mode, line spacing (%), bar height, line numbers, block cursor, blinking cursor
 - **Fonts tab**: Per-profile font family (entry + available fonts listbox with scrollbar), font preview label (initialized with current font/size on open and on profile switch), font size spinbox
 - **Timer tab**: Type (countdown/stopwatch), duration (spinbox), sound at end (checkbox), alert message (checkbox), show in status bar (checkbox)
-- **Misc tab**: Autosave enabled/interval; Behaviour section: documents folder (entry + Browse button), browser on start, watch file, Hemingway mode, split shrink margin, cursor restore
+- **Misc tab**: Autosave enabled/interval; Behaviour section: documents folder (entry + Browse button), browser file filter (entry, space-separated glob patterns, default `*.txt *.t2t *.md *.ini`), show all files / bypass filter (checkbox, default off), browser on start, watch file, Hemingway mode, split shrink margin, cursor restore, pinned TOC panel
 - **Display tab**: Status bar zones (left/center/right entries); Editor section (heading marker); Markup section (comment/bold/italic/underline/strikethrough markers, markdown headings)
 - **Apply button**: Packed before tab content via `pack -before` so it stays visible at top; saves all tabs to globals + `ini-save`, applies theme, triggers `br-reload`
 
@@ -59,6 +59,18 @@ Key implementation details:
 
 Section order: `DOCS_DIR_DEFAULT` → `DOCS_DIR` (if custom) → Favorites → Recents.
 `br-active-dir` walks up to the nearest `header`; if `dir=""` returns `DOCS_DIR_DEFAULT`.
+
+## Browser file filter
+
+`list-docs {dir}` (`src/common.tcl`, shared GUI/TUI) filters the main directory listing by `::cfg_browser_filter` — a space-separated list of glob patterns (default `*.txt *.t2t *.md *.ini`), matched case-insensitively against the filename via `string match`. Empty filter = show everything. `::cfg_browser_show_all` (default off) bypasses the filter entirely regardless of `cfg_browser_filter`.
+
+Both settings are editable on the Misc tab (`ffilter` entry + `fshowall` checkbox, first item in the boolean checkbox loop). Note: favorites/recents (`build-extra-entries`) are **not** filtered — only the main directory listing.
+
+## Pinned TOC panel — F11 vs Shift+Ctrl+F11
+
+`cfg_key_toc` (default `F11`) opens the TOC: as a floating popup (`toc-show`) normally, or toggles the pinned side panel (`toc-panel-toggle`) when `cfg_toc_pinned` is on. `cfg_key_toc_pinned` (default `Control-Shift-F11`) always toggles the pinned panel via `toc-panel-toggle`, regardless of `cfg_toc_pinned` — letting users open the panel once even while in popup mode.
+
+`toc-panel-toggle` calls `toc-panel-open`/`toc-panel-close` based on `::toc_panel_open`. Bound (GUI only, not in `writhdeck-cli.tcl`) on: `.ed.t` (main editor), each `split-make-pane` peer, the WS2 pane (`.ed.pw.r.t`), and `.ed.toc.lst` (closes the panel from inside it).
 
 ## GUI-specific patterns
 

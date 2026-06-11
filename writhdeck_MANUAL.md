@@ -103,6 +103,8 @@ All keyboard shortcuts are configurable via the `[keys]` section.
 | Key                       | Default   | Description                                                                                         |
 | ------------------------- | --------- | --------------------------------------------------------------------------------------------------- |
 | `browser`                 | `yes`     | Return to file browser after closing a file                                                         |
+| `browser_filter`          | `*.txt *.t2t *.md *.ini` | Space-separated glob patterns for files shown in the browser; empty = show all      |
+| `browser_show_all`        | `no`      | Show all files in the browser, ignoring `browser_filter`                                            |
 | `watch_file`              | `yes`     | Detect external file modifications and prompt to reload; `no` to disable                            |
 | `split_shrink_margin`     | `yes`     | Halve `margin_width` in split view (GUI); `no` to keep the full margin                              |
 | `hemingway_mode`          | `no`      | When typewriter mode is active: block arrows, backspace and undo; hide status bar; double margins   |
@@ -112,6 +114,7 @@ All keyboard shortcuts are configurable via the `[keys]` section.
 | `blink_cursor`            | `no`      | Blinking cursor                                                                                     |
 | `line_numbers`            | `no`      | Show line numbers                                                                                   |
 | `cursor_restore`          | `yes`     | Restore cursor position on reopen                                                                   |
+| `toc_pinned`              | `no`      | Pin the table of contents as a side panel instead of a popup (toggle with F11 / Shift+Ctrl+F11)     |
 | `lang`                    | `en`      | Interface language: `en`, `fr`, `de`, `es`, `ko`, `no`; also selectable in config dialog (c key)    |
 | `dark_mode`               | `yes`     | Dark theme; `no` = light                                                                            |
 | `word_goal`               | `500`     | Daily word goal shown by the `goal` status token; `0` to disable                                    |
@@ -131,7 +134,7 @@ All keyboard shortcuts are configurable via the `[keys]` section.
 
 All actions are rebindable. Use Tk key names (`Control-s`, `Alt-Return`, `F11`, etc.):
 
-`key_save` `key_close` `key_find` `key_replace` `key_goto` `key_open` `key_undo` `key_redo` `key_help` `key_toc` `key_line_numbers` `key_fullscreen` `key_split` `key_split_focus` `key_workspace` (default: `F10`) `key_typewriter` `key_dark_toggle` `key_timer` (default: `Alt-t`)
+`key_save` `key_close` `key_find` `key_replace` `key_goto` `key_open` `key_undo` `key_redo` `key_help` `key_toc` `key_toc_pinned` (default: `Control-Shift-F11`) `key_line_numbers` `key_fullscreen` `key_split` `key_split_focus` `key_workspace` (default: `F10`) `key_typewriter` `key_dark_toggle` `key_timer` (default: `Alt-t`)
 
 ### `[profiles]`
 
@@ -306,7 +309,8 @@ Default mode, requires Tk.
 | Ctrl+D                     | Toggle dark/light theme                                                 |
 | Ctrl+Up / Ctrl+Down        | Jump to previous / next paragraph                                       |
 | Ctrl+Left / Ctrl+Right     | Jump to previous / next word                                            |
-| F11                        | Table of contents                                                       |
+| F11                        | Table of contents (popup, or toggles pinned panel if `toc_pinned = yes`) |
+| Shift+Ctrl+F11             | Toggle pinned table of contents panel (side panel instead of popup)    |
 | F3                         | Toggle split view                                                       |
 | F4                         | Split view — cycle focus between panes                                  |
 | F10                        | Switch to second workspace (WS1/WS2); in split view: load WS2 into right pane |
@@ -592,6 +596,8 @@ Tous les raccourcis clavier sont configurables via la section `[keys]`.
 | Clé                       | Défaut   | Description                                                                                                          |
 | ------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
 | `browser`                 | `1`      | Retourner au navigateur après la fermeture d'un fichier                                                              |
+| `browser_filter`          | `*.txt *.t2t *.md *.ini` | Motifs glob (séparés par espaces) des fichiers affichés dans le navigateur ; vide = tout afficher |
+| `browser_show_all`        | `0`      | Afficher tous les fichiers dans le navigateur, en ignorant `browser_filter`                                          |
 | `watch_file`              | `1`      | Détecter les modifications externes et proposer de recharger ; `0` pour désactiver                                   |
 | `split_shrink_margin`     | `1`      | Diviser `margin_width` par deux en vue fractionnée (GUI) ; `0` pour conserver la marge complète                      |
 | `hemingway_mode`          | `0`      | Quand le mode machine à écrire est actif : bloquer les flèches, la suppression et l'annulation                       |
@@ -601,6 +607,7 @@ Tous les raccourcis clavier sont configurables via la section `[keys]`.
 | `blink_cursor`            | `0`      | Curseur clignotant                                                                                                   |
 | `line_numbers`            | `0`      | Afficher les numéros de ligne                                                                                        |
 | `cursor_restore`          | `1`      | Restaurer la position du curseur à la réouverture                                                                    |
+| `toc_pinned`              | `0`      | Ancrer la table des matières dans un panneau latéral au lieu d'une popup (bascule avec F11 / Maj+Ctrl+F11)          |
 | `lang`                    | `en`     | Langue de l'interface : `en`, `fr`, `de`, `es`, `ko`, `no` ; aussi sélectionnable dans le dialogue config (touche c) |
 | `dark_mode`               | `1`      | Thème sombre ; `0` = clair                                                                                           |
 | `word_goal`               | `500`    | Objectif de mots journalier affiché par le jeton `goal` ; `0` pour désactiver                                        |
@@ -620,7 +627,7 @@ Tous les raccourcis clavier sont configurables via la section `[keys]`.
 
 Toutes les actions sont reconfigurables. Utiliser les noms de touches Tk (`Control-s`, `Alt-Return`, `F11`, etc.) :
 
-`key_save` `key_close` `key_find` `key_replace` `key_goto` `key_open` `key_undo` `key_redo` `key_help` `key_toc` `key_line_numbers` `key_fullscreen` `key_split` `key_split_focus` `key_workspace` (défaut : `F10`) `key_typewriter` `key_dark_toggle` `key_timer` (défaut : `Alt-t`)
+`key_save` `key_close` `key_find` `key_replace` `key_goto` `key_open` `key_undo` `key_redo` `key_help` `key_toc` `key_toc_pinned` (défaut : `Control-Shift-F11`) `key_line_numbers` `key_fullscreen` `key_split` `key_split_focus` `key_workspace` (défaut : `F10`) `key_typewriter` `key_dark_toggle` `key_timer` (défaut : `Alt-t`)
 
 ### `[profiles]`
 
@@ -797,7 +804,8 @@ Mode par défaut, nécessite Tk.
 | Ctrl+D                     | Basculer thème sombre/clair                                                     |
 | Ctrl+Up / Ctrl+Down        | Sauter au paragraphe précédent / suivant                                        |
 | Ctrl+Left / Ctrl+Right     | Sauter au mot précédent / suivant                                               |
-| F11                        | Table des matières                                                              |
+| F11                        | Table des matières (popup, ou bascule le panneau ancré si `toc_pinned = yes`)   |
+| Maj+Ctrl+F11               | Basculer le panneau ancré de la table des matières (panneau latéral au lieu de popup) |
 | F3                         | Basculer la vue fractionnée                                                     |
 | F4                         | Vue fractionnée — cycle du focus entre les volets                               |
 | F10                        | Basculer le second espace de travail (ES1/ES2) ; en vue fractionnée : charge ES2 dans le volet droit |
