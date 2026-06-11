@@ -618,7 +618,7 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
     <p>Writhdeck is a distraction-free writing environment for long-form text — novels, essays, notes, scripts.</p>
     <p>All your documents live in your browser (IndexedDB) — nothing is sent to any server. You can also edit files directly on disk.</p>
     <p>It features a custom colour-syntax overlay, typewriter focus mode, a session timer, daily word goals, and a fully keyboard-driven interface. Compatible with the Writhdeck desktop app via shared <code>.ini</code> settings.</p>
-    <p class="about-version">Build: 2026-06-09 — Open source — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
+    <p class="about-version">Build: 2026-06-11 — Open source — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
   </div>
   <div id="about-footer">
     <button id="about-ok">Close</button>
@@ -634,7 +634,7 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
   <div id="ed-header">
     <div id="ed-actions">
       <button id="ed-menu-btn" title="Menu">≡</button>
-      <button id="ed-close-btn" title="Back to browser (Ctrl+Q)">✕</button>
+      <button id="ed-close-btn" title="Back to browser (Ctrl+Q, or Ctrl+Shift+Q on Firefox)">✕</button>
     </div>
   </div>
   <div id="ed-body">
@@ -1691,18 +1691,37 @@ const TOC = (() => {
     if (btn) btn.classList.toggle('active', visible);
   }
 
+  function _setPinned(val) {
+    _pinned = val;
+    const pinBtn = document.getElementById('toc-pin-btn');
+    if (pinBtn) {
+      pinBtn.classList.toggle('active', _pinned);
+      pinBtn.title = _pinned
+        ? 'Unpin TOC (closes when selecting a chapter)'
+        : 'Pin TOC (stays open when selecting a chapter)';
+    }
+  }
+
   function _wire() {
     if (_wired) return;
     _wired = true;
     const pinBtn = document.getElementById('toc-pin-btn');
     if (!pinBtn) return;
-    pinBtn.addEventListener('click', () => {
-      _pinned = !_pinned;
-      pinBtn.classList.toggle('active', _pinned);
-      pinBtn.title = _pinned
-        ? 'Unpin TOC (closes when selecting a chapter)'
-        : 'Pin TOC (stays open when selecting a chapter)';
-    });
+    pinBtn.addEventListener('click', () => togglePin());
+  }
+
+  // Keyboard equivalent of clicking the pin button (Shift+Ctrl+F11, mirrors
+  // Tcl's cfg_key_toc_pinned). Also opens the panel when pinning it while closed —
+  // pinning a hidden panel would otherwise have no visible effect.
+  function togglePin() {
+    _wire();
+    _setPinned(!_pinned);
+    if (_pinned && !_visible) {
+      _visible = true;
+      _show(true);
+      render();
+      focusPanel();
+    }
   }
 
   function parse(text, s) {
@@ -1733,19 +1752,13 @@ const TOC = (() => {
     return text.split('\n').slice(0, lineIdx).reduce((s, l) => s + l.length + 1, 0);
   }
 
-  function linePixelTop(ta, lineIdx) {
-    const cs = getComputedStyle(ta);
-    const m  = document.createElement('div');
-    m.style.cssText = `position:fixed;top:-9999px;left:-9999px;visibility:hidden;`
-      + `white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;`
-      + `font-family:${cs.fontFamily};font-size:${cs.fontSize};line-height:${cs.lineHeight};`
-      + `padding:${cs.paddingTop} ${cs.paddingRight} 0 ${cs.paddingLeft};`
-      + `width:${ta.clientWidth}px;box-sizing:border-box`;
-    m.textContent = ta.value.split('\n').slice(0, lineIdx).join('\n') + (lineIdx > 0 ? '\n' : '');
-    document.body.appendChild(m);
-    const top = m.offsetHeight;
-    document.body.removeChild(m);
-    return top;
+  // The `.hl-line` spans in #ed-highlight share the textarea's exact font/padding/
+  // line-height (CSS-enforced) and are kept in sync with its content, so a line's
+  // already-computed offsetTop gives its scroll position directly — no extra layout.
+  function linePixelTop(lineIdx) {
+    const pre = document.getElementById('ed-highlight');
+    const padTop = parseFloat(getComputedStyle(pre).paddingTop) || 0;
+    return pre.children[lineIdx].offsetTop + padTop;
   }
 
   function _items() {
@@ -1775,7 +1788,7 @@ const TOC = (() => {
     const offset = lineToOffset(ta.value, lineIdx);
     ta.focus();
     ta.setSelectionRange(offset, offset);
-    ta.scrollTop = Math.max(0, linePixelTop(ta, lineIdx) - ta.clientHeight / 3);
+    ta.scrollTop = Math.max(0, linePixelTop(lineIdx) - ta.clientHeight / 3);
     if (!_pinned) {
       _visible = false;
       _show(false);
@@ -1835,7 +1848,7 @@ const TOC = (() => {
   function refresh() { if (_visible) render(); }
 
   return {
-    toggle, hide, refresh, move, selectFocused, focusPanel,
+    toggle, hide, refresh, move, selectFocused, focusPanel, togglePin,
     isVisible: () => _visible,
     isPinned: () => _pinned,
     isFocused: () => {
@@ -1906,6 +1919,7 @@ const Editor = (() => {
     ['f','find'], ['r','replace'], ['g','goto'], ['n','linenos'], ['o','toc'],
     ['d','dark'],  ['c','config'], ['e','export'], ['s','stats'], ['a','analyse'],
     ['i','info'],  ['t','timer'], ['p','pause'], ['w','typewriter'], ['m','menu'], ['q','close'],
+    ['1','h1'], ['2','h2'], ['3','h3'], ['b','bold'], ['u','underline'], ['x','strike'], ['/','comment'],
   ];
   let _typewriter       = false;
   let _wc               = 0;
@@ -2090,6 +2104,66 @@ const Editor = (() => {
     updateStatusBar();
   }
 
+  // Save As (Ctrl+Shift+S) — mirrors the Tcl GUI's Save-As. With the File System
+  // Access API, lets the user pick a new file/location and re-points this document
+  // at it. Without FSA (e.g. Firefox), falls back to saving a copy under a new name
+  // in browser storage and switches the editor to that copy.
+  async function saveAs() {
+    if (!State.doc || State.doc.isIni) return;
+    if (typeof window.showSaveFilePicker === 'function') {
+      let handle;
+      try {
+        handle = await window.showSaveFilePicker({
+          suggestedName: State.doc.name,
+          types: [{ description: 'Text', accept: { 'text/plain': ['.txt', '.md', '.t2t'] } }]
+        });
+      } catch (e) {
+        if (e.name !== 'AbortError') { setMsg('Save As failed'); console.error(e); }
+        return;
+      }
+      try {
+        const writable = await handle.createWritable();
+        await writable.write(ta().value);
+        await writable.close();
+      } catch (e) {
+        setMsg('Save As failed'); console.error(e);
+        return;
+      }
+      State.doc.fileHandle = handle;
+      State.doc.name       = handle.name;
+      State.doc.fromDisk    = true;
+      State.doc.content     = ta().value;
+      State.doc.modified    = Date.now();
+      await DB.saveDoc(State.doc);
+      const idx = State.docs.findIndex(d => d.id === State.doc.id);
+      if (idx >= 0) State.docs[idx] = State.doc;
+      State.dirty = false;
+      document.title = `${State.doc.name} — Writhdeck`;
+      setMsg('Saved as ' + State.doc.name);
+      updateStatusBar();
+      Browser.render();
+      return;
+    }
+
+    // Fallback: save a copy under a new name in browser storage
+    const name = prompt('Save as (new name):', Browser.uniqueName(State.doc.name));
+    if (!name || !name.trim()) return;
+    const trimmed = name.trim();
+    if (Browser.nameExists(trimmed)) {
+      alert(`A document named "${trimmed}" already exists.`);
+      return;
+    }
+    const copy = { name: trimmed, content: ta().value, created: Date.now(), modified: Date.now() };
+    await DB.saveDoc(copy);
+    State.docs.push(copy);
+    State.doc   = copy;
+    State.dirty = false;
+    document.title = `${copy.name} — Writhdeck`;
+    setMsg('Saved as ' + copy.name);
+    updateStatusBar();
+    Browser.render();
+  }
+
   // ── Input handling ────────────────────────────────────────────────────────
 
   function onInput() {
@@ -2114,6 +2188,15 @@ const Editor = (() => {
   let _prevLineIdx = -1;
   let _prevLineStart = -1;
   let _prevLineEnd = -1;
+
+  // Tracks which <span class="hl-line"> currently renders the <span class="hl-cursor">
+  // (block cursor mode only) and that line's offsets in the source text — lets
+  // syncBlockCursor()/_tryIncrementalRepaint() move the cursor span by patching
+  // just the old/new line(s) instead of a full rehighlight(). -1 when block
+  // cursor is off or no cursor has been placed yet.
+  let _prevCursorLineIdx = -1;
+  let _prevCursorLineStart = -1;
+  let _prevCursorLineEnd = -1;
 
   // Locate the line containing offset `pos` in `text` without scanning the
   // whole document for its boundaries (lastIndexOf/indexOf walk backward and
@@ -2178,6 +2261,13 @@ const Editor = (() => {
     _prevLineIdx = info.idx;
     _prevLineStart = info.lineStart;
     _prevLineEnd = info.lineEnd;
+    if (State.settings.blockCursor) {
+      _prevCursorLineIdx = info.idx;
+      _prevCursorLineStart = info.lineStart;
+      _prevCursorLineEnd = info.lineEnd;
+    } else {
+      _prevCursorLineIdx = -1;
+    }
     scheduleSyncGutter();
   }
 
@@ -2205,7 +2295,6 @@ const Editor = (() => {
     if (_prevText === null || _prevLineIdx < 0) return false;
     if (!document.getElementById('search-bar').hidden) return false;
     if (_typewriter) return false;
-    if (State.settings.blockCursor) return false;
 
     const text = ta().value;
     const pos  = ta().selectionStart;
@@ -2220,13 +2309,55 @@ const Editor = (() => {
     if (!lineEl) return false;
 
     const s = State.settings;
-    lineEl.innerHTML = _renderLine(text.slice(lineStart, lineEnd), s, escRx(s.headingMarker), escRx(s.commentMarker), _buildMarkupRules(s), false);
+    let lineHtml = _renderLine(text.slice(lineStart, lineEnd), s, escRx(s.headingMarker), escRx(s.commentMarker), _buildMarkupRules(s), false);
+    // Typing always edits at the cursor, which (per the invariant maintained by
+    // rehighlight()/syncBlockCursor()) is already on this same line — so the
+    // cursor span only ever needs to move WITHIN this line, never to another.
+    if (s.blockCursor) {
+      lineHtml = injectCursorAt(lineHtml, pos - lineStart);
+      _prevCursorLineIdx = _prevLineIdx;
+      _prevCursorLineStart = lineStart;
+      _prevCursorLineEnd = lineEnd;
+    }
+    lineEl.innerHTML = lineHtml;
     _prevText = text;
     _prevLineStart = lineStart;
     _prevLineEnd = lineEnd;
     // _prevLineIdx unchanged — same line, no newlines shifted before it
     scheduleSyncGutter();
     return true;
+  }
+
+  // Moves the <span class="hl-cursor"> to the line under the cursor by
+  // re-rendering only the old and new cursor lines — avoids a full
+  // rehighlight() (rebuilding all <span class="hl-line"> via innerHTML, very
+  // costly on large documents in Firefox) on every click/arrow-key when block
+  // cursor is enabled. Reads line text from `text` (the source), not from the
+  // DOM, since a line previously holding an end-of-line cursor has a synthetic
+  // trailing space appended to its rendered HTML (see injectCursorAt).
+  function syncBlockCursor() {
+    if (!State.settings.blockCursor || !State.doc) return;
+    const text = ta().value;
+    const pos  = ta().selectionStart;
+    const info = _lineInfoAt(text, pos);
+    const col  = pos - info.lineStart;
+
+    if (info.idx !== _prevCursorLineIdx && _prevCursorLineIdx >= 0) {
+      _patchCursorLine(_prevCursorLineIdx, text.slice(_prevCursorLineStart, _prevCursorLineEnd), undefined);
+    }
+    _patchCursorLine(info.idx, text.slice(info.lineStart, info.lineEnd), col);
+    _prevCursorLineIdx = info.idx;
+    _prevCursorLineStart = info.lineStart;
+    _prevCursorLineEnd = info.lineEnd;
+  }
+
+  function _patchCursorLine(idx, lineText, cursorCol) {
+    const lineEl = pre().children[idx];
+    if (!lineEl) return;
+    const s = State.settings;
+    let html = _renderLine(lineText, s, escRx(s.headingMarker), escRx(s.commentMarker), _buildMarkupRules(s), false);
+    if (cursorCol !== undefined) html = injectCursorAt(html, cursorCol);
+    lineEl.innerHTML = html;
   }
 
   function syncGutter() {
@@ -2273,26 +2404,17 @@ const Editor = (() => {
     _typewriter = !_typewriter;
     document.getElementById('editor').classList.toggle('typewriter', _typewriter);
     setMsg(_typewriter ? 'Typewriter mode on' : 'Typewriter mode off');
-    _twCache = { lineIdx: -1, top: 0 };
     if (_typewriter) typewriterScroll();
   }
 
-  // linePixelTop() builds a hidden mirror <div> containing every line BEFORE lineIdx
-  // and measures its layout height — on a 90K-word doc with the cursor mid-document
-  // that's hundreds of KB of text laid out on EVERY keystroke (~400ms). But typing
-  // within the current line never changes the height of the lines before it, so the
-  // result is loop-invariant w.r.t. lineIdx — cache it and only recompute when the
-  // cursor actually moves to a different line.
-  let _twCache = { lineIdx: -1, top: 0 };
+  function isTypewriter() { return _typewriter; }
+
   function typewriterScroll() {
     if (!_typewriter) return;
     const input   = ta();
     const lineIdx = input.value.substring(0, input.selectionStart).split('\n').length - 1;
     const lh      = parseFloat(getComputedStyle(input).lineHeight) || 20;
-    if (_twCache.lineIdx !== lineIdx) {
-      _twCache = { lineIdx, top: linePixelTop(input, lineIdx) };
-    }
-    input.scrollTop = Math.max(0, _twCache.top - input.clientHeight / 2 + lh / 2);
+    input.scrollTop = Math.max(0, linePixelTop(lineIdx) - input.clientHeight / 2 + lh / 2);
   }
 
   // ── Line numbers ──────────────────────────────────────────────────────────
@@ -2351,7 +2473,7 @@ const Editor = (() => {
     for (let i = 0; i < lineIdx; i++) offset += lines[i].length + 1;
     input.focus();
     input.setSelectionRange(offset, offset);
-    input.scrollTop = Math.max(0, linePixelTop(input, lineIdx) - input.clientHeight / 3);
+    input.scrollTop = Math.max(0, linePixelTop(lineIdx) - input.clientHeight / 3);
   }
 
   function gotoLineClose() {
@@ -2359,19 +2481,13 @@ const Editor = (() => {
     ta().focus();
   }
 
-  function linePixelTop(input, lineIdx) {
-    const cs = getComputedStyle(input);
-    const m  = document.createElement('div');
-    m.style.cssText = `position:fixed;top:-9999px;left:-9999px;visibility:hidden;`
-      + `white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word;`
-      + `font-family:${cs.fontFamily};font-size:${cs.fontSize};line-height:${cs.lineHeight};`
-      + `padding:${cs.paddingTop} ${cs.paddingRight} 0 ${cs.paddingLeft};`
-      + `width:${input.clientWidth}px;box-sizing:border-box`;
-    m.textContent = input.value.split('\n').slice(0, lineIdx).join('\n') + (lineIdx > 0 ? '\n' : '');
-    document.body.appendChild(m);
-    const top = m.offsetHeight;
-    document.body.removeChild(m);
-    return top;
+  // The `.hl-line` spans in #ed-highlight share the textarea's exact font/padding/
+  // line-height (CSS-enforced) and are kept in sync with its content, so a line's
+  // already-computed offsetTop gives its scroll position directly — no extra layout.
+  function linePixelTop(lineIdx) {
+    const pre = document.getElementById('ed-highlight');
+    const padTop = parseFloat(getComputedStyle(pre).paddingTop) || 0;
+    return pre.children[lineIdx].offsetTop + padTop;
   }
 
   // ── Markup helpers ────────────────────────────────────────────────────────
@@ -2698,7 +2814,7 @@ const Editor = (() => {
     const lineIdx = input.value.slice(0, pos).split('\n').length - 1;
     // Ne pas appeler input.focus() : cela volerait le focus depuis le champ de recherche
     input.setSelectionRange(pos, pos + _searchTerm.length);
-    input.scrollTop = Math.max(0, linePixelTop(input, lineIdx) - input.clientHeight / 3);
+    input.scrollTop = Math.max(0, linePixelTop(lineIdx) - input.clientHeight / 3);
     syncScroll();
   }
 
@@ -2738,10 +2854,10 @@ const Editor = (() => {
   }
 
   return {
-    open, close, save, onInput, syncScroll, syncGutter, rehighlight, updateStatusBar, setMsg,
-    syncCursorLineCache,
+    open, close, save, saveAs, onInput, syncScroll, syncGutter, rehighlight, updateStatusBar, setMsg,
+    syncCursorLineCache, syncBlockCursor,
     saveCursorPos, applyLineNumbers,
-    toggleTypewriter, typewriterScroll, toggleLineNumbers, gotoLine, gotoLineGo, gotoLineClose,
+    toggleTypewriter, isTypewriter, typewriterScroll, toggleLineNumbers, gotoLine, gotoLineGo, gotoLineClose,
     applyLineMarker, applyInlineMarker, applyHeading,
     enterCmdMode, exitCmdMode, isCmdMode, cmdNavMove, getCmdNavKey,
     searchOpen, searchClose, searchUpdate, searchNext, searchPrev, replaceOne, replaceAll,
@@ -2816,6 +2932,7 @@ const Browser = (() => {
     const row = document.createElement('div');
     row.className = 'br-item br-nav-item';
     row.tabIndex = -1;
+    row.dataset.id = String(doc.id);
     if (State.doc && State.doc.id === doc.id) row.classList.add('selected');
 
     // No pin for folder files (they are ephemeral, not in IDB)
@@ -2995,6 +3112,30 @@ const Browser = (() => {
     render();
   }
 
+  // Returns the document corresponding to the currently keyboard-focused
+  // browser row (`.br-focused`), or null if none / the row isn't a regular
+  // stored document (e.g. writhdeck.ini, watched-folder files).
+  function getFocusedDoc() {
+    const row = document.querySelector('#br-list .br-nav-item.br-focused');
+    if (!row || !row.dataset.id || row.dataset.id === '__ini__') return null;
+    return State.docs.find(d => String(d.id) === row.dataset.id) || null;
+  }
+
+  // Saves a timestamped copy of `doc` as a new document (mirrors Tcl's
+  // do-backup, which copies the file into DOCS_DIR/backups/ with a
+  // "%Y-%m-%dT%Hh%Mm%S" timestamp).
+  async function backupDoc(doc) {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+      `T${pad(d.getHours())}h${pad(d.getMinutes())}m${pad(d.getSeconds())}`;
+    const name = uniqueName(`${doc.name} (backup ${stamp})`);
+    const copy = { name, content: doc.content || '', created: Date.now(), modified: Date.now() };
+    await DB.saveDoc(copy);
+    State.docs.push(copy);
+    render();
+  }
+
   function exportDocFrom(doc, fmt) {
     const ext  = fmt === 'md' ? '.md' : '.txt';
     const name = doc.name.replace(/\.[^.]+$/, '') + ext;
@@ -3010,6 +3151,15 @@ const Browser = (() => {
 
   // ── Shortcut bar ──────────────────────────────────────────────────────────
 
+  // Wraps an action so it only fires when a browser row is keyboard-focused
+  // (used for shortcuts that act on the focused document: r/d/b/f/i).
+  function withFocused(fn) {
+    return () => {
+      const doc = getFocusedDoc();
+      if (doc) fn(doc);
+    };
+  }
+
   function buildShortcutBar() {
     const bar = document.getElementById('br-bar');
     bar.innerHTML = '';
@@ -3021,7 +3171,17 @@ const Browser = (() => {
       ] : []),
       ['Ctrl+O', 'import copy', () => document.getElementById('file-import-input').click()],
       ['s', 'stats', () => Stats.show()],
-      ['c', 'config', () => Settings.show()]
+      ['c', 'config', () => Settings.show()],
+      ['r', 'rename',   withFocused(renameDoc)],
+      ['d', 'delete',   withFocused(deleteDoc)],
+      ['b', 'backup',   withFocused(backupDoc)],
+      ['f', 'favorite', withFocused(doc => { toggleFavorite(doc.id); render(); })],
+      ['i', 'info',     withFocused(doc => document.dispatchEvent(new CustomEvent('writhdeck-show-info', { detail: doc })))],
+      ['h', 'help', () => {
+        const d = document.getElementById('br-help-details');
+        d.open = !d.open;
+      }],
+      ['z', 'reload', () => location.reload()]
     ];
     shortcuts.forEach(([key, label, fn]) => {
       const sp = document.createElement('span');
@@ -3036,6 +3196,7 @@ const Browser = (() => {
     const row = document.createElement('div');
     row.className = 'br-item br-nav-item';
     row.tabIndex = -1;
+    row.dataset.id = '__ini__';
     if (State.doc && State.doc.isIni) row.classList.add('selected');
 
     const ico = document.createElement('span');
@@ -3183,7 +3344,7 @@ const Browser = (() => {
     render();
   }
 
-  return { render, newDoc, renameDoc, deleteDoc, openFromDisk, openFolder, hideContextMenu, hasFSA };
+  return { render, newDoc, renameDoc, deleteDoc, openFromDisk, openFolder, hideContextMenu, hasFSA, nameExists, uniqueName, getFocusedDoc, backupDoc };
 })();
 
 
@@ -3596,7 +3757,7 @@ const Settings = (() => {
 'use strict';
 // Main entry point
 
-const README_CONTENT = "# Writhdeck\n\nA distraction-free writing app that runs as a single self-contained HTML file \u2014 no server, no install, no internet required. Open `writhdeck.html` directly in any modern browser.\n\n## Features\n\n- **Single-file**: the entire app is one `writhdeck.html` (~180 KB). Copy it anywhere, it just works.\n- **Document browser**: create, rename, delete, and favourite documents stored in IndexedDB. Document names are unique \u2014 duplicates are auto-suggested as `\"Untitled (2)\"` etc.\n- **Disk file support** (Chrome/Edge/Brave): open individual files or watch a folder \u2014 edits go straight back to disk via the File System Access API.\n- **Syntax highlighting overlay**: headings, comments, and inline markers (bold, italic, underline, strikethrough) are coloured in real time without leaving the textarea.\n- **Configurable markers**: choose your own syntax for headings, comments, and each inline style. Enable Markdown-style `#` headings if you prefer.\n- **8 built-in colour schemes** (default, solarized, gruvbox, everforest, nord, + 3 more), dark and light variants, and full custom-scheme support.\n- **Writing timer**: countdown or stopwatch, with optional sound and alert at the end.\n- **Table of contents**: auto-generated from heading lines, shown in a side panel.\n- **Daily writing stats**: tracks words *added* today (not total document size) with a high-water mark across sessions. Optional daily goal.\n- **Hemingway mode**: disables backspace/delete to keep you writing forward.\n- **Typewriter mode**: keeps the cursor vertically centred; dims text outside the current paragraph so only the active paragraph appears at full colour.\n- **Find & replace** with live match highlighting, goto line, line numbers.\n- **Structure analysis**: section-by-section word-count breakdown with progress bars. Accessible from the `\u2261` menu (`a`).\n- **Word occurrences**: frequency table of all words, sorted by count. Accessible from the Analyse dialog or the `\u2261` menu.\n- **Block cursor**: optional solid rectangle cursor, rendered in the highlight overlay. Supports blink on/off.\n- **Export** as `.txt` or `.md`.\n- **INI config**: `writhdeck.ini` is always visible in the browser. Right-click it to open, export, or reset to defaults. The format is compatible with the Tcl/Tk desktop version; web-specific options are in a dedicated `[web]` section.\n- **Status bar**: fully customisable left/centre/right slots with tokens \u2014 see [Status bar tokens](#status-bar-tokens).\n- **`\u2261` menu**: all commands accessible from a single dropdown \u2014 keyboard-navigable (\u2191\u2193 + Enter, or press the hint letter directly), with format options (H1\u2013H3, bold, italic\u2026), search, export, settings, and more. Opening the menu preserves any active text selection.\n- **Right-click context menu**: format, cut/copy/paste, and spell-check toggle (editor); Open / Info / Rename / Export / Delete (browser document list); Open / Export / Reset (writhdeck.ini).\n- **Command mode** (`Esc` or `Alt+C`): interactive status bar showing all commands as clickable buttons. Navigate with `\u2190`/`\u2192`, confirm with `Enter`, or click with the mouse.\n- **About dialog**: accessible from the `?` menu in the browser \u2014 shows the app description and build date.\n- **Undo support**: bold, italic, heading, and comment formatting operations integrate with the browser's native undo stack (via `execCommand('insertText')`).\n\n## Build\n\n```sh\nmake        # produces writhdeck.html (~180 KB)\nmake clean  # removes writhdeck.html\n```\n\n`build.py` reads `src/template.html`, inlines `src/style.css` and all JS modules (in the order defined in `JS_ORDER`), and writes the result to stdout. The build date is embedded as `2026-06-09` (ISO format). Python 3, no dependencies.\n\n## Keyboard shortcuts\n\n### Global\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+D` | Toggle dark / light mode |\n| `Ctrl+O` | Import file copy |\n| `F11` | Toggle table of contents |\n| `Alt+Enter` | Toggle fullscreen |\n| `Ctrl+N` *(opt)* | New document (overrides browser \"new window\", requires setting) |\n\n### Editor\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+S` | Save |\n| `Ctrl+Q` | Close document |\n| `Ctrl+F` | Find (live match highlighting) |\n| `Ctrl+H` | Find & replace |\n| `Ctrl+G` | Go to line |\n| `Ctrl+L` | Toggle line numbers |\n| `Alt+T` | Toggle timer |\n| `Alt+C` / `Esc` | Enter command mode |\n| `Alt+M` | Open `\u2261` menu |\n\n### Command mode (`Alt+C` or `Esc`)\n\nThe status bar becomes an interactive row of command buttons. Works in fullscreen (`Alt+C`).\n\n| Input | Action |\n|---|---|\n| `\u2190` / `\u2192` | Move selection between commands |\n| `Enter` | Execute selected command |\n| *letter* | Execute command directly (e.g. `f` = Find) |\n| Mouse click | Execute command directly |\n\n| Key | Action | Key | Action |\n|---|---|---|---|\n| `f` | Find | `d` | Dark / light |\n| `r` | Find & replace | `o` | Table of contents |\n| `g` | Go to line | `c` | Settings |\n| `n` | Line numbers | `e` | Export as .txt |\n| `w` | Typewriter mode | `s` | Statistics |\n| `t` | Timer | `a` | Analyse structure |\n| `p` | Timer pause | `i` | File info |\n| `q` | Close document | `m` | Main menu (\u2261) |\n\n### Browser (document list)\n\n| Key | Action |\n|---|---|\n| `\u2191` / `\u2193` | Navigate document list |\n| `Enter` | Open selected document |\n| `n` | New document |\n| `o` | Open file from disk |\n| `w` | Watch a folder |\n| `s` | Stats |\n| `c` | Settings |\n\n## Status bar tokens\n\nThe three status bar zones (left / centre / right) are configured as space-separated token strings in Settings \u2192 Profile.\n\n| Token | Example | Description |\n|---|---|---|\n| `filename` | `my-novel.txt` | Current document name |\n| `dirty` | `[+]` | Unsaved changes indicator |\n| `words` | `1 842w` | Word count |\n| `chars` | `10 240c` | Character count |\n| `lines` | `312L` | Total line count |\n| `line` | `L42` | Current cursor line |\n| `col` | `C7` | Current cursor column |\n| `para` | `18\u00a7` | Paragraph count (blank-line separated) |\n| `pages` | `7p` | Estimated pages at 250 w/page |\n| `percent` | `68%` | Progress toward word goal |\n| `today` | `342\u2191` | Words *added* today (high-water mark across sessions) |\n| `goal` | `342/500` | Today's words / goal (hidden if no goal) |\n| `reading` | `9min` | Estimated reading time at 200 w/min |\n| `clock` | `14:32` | Current time |\n| `timer` | `24:07` | Writing timer display |\n| `space` | ` ` | Single space (explicit separator) |\n| *(anything else)* | literal | Fixed text, separators, etc. |\n\nDefault: Left `filename dirty words` \u00b7 Center *(empty)* \u00b7 Right `goal clock timer`\n\n## INI config\n\n`writhdeck.ini` uses the same format as the Tcl/Tk desktop version. Web-specific options live in a dedicated section so they are silently ignored by the desktop version:\n\n```ini\n[web]\n% Options specific to the web version \u2014 ignored by the desktop version\nopen_last_doc               = no\nintercept_browser_shortcuts = yes\nintercept_context_menu      = yes\n```\n\nOptions shared with the desktop version (`block_cursor`, `blink_cursor`, `line_numbers`, `dark_mode`, etc.) stay in `[behaviour]`.\n\nRight-click `writhdeck.ini` in the browser to export it or reset all settings to defaults (the file is recreated from defaults on next load).\n\n## Project structure\n\n```\nsrc/\n  template.html   HTML skeleton with {{STYLE}} / {{SCRIPT}} / 2026-06-09 placeholders\n  style.css       All CSS (uses CSS custom properties only, no hardcoded colours)\n  schemes.js      Built-in colour schemes + custom-scheme support\n  db.js           IndexedDB wrapper (promise-based)\n  state.js        App state, load/save helpers\n  ini.js          INI config parser/writer (compatible with desktop version)\n  highlight.js    Syntax highlighter + word count + block cursor injection\n  timer.js        Writing timer\n  toc.js          Table of contents\n  stats.js        Daily word-count stats dialog\n  editor.js       Editor panel, textarea/overlay sync, find/replace, formatting\n  browser.js      Document browser panel, FSA integration\n  settings.js     Settings dialog\n  app.js          Entry point, theme, keyboard router, menus, dialogs\nbuild.py          Build script (inlines CSS/JS, stamps build date)\nMakefile          Convenience wrapper around build.py\n```\n\n## Storage\n\nDocuments are stored in IndexedDB (`writhdeck` database, version 1):\n\n- **`documents`** store \u2014 each document: `id`, `name`, `content`, `created`, `modified`.\n- **`meta`** store \u2014 keyed entries: `iniText`, `favorites`, `recents`, `cursors`, `daily`.\n\nNothing is sent to any server.\n\n## Adding a colour scheme\n\nAdd an entry to the `SCHEMES` object in `src/schemes.js`. Each scheme needs 9 dark-mode keys and 9 light-mode (`*Alt`) keys: `bg`, `fg`, `bgBar`, `fgBar`, `bgSel`, `heading`, `comment`, `markup`, `bg2` (+ `Alt` variants). Then run `make`.\n\n## License\n\nCopyright (C) 2026 by Luginfo \u2014 Zero-Clause BSD License\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted. The software is provided \"as is\" without warranty of any kind.\n";
+const README_CONTENT = "# Writhdeck\n\nA distraction-free writing app that runs as a single self-contained HTML file \u2014 no server, no install, no internet required. Open `writhdeck.html` directly in any modern browser.\n\n## Features\n\n- **Single-file**: the entire app is one `writhdeck.html` (~180 KB). Copy it anywhere, it just works.\n- **Document browser**: create, rename, delete, and favourite documents stored in IndexedDB. Document names are unique \u2014 duplicates are auto-suggested as `\"Untitled (2)\"` etc.\n- **Disk file support** (Chrome/Edge/Brave): open individual files or watch a folder \u2014 edits go straight back to disk via the File System Access API.\n- **Syntax highlighting overlay**: headings, comments, and inline markers (bold, italic, underline, strikethrough) are coloured in real time without leaving the textarea.\n- **Configurable markers**: choose your own syntax for headings, comments, and each inline style. Enable Markdown-style `#` headings if you prefer.\n- **8 built-in colour schemes** (default, solarized, gruvbox, everforest, nord, + 3 more), dark and light variants, and full custom-scheme support.\n- **Writing timer**: countdown or stopwatch, with optional sound and alert at the end.\n- **Table of contents**: auto-generated from heading lines, shown in a side panel.\n- **Daily writing stats**: tracks words *added* today (not total document size) with a high-water mark across sessions. Optional daily goal.\n- **Hemingway mode**: disables backspace/delete to keep you writing forward.\n- **Typewriter mode**: keeps the cursor vertically centred; dims text outside the current paragraph so only the active paragraph appears at full colour.\n- **Find & replace** with live match highlighting, goto line, line numbers.\n- **Structure analysis**: section-by-section word-count breakdown with progress bars. Accessible from the `\u2261` menu (`a`).\n- **Word occurrences**: frequency table of all words, sorted by count. Accessible from the Analyse dialog or the `\u2261` menu.\n- **Block cursor**: optional solid rectangle cursor, rendered in the highlight overlay. Supports blink on/off.\n- **Export** as `.txt` or `.md`.\n- **INI config**: `writhdeck.ini` is always visible in the browser. Right-click it to open, export, or reset to defaults. The format is compatible with the Tcl/Tk desktop version; web-specific options are in a dedicated `[web]` section.\n- **Status bar**: fully customisable left/centre/right slots with tokens \u2014 see [Status bar tokens](#status-bar-tokens).\n- **`\u2261` menu**: all commands accessible from a single dropdown \u2014 keyboard-navigable (\u2191\u2193 + Enter, or press the hint letter directly), with format options (H1\u2013H3, bold, italic\u2026), search, export, settings, and more. Opening the menu preserves any active text selection.\n- **Right-click context menu**: format, cut/copy/paste, and spell-check toggle (editor); Open / Info / Rename / Export / Delete (browser document list); Open / Export / Reset (writhdeck.ini).\n- **Command mode** (`Esc` or `Alt+C`): interactive status bar showing all commands as clickable buttons. Navigate with `\u2190`/`\u2192`, confirm with `Enter`, or click with the mouse.\n- **About dialog**: accessible from the `?` menu in the browser \u2014 shows the app description and build date.\n- **Undo support**: bold, italic, heading, and comment formatting operations integrate with the browser's native undo stack (via `execCommand('insertText')`).\n\n## Build\n\n```sh\nmake        # produces writhdeck.html (~180 KB)\nmake clean  # removes writhdeck.html\n```\n\n`build.py` reads `src/template.html`, inlines `src/style.css` and all JS modules (in the order defined in `JS_ORDER`), and writes the result to stdout. The build date is embedded as `2026-06-11` (ISO format). Python 3, no dependencies.\n\n## Keyboard shortcuts\n\n### Global\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+D` | Toggle dark / light mode |\n| `Ctrl+O` | Import file copy |\n| `F11` | Toggle table of contents |\n| `Alt+Enter` | Toggle fullscreen |\n| `Ctrl+N` *(opt)* | New document (overrides browser \"new window\", requires setting) |\n\n### Editor\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+S` | Save |\n| `Ctrl+Q` | Close document (`Ctrl+Shift+Q` on Firefox, see [Browser notes](#browser-notes)) |\n| `Ctrl+F` | Find (live match highlighting) |\n| `Ctrl+H` | Find & replace |\n| `Ctrl+G` | Go to line |\n| `Ctrl+L` | Toggle line numbers |\n| `Alt+T` | Toggle timer |\n| `Alt+C` / `Esc` | Enter command mode |\n| `Alt+M` | Open `\u2261` menu |\n\n### Command mode (`Alt+C` or `Esc`)\n\nThe status bar becomes an interactive row of command buttons. Works in fullscreen (`Alt+C`).\n\n| Input | Action |\n|---|---|\n| `\u2190` / `\u2192` | Move selection between commands |\n| `Enter` | Execute selected command |\n| *letter* | Execute command directly (e.g. `f` = Find) |\n| Mouse click | Execute command directly |\n\n| Key | Action | Key | Action |\n|---|---|---|---|\n| `f` | Find | `d` | Dark / light |\n| `r` | Find & replace | `o` | Table of contents |\n| `g` | Go to line | `c` | Settings |\n| `n` | Line numbers | `e` | Export as .txt |\n| `w` | Typewriter mode | `s` | Statistics |\n| `t` | Timer | `a` | Analyse structure |\n| `p` | Timer pause | `i` | File info |\n| `q` | Close document | `m` | Main menu (\u2261) |\n\n### Browser (document list)\n\n| Key | Action |\n|---|---|\n| `\u2191` / `\u2193` | Navigate document list |\n| `Enter` | Open selected document |\n| `n` | New document |\n| `o` | Open file from disk |\n| `w` | Watch a folder |\n| `s` | Stats |\n| `c` | Settings |\n\n## Browser notes\n\n- **Disk file support** (open/watch files, edits saved straight back to disk) requires the File System Access API \u2014 available in Chrome, Edge, Brave, and other Chromium-based browsers. Firefox falls back to IndexedDB-only storage.\n- **Large documents** (tens of thousands of words): Firefox is noticeably slower than Chromium-based browsers, especially when a full re-render is triggered (search highlighting, Typewriter mode, multi-line edits like paste/undo). Chromium-based browsers are recommended for very large documents.\n- **`Ctrl+Q`**: Firefox intercepts the plain shortcut as its own \"Quit\" command before the page sees it \u2014 use `Ctrl+Shift+Q` to close the document (works in both Firefox and Chrome).\n\n## Status bar tokens\n\nThe three status bar zones (left / centre / right) are configured as space-separated token strings in Settings \u2192 Profile.\n\n| Token | Example | Description |\n|---|---|---|\n| `filename` | `my-novel.txt` | Current document name |\n| `dirty` | `[+]` | Unsaved changes indicator |\n| `words` | `1 842w` | Word count |\n| `chars` | `10 240c` | Character count |\n| `lines` | `312L` | Total line count |\n| `line` | `L42` | Current cursor line |\n| `col` | `C7` | Current cursor column |\n| `para` | `18\u00a7` | Paragraph count (blank-line separated) |\n| `pages` | `7p` | Estimated pages at 250 w/page |\n| `percent` | `68%` | Progress toward word goal |\n| `today` | `342\u2191` | Words *added* today (high-water mark across sessions) |\n| `goal` | `342/500` | Today's words / goal (hidden if no goal) |\n| `reading` | `9min` | Estimated reading time at 200 w/min |\n| `clock` | `14:32` | Current time |\n| `timer` | `24:07` | Writing timer display |\n| `space` | ` ` | Single space (explicit separator) |\n| *(anything else)* | literal | Fixed text, separators, etc. |\n\nDefault: Left `filename dirty words` \u00b7 Center *(empty)* \u00b7 Right `goal clock timer`\n\n## INI config\n\n`writhdeck.ini` uses the same format as the Tcl/Tk desktop version. Web-specific options live in a dedicated section so they are silently ignored by the desktop version:\n\n```ini\n[web]\n% Options specific to the web version \u2014 ignored by the desktop version\nopen_last_doc               = no\nintercept_browser_shortcuts = yes\nintercept_context_menu      = yes\n```\n\nOptions shared with the desktop version (`block_cursor`, `blink_cursor`, `line_numbers`, `dark_mode`, etc.) stay in `[behaviour]`.\n\nRight-click `writhdeck.ini` in the browser to export it or reset all settings to defaults (the file is recreated from defaults on next load).\n\n## Project structure\n\n```\nsrc/\n  template.html   HTML skeleton with {{STYLE}} / {{SCRIPT}} / 2026-06-11 placeholders\n  style.css       All CSS (uses CSS custom properties only, no hardcoded colours)\n  schemes.js      Built-in colour schemes + custom-scheme support\n  db.js           IndexedDB wrapper (promise-based)\n  state.js        App state, load/save helpers\n  ini.js          INI config parser/writer (compatible with desktop version)\n  highlight.js    Syntax highlighter + word count + block cursor injection\n  timer.js        Writing timer\n  toc.js          Table of contents\n  stats.js        Daily word-count stats dialog\n  editor.js       Editor panel, textarea/overlay sync, find/replace, formatting\n  browser.js      Document browser panel, FSA integration\n  settings.js     Settings dialog\n  app.js          Entry point, theme, keyboard router, menus, dialogs\nbuild.py          Build script (inlines CSS/JS, stamps build date)\nMakefile          Convenience wrapper around build.py\n```\n\n## Storage\n\nDocuments are stored in IndexedDB (`writhdeck` database, version 1):\n\n- **`documents`** store \u2014 each document: `id`, `name`, `content`, `created`, `modified`.\n- **`meta`** store \u2014 keyed entries: `iniText`, `favorites`, `recents`, `cursors`, `daily`.\n\nNothing is sent to any server.\n\n## Adding a colour scheme\n\nAdd an entry to the `SCHEMES` object in `src/schemes.js`. Each scheme needs 9 dark-mode keys and 9 light-mode (`*Alt`) keys: `bg`, `fg`, `bgBar`, `fgBar`, `bgSel`, `heading`, `comment`, `markup`, `bg2` (+ `Alt` variants). Then run `make`.\n\n## License\n\nCopyright (C) 2026 by Luginfo \u2014 Zero-Clause BSD License\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted. The software is provided \"as is\" without warranty of any kind.\n";
 
 let _edMenu          = null;
 let _openMenuFn      = null;
@@ -3969,6 +4130,13 @@ function onKeydown(e) {
     return;
   }
 
+  // Shift+Ctrl+F11 — toggle pinned TOC panel (mirrors Tcl key_toc_pinned)
+  if (ctrl && shift && key === 'F11') {
+    e.preventDefault(); e.stopPropagation();
+    if (inEditor) TOC.togglePin();
+    return;
+  }
+
   // F11 — always intercept: TOC toggle in editor, ignored elsewhere
   if (key === 'F11') {
     e.preventDefault(); e.stopPropagation();
@@ -4043,17 +4211,31 @@ function onKeydown(e) {
         case 'w': Editor.toggleTypewriter(); break;
         case 'm': showMainMenu(); break;
         case 'q': Editor.close();            break;
+        case '1': Editor.applyHeading(1);    break;
+        case '2': Editor.applyHeading(2);    break;
+        case '3': Editor.applyHeading(3);    break;
+        case 'b': Editor.applyInlineMarker(State.settings.boldMarker);      break;
+        case 'u': Editor.applyInlineMarker(State.settings.underlineMarker); break;
+        case 'x': Editor.applyInlineMarker(State.settings.strikeMarker);    break;
+        case '/': Editor.applyLineMarker(State.settings.commentMarker);     break;
         // any other key: just exit cmd mode (already done above)
       }
       return;
     }
 
+    if (ctrl && shift && lkey === 's') { e.preventDefault(); e.stopPropagation(); Editor.saveAs();        return; }
     if (ctrl && lkey === 's')     { e.preventDefault(); e.stopPropagation(); Editor.save();              return; }
+    // `shift` deliberately not checked: Firefox intercepts plain Ctrl+Q as "Quit" before
+    // JS sees it, so Ctrl+Shift+Q is the only way to close on Firefox — letting it match
+    // here too means one binding covers both browsers.
     if (ctrl && lkey === 'q')     { e.preventDefault(); e.stopPropagation(); Editor.close();             return; }
     if (ctrl && lkey === 'f')     { e.preventDefault(); e.stopPropagation(); Editor.searchOpen(false);   return; }
     if (ctrl && lkey === 'h')     { e.preventDefault(); e.stopPropagation(); Editor.searchOpen(true);    return; }
     if (ctrl && lkey === 'g')     { e.preventDefault(); e.stopPropagation(); Editor.gotoLine();          return; }
     if (ctrl && lkey === 'l')     { e.preventDefault(); e.stopPropagation(); Editor.toggleLineNumbers();  return; }
+    if (ctrl && lkey === 'b')     { e.preventDefault(); e.stopPropagation(); Editor.applyInlineMarker(State.settings.boldMarker);      return; }
+    if (ctrl && lkey === 'i')     { e.preventDefault(); e.stopPropagation(); Editor.applyInlineMarker(State.settings.italicMarker);    return; }
+    if (ctrl && lkey === 'u')     { e.preventDefault(); e.stopPropagation(); Editor.applyInlineMarker(State.settings.underlineMarker); return; }
     if (e.altKey && lkey === 't') { e.preventDefault(); e.stopPropagation(); Timer.toggle(); Editor.updateStatusBar(); return; }
     if (e.altKey && lkey === 'c') { e.preventDefault(); e.stopPropagation(); Editor.enterCmdMode(); return; }
     if (e.altKey && lkey === 'm') { e.preventDefault(); e.stopPropagation(); showMainMenu(); return; }
@@ -4070,8 +4252,9 @@ function onKeydown(e) {
       Editor.enterCmdMode();
       return;
     }
-    // Hemingway mode
-    if (State.settings.hemingwayMode && (lkey === 'backspace' || lkey === 'delete')) {
+    // Hemingway mode is a modifier of typewriter mode (mirrors Tcl/Android):
+    // it has no effect at all unless typewriter mode is also active.
+    if (State.settings.hemingwayMode && Editor.isTypewriter() && (lkey === 'backspace' || lkey === 'delete')) {
       e.preventDefault(); return;
     }
   }
@@ -4106,6 +4289,31 @@ function onKeydown(e) {
     if (lkey === 'w' && Browser.hasFSA) { e.preventDefault(); Browser.openFolder();   return; }
     if (lkey === 's') { e.preventDefault(); Stats.show();            return; }
     if (lkey === 'c') { e.preventDefault(); Settings.show();         return; }
+
+    // Shortcuts acting on the keyboard-focused row (mirrors Tcl browser r/d/b/f/i)
+    if (lkey === 'r' || lkey === 'd' || lkey === 'b' || lkey === 'f' || lkey === 'i') {
+      const doc = Browser.getFocusedDoc();
+      if (!doc) return;
+      e.preventDefault();
+      switch (lkey) {
+        case 'r': Browser.renameDoc(doc); break;
+        case 'd': Browser.deleteDoc(doc); break;
+        case 'b': Browser.backupDoc(doc); break;
+        case 'f': toggleFavorite(doc.id); Browser.render(); break;
+        case 'i': showFileInfo(doc);      break;
+      }
+      return;
+    }
+
+    // h — toggle the help menu (mirrors Tcl browser 'h' help)
+    if (lkey === 'h') {
+      e.preventDefault();
+      if (_helpDetails) _helpDetails.open = !_helpDetails.open;
+      return;
+    }
+
+    // z — reload (mirrors Tcl browser 'z' reload)
+    if (lkey === 'z') { e.preventDefault(); location.reload(); return; }
   }
 }
 
@@ -4150,9 +4358,10 @@ async function init() {
   ta.addEventListener('scroll', () => Editor.syncScroll());
   // Update line/col on cursor move (click or keyboard navigation); also keep
   // the incremental-repaint line cache in sync so a click to a different line
-  // followed by typing patches the right DOM node (see syncCursorLineCache).
-  ta.addEventListener('click',   () => { Editor.syncCursorLineCache(); Editor.updateStatusBar(); if (State.settings.blockCursor) Editor.rehighlight(); });
-  ta.addEventListener('keyup',   () => { Editor.syncCursorLineCache(); Editor.updateStatusBar(); if (State.settings.blockCursor) Editor.rehighlight(); });
+  // followed by typing patches the right DOM node (see syncCursorLineCache),
+  // and move the block-cursor span (if enabled) without a full rehighlight().
+  ta.addEventListener('click',   () => { Editor.syncCursorLineCache(); Editor.updateStatusBar(); Editor.syncBlockCursor(); });
+  ta.addEventListener('keyup',   () => { Editor.syncCursorLineCache(); Editor.updateStatusBar(); Editor.syncBlockCursor(); });
 
   // Header buttons
   document.getElementById('br-new-btn').addEventListener('click',    () => Browser.newDoc());
@@ -4248,17 +4457,19 @@ async function init() {
     [1, 2, 3].forEach(lvl => {
       const btn = edMenu.querySelector(`[data-markup="h${lvl}"]`);
       const p   = hm.repeat(lvl);
-      btn.innerHTML = hm ? `<span>${p} H${lvl} ${p}</span>` : `<span>H${lvl}</span>`;
+      const txt = hm ? `${p} H${lvl} ${p}` : `H${lvl}`;
+      btn.innerHTML = `<span>${txt}</span> <span class="hint">${lvl}</span>`;
       btn.disabled  = !hm;
     });
-    [['comment', s.commentMarker, 'Comment (line)'],
-     ['bold',    s.boldMarker,    'Bold'],
-     ['italic',  s.italicMarker,  'Italic'],
-     ['underline', s.underlineMarker, 'Underline'],
-     ['strike',  s.strikeMarker,  'Strike'],
-    ].forEach(([type, marker, label]) => {
+    [['comment', s.commentMarker, 'Comment (line)', '/'],
+     ['bold',    s.boldMarker,    'Bold',           'b'],
+     ['italic',  s.italicMarker,  'Italic',         null],
+     ['underline', s.underlineMarker, 'Underline',  'u'],
+     ['strike',  s.strikeMarker,  'Strike',         'x'],
+    ].forEach(([type, marker, label, hint]) => {
       const btn = edMenu.querySelector(`[data-markup="${type}"]`);
-      btn.innerHTML = marker ? `<span>${marker} ${label}</span>` : `<span>${label}</span>`;
+      const txt = marker ? `${marker} ${label}` : label;
+      btn.innerHTML = hint ? `<span>${txt}</span> <span class="hint">${hint}</span>` : `<span>${txt}</span>`;
       btn.disabled  = !marker;
     });
     // Update toggle labels
@@ -4417,6 +4628,11 @@ async function init() {
     else if (e.key === 'Enter')          Editor.searchNext();
     else if (e.key === 'Escape')         Editor.searchClose();
   });
+  document.getElementById('replace-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); Editor.replaceAll(); }
+    else if (e.key === 'Enter')                         { e.preventDefault(); Editor.replaceOne(); }
+    else if (e.key === 'Escape')                        Editor.searchClose();
+  });
 
   // Goto bar
   document.getElementById('goto-go').addEventListener('click',    () => Editor.gotoLineGo());
@@ -4476,6 +4692,13 @@ async function init() {
       case 'w': Editor.toggleTypewriter(); break;
       case 'm': showMainMenu();            break;
       case 'q': Editor.close();            break;
+      case '1': Editor.applyHeading(1);    break;
+      case '2': Editor.applyHeading(2);    break;
+      case '3': Editor.applyHeading(3);    break;
+      case 'b': Editor.applyInlineMarker(State.settings.boldMarker);      break;
+      case 'u': Editor.applyInlineMarker(State.settings.underlineMarker); break;
+      case 'x': Editor.applyInlineMarker(State.settings.strikeMarker);    break;
+      case '/': Editor.applyLineMarker(State.settings.commentMarker);     break;
     }
   });
 
