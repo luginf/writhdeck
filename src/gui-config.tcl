@@ -503,9 +503,29 @@ proc profile-config-dialog {} {
     pack $w.tab_misc.behaviour_sec.ffilter.lbl -side left
     pack $w.tab_misc.behaviour_sec.ffilter.entry -side left -fill x -expand 1 -padx {4 4}
 
+    # repetition scope row (spinbox)
+    frame $w.tab_misc.behaviour_sec.frpscope -bg $::bg
+    pack  $w.tab_misc.behaviour_sec.frpscope -fill x -padx 12 -pady 4
+    label $w.tab_misc.behaviour_sec.frpscope.lbl -text [t config_repetition_scope] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.tab_misc.behaviour_sec.frpscope.spin -from 10 -to 500 -increment 10 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
+    pack $w.tab_misc.behaviour_sec.frpscope.lbl -side left
+    pack $w.tab_misc.behaviour_sec.frpscope.spin -side left -padx {8 0}
+
+    # hidden repetition min. word length row (spinbox)
+    frame $w.tab_misc.behaviour_sec.frpminlen -bg $::bg
+    pack  $w.tab_misc.behaviour_sec.frpminlen -fill x -padx 12 -pady 4
+    label $w.tab_misc.behaviour_sec.frpminlen.lbl -text [t config_repetition_min_len] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.tab_misc.behaviour_sec.frpminlen.spin -from 3 -to 12 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
+    pack $w.tab_misc.behaviour_sec.frpminlen.lbl -side left
+    pack $w.tab_misc.behaviour_sec.frpminlen.spin -side left -padx {8 0}
+
+    $w.tab_misc.behaviour_sec.frpscope.spin  set $::cfg_repetition_scope
+    $w.tab_misc.behaviour_sec.frpminlen.spin set $::cfg_repetition_min_len
+
     # Boolean behaviour options
     foreach {fname key var} {
         fshowall  config_browser_show_all     profile_config_browser_show_all
+        frphidden config_repetition_hidden    profile_config_repetition_hidden
         fbrowser  config_browser_startup      profile_config_browser
         fwatch    config_watch_file           profile_config_watch_file
         fhemingway config_hemingway_mode      profile_config_hemingway
@@ -528,6 +548,7 @@ proc profile-config-dialog {} {
     $w.tab_misc.behaviour_sec.fdocs.entry insert 0 $::cfg_docs_dir
     $w.tab_misc.behaviour_sec.ffilter.entry insert 0 $::cfg_browser_filter
     set ::profile_config_browser_show_all $::cfg_browser_show_all
+    set ::profile_config_repetition_hidden $::cfg_repetition_hidden
     set ::profile_config_browser        $::cfg_browser
     set ::profile_config_watch_file     $::cfg_watch_file
     set ::profile_config_hemingway      $::cfg_hemingway_mode
@@ -725,6 +746,9 @@ proc profile-config-dialog {} {
             set docs_dir    [.profile_config.tab_misc.behaviour_sec.fdocs.entry get]
             set browser_filter [.profile_config.tab_misc.behaviour_sec.ffilter.entry get]
             set browser_show_all $::profile_config_browser_show_all
+            set repetition_scope   [.profile_config.tab_misc.behaviour_sec.frpscope.spin get]
+            set repetition_min_len [.profile_config.tab_misc.behaviour_sec.frpminlen.spin get]
+            set repetition_hidden  $::profile_config_repetition_hidden
             set browser     $::profile_config_browser
             set watch_file  $::profile_config_watch_file
             set hemingway   $::profile_config_hemingway
@@ -771,6 +795,9 @@ proc profile-config-dialog {} {
             set ::cfg_docs_dir          $docs_dir
             set ::cfg_browser_filter    $browser_filter
             set ::cfg_browser_show_all  $browser_show_all
+            set ::cfg_repetition_scope   $repetition_scope
+            set ::cfg_repetition_min_len $repetition_min_len
+            set ::cfg_repetition_hidden  $repetition_hidden
             set ::cfg_browser           $browser
             set ::cfg_watch_file        $watch_file
             set ::cfg_hemingway_mode    $hemingway

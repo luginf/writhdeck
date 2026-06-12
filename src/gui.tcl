@@ -435,11 +435,87 @@ proc analyse-dialog {fpath} {
     pack $w.f.sb -side right -fill y
     pack $w.f.t  -side left  -fill both -expand 1
 
+    frame $w.btns
+    button $w.btns.rep -text [t br_repetitions_title] -font $::font_sm -command [list repetitions-dialog $fpath]
+    button $w.btns.ok  -text "OK" -font $::font_sm -command [list destroy $w]
+    pack $w.btns.ok  -side right -padx 8 -pady 6
+    pack $w.btns.rep -side right -padx 4 -pady 6
+
+    pack $w.hdr  -fill x
+    pack $w.btns -side bottom -fill x
+    pack $w.f    -fill both -expand 1 -padx 2 -pady 2
+
+    bind $w <Return> [list destroy $w]
+    bind $w <Escape> [list destroy $w]
+    update
+    grab $w
+    focus $w.btns.ok
+    tkwait window $w
+}
+
+proc repetitions-dialog {fpath} {
+    if {![file exists $fpath]} return
+    lassign [find-repetitions $fpath] level1 level2
+
+    set w .rpdlg
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [t br_repetitions_title]
+    wm geometry $w 520x420
+    wm transient $w .
+
+    label $w.hdr -text "[file tail $fpath]" -font [list [lindex $::font 0] [lindex $::font 1] bold] \
+        -bg $::bg_bar -fg $::fg_bar -anchor w -padx 10 -pady 5
+
+    frame $w.f -bg $::bg
+    text $w.f.t -font $::font_sm -bg $::bg -fg $::fg -bd 0 -highlightthickness 0 \
+        -yscrollcommand [list $w.f.sb set] -wrap none -width 66 -height 22 \
+        -selectbackground $::bg_sel -selectforeground $::fg -cursor arrow -padx 10 -pady 6
+    scrollbar $w.f.sb -orient vertical -command [list $w.f.t yview]
+
+    $w.f.t tag configure heading_tag -foreground $::cfg_color_heading
+    $w.f.t tag configure dim_tag     -foreground $::fg_bar
+
+    set _rn 0
+    $w.f.t configure -state normal
+    if {[llength $level1] == 0} {
+        $w.f.t insert end "\n  [t br_repetitions_empty]\n" dim_tag
+    } else {
+        $w.f.t insert end "\n  [t br_repetitions_level1]\n" heading_tag
+        foreach row $level1 {
+            lassign $row word1 line1 word2 line2 gap
+            set _tag "rephit$_rn"; incr _rn
+            $w.f.t insert end "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]\n" [list dim_tag $_tag]
+            $w.f.t tag bind $_tag <Button-1> [list repetitions-jump $fpath $line1 $word1 $line2 $word2]
+            $w.f.t tag bind $_tag <Enter> [list $w.f.t configure -cursor hand2]
+            $w.f.t tag bind $_tag <Leave> [list $w.f.t configure -cursor arrow]
+        }
+    }
+    if {$::cfg_repetition_hidden} {
+        if {[llength $level2] > 0} {
+            $w.f.t insert end "\n  [t br_repetitions_level2]\n" heading_tag
+            foreach row $level2 {
+                lassign $row word1 line1 word2 line2 gap
+                set _tag "rephit$_rn"; incr _rn
+                $w.f.t insert end "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]\n" [list dim_tag $_tag]
+                $w.f.t tag bind $_tag <Button-1> [list repetitions-jump $fpath $line1 $word1 $line2 $word2]
+                $w.f.t tag bind $_tag <Enter> [list $w.f.t configure -cursor hand2]
+                $w.f.t tag bind $_tag <Leave> [list $w.f.t configure -cursor arrow]
+            }
+        }
+    } else {
+        $w.f.t insert end "\n  [t br_repetitions_hidden_off]\n" dim_tag
+    }
+    $w.f.t configure -state disabled
+
+    pack $w.f.sb -side right -fill y
+    pack $w.f.t  -side left  -fill both -expand 1
+
     button $w.ok -text "OK" -font $::font_sm -command [list destroy $w]
 
     pack $w.hdr -fill x
+    pack $w.ok  -side bottom -anchor e -padx 8 -pady 6
     pack $w.f   -fill both -expand 1 -padx 2 -pady 2
-    pack $w.ok  -anchor e -padx 8 -pady 6
 
     bind $w <Return> [list destroy $w]
     bind $w <Escape> [list destroy $w]
@@ -447,6 +523,35 @@ proc analyse-dialog {fpath} {
     grab $w
     focus $w.ok
     tkwait window $w
+}
+
+# Selects $word on $line in $t (if found) using the repfound highlight tag.
+proc repetitions-highlight-word {t line word} {
+    set last [lindex [split [$t index end] .] 0]
+    if {$line < 1 || $line >= $last} return
+    set pos [$t search -nocase -- $word "${line}.0" "${line}.end"]
+    if {$pos ne ""} {
+        $t tag add repfound $pos "$pos + [string length $word] chars"
+    }
+}
+
+# Jumps to the first occurrence of a repetition in the editor, highlighting
+# both repeated words. Leaves the Repetitions/Structure dialogs open so the
+# user can click through several rows without reopening them.
+proc repetitions-jump {fpath line1 word1 line2 word2} {
+    if {[file normalize $fpath] ne [file normalize $::filename] || ![winfo ismapped .ed]} {
+        show-editor $fpath
+    }
+
+    set t [primary-ed]
+    $t tag remove repfound 1.0 end
+    $t tag configure repfound -background "#5a3a00" -foreground "#ffdd88"
+    repetitions-highlight-word $t $line1 $word1
+    repetitions-highlight-word $t $line2 $word2
+
+    $t mark set insert "${line1}.0"
+    $t see insert
+    focus $t
 }
 
 proc word-occurrences-dialog {fpath} {

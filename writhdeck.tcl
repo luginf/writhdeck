@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260610"
+set ::version          "v20260612"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -388,6 +388,9 @@ set ::cfg_bg_sel         "#3a5a8a"
 set ::cfg_docs_dir       ""
 set ::cfg_browser_filter "*.txt *.t2t *.md *.ini"
 set ::cfg_browser_show_all 0
+set ::cfg_repetition_scope   100
+set ::cfg_repetition_min_len 4
+set ::cfg_repetition_hidden  0
 set ::cfg_console_margin_cols    6
 set ::cfg_console_margin_rows    4
 set ::cfg_heading_marker    "="
@@ -748,6 +751,9 @@ proc ini-load {} {
                 browser              { set ::cfg_browser              [string is true $v] }
                 browser_filter       { set ::cfg_browser_filter       $v }
                 browser_show_all     { set ::cfg_browser_show_all     [string is true $v] }
+                repetition_scope     { set ::cfg_repetition_scope     $v }
+                repetition_min_len   { set ::cfg_repetition_min_len   $v }
+                repetition_hidden    { set ::cfg_repetition_hidden    [string is true $v] }
                 console_center_alert { set ::cfg_console_center_alert [string is true $v] }
                 line_numbers     { set ::cfg_line_numbers   [string is true $v] }
                 cursor_restore   { set ::cfg_cursor_restore [string is true $v] }
@@ -849,6 +855,12 @@ proc ini-save {} {
     puts $fh "browser_filter       = $::cfg_browser_filter"
     puts $fh "% browser_show_all: bypass browser_filter and show all files"
     puts $fh "browser_show_all     = [expr {$::cfg_browser_show_all     ? "yes" : "no"}]"
+    puts $fh "% repetition_scope: word distance (each direction) checked by the repetition tool"
+    puts $fh "repetition_scope     = $::cfg_repetition_scope"
+    puts $fh "% repetition_min_len: minimum word length for hidden-substring repetition checks"
+    puts $fh "repetition_min_len   = $::cfg_repetition_min_len"
+    puts $fh "% repetition_hidden: also flag hidden-substring repetitions (e.g. 'tour' in 'alentours')"
+    puts $fh "repetition_hidden    = [expr {$::cfg_repetition_hidden    ? "yes" : "no"}]"
     puts $fh "watch_file           = [expr {$::cfg_watch_file           ? "yes" : "no"}]"
     puts $fh "hemingway_mode       = [expr {$::cfg_hemingway_mode       ? "yes" : "no"}]"
     puts $fh "markdown_headings    = [expr {$::cfg_markdown_headings    ? "yes" : "no"}]"
@@ -1488,6 +1500,13 @@ dict set ::i18n en {
     br_analyse_intro       "(intro)"
     br_analyse_empty       "No content to analyse."
     br_analyse_total       "Total: %d words  -  %d sections"
+    br_repetitions_title    "Repetitions"
+    br_repetitions_empty    "No repetitions found."
+    br_repetitions_level1   "Repeated words"
+    br_repetitions_level2   "Hidden repetitions"
+    br_repetitions_line     "line %d"
+    br_repetitions_distance "%d words apart"
+    br_repetitions_hidden_off "Hidden-substring check disabled (enable in Settings > Misc)."
     help_writhdeck         "WRITHDECK"
     help_version           "Version"
     help_date_time_sect    "DATE & TIME"
@@ -1557,6 +1576,9 @@ dict set ::i18n en {
     config_browser_startup       "Show browser on start:"
     config_browser_filter        "Browser file filter:"
     config_browser_show_all      "Show all files (ignore filter):"
+    config_repetition_scope      "Repetition scope (words):"
+    config_repetition_min_len    "Hidden repetition min. length:"
+    config_repetition_hidden     "Detect hidden repetitions:"
     config_watch_file            "Watch for external changes:"
     config_hemingway_mode        "Hemingway mode (no delete):"
     config_split_shrink_margin   "Shrink margin in split view:"
@@ -1684,6 +1706,13 @@ dict set ::i18n de {
     br_analyse_intro       "(Einleitung)"
     br_analyse_empty       "Kein Inhalt zum Analysieren."
     br_analyse_total       "Gesamt: %d Woerter  -  %d Abschnitte"
+    br_repetitions_title    "Wiederholungen"
+    br_repetitions_empty    "Keine Wiederholungen gefunden."
+    br_repetitions_level1   "Wiederholte Woerter"
+    br_repetitions_level2   "Versteckte Wiederholungen"
+    br_repetitions_line     "Zeile %d"
+    br_repetitions_distance "%d Woerter Abstand"
+    br_repetitions_hidden_off "Pruefung versteckter Wiederholungen deaktiviert (in Einstellungen > Sonstiges aktivieren)."
     help_writhdeck         "WRITHDECK"
     help_version           "Version"
     help_date_time_sect    "DATUM & UHRZEIT"
@@ -1753,6 +1782,9 @@ dict set ::i18n de {
     config_browser_startup       "Browser beim Start anzeigen:"
     config_browser_filter        "Dateifilter (Browser):"
     config_browser_show_all      "Alle Dateien anzeigen (Filter ignorieren):"
+    config_repetition_scope      "Wiederholungsbereich (Woerter):"
+    config_repetition_min_len    "Min. Laenge (versteckte Wiederholungen):"
+    config_repetition_hidden     "Versteckte Wiederholungen erkennen:"
     config_watch_file            "Externe Anderungen uberwachen:"
     config_hemingway_mode        "Hemingway-Modus (kein Loschen):"
     config_split_shrink_margin   "Rand in geteilter Ansicht verkleinern:"
@@ -1880,6 +1912,13 @@ dict set ::i18n es {
     br_analyse_intro       "(intro)"
     br_analyse_empty       "No hay contenido para analizar."
     br_analyse_total       "Total: %d palabras  -  %d secciones"
+    br_repetitions_title    "Repeticiones"
+    br_repetitions_empty    "No se encontraron repeticiones."
+    br_repetitions_level1   "Palabras repetidas"
+    br_repetitions_level2   "Repeticiones ocultas"
+    br_repetitions_line     "linea %d"
+    br_repetitions_distance "%d palabras de distancia"
+    br_repetitions_hidden_off "Deteccion de repeticiones ocultas desactivada (activar en Ajustes > Varios)."
     help_writhdeck         "WRITHDECK"
     help_version           "Version"
     help_date_time_sect    "FECHA Y HORA"
@@ -1949,6 +1988,9 @@ dict set ::i18n es {
     config_browser_startup       "Mostrar navegador al inicio:"
     config_browser_filter        "Filtro de archivos (navegador):"
     config_browser_show_all      "Mostrar todos los archivos (ignorar filtro):"
+    config_repetition_scope      "Alcance de repeticion (palabras):"
+    config_repetition_min_len    "Longitud min. (repeticiones ocultas):"
+    config_repetition_hidden     "Detectar repeticiones ocultas:"
     config_watch_file            "Vigilar cambios externos:"
     config_hemingway_mode        "Modo Hemingway (sin borrar):"
     config_split_shrink_margin   "Reducir margen en vista dividida:"
@@ -2076,6 +2118,13 @@ dict set ::i18n fr {
     br_analyse_intro       "(début)"
     br_analyse_empty       "Aucun contenu à analyser."
     br_analyse_total       "Total : %d mots  -  %d sections"
+    br_repetitions_title    "Répétitions"
+    br_repetitions_empty    "Aucune répétition trouvée."
+    br_repetitions_level1   "Mots répétés"
+    br_repetitions_level2   "Répétitions cachées"
+    br_repetitions_line     "ligne %d"
+    br_repetitions_distance "%d mots d'écart"
+    br_repetitions_hidden_off "Vérification des répétitions cachées désactivée (à activer dans Réglages > Divers)."
     help_writhdeck         "WRITHDECK"
     help_version           "Version"
     help_date_time_sect    "DATE & HEURE"
@@ -2145,6 +2194,9 @@ dict set ::i18n fr {
     config_browser_startup       "Navigateur au demarrage :"
     config_browser_filter        "Filtre de fichiers (navigateur) :"
     config_browser_show_all      "Afficher tous les fichiers (ignorer filtre) :"
+    config_repetition_scope      "Portée de répétition (mots) :"
+    config_repetition_min_len    "Longueur min. (répétitions cachées) :"
+    config_repetition_hidden     "Détecter les répétitions cachées :"
     config_watch_file            "Surveiller modifications externes :"
     config_hemingway_mode        "Mode Hemingway (sans suppression) :"
     config_split_shrink_margin   "Reduire marge en vue split :"
@@ -2272,6 +2324,13 @@ dict set ::i18n ko {
     br_analyse_intro       "(서론)"
     br_analyse_empty       "분석할 내용이 없습니다."
     br_analyse_total       "합계: %d 단어  -  %d 섹션"
+    br_repetitions_title    "반복"
+    br_repetitions_empty    "반복된 단어가 없습니다."
+    br_repetitions_level1   "반복된 단어"
+    br_repetitions_level2   "숨겨진 반복"
+    br_repetitions_line     "%d 행"
+    br_repetitions_distance "%d 단어 간격"
+    br_repetitions_hidden_off "숨겨진 반복 검사가 꺼져 있습니다 (설정 > 기타에서 활성화)."
     help_writhdeck         "WRITHDECK"
     help_version           "버전"
     help_date_time_sect    "날짜 및 시간"
@@ -2341,6 +2400,9 @@ dict set ::i18n ko {
     config_browser_startup       "시작 시 브라우저 표시:"
     config_browser_filter        "파일 필터 (브라우저):"
     config_browser_show_all      "모든 파일 표시 (필터 무시):"
+    config_repetition_scope      "반복 검사 범위 (단어 수):"
+    config_repetition_min_len    "최소 길이 (숨겨진 반복):"
+    config_repetition_hidden     "숨겨진 반복 감지:"
     config_watch_file            "외부 변경 감시:"
     config_hemingway_mode        "헤밍웨이 모드 (삭제 불가):"
     config_split_shrink_margin   "분할 보기에서 여백 축소:"
@@ -2468,6 +2530,13 @@ dict set ::i18n no {
     br_analyse_intro       "(intro)"
     br_analyse_empty       "Ingen innhold å analysere."
     br_analyse_total       "Totalt: %d ord  -  %d seksjoner"
+    br_repetitions_title    "Repetisjoner"
+    br_repetitions_empty    "Ingen repetisjoner funnet."
+    br_repetitions_level1   "Repeterte ord"
+    br_repetitions_level2   "Skjulte repetisjoner"
+    br_repetitions_line     "linje %d"
+    br_repetitions_distance "%d ord avstand"
+    br_repetitions_hidden_off "Sjekk av skjulte repetisjoner er av (aktiver i Innstillinger > Diverse)."
     help_writhdeck         "WRITHDECK"
     help_version           "Versjon"
     help_date_time_sect    "DATO OG TID"
@@ -2537,6 +2606,9 @@ dict set ::i18n no {
     config_browser_startup       "Vis nettleser ved oppstart:"
     config_browser_filter        "Filfilter (nettleser):"
     config_browser_show_all      "Vis alle filer (ignorer filter):"
+    config_repetition_scope      "Repetisjonsomfang (ord):"
+    config_repetition_min_len    "Min. lengde (skjulte repetisjoner):"
+    config_repetition_hidden     "Oppdag skjulte repetisjoner:"
     config_watch_file            "Se etter eksterne endringer:"
     config_hemingway_mode        "Hemingway-modus (ingen sletting):"
     config_split_shrink_margin   "Krymp margin i delt visning:"
@@ -2892,6 +2964,35 @@ proc _cmp_word_count {counts a b} {
     return [string compare $a $b]
 }
 
+# Merges singular/plural pairs ("chemise" + "chemises") into one entry
+# "chemise(s)" with the combined count, so they appear as a single occurrence.
+proc merge-singular-plural {counts} {
+    set skip [dict create]
+    foreach word [dict keys $counts] {
+        if {[string index $word end] eq "s"} {
+            set singular [string range $word 0 end-1]
+            if {[dict exists $counts $singular]} {
+                dict set skip $word 1
+                dict set skip $singular 1
+            }
+        }
+    }
+    set merged [dict create]
+    foreach word [dict keys $counts] {
+        if {[string index $word end] eq "s"} {
+            set singular [string range $word 0 end-1]
+            if {[dict exists $counts $singular]} {
+                dict set merged "${singular}(s)" [expr {[dict get $counts $word] + [dict get $counts $singular]}]
+                continue
+            }
+        }
+        if {![dict exists $skip $word]} {
+            dict set merged $word [dict get $counts $word]
+        }
+    }
+    return $merged
+}
+
 proc get-word-occurrences {fpath} {
     set counts [dict create]
     if {[catch {
@@ -2906,11 +3007,113 @@ proc get-word-occurrences {fpath} {
     }]} {
         return [list]
     }
+    set counts [merge-singular-plural $counts]
     set result {}
     foreach word [lsort -command [list _cmp_word_count $counts] [dict keys $counts]] {
         lappend result [list $word [dict get $counts $word]]
     }
     return $result
+}
+
+# Common short words excluded from repetition detection to reduce noise.
+# Falls back to the English list for languages without their own entry.
+set ::repetition_stopwords [dict create \
+    en {about above after again against all also although always among and another any anyone anything are around because been before being between both but cannot could did does doing down during each either else enough even ever every for from further had has have having here how however into its itself just like more most much must never not now off once only onto other our ours out over own same several should since some such than that the their theirs them then there these they this those through thus too toward under until upon very was well were what when where which while who whom whose why will with within without would your yours} \
+    fr {alors après aussi autre autres avant avec bien car cela celle celles celui ces cette ceux chaque chez comme dans depuis des donc dont déjà elle elles encore entre est été étaient était être faire fait ici ils les lequel leur leurs lorsque là même non notre nos nous où oui par parce pas peu plus pour pourquoi quand que quel quelle quelles quels quelque quelques qui quoi sans ses seulement son sont sous suis sur toute toutes tous tout très trop une vers voici voilà votre vos vous} \
+]
+
+proc repetition-stopwords {} {
+    if {[dict exists $::repetition_stopwords $::cfg_lang]} {
+        return [dict get $::repetition_stopwords $::cfg_lang]
+    }
+    return [dict get $::repetition_stopwords en]
+}
+
+proc repetition-lemma {word} {
+    if {[string length $word] > 3} {
+        set last [string index $word end]
+        if {$last eq "s" || $last eq "x"} {
+            return [string range $word 0 end-1]
+        }
+    }
+    return $word
+}
+
+# Two-tier repetition scan: level 1 = same word/lemma repeated within
+# ::cfg_repetition_scope words; level 2 (optional, ::cfg_repetition_hidden) =
+# one word hidden as a substring of another (e.g. "tour" in "alentours").
+# Returns {level1 level2}, each a list of {word1 line1 word2 line2 distance}.
+proc find-repetitions {fpath} {
+    set scope   $::cfg_repetition_scope
+    set min_len $::cfg_repetition_min_len
+    set stop    [repetition-stopwords]
+
+    if {[catch {
+        set fh [open $fpath r]; chan configure $fh -encoding utf-8
+        set content [read $fh]
+        close $fh
+    }]} {
+        return [list {} {}]
+    }
+
+    set occurrences {}
+    set index 0
+    set line_no 1
+    foreach line [split $content "\n"] {
+        foreach word [regexp -all -inline {\w+} [string tolower $line]] {
+            if {[string length $word] > 2 && [lsearch -exact $stop $word] < 0} {
+                lappend occurrences [list $word [repetition-lemma $word] $line_no $index]
+            }
+            incr index
+        }
+        incr line_no
+    }
+
+    set by_lemma [dict create]
+    foreach occ $occurrences {
+        lassign $occ word lemma line idx
+        dict lappend by_lemma $lemma $occ
+    }
+    set level1 {}
+    foreach lemma [dict keys $by_lemma] {
+        set occs [dict get $by_lemma $lemma]
+        for {set i 1} {$i < [llength $occs]} {incr i} {
+            lassign [lindex $occs [expr {$i-1}]] word1 lemma1 line1 idx1
+            lassign [lindex $occs $i]              word2 lemma2 line2 idx2
+            set gap [expr {$idx2 - $idx1}]
+            if {$gap <= $scope} {
+                lappend level1 [list $word1 $line1 $word2 $line2 $gap]
+            }
+        }
+    }
+    set level1 [lsort -integer -index 1 $level1]
+
+    set level2 {}
+    if {$::cfg_repetition_hidden} {
+        set long_occs {}
+        foreach occ $occurrences {
+            lassign $occ word lemma line idx
+            if {[string length $word] >= $min_len} {
+                lappend long_occs $occ
+            }
+        }
+        set n [llength $long_occs]
+        for {set i 0} {$i < $n} {incr i} {
+            lassign [lindex $long_occs $i] wordA lemmaA lineA idxA
+            for {set j [expr {$i+1}]} {$j < $n} {incr j} {
+                lassign [lindex $long_occs $j] wordB lemmaB lineB idxB
+                set gap [expr {$idxB - $idxA}]
+                if {$gap > $scope} break
+                if {$lemmaA eq $lemmaB} continue
+                if {[string first $wordA $wordB] >= 0 || [string first $wordB $wordA] >= 0} {
+                    lappend level2 [list $wordA $lineA $wordB $lineB $gap]
+                }
+            }
+        }
+        set level2 [lsort -integer -index 1 $level2]
+    }
+
+    return [list $level1 $level2]
 }
 
 
@@ -3422,9 +3625,29 @@ proc profile-config-dialog {} {
     pack $w.tab_misc.behaviour_sec.ffilter.lbl -side left
     pack $w.tab_misc.behaviour_sec.ffilter.entry -side left -fill x -expand 1 -padx {4 4}
 
+    # repetition scope row (spinbox)
+    frame $w.tab_misc.behaviour_sec.frpscope -bg $::bg
+    pack  $w.tab_misc.behaviour_sec.frpscope -fill x -padx 12 -pady 4
+    label $w.tab_misc.behaviour_sec.frpscope.lbl -text [t config_repetition_scope] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.tab_misc.behaviour_sec.frpscope.spin -from 10 -to 500 -increment 10 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
+    pack $w.tab_misc.behaviour_sec.frpscope.lbl -side left
+    pack $w.tab_misc.behaviour_sec.frpscope.spin -side left -padx {8 0}
+
+    # hidden repetition min. word length row (spinbox)
+    frame $w.tab_misc.behaviour_sec.frpminlen -bg $::bg
+    pack  $w.tab_misc.behaviour_sec.frpminlen -fill x -padx 12 -pady 4
+    label $w.tab_misc.behaviour_sec.frpminlen.lbl -text [t config_repetition_min_len] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+    spinbox $w.tab_misc.behaviour_sec.frpminlen.spin -from 3 -to 12 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
+    pack $w.tab_misc.behaviour_sec.frpminlen.lbl -side left
+    pack $w.tab_misc.behaviour_sec.frpminlen.spin -side left -padx {8 0}
+
+    $w.tab_misc.behaviour_sec.frpscope.spin  set $::cfg_repetition_scope
+    $w.tab_misc.behaviour_sec.frpminlen.spin set $::cfg_repetition_min_len
+
     # Boolean behaviour options
     foreach {fname key var} {
         fshowall  config_browser_show_all     profile_config_browser_show_all
+        frphidden config_repetition_hidden    profile_config_repetition_hidden
         fbrowser  config_browser_startup      profile_config_browser
         fwatch    config_watch_file           profile_config_watch_file
         fhemingway config_hemingway_mode      profile_config_hemingway
@@ -3447,6 +3670,7 @@ proc profile-config-dialog {} {
     $w.tab_misc.behaviour_sec.fdocs.entry insert 0 $::cfg_docs_dir
     $w.tab_misc.behaviour_sec.ffilter.entry insert 0 $::cfg_browser_filter
     set ::profile_config_browser_show_all $::cfg_browser_show_all
+    set ::profile_config_repetition_hidden $::cfg_repetition_hidden
     set ::profile_config_browser        $::cfg_browser
     set ::profile_config_watch_file     $::cfg_watch_file
     set ::profile_config_hemingway      $::cfg_hemingway_mode
@@ -3644,6 +3868,9 @@ proc profile-config-dialog {} {
             set docs_dir    [.profile_config.tab_misc.behaviour_sec.fdocs.entry get]
             set browser_filter [.profile_config.tab_misc.behaviour_sec.ffilter.entry get]
             set browser_show_all $::profile_config_browser_show_all
+            set repetition_scope   [.profile_config.tab_misc.behaviour_sec.frpscope.spin get]
+            set repetition_min_len [.profile_config.tab_misc.behaviour_sec.frpminlen.spin get]
+            set repetition_hidden  $::profile_config_repetition_hidden
             set browser     $::profile_config_browser
             set watch_file  $::profile_config_watch_file
             set hemingway   $::profile_config_hemingway
@@ -3690,6 +3917,9 @@ proc profile-config-dialog {} {
             set ::cfg_docs_dir          $docs_dir
             set ::cfg_browser_filter    $browser_filter
             set ::cfg_browser_show_all  $browser_show_all
+            set ::cfg_repetition_scope   $repetition_scope
+            set ::cfg_repetition_min_len $repetition_min_len
+            set ::cfg_repetition_hidden  $repetition_hidden
             set ::cfg_browser           $browser
             set ::cfg_watch_file        $watch_file
             set ::cfg_hemingway_mode    $hemingway
@@ -4204,11 +4434,87 @@ proc analyse-dialog {fpath} {
     pack $w.f.sb -side right -fill y
     pack $w.f.t  -side left  -fill both -expand 1
 
+    frame $w.btns
+    button $w.btns.rep -text [t br_repetitions_title] -font $::font_sm -command [list repetitions-dialog $fpath]
+    button $w.btns.ok  -text "OK" -font $::font_sm -command [list destroy $w]
+    pack $w.btns.ok  -side right -padx 8 -pady 6
+    pack $w.btns.rep -side right -padx 4 -pady 6
+
+    pack $w.hdr  -fill x
+    pack $w.btns -side bottom -fill x
+    pack $w.f    -fill both -expand 1 -padx 2 -pady 2
+
+    bind $w <Return> [list destroy $w]
+    bind $w <Escape> [list destroy $w]
+    update
+    grab $w
+    focus $w.btns.ok
+    tkwait window $w
+}
+
+proc repetitions-dialog {fpath} {
+    if {![file exists $fpath]} return
+    lassign [find-repetitions $fpath] level1 level2
+
+    set w .rpdlg
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [t br_repetitions_title]
+    wm geometry $w 520x420
+    wm transient $w .
+
+    label $w.hdr -text "[file tail $fpath]" -font [list [lindex $::font 0] [lindex $::font 1] bold] \
+        -bg $::bg_bar -fg $::fg_bar -anchor w -padx 10 -pady 5
+
+    frame $w.f -bg $::bg
+    text $w.f.t -font $::font_sm -bg $::bg -fg $::fg -bd 0 -highlightthickness 0 \
+        -yscrollcommand [list $w.f.sb set] -wrap none -width 66 -height 22 \
+        -selectbackground $::bg_sel -selectforeground $::fg -cursor arrow -padx 10 -pady 6
+    scrollbar $w.f.sb -orient vertical -command [list $w.f.t yview]
+
+    $w.f.t tag configure heading_tag -foreground $::cfg_color_heading
+    $w.f.t tag configure dim_tag     -foreground $::fg_bar
+
+    set _rn 0
+    $w.f.t configure -state normal
+    if {[llength $level1] == 0} {
+        $w.f.t insert end "\n  [t br_repetitions_empty]\n" dim_tag
+    } else {
+        $w.f.t insert end "\n  [t br_repetitions_level1]\n" heading_tag
+        foreach row $level1 {
+            lassign $row word1 line1 word2 line2 gap
+            set _tag "rephit$_rn"; incr _rn
+            $w.f.t insert end "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]\n" [list dim_tag $_tag]
+            $w.f.t tag bind $_tag <Button-1> [list repetitions-jump $fpath $line1 $word1 $line2 $word2]
+            $w.f.t tag bind $_tag <Enter> [list $w.f.t configure -cursor hand2]
+            $w.f.t tag bind $_tag <Leave> [list $w.f.t configure -cursor arrow]
+        }
+    }
+    if {$::cfg_repetition_hidden} {
+        if {[llength $level2] > 0} {
+            $w.f.t insert end "\n  [t br_repetitions_level2]\n" heading_tag
+            foreach row $level2 {
+                lassign $row word1 line1 word2 line2 gap
+                set _tag "rephit$_rn"; incr _rn
+                $w.f.t insert end "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]\n" [list dim_tag $_tag]
+                $w.f.t tag bind $_tag <Button-1> [list repetitions-jump $fpath $line1 $word1 $line2 $word2]
+                $w.f.t tag bind $_tag <Enter> [list $w.f.t configure -cursor hand2]
+                $w.f.t tag bind $_tag <Leave> [list $w.f.t configure -cursor arrow]
+            }
+        }
+    } else {
+        $w.f.t insert end "\n  [t br_repetitions_hidden_off]\n" dim_tag
+    }
+    $w.f.t configure -state disabled
+
+    pack $w.f.sb -side right -fill y
+    pack $w.f.t  -side left  -fill both -expand 1
+
     button $w.ok -text "OK" -font $::font_sm -command [list destroy $w]
 
     pack $w.hdr -fill x
+    pack $w.ok  -side bottom -anchor e -padx 8 -pady 6
     pack $w.f   -fill both -expand 1 -padx 2 -pady 2
-    pack $w.ok  -anchor e -padx 8 -pady 6
 
     bind $w <Return> [list destroy $w]
     bind $w <Escape> [list destroy $w]
@@ -4216,6 +4522,35 @@ proc analyse-dialog {fpath} {
     grab $w
     focus $w.ok
     tkwait window $w
+}
+
+# Selects $word on $line in $t (if found) using the repfound highlight tag.
+proc repetitions-highlight-word {t line word} {
+    set last [lindex [split [$t index end] .] 0]
+    if {$line < 1 || $line >= $last} return
+    set pos [$t search -nocase -- $word "${line}.0" "${line}.end"]
+    if {$pos ne ""} {
+        $t tag add repfound $pos "$pos + [string length $word] chars"
+    }
+}
+
+# Jumps to the first occurrence of a repetition in the editor, highlighting
+# both repeated words. Leaves the Repetitions/Structure dialogs open so the
+# user can click through several rows without reopening them.
+proc repetitions-jump {fpath line1 word1 line2 word2} {
+    if {[file normalize $fpath] ne [file normalize $::filename] || ![winfo ismapped .ed]} {
+        show-editor $fpath
+    }
+
+    set t [primary-ed]
+    $t tag remove repfound 1.0 end
+    $t tag configure repfound -background "#5a3a00" -foreground "#ffdd88"
+    repetitions-highlight-word $t $line1 $word1
+    repetitions-highlight-word $t $line2 $word2
+
+    $t mark set insert "${line1}.0"
+    $t see insert
+    focus $t
 }
 
 proc word-occurrences-dialog {fpath} {
@@ -7609,6 +7944,10 @@ proc tui-browser {} {
                     set _path [file join $dir $name]
                     if {[file isfile $_path]} {
                         tui-analyse-dialog $_path $rows $cols
+                        if {$::tui_rep_jump ne ""} {
+                            cursor-put $_path $::tui_rep_jump 0
+                            return $_path
+                        }
                     }
                 }
             }
@@ -8432,6 +8771,9 @@ proc tui-editor {filepath {init_state {}}} {
                         lassign [tui-size] rows cols
                         if {$filepath ne ""} {
                             tui-analyse-dialog $filepath $rows $cols
+                            if {$::tui_rep_jump ne ""} {
+                                set cy [expr {min($::tui_rep_jump, [llength $lines])}]; set cx 0
+                            }
                         }
                         set ::tui_cmd_mode 0
                         puts -nonewline "\033\[2J\033\[H"; flush stdout
@@ -8903,6 +9245,7 @@ proc tui-analyse-dialog {fpath rows cols} {
     set data [analyse-data $fpath]
     if {$data eq {}} return
     lassign $data total nsec sdata
+    set ::tui_rep_jump ""
 
     set all_lines {}
     lappend all_lines [list "  [t br_analyse_title] -- [file tail $fpath]" 1]
@@ -8949,16 +9292,135 @@ proc tui-analyse-dialog {fpath rows cols} {
                 puts -nonewline "\033\[K"
             }
         }
-        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  q close" "" $cols
+        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  r:repetitions  q close" "" $cols
         flush stdout
 
         set _k ""; while {$_k eq ""} { set _k [tui-getch] }
         switch -- $_k {
             q       { break }
+            r       { tui-repetitions-dialog $fpath $rows $cols
+                      if {$::tui_rep_jump ne ""} { break } }
             UP - k  { incr _scroll -1 }
             DOWN - j { incr _scroll 1 }
             HOME    { set _scroll 0 }
             END     { set _scroll [expr {max(0, $_total - $_usable)}] }
+            default { if {$_k eq $::cfg_tui_help} { break } }
+        }
+    }
+}
+
+proc tui-repetitions-dialog {fpath rows cols} {
+    lassign [find-repetitions $fpath] level1 level2
+
+    # Each entry: {text inv jumpline} - jumpline is the target line number
+    # for ENTER on this row, or "" for headings/non-selectable rows.
+    set all_lines {}
+    lappend all_lines [list "  [t br_repetitions_title] -- [file tail $fpath]" 1 ""]
+    lappend all_lines [list "" 0 ""]
+
+    if {[llength $level1] == 0} {
+        lappend all_lines [list "  [t br_repetitions_empty]" 0 ""]
+    } else {
+        lappend all_lines [list "  [t br_repetitions_level1]" 1 ""]
+        foreach row $level1 {
+            lassign $row word1 line1 word2 line2 gap
+            lappend all_lines [list "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]" 0 $line1]
+        }
+    }
+
+    if {$::cfg_repetition_hidden} {
+        if {[llength $level2] > 0} {
+            lappend all_lines [list "" 0 ""]
+            lappend all_lines [list "  [t br_repetitions_level2]" 1 ""]
+            foreach row $level2 {
+                lassign $row word1 line1 word2 line2 gap
+                lappend all_lines [list "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]" 0 $line1]
+            }
+        }
+    } else {
+        lappend all_lines [list "" 0 ""]
+        lappend all_lines [list "  [t br_repetitions_hidden_off]" 0 ""]
+    }
+
+    set _usable [expr {$rows - 4}]
+    set _total  [llength $all_lines]
+    set _scroll 0
+
+    # first selectable (jumpable) row, if any
+    set _cur -1
+    for {set _i 0} {$_i < $_total} {incr _i} {
+        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+    }
+
+    puts -nonewline "\033\[2J\033\[H"; flush stdout
+
+    while 1 {
+        if {$_cur >= 0} {
+            if {$_cur < $_scroll}             { set _scroll $_cur }
+            if {$_cur >= $_scroll + $_usable} { set _scroll [expr {$_cur - $_usable + 1}] }
+        }
+        set _max_scroll [expr {max(0, $_total - $_usable)}]
+        if {$_scroll > $_max_scroll} { set _scroll $_max_scroll }
+        if {$_scroll < 0}            { set _scroll 0 }
+
+        puts -nonewline "\033\[H"
+        for {set _i 0} {$_i < $_usable} {incr _i} {
+            set _idx [expr {$_scroll + $_i}]
+            if {$_idx < $_total} {
+                tui-move $_i 0
+                lassign [lindex $all_lines $_idx] _txt _inv _jl
+                if {$_idx == $_cur} { tui-attr sel } elseif {$_inv} { tui-attr reverse }
+                puts -nonewline "[string range $_txt 0 [expr {$cols - 1}]]\033\[K"
+                if {$_idx == $_cur || $_inv} { tui-attr off }
+            } else {
+                tui-move $_i 0
+                puts -nonewline "\033\[K"
+            }
+        }
+        if {$_cur >= 0} {
+            tui-bar [expr {$rows - 1}] "  UP/DOWN select  ENTER jump  q close" "" $cols
+        } else {
+            tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  q close" "" $cols
+        }
+        flush stdout
+
+        set _k ""; while {$_k eq ""} { set _k [tui-getch] }
+        switch -- $_k {
+            q { break }
+            ENTER {
+                if {$_cur >= 0} {
+                    set ::tui_rep_jump [lindex [lindex $all_lines $_cur] 2]
+                    break
+                }
+            }
+            UP - k {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_cur - 1}]} {$_i >= 0} {incr _i -1} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { incr _scroll -1 }
+            }
+            DOWN - j {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_cur + 1}]} {$_i < $_total} {incr _i} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { incr _scroll 1 }
+            }
+            HOME {
+                if {$_cur >= 0} {
+                    for {set _i 0} {$_i < $_total} {incr _i} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { set _scroll 0 }
+            }
+            END {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_total - 1}]} {$_i >= 0} {incr _i -1} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { set _scroll [expr {max(0, $_total - $_usable)}] }
+            }
             default { if {$_k eq $::cfg_tui_help} { break } }
         }
     }

@@ -948,6 +948,10 @@ proc tui-browser {} {
                     set _path [file join $dir $name]
                     if {[file isfile $_path]} {
                         tui-analyse-dialog $_path $rows $cols
+                        if {$::tui_rep_jump ne ""} {
+                            cursor-put $_path $::tui_rep_jump 0
+                            return $_path
+                        }
                     }
                 }
             }
@@ -1771,6 +1775,9 @@ proc tui-editor {filepath {init_state {}}} {
                         lassign [tui-size] rows cols
                         if {$filepath ne ""} {
                             tui-analyse-dialog $filepath $rows $cols
+                            if {$::tui_rep_jump ne ""} {
+                                set cy [expr {min($::tui_rep_jump, [llength $lines])}]; set cx 0
+                            }
                         }
                         set ::tui_cmd_mode 0
                         puts -nonewline "\033\[2J\033\[H"; flush stdout
@@ -2242,6 +2249,7 @@ proc tui-analyse-dialog {fpath rows cols} {
     set data [analyse-data $fpath]
     if {$data eq {}} return
     lassign $data total nsec sdata
+    set ::tui_rep_jump ""
 
     set all_lines {}
     lappend all_lines [list "  [t br_analyse_title] -- [file tail $fpath]" 1]
@@ -2288,16 +2296,135 @@ proc tui-analyse-dialog {fpath rows cols} {
                 puts -nonewline "\033\[K"
             }
         }
-        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  q close" "" $cols
+        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  r:repetitions  q close" "" $cols
         flush stdout
 
         set _k ""; while {$_k eq ""} { set _k [tui-getch] }
         switch -- $_k {
             q       { break }
+            r       { tui-repetitions-dialog $fpath $rows $cols
+                      if {$::tui_rep_jump ne ""} { break } }
             UP - k  { incr _scroll -1 }
             DOWN - j { incr _scroll 1 }
             HOME    { set _scroll 0 }
             END     { set _scroll [expr {max(0, $_total - $_usable)}] }
+            default { if {$_k eq $::cfg_tui_help} { break } }
+        }
+    }
+}
+
+proc tui-repetitions-dialog {fpath rows cols} {
+    lassign [find-repetitions $fpath] level1 level2
+
+    # Each entry: {text inv jumpline} - jumpline is the target line number
+    # for ENTER on this row, or "" for headings/non-selectable rows.
+    set all_lines {}
+    lappend all_lines [list "  [t br_repetitions_title] -- [file tail $fpath]" 1 ""]
+    lappend all_lines [list "" 0 ""]
+
+    if {[llength $level1] == 0} {
+        lappend all_lines [list "  [t br_repetitions_empty]" 0 ""]
+    } else {
+        lappend all_lines [list "  [t br_repetitions_level1]" 1 ""]
+        foreach row $level1 {
+            lassign $row word1 line1 word2 line2 gap
+            lappend all_lines [list "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]" 0 $line1]
+        }
+    }
+
+    if {$::cfg_repetition_hidden} {
+        if {[llength $level2] > 0} {
+            lappend all_lines [list "" 0 ""]
+            lappend all_lines [list "  [t br_repetitions_level2]" 1 ""]
+            foreach row $level2 {
+                lassign $row word1 line1 word2 line2 gap
+                lappend all_lines [list "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]" 0 $line1]
+            }
+        }
+    } else {
+        lappend all_lines [list "" 0 ""]
+        lappend all_lines [list "  [t br_repetitions_hidden_off]" 0 ""]
+    }
+
+    set _usable [expr {$rows - 4}]
+    set _total  [llength $all_lines]
+    set _scroll 0
+
+    # first selectable (jumpable) row, if any
+    set _cur -1
+    for {set _i 0} {$_i < $_total} {incr _i} {
+        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+    }
+
+    puts -nonewline "\033\[2J\033\[H"; flush stdout
+
+    while 1 {
+        if {$_cur >= 0} {
+            if {$_cur < $_scroll}             { set _scroll $_cur }
+            if {$_cur >= $_scroll + $_usable} { set _scroll [expr {$_cur - $_usable + 1}] }
+        }
+        set _max_scroll [expr {max(0, $_total - $_usable)}]
+        if {$_scroll > $_max_scroll} { set _scroll $_max_scroll }
+        if {$_scroll < 0}            { set _scroll 0 }
+
+        puts -nonewline "\033\[H"
+        for {set _i 0} {$_i < $_usable} {incr _i} {
+            set _idx [expr {$_scroll + $_i}]
+            if {$_idx < $_total} {
+                tui-move $_i 0
+                lassign [lindex $all_lines $_idx] _txt _inv _jl
+                if {$_idx == $_cur} { tui-attr sel } elseif {$_inv} { tui-attr reverse }
+                puts -nonewline "[string range $_txt 0 [expr {$cols - 1}]]\033\[K"
+                if {$_idx == $_cur || $_inv} { tui-attr off }
+            } else {
+                tui-move $_i 0
+                puts -nonewline "\033\[K"
+            }
+        }
+        if {$_cur >= 0} {
+            tui-bar [expr {$rows - 1}] "  UP/DOWN select  ENTER jump  q close" "" $cols
+        } else {
+            tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  q close" "" $cols
+        }
+        flush stdout
+
+        set _k ""; while {$_k eq ""} { set _k [tui-getch] }
+        switch -- $_k {
+            q { break }
+            ENTER {
+                if {$_cur >= 0} {
+                    set ::tui_rep_jump [lindex [lindex $all_lines $_cur] 2]
+                    break
+                }
+            }
+            UP - k {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_cur - 1}]} {$_i >= 0} {incr _i -1} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { incr _scroll -1 }
+            }
+            DOWN - j {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_cur + 1}]} {$_i < $_total} {incr _i} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { incr _scroll 1 }
+            }
+            HOME {
+                if {$_cur >= 0} {
+                    for {set _i 0} {$_i < $_total} {incr _i} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { set _scroll 0 }
+            }
+            END {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_total - 1}]} {$_i >= 0} {incr _i -1} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { set _scroll [expr {max(0, $_total - $_usable)}] }
+            }
             default { if {$_k eq $::cfg_tui_help} { break } }
         }
     }

@@ -105,6 +105,9 @@ set ::cfg_bg_sel         "#3a5a8a"
 set ::cfg_docs_dir       ""
 set ::cfg_browser_filter "*.txt *.t2t *.md *.ini"
 set ::cfg_browser_show_all 0
+set ::cfg_repetition_scope   100
+set ::cfg_repetition_min_len 4
+set ::cfg_repetition_hidden  0
 set ::cfg_console_margin_cols    6
 set ::cfg_console_margin_rows    4
 set ::cfg_heading_marker    "="
@@ -465,6 +468,9 @@ proc ini-load {} {
                 browser              { set ::cfg_browser              [string is true $v] }
                 browser_filter       { set ::cfg_browser_filter       $v }
                 browser_show_all     { set ::cfg_browser_show_all     [string is true $v] }
+                repetition_scope     { set ::cfg_repetition_scope     $v }
+                repetition_min_len   { set ::cfg_repetition_min_len   $v }
+                repetition_hidden    { set ::cfg_repetition_hidden    [string is true $v] }
                 console_center_alert { set ::cfg_console_center_alert [string is true $v] }
                 line_numbers     { set ::cfg_line_numbers   [string is true $v] }
                 cursor_restore   { set ::cfg_cursor_restore [string is true $v] }
@@ -566,6 +572,12 @@ proc ini-save {} {
     puts $fh "browser_filter       = $::cfg_browser_filter"
     puts $fh "% browser_show_all: bypass browser_filter and show all files"
     puts $fh "browser_show_all     = [expr {$::cfg_browser_show_all     ? "yes" : "no"}]"
+    puts $fh "% repetition_scope: word distance (each direction) checked by the repetition tool"
+    puts $fh "repetition_scope     = $::cfg_repetition_scope"
+    puts $fh "% repetition_min_len: minimum word length for hidden-substring repetition checks"
+    puts $fh "repetition_min_len   = $::cfg_repetition_min_len"
+    puts $fh "% repetition_hidden: also flag hidden-substring repetitions (e.g. 'tour' in 'alentours')"
+    puts $fh "repetition_hidden    = [expr {$::cfg_repetition_hidden    ? "yes" : "no"}]"
     puts $fh "watch_file           = [expr {$::cfg_watch_file           ? "yes" : "no"}]"
     puts $fh "hemingway_mode       = [expr {$::cfg_hemingway_mode       ? "yes" : "no"}]"
     puts $fh "markdown_headings    = [expr {$::cfg_markdown_headings    ? "yes" : "no"}]"
