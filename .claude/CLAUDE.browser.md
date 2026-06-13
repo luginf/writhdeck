@@ -64,7 +64,7 @@ Section order: `DOCS_DIR_DEFAULT` → `DOCS_DIR` (if custom) → Favorites → R
 
 `list-docs {dir}` (`src/common.tcl`, shared GUI/TUI) filters the main directory listing by `::cfg_browser_filter` — a space-separated list of glob patterns (default `*.txt *.t2t *.md *.ini`), matched case-insensitively against the filename via `string match`. Empty filter = show everything. `::cfg_browser_show_all` (default off) bypasses the filter entirely regardless of `cfg_browser_filter`.
 
-Both settings are editable on the Misc tab (`ffilter` entry + `fshowall` checkbox, first item in the boolean checkbox loop). Note: favorites/recents (`build-extra-entries`) are **not** filtered — only the main directory listing.
+Both settings are editable on the Misc tab (`ffilter` entry, immediately followed by the standalone `fshowall` checkbox right below it). Note: favorites/recents (`build-extra-entries`) are **not** filtered — only the main directory listing.
 
 ## Pinned TOC panel — F11 vs Shift+Ctrl+F11
 

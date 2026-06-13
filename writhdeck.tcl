@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260612"
+set ::version          "v20260613"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -1399,6 +1399,8 @@ dict set ::i18n en {
     br_stats_no_data   "No writing stats yet for this file."
     br_stats_today     "Today"
     br_stats_total     "Total"
+    br_stats_total_words "Total words"
+    br_stats_total_chars "Total characters"
     br_stats_clear     "Clear stats"
     br_stats_clear_confirm "Clear all writing stats for \"%s\"?"
     br_fav_added       "[+] added to favorites: %s"
@@ -1500,6 +1502,7 @@ dict set ::i18n en {
     br_analyse_intro       "(intro)"
     br_analyse_empty       "No content to analyse."
     br_analyse_total       "Total: %d words  -  %d sections"
+    br_word_occ_title       "Word Occurrences"
     br_repetitions_title    "Repetitions"
     br_repetitions_empty    "No repetitions found."
     br_repetitions_level1   "Repeated words"
@@ -1605,6 +1608,8 @@ dict set ::i18n de {
     br_stats_no_data   "Noch keine Schreibstatistiken fuer diese Datei."
     br_stats_today     "Heute"
     br_stats_total     "Insgesamt"
+    br_stats_total_words "Woerter insgesamt"
+    br_stats_total_chars "Zeichen insgesamt"
     br_stats_clear     "Statistiken loeschen"
     br_stats_clear_confirm "Alle Schreibstatistiken fuer \"%s\" loeschen?"
     br_fav_added       "[+] zu Favoriten hinzugefuegt: %s"
@@ -1706,6 +1711,7 @@ dict set ::i18n de {
     br_analyse_intro       "(Einleitung)"
     br_analyse_empty       "Kein Inhalt zum Analysieren."
     br_analyse_total       "Gesamt: %d Woerter  -  %d Abschnitte"
+    br_word_occ_title       "Wortvorkommnisse"
     br_repetitions_title    "Wiederholungen"
     br_repetitions_empty    "Keine Wiederholungen gefunden."
     br_repetitions_level1   "Wiederholte Woerter"
@@ -1811,6 +1817,8 @@ dict set ::i18n es {
     br_stats_no_data   "Sin estadisticas de escritura para este archivo."
     br_stats_today     "Hoy"
     br_stats_total     "Total"
+    br_stats_total_words "Total de palabras"
+    br_stats_total_chars "Total de caracteres"
     br_stats_clear     "Borrar estadisticas"
     br_stats_clear_confirm "Borrar todas las estadisticas de escritura para \"%s\"?"
     br_fav_added       "[+] anadido a favoritos: %s"
@@ -1912,6 +1920,7 @@ dict set ::i18n es {
     br_analyse_intro       "(intro)"
     br_analyse_empty       "No hay contenido para analizar."
     br_analyse_total       "Total: %d palabras  -  %d secciones"
+    br_word_occ_title       "Ocurrencias de palabras"
     br_repetitions_title    "Repeticiones"
     br_repetitions_empty    "No se encontraron repeticiones."
     br_repetitions_level1   "Palabras repetidas"
@@ -2017,6 +2026,8 @@ dict set ::i18n fr {
     br_stats_no_data   "Aucune statistique d'écriture pour ce fichier."
     br_stats_today     "Aujourd'hui"
     br_stats_total     "Total"
+    br_stats_total_words "Nombre de mots"
+    br_stats_total_chars "Nombre de lettres"
     br_stats_clear     "Effacer les stats"
     br_stats_clear_confirm "Effacer toutes les statistiques de \"%s\" ?"
     br_fav_added       "[+] ajouté aux favoris : %s"
@@ -2118,6 +2129,7 @@ dict set ::i18n fr {
     br_analyse_intro       "(début)"
     br_analyse_empty       "Aucun contenu à analyser."
     br_analyse_total       "Total : %d mots  -  %d sections"
+    br_word_occ_title       "Occurrences de mots"
     br_repetitions_title    "Répétitions"
     br_repetitions_empty    "Aucune répétition trouvée."
     br_repetitions_level1   "Mots répétés"
@@ -2223,6 +2235,8 @@ dict set ::i18n ko {
     br_stats_no_data   "이 파일에 대한 작문 통계가 없습니다."
     br_stats_today     "오늘"
     br_stats_total     "합계"
+    br_stats_total_words "총 단어 수"
+    br_stats_total_chars "총 글자 수"
     br_stats_clear     "통계 지우기"
     br_stats_clear_confirm "\"%s\"의 모든 작문 통계를 지우시겠습니까?"
     br_fav_added       "[+] 즐겨찾기에 추가됨: %s"
@@ -2324,6 +2338,7 @@ dict set ::i18n ko {
     br_analyse_intro       "(서론)"
     br_analyse_empty       "분석할 내용이 없습니다."
     br_analyse_total       "합계: %d 단어  -  %d 섹션"
+    br_word_occ_title       "단어 발생"
     br_repetitions_title    "반복"
     br_repetitions_empty    "반복된 단어가 없습니다."
     br_repetitions_level1   "반복된 단어"
@@ -2429,6 +2444,8 @@ dict set ::i18n no {
     br_stats_no_data   "Ingen skrivstatistikk ennå for denne filen."
     br_stats_today     "I dag"
     br_stats_total     "Totalt"
+    br_stats_total_words "Ord totalt"
+    br_stats_total_chars "Tegn totalt"
     br_stats_clear     "Slett statistikk"
     br_stats_clear_confirm "Slette all skrivstatistikk for \"%s\"?"
     br_fav_added       "[+] lagt til favoritter: %s"
@@ -2530,6 +2547,7 @@ dict set ::i18n no {
     br_analyse_intro       "(intro)"
     br_analyse_empty       "Ingen innhold å analysere."
     br_analyse_total       "Totalt: %d ord  -  %d seksjoner"
+    br_word_occ_title       "Ordforkomster"
     br_repetitions_title    "Repetisjoner"
     br_repetitions_empty    "Ingen repetisjoner funnet."
     br_repetitions_level1   "Repeterte ord"
@@ -2761,52 +2779,6 @@ proc heading-level {line} {
     return ""
 }
 
-proc analyse-data {fpath} {
-    # Returns {total nsec sdata} where sdata is a list of {indent level title words pct}.
-    # Returns {} if the file does not exist.
-    if {![file exists $fpath]} { return {} }
-    set sections [analyse-structure $fpath]
-    set total 0
-    foreach sec $sections { incr total [lindex $sec 2] }
-    set result {}
-    foreach sec $sections {
-        lassign $sec title level words
-        if {$words == 0 && $title eq ""} continue
-        set pct [expr {$total > 0 ? round($words * 100.0 / $total) : 0}]
-        set indent [string repeat "  " [expr {max(0, $level - 1)}]]
-        lappend result [list $indent $level $title $words $pct]
-    }
-    return [list $total [llength $result] $result]
-}
-
-proc analyse-structure {fpath} {
-    if {![file exists $fpath]} { return {} }
-    set fd [open $fpath r]
-    chan configure $fd -encoding utf-8
-    set content [read $fd]
-    close $fd
-
-    set sections {}
-    set cur_title ""
-    set cur_level 0
-    set cur_words 0
-
-    foreach line [split $content \n] {
-        set hl [heading-level $line]
-        if {$hl ne ""} {
-            lappend sections [list $cur_title $cur_level $cur_words]
-            lassign $hl title level
-            set cur_title $title
-            set cur_level $level
-            set cur_words 0
-        } else {
-            incr cur_words [llength [regexp -all -inline {\S+} $line]]
-        }
-    }
-    lappend sections [list $cur_title $cur_level $cur_words]
-    return $sections
-}
-
 proc markers-update {} {
     set ::cached_heading_re [heading-re]
     if {$::cfg_comment_marker ne ""} {
@@ -2956,6 +2928,63 @@ proc toggle-favorite {path} {
         lappend ::favorites_list $path
     }
     state-save
+}
+
+# ===========================================================================
+# analysis.tcl
+# ===========================================================================
+# ===========================================================================
+# Analysis tools: structure outline, word-occurrence search, repetition
+# detection. Optional module -- see ANALYSIS_TOOLS (and the per-target
+# MINI_ANALYSIS_TOOLS / JIM_ANALYSIS_TOOLS overrides) in the Makefile.
+# ===========================================================================
+
+# --- shared helpers (used by both GUI and TUI) ----------------------------
+
+proc analyse-data {fpath} {
+    # Returns {total nsec sdata} where sdata is a list of {indent level title words pct}.
+    # Returns {} if the file does not exist.
+    if {![file exists $fpath]} { return {} }
+    set sections [analyse-structure $fpath]
+    set total 0
+    foreach sec $sections { incr total [lindex $sec 2] }
+    set result {}
+    foreach sec $sections {
+        lassign $sec title level words
+        if {$words == 0 && $title eq ""} continue
+        set pct [expr {$total > 0 ? round($words * 100.0 / $total) : 0}]
+        set indent [string repeat "  " [expr {max(0, $level - 1)}]]
+        lappend result [list $indent $level $title $words $pct]
+    }
+    return [list $total [llength $result] $result]
+}
+
+proc analyse-structure {fpath} {
+    if {![file exists $fpath]} { return {} }
+    set fd [open $fpath r]
+    chan configure $fd -encoding utf-8
+    set content [read $fd]
+    close $fd
+
+    set sections {}
+    set cur_title ""
+    set cur_level 0
+    set cur_words 0
+
+    foreach line [split $content \n] {
+        set hl [heading-level $line]
+        if {$hl ne ""} {
+            lappend sections [list $cur_title $cur_level $cur_words]
+            lassign $hl title level
+            set cur_title $title
+            set cur_level $level
+            set cur_words 0
+        } else {
+            incr cur_words [llength [regexp -all -inline {\S+} $line]]
+        }
+    }
+    lappend sections [list $cur_title $cur_level $cur_words]
+    return $sections
 }
 
 proc _cmp_word_count {counts a b} {
@@ -3116,6 +3145,498 @@ proc find-repetitions {fpath} {
     return [list $level1 $level2]
 }
 
+# --- GUI dialogs -----------------------------------------------------------
+
+proc br-analyse-shortcut {} {
+    set e [br-selected]
+    if {[llength $e]} {
+        set fpath [file join [lindex $e 1] [lindex $e 2]]
+        analyse-dialog $fpath
+    }
+}
+
+proc analyse-dialog {fpath} {
+    set data [analyse-data $fpath]
+    if {$data eq {}} { info-dialog "File not found: $fpath"; return }
+    lassign $data total nsec sdata
+
+    set w .adlg
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [t br_analyse_title]
+    wm geometry $w 520x420
+    wm transient $w .
+
+    label $w.hdr -text "[file tail $fpath]" -font [list [lindex $::font 0] [lindex $::font 1] bold] \
+        -bg $::bg_bar -fg $::fg_bar -anchor w -padx 10 -pady 5
+
+    frame $w.f -bg $::bg
+    text $w.f.t -font $::font_sm -bg $::bg -fg $::fg -bd 0 -highlightthickness 0 \
+        -yscrollcommand [list $w.f.sb set] -wrap none -width 66 -height 22 \
+        -selectbackground $::bg_sel -selectforeground $::fg -cursor arrow -padx 10 -pady 6
+    scrollbar $w.f.sb -orient vertical -command [list $w.f.t yview]
+
+    $w.f.t tag configure heading_tag -foreground $::cfg_color_heading
+    $w.f.t tag configure bar_tag     -foreground $::cfg_color_heading
+    $w.f.t tag configure dim_tag     -foreground $::fg_bar
+
+    $w.f.t configure -state normal
+    if {$total == 0} {
+        $w.f.t insert end "\n  [t br_analyse_empty]\n" dim_tag
+    } else {
+        set max_bar 28
+        foreach row $sdata {
+            lassign $row indent level title words pct
+            set bar [string repeat "|" [expr {max(1, round($pct * $max_bar / 100.0))}]]
+            set lbl [expr {$title eq "" ? [t br_analyse_intro] : $title}]
+            set lvl_str [expr {$level > 0 ? "H$level " : "    "}]
+            $w.f.t insert end "\n${indent}${lvl_str}" dim_tag
+            $w.f.t insert end "${lbl}\n" heading_tag
+            $w.f.t insert end "${indent}    ${bar} " bar_tag
+            $w.f.t insert end "${words}w (${pct}%)\n" dim_tag
+        }
+        $w.f.t insert end "\n  [t br_analyse_total $total $nsec]\n" dim_tag
+    }
+    $w.f.t configure -state disabled
+
+    pack $w.f.sb -side right -fill y
+    pack $w.f.t  -side left  -fill both -expand 1
+
+    frame $w.btns
+    button $w.btns.rep -text [t br_repetitions_title] -font $::font_sm -command [list repetitions-dialog $fpath]
+    button $w.btns.occ -text [t br_word_occ_title] -font $::font_sm -command [list word-occurrences-dialog $fpath]
+    button $w.btns.ok  -text "OK" -font $::font_sm -command [list destroy $w]
+    pack $w.btns.ok  -side right -padx 8 -pady 6
+    pack $w.btns.rep -side right -padx 4 -pady 6
+    pack $w.btns.occ -side right -padx 4 -pady 6
+
+    pack $w.hdr  -fill x
+    pack $w.btns -side bottom -fill x
+    pack $w.f    -fill both -expand 1 -padx 2 -pady 2
+
+    bind $w <Return> [list destroy $w]
+    bind $w <Escape> [list destroy $w]
+    update
+    grab $w
+    focus $w.btns.ok
+    tkwait window $w
+}
+
+proc repetitions-dialog {fpath} {
+    if {![file exists $fpath]} return
+    lassign [find-repetitions $fpath] level1 level2
+
+    set w .rpdlg
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [t br_repetitions_title]
+    wm geometry $w 520x420
+    wm transient $w .
+
+    label $w.hdr -text "[file tail $fpath]" -font [list [lindex $::font 0] [lindex $::font 1] bold] \
+        -bg $::bg_bar -fg $::fg_bar -anchor w -padx 10 -pady 5
+
+    frame $w.f -bg $::bg
+    text $w.f.t -font $::font_sm -bg $::bg -fg $::fg -bd 0 -highlightthickness 0 \
+        -yscrollcommand [list $w.f.sb set] -wrap none -width 66 -height 22 \
+        -selectbackground $::bg_sel -selectforeground $::fg -cursor arrow -padx 10 -pady 6
+    scrollbar $w.f.sb -orient vertical -command [list $w.f.t yview]
+
+    $w.f.t tag configure heading_tag -foreground $::cfg_color_heading
+    $w.f.t tag configure dim_tag     -foreground $::fg_bar
+
+    set _rn 0
+    $w.f.t configure -state normal
+    if {[llength $level1] == 0} {
+        $w.f.t insert end "\n  [t br_repetitions_empty]\n" dim_tag
+    } else {
+        $w.f.t insert end "\n  [t br_repetitions_level1]\n" heading_tag
+        foreach row $level1 {
+            lassign $row word1 line1 word2 line2 gap
+            set _tag "rephit$_rn"; incr _rn
+            $w.f.t insert end "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]\n" [list dim_tag $_tag]
+            $w.f.t tag bind $_tag <Button-1> "[list repetitions-jump $fpath $line1 $word1 $line2 $word2]; break"
+            $w.f.t tag bind $_tag <Enter> [list $w.f.t configure -cursor hand2]
+            $w.f.t tag bind $_tag <Leave> [list $w.f.t configure -cursor arrow]
+        }
+    }
+    if {$::cfg_repetition_hidden} {
+        if {[llength $level2] > 0} {
+            $w.f.t insert end "\n  [t br_repetitions_level2]\n" heading_tag
+            foreach row $level2 {
+                lassign $row word1 line1 word2 line2 gap
+                set _tag "rephit$_rn"; incr _rn
+                $w.f.t insert end "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]\n" [list dim_tag $_tag]
+                $w.f.t tag bind $_tag <Button-1> "[list repetitions-jump $fpath $line1 $word1 $line2 $word2]; break"
+                $w.f.t tag bind $_tag <Enter> [list $w.f.t configure -cursor hand2]
+                $w.f.t tag bind $_tag <Leave> [list $w.f.t configure -cursor arrow]
+            }
+        }
+    } else {
+        $w.f.t insert end "\n  [t br_repetitions_hidden_off]\n" dim_tag
+    }
+    $w.f.t configure -state disabled
+
+    pack $w.f.sb -side right -fill y
+    pack $w.f.t  -side left  -fill both -expand 1
+
+    button $w.ok -text "OK" -font $::font_sm -command [list destroy $w]
+
+    pack $w.hdr -fill x
+    pack $w.ok  -side bottom -anchor e -padx 8 -pady 6
+    pack $w.f   -fill both -expand 1 -padx 2 -pady 2
+
+    bind $w <Return> [list destroy $w]
+    bind $w <Escape> [list destroy $w]
+    bind $w <Destroy> [list repetitions-clear-highlight]
+    update
+    grab $w
+    focus $w.ok
+    tkwait window $w
+}
+
+# Removes the repetition highlight from the editor (called when the
+# Repetitions dialog closes).
+proc repetitions-clear-highlight {} {
+    catch { [primary-ed] tag remove repfound 1.0 end }
+}
+
+# Selects $word on $line in $t (if found) using the repfound highlight tag.
+proc repetitions-highlight-word {t line word} {
+    set last [lindex [split [$t index end] .] 0]
+    if {$line < 1 || $line >= $last} return
+    set pos [$t search -nocase -- $word "${line}.0" "${line}.end"]
+    if {$pos ne ""} {
+        $t tag add repfound $pos "$pos + [string length $word] chars"
+    }
+}
+
+# Jumps to the first occurrence of a repetition in the editor, highlighting
+# both repeated words, and makes the editor editable so the repetition can be
+# fixed right away. Closes the Structure dialog (it would otherwise keep a
+# grab blocking the editor) but leaves the Repetitions dialog open so the
+# user can click through several rows without reopening it.
+proc repetitions-jump {fpath line1 word1 line2 word2} {
+    catch {destroy .adlg}
+    catch {grab release .rpdlg}
+
+    if {[file normalize $fpath] ne [file normalize $::filename] || ![winfo ismapped .ed]} {
+        show-editor $fpath
+    }
+
+    set t [primary-ed]
+    $t tag remove repfound 1.0 end
+    $t tag configure repfound -background "#5a3a00" -foreground "#ffdd88"
+    repetitions-highlight-word $t $line1 $word1
+    repetitions-highlight-word $t $line2 $word2
+
+    $t mark set insert "${line1}.0"
+    $t see insert
+    focus -force $t
+
+    # The "a" cmd-mode keypress that opened the Structure dialog is still
+    # waiting (nested tkwait through .adlg/.rpdlg) and only resets
+    # gui_cmd_mode once .rpdlg closes; reset it now so the editor is
+    # immediately editable.
+    set ::gui_cmd_mode 0
+    ed-status
+
+    # Text's built-in <1> class binding (tk::TextButton1) runs after our tag
+    # binding and unconditionally calls "focus" on .rpdlg.f.t, stealing focus
+    # back; re-claim it once this event has fully finished processing.
+    after idle [list focus -force $t]
+}
+
+proc word-occurrences-dialog {fpath} {
+    if {![file exists $fpath]} return
+
+    set w .wodlg
+    catch {destroy $w}
+    toplevel $w
+    wm title $w "Word Occurrences"
+    wm geometry $w 400x500
+    wm transient $w .
+
+    set word_data [get-word-occurrences $fpath]
+    if {[llength $word_data] == 0} {
+        info-dialog "No words to display"
+        return
+    }
+
+    catch {
+        frame $w.f
+        listbox $w.f.lb -font [list [lindex $::font 0] 9] -yscrollcommand [list $w.f.sb set] -width 50 -height 20
+        scrollbar $w.f.sb -orient vertical -command [list $w.f.lb yview]
+
+        foreach pair $word_data {
+            lassign $pair word count
+            $w.f.lb insert end [format "%-30s %6d" $word $count]
+        }
+
+        pack $w.f.sb -side right -fill y
+        pack $w.f.lb -side left -fill both -expand 1
+        pack $w.f -fill both -expand 1 -padx 8 -pady 8
+
+        frame $w.btns
+        button $w.btns.ok -text "Close" -font $::font_sm -command [list destroy $w]
+        pack $w.btns.ok -padx 8 -pady 6
+        pack $w.btns -fill x
+    }
+
+    update
+    grab $w
+    focus $w.f.lb
+}
+
+# --- TUI dialogs -----------------------------------------------------------
+
+proc tui-word-occurrences {fpath rows cols} {
+    if {![file exists $fpath]} return
+
+    set word_data [get-word-occurrences $fpath]
+    if {[llength $word_data] == 0} {
+        tui-info-dialog [t br_stats_no_data] $rows $cols
+        return
+    }
+
+    catch {
+        set all_lines [list [list "  Word Occurrences" 1] [list "" 0] \
+            [list [format "  %-30s %s" "Word" "Count"] 1]]
+        foreach pair $word_data {
+            lassign $pair word count
+            lappend all_lines [list [format "  %-30s %6d" $word $count] 0]
+        }
+
+        set _usable [expr {$rows-4}]
+        set _total [llength $all_lines]
+        set _scroll 0
+        set _w [expr {min(50, $cols-4)}]
+        set _left [expr {max(0,($cols-$_w)/2)}]
+        set _top  [expr {max(0,($rows-$_usable)/2)}]
+
+        puts -nonewline "\033\[2J\033\[H"; flush stdout
+
+        while 1 {
+            set _max_scroll [expr {max(0, $_total - $_usable)}]
+            if {$_scroll > $_max_scroll} { set _scroll $_max_scroll }
+            if {$_scroll < 0} { set _scroll 0 }
+
+            puts -nonewline "\033\[H"
+            for {set _i 0} {$_i < $_usable} {incr _i} {
+                set _idx [expr {$_scroll + $_i}]
+                if {$_idx < $_total} {
+                    tui-move [expr {$_top+$_i}] $_left
+                    lassign [lindex $all_lines $_idx] _txt _inv
+                    if {$_inv} { tui-attr reverse }
+                    puts -nonewline "[string range $_txt 0 [expr {$_w-1}]]\033\[K"
+                    if {$_inv} { tui-attr off }
+                } else {
+                    tui-move [expr {$_top+$_i}] $_left
+                    puts -nonewline "\033\[K"
+                }
+            }
+            tui-bar [expr {$rows-1}] "  UP/DOWN scroll  q close" "" $cols
+            flush stdout
+
+            set _k ""; while {$_k eq ""} { set _k [tui-getch] }
+            switch -- $_k {
+                q { break }
+                UP - k { incr _scroll -1 }
+                DOWN - j { incr _scroll 1 }
+                HOME { set _scroll 0 }
+                END { set _scroll [expr {max(0, $_total - $_usable)}] }
+                default {
+                    if {$_k eq $::cfg_tui_help} { break }
+                }
+            }
+        }
+    }
+}
+
+proc tui-analyse-dialog {fpath rows cols} {
+    set data [analyse-data $fpath]
+    if {$data eq {}} return
+    lassign $data total nsec sdata
+    set ::tui_rep_jump ""
+
+    set all_lines {}
+    lappend all_lines [list "  [t br_analyse_title] -- [file tail $fpath]" 1]
+    lappend all_lines [list "" 0]
+
+    if {$total == 0} {
+        lappend all_lines [list "  [t br_analyse_empty]" 0]
+    } else {
+        set max_bar 25
+        foreach row $sdata {
+            lassign $row indent level title words pct
+            set bar [string repeat "|" [expr {max(1, round($pct * $max_bar / 100.0))}]]
+            set lbl [expr {$title eq "" ? [t br_analyse_intro] : $title}]
+            set lvl_str [expr {$level > 0 ? "H$level" : "   "}]
+            lappend all_lines [list "${indent}  ${lvl_str} ${lbl}" 1]
+            lappend all_lines [list "${indent}      ${bar} ${words}w (${pct}%)" 0]
+            lappend all_lines [list "" 0]
+        }
+        lappend all_lines [list "  [t br_analyse_total $total $nsec]" 0]
+    }
+
+    set _usable [expr {$rows - 4}]
+    set _total  [llength $all_lines]
+    set _scroll 0
+
+    puts -nonewline "\033\[2J\033\[H"; flush stdout
+
+    while 1 {
+        set _max_scroll [expr {max(0, $_total - $_usable)}]
+        if {$_scroll > $_max_scroll} { set _scroll $_max_scroll }
+        if {$_scroll < 0}           { set _scroll 0 }
+
+        puts -nonewline "\033\[H"
+        for {set _i 0} {$_i < $_usable} {incr _i} {
+            set _idx [expr {$_scroll + $_i}]
+            if {$_idx < $_total} {
+                tui-move $_i 0
+                lassign [lindex $all_lines $_idx] _txt _inv
+                if {$_inv} { tui-attr reverse }
+                puts -nonewline "[string range $_txt 0 [expr {$cols - 1}]]\033\[K"
+                if {$_inv} { tui-attr off }
+            } else {
+                tui-move $_i 0
+                puts -nonewline "\033\[K"
+            }
+        }
+        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  r:repetitions  q close" "" $cols
+        flush stdout
+
+        set _k ""; while {$_k eq ""} { set _k [tui-getch] }
+        switch -- $_k {
+            q       { break }
+            r       { tui-repetitions-dialog $fpath $rows $cols
+                      if {$::tui_rep_jump ne ""} { break } }
+            UP - k  { incr _scroll -1 }
+            DOWN - j { incr _scroll 1 }
+            HOME    { set _scroll 0 }
+            END     { set _scroll [expr {max(0, $_total - $_usable)}] }
+            default { if {$_k eq $::cfg_tui_help} { break } }
+        }
+    }
+}
+
+proc tui-repetitions-dialog {fpath rows cols} {
+    lassign [find-repetitions $fpath] level1 level2
+
+    # Each entry: {text inv jumpline} - jumpline is the target line number
+    # for ENTER on this row, or "" for headings/non-selectable rows.
+    set all_lines {}
+    lappend all_lines [list "  [t br_repetitions_title] -- [file tail $fpath]" 1 ""]
+    lappend all_lines [list "" 0 ""]
+
+    if {[llength $level1] == 0} {
+        lappend all_lines [list "  [t br_repetitions_empty]" 0 ""]
+    } else {
+        lappend all_lines [list "  [t br_repetitions_level1]" 1 ""]
+        foreach row $level1 {
+            lassign $row word1 line1 word2 line2 gap
+            lappend all_lines [list "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]" 0 $line1]
+        }
+    }
+
+    if {$::cfg_repetition_hidden} {
+        if {[llength $level2] > 0} {
+            lappend all_lines [list "" 0 ""]
+            lappend all_lines [list "  [t br_repetitions_level2]" 1 ""]
+            foreach row $level2 {
+                lassign $row word1 line1 word2 line2 gap
+                lappend all_lines [list "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]" 0 $line1]
+            }
+        }
+    } else {
+        lappend all_lines [list "" 0 ""]
+        lappend all_lines [list "  [t br_repetitions_hidden_off]" 0 ""]
+    }
+
+    set _usable [expr {$rows - 4}]
+    set _total  [llength $all_lines]
+    set _scroll 0
+
+    # first selectable (jumpable) row, if any
+    set _cur -1
+    for {set _i 0} {$_i < $_total} {incr _i} {
+        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+    }
+
+    puts -nonewline "\033\[2J\033\[H"; flush stdout
+
+    while 1 {
+        if {$_cur >= 0} {
+            if {$_cur < $_scroll}             { set _scroll $_cur }
+            if {$_cur >= $_scroll + $_usable} { set _scroll [expr {$_cur - $_usable + 1}] }
+        }
+        set _max_scroll [expr {max(0, $_total - $_usable)}]
+        if {$_scroll > $_max_scroll} { set _scroll $_max_scroll }
+        if {$_scroll < 0}            { set _scroll 0 }
+
+        puts -nonewline "\033\[H"
+        for {set _i 0} {$_i < $_usable} {incr _i} {
+            set _idx [expr {$_scroll + $_i}]
+            if {$_idx < $_total} {
+                tui-move $_i 0
+                lassign [lindex $all_lines $_idx] _txt _inv _jl
+                if {$_idx == $_cur} { tui-attr sel } elseif {$_inv} { tui-attr reverse }
+                puts -nonewline "[string range $_txt 0 [expr {$cols - 1}]]\033\[K"
+                if {$_idx == $_cur || $_inv} { tui-attr off }
+            } else {
+                tui-move $_i 0
+                puts -nonewline "\033\[K"
+            }
+        }
+        if {$_cur >= 0} {
+            tui-bar [expr {$rows - 1}] "  UP/DOWN select  ENTER jump  q close" "" $cols
+        } else {
+            tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  q close" "" $cols
+        }
+        flush stdout
+
+        set _k ""; while {$_k eq ""} { set _k [tui-getch] }
+        switch -- $_k {
+            q { break }
+            ENTER {
+                if {$_cur >= 0} {
+                    set ::tui_rep_jump [lindex [lindex $all_lines $_cur] 2]
+                    break
+                }
+            }
+            UP - k {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_cur - 1}]} {$_i >= 0} {incr _i -1} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { incr _scroll -1 }
+            }
+            DOWN - j {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_cur + 1}]} {$_i < $_total} {incr _i} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { incr _scroll 1 }
+            }
+            HOME {
+                if {$_cur >= 0} {
+                    for {set _i 0} {$_i < $_total} {incr _i} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { set _scroll 0 }
+            }
+            END {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_total - 1}]} {$_i >= 0} {incr _i -1} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { set _scroll [expr {max(0, $_total - $_usable)}] }
+            }
+            default { if {$_k eq $::cfg_tui_help} { break } }
+        }
+    }
+}
 
 # ===========================================================================
 # gui-config.tcl
@@ -3625,6 +4146,17 @@ proc profile-config-dialog {} {
     pack $w.tab_misc.behaviour_sec.ffilter.lbl -side left
     pack $w.tab_misc.behaviour_sec.ffilter.entry -side left -fill x -expand 1 -padx {4 4}
 
+    # show all files / bypass filter row (checkbox)
+    frame $w.tab_misc.behaviour_sec.fshowall -bg $::bg
+    pack  $w.tab_misc.behaviour_sec.fshowall -fill x -padx 12 -pady 3
+    label $w.tab_misc.behaviour_sec.fshowall.lbl -text [t config_browser_show_all] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.tab_misc.behaviour_sec.fshowall.check -variable profile_config_browser_show_all \
+        -font $::font_sm -bg $::bg -fg $::fg \
+        -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
+        -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
+    pack $w.tab_misc.behaviour_sec.fshowall.lbl -side left
+    pack $w.tab_misc.behaviour_sec.fshowall.check -side left -padx {8 2}
+
     # repetition scope row (spinbox)
     frame $w.tab_misc.behaviour_sec.frpscope -bg $::bg
     pack  $w.tab_misc.behaviour_sec.frpscope -fill x -padx 12 -pady 4
@@ -3646,7 +4178,6 @@ proc profile-config-dialog {} {
 
     # Boolean behaviour options
     foreach {fname key var} {
-        fshowall  config_browser_show_all     profile_config_browser_show_all
         frphidden config_repetition_hidden    profile_config_repetition_hidden
         fbrowser  config_browser_startup      profile_config_browser
         fwatch    config_watch_file           profile_config_watch_file
@@ -4066,11 +4597,15 @@ foreach {char cmd key} {
     d br-delete br_key_delete
     r br-rename br_key_rename
     i br-info-shortcut br_key_info
-    a br-analyse-shortcut br_key_analyse
-    w word-occurrences-dialog br_key_words
 } {
     set label "$char:[t $key]"
     lappend _shortcuts [list $label $cmd]
+}
+if {[info procs br-analyse-shortcut] ne ""} {
+    lappend _shortcuts [list "a:[t br_key_analyse]" "br-analyse-shortcut"]
+}
+if {[info procs word-occurrences-dialog] ne ""} {
+    lappend _shortcuts [list "w:[t br_key_words]" "word-occurrences-dialog"]
 }
 if {[info procs profile-config-dialog] ne ""} {
     lappend _shortcuts [list "c:[t br_key_config]" "profile-config-dialog"]
@@ -4265,14 +4800,6 @@ proc br-info-shortcut {} {
     }
 }
 
-proc br-analyse-shortcut {} {
-    set e [br-selected]
-    if {[llength $e]} {
-        set fpath [file join [lindex $e 1] [lindex $e 2]]
-        analyse-dialog $fpath
-    }
-}
-
 # --- browser dialogs ----------------------------------------------------------
 proc input-dialog {title prompt} {
     set w .dlg
@@ -4373,11 +4900,13 @@ proc file-info-dialog {fpath} {
     frame $w.f -bg $::bg
     button $w.f.ok -text "OK" -font $::font_sm -command [list destroy $w]
     button $w.f.stats -text "Stats" -font $::font_sm -command [list file-stats-dialog $fpath]
-    button $w.f.words -text "Word Occurrences" -font $::font_sm -command [list word-occurrences-dialog $fpath]
-
     pack $w.info -fill both -expand 1 -padx 8 -pady 8
     pack $w.f -fill x -padx 8 -pady 6
-    pack $w.f.ok $w.f.stats $w.f.words -side left -padx 4
+    pack $w.f.ok $w.f.stats -side left -padx 4
+    if {[info procs word-occurrences-dialog] ne ""} {
+        button $w.f.words -text "Word Occurrences" -font $::font_sm -command [list word-occurrences-dialog $fpath]
+        pack $w.f.words -side left -padx 4
+    }
 
     bind $w <Return> [list destroy $w]
     bind $w <Escape> [list destroy $w]
@@ -4385,213 +4914,6 @@ proc file-info-dialog {fpath} {
     grab $w
     focus $w.f.ok
     tkwait window $w
-}
-
-proc analyse-dialog {fpath} {
-    set data [analyse-data $fpath]
-    if {$data eq {}} { info-dialog "File not found: $fpath"; return }
-    lassign $data total nsec sdata
-
-    set w .adlg
-    catch {destroy $w}
-    toplevel $w
-    wm title $w [t br_analyse_title]
-    wm geometry $w 520x420
-    wm transient $w .
-
-    label $w.hdr -text "[file tail $fpath]" -font [list [lindex $::font 0] [lindex $::font 1] bold] \
-        -bg $::bg_bar -fg $::fg_bar -anchor w -padx 10 -pady 5
-
-    frame $w.f -bg $::bg
-    text $w.f.t -font $::font_sm -bg $::bg -fg $::fg -bd 0 -highlightthickness 0 \
-        -yscrollcommand [list $w.f.sb set] -wrap none -width 66 -height 22 \
-        -selectbackground $::bg_sel -selectforeground $::fg -cursor arrow -padx 10 -pady 6
-    scrollbar $w.f.sb -orient vertical -command [list $w.f.t yview]
-
-    $w.f.t tag configure heading_tag -foreground $::cfg_color_heading
-    $w.f.t tag configure bar_tag     -foreground $::cfg_color_heading
-    $w.f.t tag configure dim_tag     -foreground $::fg_bar
-
-    $w.f.t configure -state normal
-    if {$total == 0} {
-        $w.f.t insert end "\n  [t br_analyse_empty]\n" dim_tag
-    } else {
-        set max_bar 28
-        foreach row $sdata {
-            lassign $row indent level title words pct
-            set bar [string repeat "|" [expr {max(1, round($pct * $max_bar / 100.0))}]]
-            set lbl [expr {$title eq "" ? [t br_analyse_intro] : $title}]
-            set lvl_str [expr {$level > 0 ? "H$level " : "    "}]
-            $w.f.t insert end "\n${indent}${lvl_str}" dim_tag
-            $w.f.t insert end "${lbl}\n" heading_tag
-            $w.f.t insert end "${indent}    ${bar} " bar_tag
-            $w.f.t insert end "${words}w (${pct}%)\n" dim_tag
-        }
-        $w.f.t insert end "\n  [t br_analyse_total $total $nsec]\n" dim_tag
-    }
-    $w.f.t configure -state disabled
-
-    pack $w.f.sb -side right -fill y
-    pack $w.f.t  -side left  -fill both -expand 1
-
-    frame $w.btns
-    button $w.btns.rep -text [t br_repetitions_title] -font $::font_sm -command [list repetitions-dialog $fpath]
-    button $w.btns.ok  -text "OK" -font $::font_sm -command [list destroy $w]
-    pack $w.btns.ok  -side right -padx 8 -pady 6
-    pack $w.btns.rep -side right -padx 4 -pady 6
-
-    pack $w.hdr  -fill x
-    pack $w.btns -side bottom -fill x
-    pack $w.f    -fill both -expand 1 -padx 2 -pady 2
-
-    bind $w <Return> [list destroy $w]
-    bind $w <Escape> [list destroy $w]
-    update
-    grab $w
-    focus $w.btns.ok
-    tkwait window $w
-}
-
-proc repetitions-dialog {fpath} {
-    if {![file exists $fpath]} return
-    lassign [find-repetitions $fpath] level1 level2
-
-    set w .rpdlg
-    catch {destroy $w}
-    toplevel $w
-    wm title $w [t br_repetitions_title]
-    wm geometry $w 520x420
-    wm transient $w .
-
-    label $w.hdr -text "[file tail $fpath]" -font [list [lindex $::font 0] [lindex $::font 1] bold] \
-        -bg $::bg_bar -fg $::fg_bar -anchor w -padx 10 -pady 5
-
-    frame $w.f -bg $::bg
-    text $w.f.t -font $::font_sm -bg $::bg -fg $::fg -bd 0 -highlightthickness 0 \
-        -yscrollcommand [list $w.f.sb set] -wrap none -width 66 -height 22 \
-        -selectbackground $::bg_sel -selectforeground $::fg -cursor arrow -padx 10 -pady 6
-    scrollbar $w.f.sb -orient vertical -command [list $w.f.t yview]
-
-    $w.f.t tag configure heading_tag -foreground $::cfg_color_heading
-    $w.f.t tag configure dim_tag     -foreground $::fg_bar
-
-    set _rn 0
-    $w.f.t configure -state normal
-    if {[llength $level1] == 0} {
-        $w.f.t insert end "\n  [t br_repetitions_empty]\n" dim_tag
-    } else {
-        $w.f.t insert end "\n  [t br_repetitions_level1]\n" heading_tag
-        foreach row $level1 {
-            lassign $row word1 line1 word2 line2 gap
-            set _tag "rephit$_rn"; incr _rn
-            $w.f.t insert end "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]\n" [list dim_tag $_tag]
-            $w.f.t tag bind $_tag <Button-1> [list repetitions-jump $fpath $line1 $word1 $line2 $word2]
-            $w.f.t tag bind $_tag <Enter> [list $w.f.t configure -cursor hand2]
-            $w.f.t tag bind $_tag <Leave> [list $w.f.t configure -cursor arrow]
-        }
-    }
-    if {$::cfg_repetition_hidden} {
-        if {[llength $level2] > 0} {
-            $w.f.t insert end "\n  [t br_repetitions_level2]\n" heading_tag
-            foreach row $level2 {
-                lassign $row word1 line1 word2 line2 gap
-                set _tag "rephit$_rn"; incr _rn
-                $w.f.t insert end "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]\n" [list dim_tag $_tag]
-                $w.f.t tag bind $_tag <Button-1> [list repetitions-jump $fpath $line1 $word1 $line2 $word2]
-                $w.f.t tag bind $_tag <Enter> [list $w.f.t configure -cursor hand2]
-                $w.f.t tag bind $_tag <Leave> [list $w.f.t configure -cursor arrow]
-            }
-        }
-    } else {
-        $w.f.t insert end "\n  [t br_repetitions_hidden_off]\n" dim_tag
-    }
-    $w.f.t configure -state disabled
-
-    pack $w.f.sb -side right -fill y
-    pack $w.f.t  -side left  -fill both -expand 1
-
-    button $w.ok -text "OK" -font $::font_sm -command [list destroy $w]
-
-    pack $w.hdr -fill x
-    pack $w.ok  -side bottom -anchor e -padx 8 -pady 6
-    pack $w.f   -fill both -expand 1 -padx 2 -pady 2
-
-    bind $w <Return> [list destroy $w]
-    bind $w <Escape> [list destroy $w]
-    update
-    grab $w
-    focus $w.ok
-    tkwait window $w
-}
-
-# Selects $word on $line in $t (if found) using the repfound highlight tag.
-proc repetitions-highlight-word {t line word} {
-    set last [lindex [split [$t index end] .] 0]
-    if {$line < 1 || $line >= $last} return
-    set pos [$t search -nocase -- $word "${line}.0" "${line}.end"]
-    if {$pos ne ""} {
-        $t tag add repfound $pos "$pos + [string length $word] chars"
-    }
-}
-
-# Jumps to the first occurrence of a repetition in the editor, highlighting
-# both repeated words. Leaves the Repetitions/Structure dialogs open so the
-# user can click through several rows without reopening them.
-proc repetitions-jump {fpath line1 word1 line2 word2} {
-    if {[file normalize $fpath] ne [file normalize $::filename] || ![winfo ismapped .ed]} {
-        show-editor $fpath
-    }
-
-    set t [primary-ed]
-    $t tag remove repfound 1.0 end
-    $t tag configure repfound -background "#5a3a00" -foreground "#ffdd88"
-    repetitions-highlight-word $t $line1 $word1
-    repetitions-highlight-word $t $line2 $word2
-
-    $t mark set insert "${line1}.0"
-    $t see insert
-    focus $t
-}
-
-proc word-occurrences-dialog {fpath} {
-    if {![file exists $fpath]} return
-
-    set w .wodlg
-    catch {destroy $w}
-    toplevel $w
-    wm title $w "Word Occurrences"
-    wm geometry $w 400x500
-    wm transient $w .
-
-    set word_data [get-word-occurrences $fpath]
-    if {[llength $word_data] == 0} {
-        info-dialog "No words to display"
-        return
-    }
-
-    catch {
-        frame $w.f
-        listbox $w.f.lb -font [list [lindex $::font 0] 9] -yscrollcommand [list $w.f.sb set] -width 50 -height 20
-        scrollbar $w.f.sb -orient vertical -command [list $w.f.lb yview]
-
-        foreach pair $word_data {
-            lassign $pair word count
-            $w.f.lb insert end [format "%-30s %6d" $word $count]
-        }
-
-        pack $w.f.sb -side right -fill y
-        pack $w.f.lb -side left -fill both -expand 1
-        pack $w.f -fill both -expand 1 -padx 8 -pady 8
-
-        frame $w.btns
-        button $w.btns.ok -text "Close" -font $::font_sm -command [list destroy $w]
-        pack $w.btns.ok -padx 8 -pady 6
-        pack $w.btns -fill x
-    }
-
-    update
-    grab $w
-    focus $w.f.lb
 }
 
 proc file-stats-dialog {fpath} {
@@ -4773,6 +5095,18 @@ proc br-stats {{path ""}} {
     }
     set fdata [dict get $::daily_data $path]
     set nrows [dict size $fdata]
+
+    set total_words 0
+    set total_chars 0
+    if {[file exists $path]} {
+        set fd [open $path r]
+        chan configure $fd -encoding utf-8
+        set content [read $fd]
+        close $fd
+        set total_words [llength [regexp -all -inline {\S+} $content]]
+        set total_chars [string length $content]
+    }
+
     set w .stats
     catch {destroy $w}
     toplevel $w
@@ -4782,9 +5116,11 @@ proc br-stats {{path ""}} {
     text $w.t -font $::font_sm -state normal -bg $::bg -fg $::fg \
         -selectbackground $::bg_sel -selectforeground $::fg \
         -borderwidth 0 -padx 16 -pady 12 -width 36 \
-        -height [expr {$nrows + 7}] -cursor arrow
+        -height [expr {$nrows + 9}] -cursor arrow
     $w.t tag configure heading -foreground $::fg_bar -font [concat $::font_sm bold]
     $w.t insert end "\n  [file tail $path]\n" heading
+    $w.t insert end [format "  %-26s %d\n" [t br_stats_total_words] $total_words]
+    $w.t insert end [format "  %-26s %d\n" [t br_stats_total_chars] $total_chars]
     $w.t insert end [format "\n  %-14s %s\n" "Date" "Words"] heading
     set today [clock format [clock seconds] -format "%Y-%m-%d"]
     set grand_total 0
@@ -4829,8 +5165,12 @@ bind .br.mid.lst <b>           { br-backup }
 bind .br.mid.lst <d>           { br-delete }
 bind .br.mid.lst <r>           { br-rename }
 bind .br.mid.lst <i>           { set e [br-selected]; if {[llength $e]} { file-info-dialog [file join [lindex $e 1] [lindex $e 2]] } }
-bind .br.mid.lst <a>           { set e [br-selected]; if {[llength $e]} { analyse-dialog [file join [lindex $e 1] [lindex $e 2]] } }
-bind .br.mid.lst <w>           { set e [br-selected]; if {[llength $e]} { word-occurrences-dialog [file join [lindex $e 1] [lindex $e 2]] } }
+if {[info procs analyse-dialog] ne ""} {
+    bind .br.mid.lst <a>       { set e [br-selected]; if {[llength $e]} { analyse-dialog [file join [lindex $e 1] [lindex $e 2]] } }
+}
+if {[info procs word-occurrences-dialog] ne ""} {
+    bind .br.mid.lst <w>       { set e [br-selected]; if {[llength $e]} { word-occurrences-dialog [file join [lindex $e 1] [lindex $e 2]] } }
+}
 if {[info procs profile-config-dialog] ne ""} {
     bind .br.mid.lst <c>       { profile-config-dialog }
 }
@@ -6119,14 +6459,14 @@ proc gui-handle-keypress {key} {
             ed-status
             return 1
         } elseif {$key eq "w" || $key eq "W"} {
-            if {$::filename ne ""} {
+            if {$::filename ne "" && [info procs word-occurrences-dialog] ne ""} {
                 word-occurrences-dialog $::filename
             }
             set ::gui_cmd_mode 0
             ed-status
             return 1
         } elseif {$key eq "a" || $key eq "A"} {
-            if {$::filename ne ""} {
+            if {$::filename ne "" && [info procs analyse-dialog] ne ""} {
                 analyse-dialog $::filename
             }
             set ::gui_cmd_mode 0
@@ -7930,7 +8270,7 @@ proc tui-browser {} {
                 }
             }
             w {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && [info procs tui-word-occurrences] ne ""} {
                     lassign [lindex $entries $cfi] _ dir name
                     set _path [file join $dir $name]
                     if {[file isfile $_path]} {
@@ -7939,7 +8279,7 @@ proc tui-browser {} {
                 }
             }
             a {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && [info procs tui-analyse-dialog] ne ""} {
                     lassign [lindex $entries $cfi] _ dir name
                     set _path [file join $dir $name]
                     if {[file isfile $_path]} {
@@ -8760,7 +9100,7 @@ proc tui-editor {filepath {init_state {}}} {
                         set clear_sel 0
                     } elseif {$key eq "w"} {
                         lassign [tui-size] rows cols
-                        if {$filepath ne ""} {
+                        if {$filepath ne "" && [info procs tui-word-occurrences] ne ""} {
                             tui-word-occurrences $filepath $rows $cols
                         }
                         set ::tui_cmd_mode 0
@@ -8769,7 +9109,7 @@ proc tui-editor {filepath {init_state {}}} {
                         set clear_sel 0
                     } elseif {$key eq "a"} {
                         lassign [tui-size] rows cols
-                        if {$filepath ne ""} {
+                        if {$filepath ne "" && [info procs tui-analyse-dialog] ne ""} {
                             tui-analyse-dialog $filepath $rows $cols
                             if {$::tui_rep_jump ne ""} {
                                 set cy [expr {min($::tui_rep_jump, [llength $lines])}]; set cx 0
@@ -9176,254 +9516,6 @@ proc tui-stats-dialog {filepath rows cols} {
         }
     }
     return ""
-}
-
-proc tui-word-occurrences {fpath rows cols} {
-    if {![file exists $fpath]} return
-
-    set word_data [get-word-occurrences $fpath]
-    if {[llength $word_data] == 0} {
-        tui-info-dialog [t br_stats_no_data] $rows $cols
-        return
-    }
-
-    catch {
-        set all_lines [list [list "  Word Occurrences" 1] [list "" 0] \
-            [list [format "  %-30s %s" "Word" "Count"] 1]]
-        foreach pair $word_data {
-            lassign $pair word count
-            lappend all_lines [list [format "  %-30s %6d" $word $count] 0]
-        }
-
-        set _usable [expr {$rows-4}]
-        set _total [llength $all_lines]
-        set _scroll 0
-        set _w [expr {min(50, $cols-4)}]
-        set _left [expr {max(0,($cols-$_w)/2)}]
-        set _top  [expr {max(0,($rows-$_usable)/2)}]
-
-        puts -nonewline "\033\[2J\033\[H"; flush stdout
-
-        while 1 {
-            set _max_scroll [expr {max(0, $_total - $_usable)}]
-            if {$_scroll > $_max_scroll} { set _scroll $_max_scroll }
-            if {$_scroll < 0} { set _scroll 0 }
-
-            puts -nonewline "\033\[H"
-            for {set _i 0} {$_i < $_usable} {incr _i} {
-                set _idx [expr {$_scroll + $_i}]
-                if {$_idx < $_total} {
-                    tui-move [expr {$_top+$_i}] $_left
-                    lassign [lindex $all_lines $_idx] _txt _inv
-                    if {$_inv} { tui-attr reverse }
-                    puts -nonewline "[string range $_txt 0 [expr {$_w-1}]]\033\[K"
-                    if {$_inv} { tui-attr off }
-                } else {
-                    tui-move [expr {$_top+$_i}] $_left
-                    puts -nonewline "\033\[K"
-                }
-            }
-            tui-bar [expr {$rows-1}] "  UP/DOWN scroll  q close" "" $cols
-            flush stdout
-
-            set _k ""; while {$_k eq ""} { set _k [tui-getch] }
-            switch -- $_k {
-                q { break }
-                UP - k { incr _scroll -1 }
-                DOWN - j { incr _scroll 1 }
-                HOME { set _scroll 0 }
-                END { set _scroll [expr {max(0, $_total - $_usable)}] }
-                default {
-                    if {$_k eq $::cfg_tui_help} { break }
-                }
-            }
-        }
-    }
-}
-
-proc tui-analyse-dialog {fpath rows cols} {
-    set data [analyse-data $fpath]
-    if {$data eq {}} return
-    lassign $data total nsec sdata
-    set ::tui_rep_jump ""
-
-    set all_lines {}
-    lappend all_lines [list "  [t br_analyse_title] -- [file tail $fpath]" 1]
-    lappend all_lines [list "" 0]
-
-    if {$total == 0} {
-        lappend all_lines [list "  [t br_analyse_empty]" 0]
-    } else {
-        set max_bar 25
-        foreach row $sdata {
-            lassign $row indent level title words pct
-            set bar [string repeat "|" [expr {max(1, round($pct * $max_bar / 100.0))}]]
-            set lbl [expr {$title eq "" ? [t br_analyse_intro] : $title}]
-            set lvl_str [expr {$level > 0 ? "H$level" : "   "}]
-            lappend all_lines [list "${indent}  ${lvl_str} ${lbl}" 1]
-            lappend all_lines [list "${indent}      ${bar} ${words}w (${pct}%)" 0]
-            lappend all_lines [list "" 0]
-        }
-        lappend all_lines [list "  [t br_analyse_total $total $nsec]" 0]
-    }
-
-    set _usable [expr {$rows - 4}]
-    set _total  [llength $all_lines]
-    set _scroll 0
-
-    puts -nonewline "\033\[2J\033\[H"; flush stdout
-
-    while 1 {
-        set _max_scroll [expr {max(0, $_total - $_usable)}]
-        if {$_scroll > $_max_scroll} { set _scroll $_max_scroll }
-        if {$_scroll < 0}           { set _scroll 0 }
-
-        puts -nonewline "\033\[H"
-        for {set _i 0} {$_i < $_usable} {incr _i} {
-            set _idx [expr {$_scroll + $_i}]
-            if {$_idx < $_total} {
-                tui-move $_i 0
-                lassign [lindex $all_lines $_idx] _txt _inv
-                if {$_inv} { tui-attr reverse }
-                puts -nonewline "[string range $_txt 0 [expr {$cols - 1}]]\033\[K"
-                if {$_inv} { tui-attr off }
-            } else {
-                tui-move $_i 0
-                puts -nonewline "\033\[K"
-            }
-        }
-        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  r:repetitions  q close" "" $cols
-        flush stdout
-
-        set _k ""; while {$_k eq ""} { set _k [tui-getch] }
-        switch -- $_k {
-            q       { break }
-            r       { tui-repetitions-dialog $fpath $rows $cols
-                      if {$::tui_rep_jump ne ""} { break } }
-            UP - k  { incr _scroll -1 }
-            DOWN - j { incr _scroll 1 }
-            HOME    { set _scroll 0 }
-            END     { set _scroll [expr {max(0, $_total - $_usable)}] }
-            default { if {$_k eq $::cfg_tui_help} { break } }
-        }
-    }
-}
-
-proc tui-repetitions-dialog {fpath rows cols} {
-    lassign [find-repetitions $fpath] level1 level2
-
-    # Each entry: {text inv jumpline} - jumpline is the target line number
-    # for ENTER on this row, or "" for headings/non-selectable rows.
-    set all_lines {}
-    lappend all_lines [list "  [t br_repetitions_title] -- [file tail $fpath]" 1 ""]
-    lappend all_lines [list "" 0 ""]
-
-    if {[llength $level1] == 0} {
-        lappend all_lines [list "  [t br_repetitions_empty]" 0 ""]
-    } else {
-        lappend all_lines [list "  [t br_repetitions_level1]" 1 ""]
-        foreach row $level1 {
-            lassign $row word1 line1 word2 line2 gap
-            lappend all_lines [list "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]" 0 $line1]
-        }
-    }
-
-    if {$::cfg_repetition_hidden} {
-        if {[llength $level2] > 0} {
-            lappend all_lines [list "" 0 ""]
-            lappend all_lines [list "  [t br_repetitions_level2]" 1 ""]
-            foreach row $level2 {
-                lassign $row word1 line1 word2 line2 gap
-                lappend all_lines [list "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]" 0 $line1]
-            }
-        }
-    } else {
-        lappend all_lines [list "" 0 ""]
-        lappend all_lines [list "  [t br_repetitions_hidden_off]" 0 ""]
-    }
-
-    set _usable [expr {$rows - 4}]
-    set _total  [llength $all_lines]
-    set _scroll 0
-
-    # first selectable (jumpable) row, if any
-    set _cur -1
-    for {set _i 0} {$_i < $_total} {incr _i} {
-        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
-    }
-
-    puts -nonewline "\033\[2J\033\[H"; flush stdout
-
-    while 1 {
-        if {$_cur >= 0} {
-            if {$_cur < $_scroll}             { set _scroll $_cur }
-            if {$_cur >= $_scroll + $_usable} { set _scroll [expr {$_cur - $_usable + 1}] }
-        }
-        set _max_scroll [expr {max(0, $_total - $_usable)}]
-        if {$_scroll > $_max_scroll} { set _scroll $_max_scroll }
-        if {$_scroll < 0}            { set _scroll 0 }
-
-        puts -nonewline "\033\[H"
-        for {set _i 0} {$_i < $_usable} {incr _i} {
-            set _idx [expr {$_scroll + $_i}]
-            if {$_idx < $_total} {
-                tui-move $_i 0
-                lassign [lindex $all_lines $_idx] _txt _inv _jl
-                if {$_idx == $_cur} { tui-attr sel } elseif {$_inv} { tui-attr reverse }
-                puts -nonewline "[string range $_txt 0 [expr {$cols - 1}]]\033\[K"
-                if {$_idx == $_cur || $_inv} { tui-attr off }
-            } else {
-                tui-move $_i 0
-                puts -nonewline "\033\[K"
-            }
-        }
-        if {$_cur >= 0} {
-            tui-bar [expr {$rows - 1}] "  UP/DOWN select  ENTER jump  q close" "" $cols
-        } else {
-            tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  q close" "" $cols
-        }
-        flush stdout
-
-        set _k ""; while {$_k eq ""} { set _k [tui-getch] }
-        switch -- $_k {
-            q { break }
-            ENTER {
-                if {$_cur >= 0} {
-                    set ::tui_rep_jump [lindex [lindex $all_lines $_cur] 2]
-                    break
-                }
-            }
-            UP - k {
-                if {$_cur >= 0} {
-                    for {set _i [expr {$_cur - 1}]} {$_i >= 0} {incr _i -1} {
-                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
-                    }
-                } else { incr _scroll -1 }
-            }
-            DOWN - j {
-                if {$_cur >= 0} {
-                    for {set _i [expr {$_cur + 1}]} {$_i < $_total} {incr _i} {
-                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
-                    }
-                } else { incr _scroll 1 }
-            }
-            HOME {
-                if {$_cur >= 0} {
-                    for {set _i 0} {$_i < $_total} {incr _i} {
-                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
-                    }
-                } else { set _scroll 0 }
-            }
-            END {
-                if {$_cur >= 0} {
-                    for {set _i [expr {$_total - 1}]} {$_i >= 0} {incr _i -1} {
-                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
-                    }
-                } else { set _scroll [expr {max(0, $_total - $_usable)}] }
-            }
-            default { if {$_k eq $::cfg_tui_help} { break } }
-        }
-    }
 }
 
 proc tui-timer-alert {} {

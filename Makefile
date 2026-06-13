@@ -9,6 +9,9 @@
 #   make SCHEMES="default solarized gruvbox"          # GUI: specific schemes (by default: all)
 #   make GUI_CONFIG=no                                # GUI: omit config dialog (~700 lines saved)
 #   make CLI_SCHEMES="default alt01"                  # CLI: specific schemes (by default: default alt01)
+#   make ANALYSIS_TOOLS=no                            # writhdeck.tcl/writhdeck-cli.tcl: omit analysis tools (structure, occurrences, repetitions)
+#   make mini MINI_ANALYSIS_TOOLS=yes                 # writhdeck-mini.tcl: include analysis tools (off by default)
+#   make jimtcl JIM_ANALYSIS_TOOLS=yes                # writhdeck-jim.tcl: include analysis tools (off by default)
 #
 # Typical builds:
 #   make                                              # Standard: full GUI, minimal CLI
@@ -32,10 +35,22 @@ SEP       := ===================================================================
 
 GUI_CONFIG ?= yes
 GUI_CONFIG_SRC := $(if $(filter yes,$(GUI_CONFIG)),src/gui-config.tcl,)
-GUI_SRCS  := src/state.tcl src/config.tcl $(GUI_SCHEME_FILES) src/common.tcl $(GUI_CONFIG_SRC) src/gui.tcl src/tui.tcl src/main.tcl
+
+# Analysis tools (structure outline, word occurrences, repetitions): one
+# all-or-nothing module, src/analysis.tcl. On by default for writhdeck.tcl
+# and writhdeck-cli.tcl; off by default for writhdeck-mini.tcl and
+# writhdeck-jim.tcl. Each target has its own override variable.
+ANALYSIS_TOOLS      ?= yes
+MINI_ANALYSIS_TOOLS ?= no
+JIM_ANALYSIS_TOOLS  ?= no
+ANALYSIS_SRC      := $(if $(filter yes,$(ANALYSIS_TOOLS)),src/analysis.tcl,)
+MINI_ANALYSIS_SRC := $(if $(filter yes,$(MINI_ANALYSIS_TOOLS)),src/analysis.tcl,)
+JIM_ANALYSIS_SRC  := $(if $(filter yes,$(JIM_ANALYSIS_TOOLS)),src/analysis.tcl,)
+
+GUI_SRCS  := src/state.tcl src/config.tcl $(GUI_SCHEME_FILES) src/common.tcl $(ANALYSIS_SRC) $(GUI_CONFIG_SRC) src/gui.tcl src/tui.tcl src/main.tcl
 MINI_SCHEME_FILES := $(patsubst %,src/schemes/%.tcl,$(AVAILABLE_SCHEMES))
-CLI_SRCS  := src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl src/tui.tcl src/main-cli.tcl
-JIM_SRCS  := src/compat-jim.tcl src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl src/tui.tcl src/main-cli.tcl
+CLI_SRCS  := src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl $(ANALYSIS_SRC) src/tui.tcl src/main-cli.tcl
+JIM_SRCS  := src/compat-jim.tcl src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl $(JIM_ANALYSIS_SRC) src/tui.tcl src/main-cli.tcl
 
 COMPACT_SCRIPT := tools/tcl-compact.tcl
 
@@ -58,6 +73,7 @@ writhdeck.tcl: src/boot.tcl $(GUI_SRCS) $(GUI_I18N_FILES) Makefile
 	@for f in $(GUI_I18N_FILES); do cat $$f >> $@; done
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "common.tcl" "$(SEP)" >> $@
 	@cat src/common.tcl >> $@
+	@for f in $(ANALYSIS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "analysis.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
 	@for f in $(GUI_CONFIG_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "gui-config.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "gui.tcl" "$(SEP)" >> $@
 	@cat src/gui.tcl >> $@
@@ -81,6 +97,7 @@ writhdeck-cli.tcl: src/boot-cli.tcl $(CLI_SRCS) $(CLI_I18N_FILES) Makefile
 	@for f in $(CLI_I18N_FILES); do cat $$f >> $@; done
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "common.tcl" "$(SEP)" >> $@
 	@cat src/common.tcl >> $@
+	@for f in $(ANALYSIS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "analysis.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "tui.tcl" "$(SEP)" >> $@
 	@cat src/tui.tcl >> $@
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "main-cli.tcl" "$(SEP)" >> $@
@@ -108,6 +125,7 @@ writhdeck-jim.tcl: src/boot-jim.tcl $(JIM_SRCS) $(CLI_I18N_FILES) Makefile
 	@for f in $(CLI_I18N_FILES); do cat $$f >> $@; done
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "common.tcl" "$(SEP)" >> $@
 	@cat src/common.tcl >> $@
+	@for f in $(JIM_ANALYSIS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "analysis.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "tui.tcl" "$(SEP)" >> $@
 	@cat src/tui.tcl >> $@
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "main-cli.tcl" "$(SEP)" >> $@
@@ -128,16 +146,18 @@ compact-cli: writhdeck-cli.tcl
 mini: writhdeck-mini.tcl
 
 writhdeck-mini.tcl: src/boot.tcl src/state.tcl src/config.tcl $(MINI_SCHEME_FILES) \
-                    src/i18n/en.tcl src/common.tcl src/gui.tcl src/tui.tcl src/main.tcl \
+                    src/i18n/en.tcl src/common.tcl $(MINI_ANALYSIS_SRC) src/gui.tcl src/tui.tcl src/main.tcl \
                     $(COMPACT_SCRIPT) Makefile
 	@rm -f writhdeck-mini.tcl writhdeck-mini-raw.tcl
 	@cat src/boot.tcl src/state.tcl src/config.tcl > writhdeck-mini-raw.tcl
 	@for f in $(MINI_SCHEME_FILES); do cat $$f >> writhdeck-mini-raw.tcl; done
-	@cat src/i18n/en.tcl src/common.tcl src/gui.tcl src/tui.tcl src/main.tcl >> writhdeck-mini-raw.tcl
+	@cat src/i18n/en.tcl src/common.tcl >> writhdeck-mini-raw.tcl
+	@for f in $(MINI_ANALYSIS_SRC); do cat $$f >> writhdeck-mini-raw.tcl; done
+	@cat src/gui.tcl src/tui.tcl src/main.tcl >> writhdeck-mini-raw.tcl
 	@tclsh $(COMPACT_SCRIPT) writhdeck-mini-raw.tcl writhdeck-mini.tcl
 	@rm writhdeck-mini-raw.tcl
 	@chmod +x writhdeck-mini.tcl
-	@echo "Built writhdeck-mini.tcl (GUI+TUI compact, en only, no config dialog)"
+	@echo "Built writhdeck-mini.tcl (GUI+TUI compact, en only, no config dialog$(if $(MINI_ANALYSIS_SRC), + analysis tools,))"
 
 clean:
 	rm -f writhdeck.tcl writhdeck-cli.tcl writhdeck-compact.tcl writhdeck-cli-compact.tcl writhdeck-jim.tcl writhdeck-sfx writhdeck-mini.tcl writhdeck-mini-raw.tcl

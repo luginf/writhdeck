@@ -67,11 +67,15 @@ foreach {char cmd key} {
     d br-delete br_key_delete
     r br-rename br_key_rename
     i br-info-shortcut br_key_info
-    a br-analyse-shortcut br_key_analyse
-    w word-occurrences-dialog br_key_words
 } {
     set label "$char:[t $key]"
     lappend _shortcuts [list $label $cmd]
+}
+if {[info procs br-analyse-shortcut] ne ""} {
+    lappend _shortcuts [list "a:[t br_key_analyse]" "br-analyse-shortcut"]
+}
+if {[info procs word-occurrences-dialog] ne ""} {
+    lappend _shortcuts [list "w:[t br_key_words]" "word-occurrences-dialog"]
 }
 if {[info procs profile-config-dialog] ne ""} {
     lappend _shortcuts [list "c:[t br_key_config]" "profile-config-dialog"]
@@ -266,14 +270,6 @@ proc br-info-shortcut {} {
     }
 }
 
-proc br-analyse-shortcut {} {
-    set e [br-selected]
-    if {[llength $e]} {
-        set fpath [file join [lindex $e 1] [lindex $e 2]]
-        analyse-dialog $fpath
-    }
-}
-
 # --- browser dialogs ----------------------------------------------------------
 proc input-dialog {title prompt} {
     set w .dlg
@@ -374,11 +370,13 @@ proc file-info-dialog {fpath} {
     frame $w.f -bg $::bg
     button $w.f.ok -text "OK" -font $::font_sm -command [list destroy $w]
     button $w.f.stats -text "Stats" -font $::font_sm -command [list file-stats-dialog $fpath]
-    button $w.f.words -text "Word Occurrences" -font $::font_sm -command [list word-occurrences-dialog $fpath]
-
     pack $w.info -fill both -expand 1 -padx 8 -pady 8
     pack $w.f -fill x -padx 8 -pady 6
-    pack $w.f.ok $w.f.stats $w.f.words -side left -padx 4
+    pack $w.f.ok $w.f.stats -side left -padx 4
+    if {[info procs word-occurrences-dialog] ne ""} {
+        button $w.f.words -text "Word Occurrences" -font $::font_sm -command [list word-occurrences-dialog $fpath]
+        pack $w.f.words -side left -padx 4
+    }
 
     bind $w <Return> [list destroy $w]
     bind $w <Escape> [list destroy $w]
@@ -386,213 +384,6 @@ proc file-info-dialog {fpath} {
     grab $w
     focus $w.f.ok
     tkwait window $w
-}
-
-proc analyse-dialog {fpath} {
-    set data [analyse-data $fpath]
-    if {$data eq {}} { info-dialog "File not found: $fpath"; return }
-    lassign $data total nsec sdata
-
-    set w .adlg
-    catch {destroy $w}
-    toplevel $w
-    wm title $w [t br_analyse_title]
-    wm geometry $w 520x420
-    wm transient $w .
-
-    label $w.hdr -text "[file tail $fpath]" -font [list [lindex $::font 0] [lindex $::font 1] bold] \
-        -bg $::bg_bar -fg $::fg_bar -anchor w -padx 10 -pady 5
-
-    frame $w.f -bg $::bg
-    text $w.f.t -font $::font_sm -bg $::bg -fg $::fg -bd 0 -highlightthickness 0 \
-        -yscrollcommand [list $w.f.sb set] -wrap none -width 66 -height 22 \
-        -selectbackground $::bg_sel -selectforeground $::fg -cursor arrow -padx 10 -pady 6
-    scrollbar $w.f.sb -orient vertical -command [list $w.f.t yview]
-
-    $w.f.t tag configure heading_tag -foreground $::cfg_color_heading
-    $w.f.t tag configure bar_tag     -foreground $::cfg_color_heading
-    $w.f.t tag configure dim_tag     -foreground $::fg_bar
-
-    $w.f.t configure -state normal
-    if {$total == 0} {
-        $w.f.t insert end "\n  [t br_analyse_empty]\n" dim_tag
-    } else {
-        set max_bar 28
-        foreach row $sdata {
-            lassign $row indent level title words pct
-            set bar [string repeat "|" [expr {max(1, round($pct * $max_bar / 100.0))}]]
-            set lbl [expr {$title eq "" ? [t br_analyse_intro] : $title}]
-            set lvl_str [expr {$level > 0 ? "H$level " : "    "}]
-            $w.f.t insert end "\n${indent}${lvl_str}" dim_tag
-            $w.f.t insert end "${lbl}\n" heading_tag
-            $w.f.t insert end "${indent}    ${bar} " bar_tag
-            $w.f.t insert end "${words}w (${pct}%)\n" dim_tag
-        }
-        $w.f.t insert end "\n  [t br_analyse_total $total $nsec]\n" dim_tag
-    }
-    $w.f.t configure -state disabled
-
-    pack $w.f.sb -side right -fill y
-    pack $w.f.t  -side left  -fill both -expand 1
-
-    frame $w.btns
-    button $w.btns.rep -text [t br_repetitions_title] -font $::font_sm -command [list repetitions-dialog $fpath]
-    button $w.btns.ok  -text "OK" -font $::font_sm -command [list destroy $w]
-    pack $w.btns.ok  -side right -padx 8 -pady 6
-    pack $w.btns.rep -side right -padx 4 -pady 6
-
-    pack $w.hdr  -fill x
-    pack $w.btns -side bottom -fill x
-    pack $w.f    -fill both -expand 1 -padx 2 -pady 2
-
-    bind $w <Return> [list destroy $w]
-    bind $w <Escape> [list destroy $w]
-    update
-    grab $w
-    focus $w.btns.ok
-    tkwait window $w
-}
-
-proc repetitions-dialog {fpath} {
-    if {![file exists $fpath]} return
-    lassign [find-repetitions $fpath] level1 level2
-
-    set w .rpdlg
-    catch {destroy $w}
-    toplevel $w
-    wm title $w [t br_repetitions_title]
-    wm geometry $w 520x420
-    wm transient $w .
-
-    label $w.hdr -text "[file tail $fpath]" -font [list [lindex $::font 0] [lindex $::font 1] bold] \
-        -bg $::bg_bar -fg $::fg_bar -anchor w -padx 10 -pady 5
-
-    frame $w.f -bg $::bg
-    text $w.f.t -font $::font_sm -bg $::bg -fg $::fg -bd 0 -highlightthickness 0 \
-        -yscrollcommand [list $w.f.sb set] -wrap none -width 66 -height 22 \
-        -selectbackground $::bg_sel -selectforeground $::fg -cursor arrow -padx 10 -pady 6
-    scrollbar $w.f.sb -orient vertical -command [list $w.f.t yview]
-
-    $w.f.t tag configure heading_tag -foreground $::cfg_color_heading
-    $w.f.t tag configure dim_tag     -foreground $::fg_bar
-
-    set _rn 0
-    $w.f.t configure -state normal
-    if {[llength $level1] == 0} {
-        $w.f.t insert end "\n  [t br_repetitions_empty]\n" dim_tag
-    } else {
-        $w.f.t insert end "\n  [t br_repetitions_level1]\n" heading_tag
-        foreach row $level1 {
-            lassign $row word1 line1 word2 line2 gap
-            set _tag "rephit$_rn"; incr _rn
-            $w.f.t insert end "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]\n" [list dim_tag $_tag]
-            $w.f.t tag bind $_tag <Button-1> [list repetitions-jump $fpath $line1 $word1 $line2 $word2]
-            $w.f.t tag bind $_tag <Enter> [list $w.f.t configure -cursor hand2]
-            $w.f.t tag bind $_tag <Leave> [list $w.f.t configure -cursor arrow]
-        }
-    }
-    if {$::cfg_repetition_hidden} {
-        if {[llength $level2] > 0} {
-            $w.f.t insert end "\n  [t br_repetitions_level2]\n" heading_tag
-            foreach row $level2 {
-                lassign $row word1 line1 word2 line2 gap
-                set _tag "rephit$_rn"; incr _rn
-                $w.f.t insert end "  \"$word1\" ([t br_repetitions_line $line1])  ->  \"$word2\" ([t br_repetitions_line $line2])   [t br_repetitions_distance $gap]\n" [list dim_tag $_tag]
-                $w.f.t tag bind $_tag <Button-1> [list repetitions-jump $fpath $line1 $word1 $line2 $word2]
-                $w.f.t tag bind $_tag <Enter> [list $w.f.t configure -cursor hand2]
-                $w.f.t tag bind $_tag <Leave> [list $w.f.t configure -cursor arrow]
-            }
-        }
-    } else {
-        $w.f.t insert end "\n  [t br_repetitions_hidden_off]\n" dim_tag
-    }
-    $w.f.t configure -state disabled
-
-    pack $w.f.sb -side right -fill y
-    pack $w.f.t  -side left  -fill both -expand 1
-
-    button $w.ok -text "OK" -font $::font_sm -command [list destroy $w]
-
-    pack $w.hdr -fill x
-    pack $w.ok  -side bottom -anchor e -padx 8 -pady 6
-    pack $w.f   -fill both -expand 1 -padx 2 -pady 2
-
-    bind $w <Return> [list destroy $w]
-    bind $w <Escape> [list destroy $w]
-    update
-    grab $w
-    focus $w.ok
-    tkwait window $w
-}
-
-# Selects $word on $line in $t (if found) using the repfound highlight tag.
-proc repetitions-highlight-word {t line word} {
-    set last [lindex [split [$t index end] .] 0]
-    if {$line < 1 || $line >= $last} return
-    set pos [$t search -nocase -- $word "${line}.0" "${line}.end"]
-    if {$pos ne ""} {
-        $t tag add repfound $pos "$pos + [string length $word] chars"
-    }
-}
-
-# Jumps to the first occurrence of a repetition in the editor, highlighting
-# both repeated words. Leaves the Repetitions/Structure dialogs open so the
-# user can click through several rows without reopening them.
-proc repetitions-jump {fpath line1 word1 line2 word2} {
-    if {[file normalize $fpath] ne [file normalize $::filename] || ![winfo ismapped .ed]} {
-        show-editor $fpath
-    }
-
-    set t [primary-ed]
-    $t tag remove repfound 1.0 end
-    $t tag configure repfound -background "#5a3a00" -foreground "#ffdd88"
-    repetitions-highlight-word $t $line1 $word1
-    repetitions-highlight-word $t $line2 $word2
-
-    $t mark set insert "${line1}.0"
-    $t see insert
-    focus $t
-}
-
-proc word-occurrences-dialog {fpath} {
-    if {![file exists $fpath]} return
-
-    set w .wodlg
-    catch {destroy $w}
-    toplevel $w
-    wm title $w "Word Occurrences"
-    wm geometry $w 400x500
-    wm transient $w .
-
-    set word_data [get-word-occurrences $fpath]
-    if {[llength $word_data] == 0} {
-        info-dialog "No words to display"
-        return
-    }
-
-    catch {
-        frame $w.f
-        listbox $w.f.lb -font [list [lindex $::font 0] 9] -yscrollcommand [list $w.f.sb set] -width 50 -height 20
-        scrollbar $w.f.sb -orient vertical -command [list $w.f.lb yview]
-
-        foreach pair $word_data {
-            lassign $pair word count
-            $w.f.lb insert end [format "%-30s %6d" $word $count]
-        }
-
-        pack $w.f.sb -side right -fill y
-        pack $w.f.lb -side left -fill both -expand 1
-        pack $w.f -fill both -expand 1 -padx 8 -pady 8
-
-        frame $w.btns
-        button $w.btns.ok -text "Close" -font $::font_sm -command [list destroy $w]
-        pack $w.btns.ok -padx 8 -pady 6
-        pack $w.btns -fill x
-    }
-
-    update
-    grab $w
-    focus $w.f.lb
 }
 
 proc file-stats-dialog {fpath} {
@@ -774,6 +565,18 @@ proc br-stats {{path ""}} {
     }
     set fdata [dict get $::daily_data $path]
     set nrows [dict size $fdata]
+
+    set total_words 0
+    set total_chars 0
+    if {[file exists $path]} {
+        set fd [open $path r]
+        chan configure $fd -encoding utf-8
+        set content [read $fd]
+        close $fd
+        set total_words [llength [regexp -all -inline {\S+} $content]]
+        set total_chars [string length $content]
+    }
+
     set w .stats
     catch {destroy $w}
     toplevel $w
@@ -783,9 +586,11 @@ proc br-stats {{path ""}} {
     text $w.t -font $::font_sm -state normal -bg $::bg -fg $::fg \
         -selectbackground $::bg_sel -selectforeground $::fg \
         -borderwidth 0 -padx 16 -pady 12 -width 36 \
-        -height [expr {$nrows + 7}] -cursor arrow
+        -height [expr {$nrows + 9}] -cursor arrow
     $w.t tag configure heading -foreground $::fg_bar -font [concat $::font_sm bold]
     $w.t insert end "\n  [file tail $path]\n" heading
+    $w.t insert end [format "  %-26s %d\n" [t br_stats_total_words] $total_words]
+    $w.t insert end [format "  %-26s %d\n" [t br_stats_total_chars] $total_chars]
     $w.t insert end [format "\n  %-14s %s\n" "Date" "Words"] heading
     set today [clock format [clock seconds] -format "%Y-%m-%d"]
     set grand_total 0
@@ -830,8 +635,12 @@ bind .br.mid.lst <b>           { br-backup }
 bind .br.mid.lst <d>           { br-delete }
 bind .br.mid.lst <r>           { br-rename }
 bind .br.mid.lst <i>           { set e [br-selected]; if {[llength $e]} { file-info-dialog [file join [lindex $e 1] [lindex $e 2]] } }
-bind .br.mid.lst <a>           { set e [br-selected]; if {[llength $e]} { analyse-dialog [file join [lindex $e 1] [lindex $e 2]] } }
-bind .br.mid.lst <w>           { set e [br-selected]; if {[llength $e]} { word-occurrences-dialog [file join [lindex $e 1] [lindex $e 2]] } }
+if {[info procs analyse-dialog] ne ""} {
+    bind .br.mid.lst <a>       { set e [br-selected]; if {[llength $e]} { analyse-dialog [file join [lindex $e 1] [lindex $e 2]] } }
+}
+if {[info procs word-occurrences-dialog] ne ""} {
+    bind .br.mid.lst <w>       { set e [br-selected]; if {[llength $e]} { word-occurrences-dialog [file join [lindex $e 1] [lindex $e 2]] } }
+}
 if {[info procs profile-config-dialog] ne ""} {
     bind .br.mid.lst <c>       { profile-config-dialog }
 }
@@ -2120,14 +1929,14 @@ proc gui-handle-keypress {key} {
             ed-status
             return 1
         } elseif {$key eq "w" || $key eq "W"} {
-            if {$::filename ne ""} {
+            if {$::filename ne "" && [info procs word-occurrences-dialog] ne ""} {
                 word-occurrences-dialog $::filename
             }
             set ::gui_cmd_mode 0
             ed-status
             return 1
         } elseif {$key eq "a" || $key eq "A"} {
-            if {$::filename ne ""} {
+            if {$::filename ne "" && [info procs analyse-dialog] ne ""} {
                 analyse-dialog $::filename
             }
             set ::gui_cmd_mode 0

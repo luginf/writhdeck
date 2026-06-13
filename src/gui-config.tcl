@@ -503,6 +503,17 @@ proc profile-config-dialog {} {
     pack $w.tab_misc.behaviour_sec.ffilter.lbl -side left
     pack $w.tab_misc.behaviour_sec.ffilter.entry -side left -fill x -expand 1 -padx {4 4}
 
+    # show all files / bypass filter row (checkbox)
+    frame $w.tab_misc.behaviour_sec.fshowall -bg $::bg
+    pack  $w.tab_misc.behaviour_sec.fshowall -fill x -padx 12 -pady 3
+    label $w.tab_misc.behaviour_sec.fshowall.lbl -text [t config_browser_show_all] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.tab_misc.behaviour_sec.fshowall.check -variable profile_config_browser_show_all \
+        -font $::font_sm -bg $::bg -fg $::fg \
+        -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
+        -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
+    pack $w.tab_misc.behaviour_sec.fshowall.lbl -side left
+    pack $w.tab_misc.behaviour_sec.fshowall.check -side left -padx {8 2}
+
     # repetition scope row (spinbox)
     frame $w.tab_misc.behaviour_sec.frpscope -bg $::bg
     pack  $w.tab_misc.behaviour_sec.frpscope -fill x -padx 12 -pady 4
@@ -524,7 +535,6 @@ proc profile-config-dialog {} {
 
     # Boolean behaviour options
     foreach {fname key var} {
-        fshowall  config_browser_show_all     profile_config_browser_show_all
         frphidden config_repetition_hidden    profile_config_repetition_hidden
         fbrowser  config_browser_startup      profile_config_browser
         fwatch    config_watch_file           profile_config_watch_file
