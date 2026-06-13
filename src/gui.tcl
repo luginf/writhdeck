@@ -887,7 +887,10 @@ proc gui-status-state {} {
 proc gui-status-update {} {
     if {$::gui_cmd_mode} {
         set ::ed_bar_left ""
-        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words  a: analyse"
+        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats"
+        if {[info procs analyse-dialog] ne ""} {
+            append ::ed_bar_center "  w: words  a: analyse"
+        }
         set ::ed_bar_right ""
         return
     }

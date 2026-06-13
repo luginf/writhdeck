@@ -7,6 +7,7 @@ Source modules listed in **Generated file structure** above. Build via `Makefile
 - `make LANGUAGES="en"` — build with English only
 - `make LANGUAGES="en fr de es ko"` — build with specific languages
 - `make GUI_CONFIG=no` — omit GUI config dialog from `writhdeck.tcl` (excludes `src/gui-config.tcl`, ~700 lines saved; `c` key hidden from browser)
+- `make ANALYSIS_TOOLS=no` — omit analysis tools (structure outline, word occurrences, repetitions; `src/analysis.tcl`) from `writhdeck.tcl`/`writhdeck-cli.tcl` (on by default); `make mini MINI_ANALYSIS_TOOLS=yes` / `make jimtcl JIM_ANALYSIS_TOOLS=yes` add them to those targets (off by default)
 - `make compact` — generate `writhdeck-compact.tcl` + `writhdeck-cli-compact.tcl` (stripped, ~-20 to -25%)
 - `make compact-cli` — generate `writhdeck-cli-compact.tcl` only
 - `make jimtcl` — generate `writhdeck-jim.tcl` (JimTcl-compatible TUI build, see below)

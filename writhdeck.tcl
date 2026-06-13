@@ -3504,7 +3504,7 @@ proc tui-analyse-dialog {fpath rows cols} {
                 puts -nonewline "\033\[K"
             }
         }
-        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  r:repetitions  q close" "" $cols
+        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  r:repetitions  w:words  q close" "" $cols
         flush stdout
 
         set _k ""; while {$_k eq ""} { set _k [tui-getch] }
@@ -3512,6 +3512,8 @@ proc tui-analyse-dialog {fpath rows cols} {
             q       { break }
             r       { tui-repetitions-dialog $fpath $rows $cols
                       if {$::tui_rep_jump ne ""} { break } }
+            w       { tui-word-occurrences $fpath $rows $cols
+                      puts -nonewline "\033\[2J\033\[H"; flush stdout }
             UP - k  { incr _scroll -1 }
             DOWN - j { incr _scroll 1 }
             HOME    { set _scroll 0 }
@@ -5417,7 +5419,10 @@ proc gui-status-state {} {
 proc gui-status-update {} {
     if {$::gui_cmd_mode} {
         set ::ed_bar_left ""
-        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words  a: analyse"
+        set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats"
+        if {[info procs analyse-dialog] ne ""} {
+            append ::ed_bar_center "  w: words  a: analyse"
+        }
         set ::ed_bar_right ""
         return
     }
@@ -9158,7 +9163,10 @@ proc tui-editor {filepath {init_state {}}} {
                     }
                 } elseif {$key eq $::cfg_tui_cmd_mode} {
                     set ::tui_cmd_mode 1
-                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats  w: words  a: analyse"
+                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats"
+                    if {[info procs tui-analyse-dialog] ne ""} {
+                        append message "  w: words  a: analyse"
+                    }
                     set msg_time [clock seconds]
                     set clear_sel 0
                 } elseif {$key eq $::cfg_tui_close} {

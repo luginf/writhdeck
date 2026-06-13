@@ -47,12 +47,15 @@ After `make`, the generated `writhdeck.tcl` contains these sections (concatenate
 | State          | `src/state.tcl`        | `.writhdeck.json` persistence, cursors, favorites, recents, daily stats         |
 | Config         | `src/config.tcl`       | INI loading/saving, profiles, schemes, keys, i18n system, theme init            |
 | Common         | `src/common.tcl`       | `list-docs`, `br-dirs`, `do-backup`, `build-extra-entries`, inline parsers      |
+| **Analysis**   | `src/analysis.tcl`     | Structure outline, word occurrences, repetitions — `get-word-occurrences`, `analyse-structure`, `find-repetitions`, GUI+TUI dialogs |
 | **GUI config** | `src/gui-config.tcl`   | `profile-config-dialog`, `config-tab-switch`, `profile-config-update-profile`   |
 | **GUI**        | `src/gui.tcl`          | Wrapped in `if {!$::no_gui}` — browser, editor, dialogs, TOC, split view        |
 | **TUI**        | `src/tui.tcl`          | Terminal UI — `tui-init`, `tui-browser`, `tui-editor`, `tui-main`, helpers      |
 | Entry point    | `src/main.tcl`         | Dispatch: `if {$::no_gui}` → TUI, else → GUI                                   |
 
 Both `src/gui-config.tcl` and `src/gui.tcl` are wrapped in `if {!$::no_gui} { ... }`. `src/gui-config.tcl` is optional — excluded with `make GUI_CONFIG=no` (~700 lines, hides `c` key in browser).
+
+`src/analysis.tcl` contains only `proc` definitions (no top-level Tk-building code), so it is **not** wrapped in `if {!$::no_gui}` — safe to load in TUI-only builds. It is an optional all-or-nothing module: included by default in `writhdeck.tcl`/`writhdeck-cli.tcl` (`ANALYSIS_TOOLS=no` to exclude), excluded by default from `writhdeck-mini.tcl`/`writhdeck-jim.tcl` (`MINI_ANALYSIS_TOOLS=yes` / `JIM_ANALYSIS_TOOLS=yes` to include). When excluded, `gui.tcl`/`tui.tcl` guard every call site, binding, button, and help-bar entry with `if {[info procs <proc>] ne ""} { ... }`.
 
 ### Section headers
 
@@ -70,7 +73,7 @@ These markers help navigate the ~5000-line file during development.
 
 **`tilde-expand` before `file normalize`** — Tcl 9 no longer expands `~` in `file normalize`. Always call `tilde-expand $path` first when the path comes from user input (config file, prompts). The proc is defined after `::HOME_DIR` near line 110.
 
-**Procs shared between GUI and TUI must be defined outside the `if {!$::no_gui}` block.** Currently outside: all `state-*`, `daily-*`, `recent-*`, `build-extra-entries`, `toggle-favorite`, `do-backup`, `get-word-occurrences`.
+**Procs shared between GUI and TUI must be defined outside the `if {!$::no_gui}` block.** Currently outside: all `state-*`, `daily-*`, `recent-*`, `build-extra-entries`, `toggle-favorite`, `do-backup`. Analysis helpers (`get-word-occurrences`, `analyse-structure`, `find-repetitions`, ...) live in `src/analysis.tcl`, which is entirely outside `if {!$::no_gui}` (proc-only file, see **Generated file structure** above).
 
 **`get-word-occurrences {fpath}`** — returns a list of `{word count}` pairs sorted by count descending. Opens with `-encoding utf-8`, reads, and closes the file itself. Callers iterate with `foreach pair $word_data { lassign $pair word count }` — do not re-read the file.
 
