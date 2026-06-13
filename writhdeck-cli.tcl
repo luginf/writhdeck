@@ -344,6 +344,9 @@ set ::cfg_browser_show_all 0
 set ::cfg_repetition_scope   100
 set ::cfg_repetition_min_len 4
 set ::cfg_repetition_hidden  0
+set ::cfg_spell_lang ""
+set ::cfg_spell_highlight 0
+set ::cfg_analysis_ignore_comments 0
 set ::cfg_console_margin_cols    6
 set ::cfg_console_margin_rows    4
 set ::cfg_heading_marker    "="
@@ -707,6 +710,9 @@ proc ini-load {} {
                 repetition_scope     { set ::cfg_repetition_scope     $v }
                 repetition_min_len   { set ::cfg_repetition_min_len   $v }
                 repetition_hidden    { set ::cfg_repetition_hidden    [string is true $v] }
+                spell_lang           { set ::cfg_spell_lang           $v }
+                spell_highlight      { set ::cfg_spell_highlight      [string is true $v] }
+                analysis_ignore_comments { set ::cfg_analysis_ignore_comments [string is true $v] }
                 console_center_alert { set ::cfg_console_center_alert [string is true $v] }
                 line_numbers     { set ::cfg_line_numbers   [string is true $v] }
                 cursor_restore   { set ::cfg_cursor_restore [string is true $v] }
@@ -814,6 +820,12 @@ proc ini-save {} {
     puts $fh "repetition_min_len   = $::cfg_repetition_min_len"
     puts $fh "% repetition_hidden: also flag hidden-substring repetitions (e.g. 'tour' in 'alentours')"
     puts $fh "repetition_hidden    = [expr {$::cfg_repetition_hidden    ? "yes" : "no"}]"
+    puts $fh "% spell_lang: hunspell dictionary name (e.g. fr_FR); empty = derive from 'lang'"
+    puts $fh "spell_lang           = $::cfg_spell_lang"
+    puts $fh "% spell_highlight: underline misspelled words (visible lines only) in the editor"
+    puts $fh "spell_highlight      = [expr {$::cfg_spell_highlight ? "yes" : "no"}]"
+    puts $fh "% analysis_ignore_comments: skip commented lines (cfg_comment_marker) in spellcheck, repetitions, word occurrences"
+    puts $fh "analysis_ignore_comments = [expr {$::cfg_analysis_ignore_comments ? "yes" : "no"}]"
     puts $fh "watch_file           = [expr {$::cfg_watch_file           ? "yes" : "no"}]"
     puts $fh "hemingway_mode       = [expr {$::cfg_hemingway_mode       ? "yes" : "no"}]"
     puts $fh "markdown_headings    = [expr {$::cfg_markdown_headings    ? "yes" : "no"}]"
@@ -1325,6 +1337,12 @@ dict set ::i18n en {
     br_repetitions_line     "line %d"
     br_repetitions_distance "%d words apart"
     br_repetitions_hidden_off "Hidden-substring check disabled (enable in Settings > Misc)."
+    br_spellcheck_title       "Spelling"
+    br_spellcheck_checking    "Checking spelling..."
+    br_spellcheck_empty       "No spelling errors found."
+    br_spellcheck_suggestions "suggestions: %s"
+    br_spellcheck_no_suggestions "(no suggestions)"
+    br_spellcheck_unavailable "Spell checker unavailable (dictionary '%s' not found)."
     help_writhdeck         "WRITHDECK"
     help_version           "Version"
     help_date_time_sect    "DATE & TIME"
@@ -1396,7 +1414,10 @@ dict set ::i18n en {
     config_browser_show_all      "Show all files (ignore filter):"
     config_repetition_scope      "Repetition scope (words):"
     config_repetition_min_len    "Hidden repetition min. length:"
+    config_spell_lang            "Spell-check language (empty=auto):"
+    config_spell_highlight       "Highlight spelling errors (visible text):"
     config_repetition_hidden     "Detect hidden repetitions:"
+    config_analysis_ignore_comments "Ignore commented lines (analysis):"
     config_watch_file            "Watch for external changes:"
     config_hemingway_mode        "Hemingway mode (no delete):"
     config_split_shrink_margin   "Shrink margin in split view:"
@@ -1534,6 +1555,12 @@ dict set ::i18n fr {
     br_repetitions_line     "ligne %d"
     br_repetitions_distance "%d mots d'écart"
     br_repetitions_hidden_off "Vérification des répétitions cachées désactivée (à activer dans Réglages > Divers)."
+    br_spellcheck_title       "Orthographe"
+    br_spellcheck_checking    "Vérification orthographique..."
+    br_spellcheck_empty       "Aucune erreur orthographique trouvée."
+    br_spellcheck_suggestions "suggestions : %s"
+    br_spellcheck_no_suggestions "(aucune suggestion)"
+    br_spellcheck_unavailable "Correcteur orthographique indisponible (dictionnaire '%s' introuvable)."
     help_writhdeck         "WRITHDECK"
     help_version           "Version"
     help_date_time_sect    "DATE & HEURE"
@@ -1605,7 +1632,10 @@ dict set ::i18n fr {
     config_browser_show_all      "Afficher tous les fichiers (ignorer filtre) :"
     config_repetition_scope      "Portée de répétition (mots) :"
     config_repetition_min_len    "Longueur min. (répétitions cachées) :"
+    config_spell_lang             "Langue du correcteur (vide=auto) :"
+    config_spell_highlight        "Surligner les fautes d'orthographe (texte visible) :"
     config_repetition_hidden     "Détecter les répétitions cachées :"
+    config_analysis_ignore_comments "Ignorer les lignes commentées (analyse) :"
     config_watch_file            "Surveiller modifications externes :"
     config_hemingway_mode        "Mode Hemingway (sans suppression) :"
     config_split_shrink_margin   "Reduire marge en vue split :"
@@ -1920,6 +1950,21 @@ proc toggle-favorite {path} {
 
 # --- shared helpers (used by both GUI and TUI) ----------------------------
 
+proc analysis-strip-comments {content} {
+    if {!$::cfg_analysis_ignore_comments || $::cached_comment_re eq ""} {
+        return $content
+    }
+    set lines {}
+    foreach line [split $content "\n"] {
+        if {[regexp -- $::cached_comment_re $line]} {
+            lappend lines ""
+        } else {
+            lappend lines $line
+        }
+    }
+    return [join $lines "\n"]
+}
+
 proc analyse-data {fpath} {
     # Returns {total nsec sdata} where sdata is a list of {indent level title words pct}.
     # Returns {} if the file does not exist.
@@ -2007,6 +2052,7 @@ proc get-word-occurrences {fpath} {
         set fh [open $fpath r]; chan configure $fh -encoding utf-8
         set content [read $fh]
         close $fh
+        set content [analysis-strip-comments $content]
         foreach word [regexp -all -inline {\w+} [string tolower $content]] {
             if {[string length $word] > 2} {
                 dict incr counts $word
@@ -2063,6 +2109,7 @@ proc find-repetitions {fpath} {
     }]} {
         return [list {} {}]
     }
+    set content [analysis-strip-comments $content]
 
     set occurrences {}
     set index 0
@@ -2124,6 +2171,133 @@ proc find-repetitions {fpath} {
     return [list $level1 $level2]
 }
 
+# --- spellcheck --------------------------------------------------------------
+# On-demand spellcheck via a persistent "hunspell -a" pipe. Computed lazily,
+# only when the user opens the Spelling tool from Structure Analysis.
+
+# Maps a WrithDeck UI language code to a hunspell dictionary name.
+proc spell-dict-for-lang {lang} {
+    switch -- $lang {
+        en { return "en_US" }
+        fr { return "fr_FR" }
+        de { return "de_DE" }
+        es { return "es_ES" }
+        no { return "nb_NO" }
+        ko { return "" }
+        default { return "en_US" }
+    }
+}
+
+# Returns the hunspell dictionary name to use: ::cfg_spell_lang if set
+# (raw hunspell dict name, e.g. "fr_BE"), else derived from ::cfg_lang.
+proc spell-dict-resolve {} {
+    if {$::cfg_spell_lang ne ""} { return $::cfg_spell_lang }
+    return [spell-dict-for-lang $::cfg_lang]
+}
+
+# Lazily opens (or reuses) a persistent "hunspell -a -d $dict" pipe. Returns
+# "" if hunspell or the dictionary is unavailable. Reopens if the cached pipe
+# was for a different dictionary or has died.
+proc spell-pipe-get {dict} {
+    if {$dict eq ""} { return "" }
+    if {[info exists ::spell_pipe] && $::spell_pipe ne ""} {
+        if {$::spell_pipe_dict eq $dict && ![eof $::spell_pipe]} {
+            return $::spell_pipe
+        }
+        catch { close $::spell_pipe }
+        unset ::spell_pipe
+    }
+    if {[catch {
+        set pipe [open "|hunspell -a -d $dict" r+]
+        chan configure $pipe -encoding utf-8 -buffering line
+        gets $pipe
+        if {[eof $pipe]} { error "hunspell unavailable" }
+    }]} {
+        catch { close $pipe }
+        return ""
+    }
+    set ::spell_pipe $pipe
+    set ::spell_pipe_dict $dict
+    return $pipe
+}
+
+# Sends one word to the hunspell pipe and reads its reply. hunspell -a
+# replies to each word with one result line followed by a blank line.
+# Returns {1 {}} if correct, {0 {sugg1 sugg2 ...}} if not (suggestions may be
+# empty). On pipe failure, closes/unsets ::spell_pipe and re-raises so the
+# caller can abort the scan gracefully.
+proc spell-check-word {pipe word} {
+    if {[catch {
+        puts $pipe $word
+        flush $pipe
+        set result [gets $pipe]
+        if {[eof $pipe]} { error "hunspell pipe closed" }
+        gets $pipe
+    } err]} {
+        catch { close $pipe }
+        catch { unset ::spell_pipe }
+        error $err
+    }
+    switch -- [string index $result 0] {
+        "*" - "+" - "-" { return [list 1 {}] }
+        "&" {
+            set colon [string first ":" $result]
+            if {$colon < 0} { return [list 0 {}] }
+            set sugg {}
+            foreach s [split [string range $result [expr {$colon+1}] end] ","] {
+                set s [string trim $s]
+                if {$s ne ""} { lappend sugg $s }
+            }
+            return [list 0 $sugg]
+        }
+        default { return [list 0 {}] }
+    }
+}
+
+# Removes markup markers built from word characters (only cfg_underline_marker
+# qualifies; the others are non-word and naturally excluded by the word regex
+# used in spell-check-document).
+proc spell-strip-markup {content} {
+    if {$::cfg_underline_marker ne ""} {
+        set content [string map [list $::cfg_underline_marker " "] $content]
+    }
+    return $content
+}
+
+# Scans $fpath for misspelled words. Returns a list of {word line suggestions}
+# for every occurrence of every misspelled word, in line order. Returns {} if
+# the document is clean or the spell checker is unavailable.
+proc spell-check-document {fpath} {
+    set pipe [spell-pipe-get [spell-dict-resolve]]
+    if {$pipe eq ""} { return {} }
+
+    if {[catch {
+        set fh [open $fpath r]; chan configure $fh -encoding utf-8
+        set content [read $fh]
+        close $fh
+    }]} {
+        return {}
+    }
+    set content [analysis-strip-comments $content]
+    set content [spell-strip-markup $content]
+
+    set cache [dict create]
+    set results {}
+    set line_no 1
+    foreach line [split $content "\n"] {
+        foreach word [regexp -all -inline {[[:alpha:]]+(?:['-][[:alpha:]]+)*} $line] {
+            if {![dict exists $cache $word]} {
+                if {[catch {spell-check-word $pipe $word} res]} { return $results }
+                dict set cache $word $res
+            }
+            lassign [dict get $cache $word] ok sugg
+            if {!$ok} { lappend results [list $word $line_no $sugg] }
+        }
+        incr line_no
+    }
+    return $results
+}
+
 # --- GUI dialogs -----------------------------------------------------------
 
 proc br-analyse-shortcut {} {
@@ -2182,12 +2356,14 @@ proc analyse-dialog {fpath} {
     pack $w.f.t  -side left  -fill both -expand 1
 
     frame $w.btns
-    button $w.btns.rep -text [t br_repetitions_title] -font $::font_sm -command [list repetitions-dialog $fpath]
-    button $w.btns.occ -text [t br_word_occ_title] -font $::font_sm -command [list word-occurrences-dialog $fpath]
-    button $w.btns.ok  -text "OK" -font $::font_sm -command [list destroy $w]
-    pack $w.btns.ok  -side right -padx 8 -pady 6
-    pack $w.btns.rep -side right -padx 4 -pady 6
-    pack $w.btns.occ -side right -padx 4 -pady 6
+    button $w.btns.rep   -text [t br_repetitions_title] -font $::font_sm -command [list repetitions-dialog $fpath]
+    button $w.btns.occ   -text [t br_word_occ_title] -font $::font_sm -command [list word-occurrences-dialog $fpath]
+    button $w.btns.spell -text [t br_spellcheck_title] -font $::font_sm -command [list spellcheck-dialog $fpath]
+    button $w.btns.ok    -text "OK" -font $::font_sm -command [list destroy $w]
+    pack $w.btns.ok    -side right -padx 8 -pady 6
+    pack $w.btns.rep   -side right -padx 4 -pady 6
+    pack $w.btns.occ   -side right -padx 4 -pady 6
+    pack $w.btns.spell -side right -padx 4 -pady 6
 
     pack $w.hdr  -fill x
     pack $w.btns -side bottom -fill x
@@ -2323,6 +2499,106 @@ proc repetitions-jump {fpath line1 word1 line2 word2} {
     # Text's built-in <1> class binding (tk::TextButton1) runs after our tag
     # binding and unconditionally calls "focus" on .rpdlg.f.t, stealing focus
     # back; re-claim it once this event has fully finished processing.
+    after idle [list focus -force $t]
+}
+
+proc spellcheck-dialog {fpath} {
+    if {![file exists $fpath]} return
+
+    set dict [spell-dict-resolve]
+    set pipe [spell-pipe-get $dict]
+    if {$pipe eq ""} {
+        info-dialog [format [t br_spellcheck_unavailable] $dict]
+        return
+    }
+
+    set w .spdlg
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [t br_spellcheck_title]
+    wm geometry $w 520x420
+    wm transient $w .
+
+    label $w.hdr -text "[file tail $fpath]" -font [list [lindex $::font 0] [lindex $::font 1] bold] \
+        -bg $::bg_bar -fg $::fg_bar -anchor w -padx 10 -pady 5
+    pack $w.hdr -fill x
+
+    label $w.wait -text "[t br_spellcheck_checking]" -bg $::bg -fg $::fg
+    pack $w.wait -fill both -expand 1
+    update
+
+    set results [spell-check-document $fpath]
+    destroy $w.wait
+
+    frame $w.f -bg $::bg
+    text $w.f.t -font $::font_sm -bg $::bg -fg $::fg -bd 0 -highlightthickness 0 \
+        -yscrollcommand [list $w.f.sb set] -wrap none -width 66 -height 22 \
+        -selectbackground $::bg_sel -selectforeground $::fg -cursor arrow -padx 10 -pady 6
+    scrollbar $w.f.sb -orient vertical -command [list $w.f.t yview]
+
+    $w.f.t tag configure dim_tag -foreground $::fg_bar
+
+    set _rn 0
+    $w.f.t configure -state normal
+    if {[llength $results] == 0} {
+        $w.f.t insert end "\n  [t br_spellcheck_empty]\n" dim_tag
+    } else {
+        $w.f.t insert end "\n" dim_tag
+        foreach row $results {
+            lassign $row word line sugg
+            set _tag "rephit$_rn"; incr _rn
+            if {[llength $sugg]} {
+                set sugg_txt [t br_spellcheck_suggestions [join $sugg ", "]]
+            } else {
+                set sugg_txt [t br_spellcheck_no_suggestions]
+            }
+            $w.f.t insert end "  \"$word\" ([t br_repetitions_line $line])   $sugg_txt\n" [list dim_tag $_tag]
+            $w.f.t tag bind $_tag <Button-1> "[list spellcheck-jump $fpath $line $word]; break"
+            $w.f.t tag bind $_tag <Enter> [list $w.f.t configure -cursor hand2]
+            $w.f.t tag bind $_tag <Leave> [list $w.f.t configure -cursor arrow]
+        }
+    }
+    $w.f.t configure -state disabled
+
+    pack $w.f.sb -side right -fill y
+    pack $w.f.t  -side left  -fill both -expand 1
+
+    button $w.ok -text "OK" -font $::font_sm -command [list destroy $w]
+
+    pack $w.ok  -side bottom -anchor e -padx 8 -pady 6
+    pack $w.f   -fill both -expand 1 -padx 2 -pady 2
+
+    bind $w <Return> [list destroy $w]
+    bind $w <Escape> [list destroy $w]
+    bind $w <Destroy> [list repetitions-clear-highlight]
+    update
+    grab $w
+    focus $w.ok
+    tkwait window $w
+}
+
+# Single-word sibling of repetitions-jump: jumps to and highlights one
+# misspelled word, leaving the Spelling dialog open for further clicks.
+proc spellcheck-jump {fpath line word} {
+    catch {destroy .adlg}
+    catch {grab release .spdlg}
+
+    if {[file normalize $fpath] ne [file normalize $::filename] || ![winfo ismapped .ed]} {
+        show-editor $fpath
+    }
+
+    set t [primary-ed]
+    $t tag remove repfound 1.0 end
+    $t tag configure repfound -background "#5a3a00" -foreground "#ffdd88"
+    repetitions-highlight-word $t $line $word
+
+    $t mark set insert "${line}.0"
+    $t see insert
+    focus -force $t
+
+    set ::gui_cmd_mode 0
+    ed-status
+
     after idle [list focus -force $t]
 }
 
@@ -2483,7 +2759,7 @@ proc tui-analyse-dialog {fpath rows cols} {
                 puts -nonewline "\033\[K"
             }
         }
-        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  r:repetitions  w:words  q close" "" $cols
+        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  r:repetitions  w:words  o:spelling  q close" "" $cols
         flush stdout
 
         set _k ""; while {$_k eq ""} { set _k [tui-getch] }
@@ -2492,6 +2768,9 @@ proc tui-analyse-dialog {fpath rows cols} {
             r       { tui-repetitions-dialog $fpath $rows $cols
                       if {$::tui_rep_jump ne ""} { break } }
             w       { tui-word-occurrences $fpath $rows $cols
+                      puts -nonewline "\033\[2J\033\[H"; flush stdout }
+            o       { tui-spellcheck-dialog $fpath $rows $cols
+                      if {$::tui_rep_jump ne ""} { break }
                       puts -nonewline "\033\[2J\033\[H"; flush stdout }
             UP - k  { incr _scroll -1 }
             DOWN - j { incr _scroll 1 }
@@ -2533,6 +2812,128 @@ proc tui-repetitions-dialog {fpath rows cols} {
     } else {
         lappend all_lines [list "" 0 ""]
         lappend all_lines [list "  [t br_repetitions_hidden_off]" 0 ""]
+    }
+
+    set _usable [expr {$rows - 4}]
+    set _total  [llength $all_lines]
+    set _scroll 0
+
+    # first selectable (jumpable) row, if any
+    set _cur -1
+    for {set _i 0} {$_i < $_total} {incr _i} {
+        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+    }
+
+    puts -nonewline "\033\[2J\033\[H"; flush stdout
+
+    while 1 {
+        if {$_cur >= 0} {
+            if {$_cur < $_scroll}             { set _scroll $_cur }
+            if {$_cur >= $_scroll + $_usable} { set _scroll [expr {$_cur - $_usable + 1}] }
+        }
+        set _max_scroll [expr {max(0, $_total - $_usable)}]
+        if {$_scroll > $_max_scroll} { set _scroll $_max_scroll }
+        if {$_scroll < 0}            { set _scroll 0 }
+
+        puts -nonewline "\033\[H"
+        for {set _i 0} {$_i < $_usable} {incr _i} {
+            set _idx [expr {$_scroll + $_i}]
+            if {$_idx < $_total} {
+                tui-move $_i 0
+                lassign [lindex $all_lines $_idx] _txt _inv _jl
+                if {$_idx == $_cur} { tui-attr sel } elseif {$_inv} { tui-attr reverse }
+                puts -nonewline "[string range $_txt 0 [expr {$cols - 1}]]\033\[K"
+                if {$_idx == $_cur || $_inv} { tui-attr off }
+            } else {
+                tui-move $_i 0
+                puts -nonewline "\033\[K"
+            }
+        }
+        if {$_cur >= 0} {
+            tui-bar [expr {$rows - 1}] "  UP/DOWN select  ENTER jump  q close" "" $cols
+        } else {
+            tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  q close" "" $cols
+        }
+        flush stdout
+
+        set _k ""; while {$_k eq ""} { set _k [tui-getch] }
+        switch -- $_k {
+            q { break }
+            ENTER {
+                if {$_cur >= 0} {
+                    set ::tui_rep_jump [lindex [lindex $all_lines $_cur] 2]
+                    break
+                }
+            }
+            UP - k {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_cur - 1}]} {$_i >= 0} {incr _i -1} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { incr _scroll -1 }
+            }
+            DOWN - j {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_cur + 1}]} {$_i < $_total} {incr _i} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { incr _scroll 1 }
+            }
+            HOME {
+                if {$_cur >= 0} {
+                    for {set _i 0} {$_i < $_total} {incr _i} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { set _scroll 0 }
+            }
+            END {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_total - 1}]} {$_i >= 0} {incr _i -1} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { set _scroll [expr {max(0, $_total - $_usable)}] }
+            }
+            default { if {$_k eq $::cfg_tui_help} { break } }
+        }
+    }
+}
+
+proc tui-spellcheck-dialog {fpath rows cols} {
+    set dict [spell-dict-resolve]
+    set pipe [spell-pipe-get $dict]
+    if {$pipe eq ""} {
+        tui-info-dialog [format [t br_spellcheck_unavailable] $dict] $rows $cols
+        return
+    }
+
+    set _msg "  [t br_spellcheck_checking]  "
+    puts -nonewline "\033\[2J\033\[H"
+    tui-move [expr {$rows/2}] [expr {max(0, ($cols - [string length $_msg])/2)}]
+    tui-attr reverse
+    puts -nonewline $_msg
+    tui-attr off
+    flush stdout
+
+    set results [spell-check-document $fpath]
+
+    # Each entry: {text inv jumpline} - jumpline is the target line number
+    # for ENTER on this row, or "" for headings/non-selectable rows.
+    set all_lines {}
+    lappend all_lines [list "  [t br_spellcheck_title] -- [file tail $fpath]" 1 ""]
+    lappend all_lines [list "" 0 ""]
+
+    if {[llength $results] == 0} {
+        lappend all_lines [list "  [t br_spellcheck_empty]" 0 ""]
+    } else {
+        foreach row $results {
+            lassign $row word line sugg
+            if {[llength $sugg]} {
+                set sugg_txt [t br_spellcheck_suggestions [join $sugg ", "]]
+            } else {
+                set sugg_txt [t br_spellcheck_no_suggestions]
+            }
+            lappend all_lines [list "  \"$word\" ([t br_repetitions_line $line])   $sugg_txt" 0 $line]
+        }
     }
 
     set _usable [expr {$rows - 4}]

@@ -406,44 +406,21 @@ Voir `src/i18n/README.md` pour le guide complet (format, ajout de langue, format
 - **Presse-papiers interne** : historique des N derniers copier-coller
 - **Statistiques de session** : temps d'écriture, mots ajoutés depuis l'ouverture
 
-- **Correcteur orthographique (spellcheck)** — voir analyse complète ci-dessous.
-
-### Spellcheck — analyse
-
-**Outil recommandé** : `hunspell -a` ou `aspell -a` en mode pipe persistent. Démarrage unique, envoi de mots ligne par ligne, lecture des résultats :
-- `*` = correct
-- `& mot N offset: sugg1, sugg2...` = incorrect avec suggestions
-- `# mot offset` = incorrect sans suggestion
-
-```tcl
-set ::spell_pipe [open "|hunspell -a -d fr_FR" r+]
-chan configure $::spell_pipe -buffering line -encoding utf-8
-gets $::spell_pipe   ;# consomme la ligne de bienvenue "@(#) ..."
-
-proc spell-check-word {word} {
-    puts $::spell_pipe $word
-    gets $::spell_pipe line
-    return [expr {[string index $line 0] eq "*"}]
-}
-```
-
-Affichage : `tag configure spell_error -underline 1 -foreground red` sur le widget Text.
-
-**Alternatives** :
-- `/usr/share/dict/words` chargé en dict Tcl : O(1), zéro dépendance, pas de morphologie, pas de suggestions, dictionnaires FR pauvres.
-- `enchant-2` : même protocole pipe qu'aspell, choisit automatiquement le backend disponible.
-- Windows : aspell/hunspell absents par défaut — dégrader proprement avec message en status bar.
-
-**Deux stratégies d'intégration** :
-- **À la demande** (recommandée, cohérente avec la philosophie WrithDeck) : touche configurable `key_spell`, bascule ON/OFF, passe tout le doc en revue une fois, navigation "erreur suivante". Pas de distraction pendant l'écriture.
-- **Temps réel** : dans le handler `<<Modified>>` (debounce 300ms, déjà utilisé par `highlight-headings`), re-vérifie seulement les lignes modifiées via un cache par ligne — exactement le même mécanisme que `hl_line_cache`.
-
-**Points techniques spécifiques à WrithDeck** :
-1. **Extraction des mots** : ignorer les marqueurs (`# titre`, `// commentaire`, `**gras**`) avant d'envoyer à hunspell — sinon les caractères de markup sont vus comme des mots invalides.
-2. **Langue de saisie ≠ langue d'interface** : `spell_lang` séparé de `cfg_lang` dans l'INI (on peut écrire en FR avec l'UI en EN).
-3. **TUI** : pas de `tag configure` — afficher un compteur d'erreurs dans la status bar ou ignorer.
-4. **Gestion du pipe** : redémarrer si le processus crash ; écriture/lecture non bloquante pour le mode temps réel.
-5. **Scope** : vérifier uniquement le workspace actif (`.ed.t` ou pane focalisé en split).
+- ~~**Correcteur orthographique (spellcheck)**~~ — implémenté (voir session 2026-06-13) :
+  troisième outil du dialogue Analyse de structure (`analyse-dialog` / `tui-analyse-dialog`,
+  bouton "Spelling" / touche `o`), à la demande uniquement. Pipe persistant
+  `|hunspell -a -d $dict` (`spell-pipe-get`/`spell-check-word` dans `src/analysis.tcl`) —
+  protocole correct : pour chaque mot envoyé, hunspell répond UNE ligne de résultat
+  (`*`/`+`/`-`=correct, `& mot N offset: sugg1,sugg2...`=incorrect avec suggestions,
+  `#`=incorrect sans suggestion) PUIS une ligne vide à consommer également (le sample
+  ci-dessus ne le faisait pas). `spell-dict-resolve` utilise `cfg_spell_lang` si défini,
+  sinon dérive de `cfg_lang` (`spell-dict-for-lang`). Extraction des mots Unicode-aware
+  (`[[:alpha:]]+(?:['-][[:alpha:]]+)*`), `cfg_underline_marker` retiré du texte avant scan.
+  Un indicateur "Checking spelling..." (`br_spellcheck_checking`) s'affiche pendant le
+  calcul (peut prendre plusieurs secondes sur un long document). Dictionnaire introuvable
+  → message `br_spellcheck_unavailable` au lieu de planter. Réutilise l'infrastructure
+  jump/highlight (`repfound`, `repetitions-highlight-word`, `::tui_rep_jump`) des
+  Répétitions.
 
 ### Android — à implémenter
 

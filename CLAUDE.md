@@ -47,7 +47,7 @@ After `make`, the generated `writhdeck.tcl` contains these sections (concatenate
 | State          | `src/state.tcl`        | `.writhdeck.json` persistence, cursors, favorites, recents, daily stats         |
 | Config         | `src/config.tcl`       | INI loading/saving, profiles, schemes, keys, i18n system, theme init            |
 | Common         | `src/common.tcl`       | `list-docs`, `br-dirs`, `do-backup`, `build-extra-entries`, inline parsers      |
-| **Analysis**   | `src/analysis.tcl`     | Structure outline, word occurrences, repetitions — `get-word-occurrences`, `analyse-structure`, `find-repetitions`, GUI+TUI dialogs |
+| **Analysis**   | `src/analysis.tcl`     | Structure outline, word occurrences, repetitions, spell-check — `get-word-occurrences`, `analyse-structure`, `find-repetitions`, `spell-check-document`, GUI+TUI dialogs |
 | **GUI config** | `src/gui-config.tcl`   | `profile-config-dialog`, `config-tab-switch`, `profile-config-update-profile`   |
 | **GUI**        | `src/gui.tcl`          | Wrapped in `if {!$::no_gui}` — browser, editor, dialogs, TOC, split view        |
 | **TUI**        | `src/tui.tcl`          | Terminal UI — `tui-init`, `tui-browser`, `tui-editor`, `tui-main`, helpers      |

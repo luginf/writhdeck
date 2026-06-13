@@ -475,7 +475,7 @@ proc profile-config-dialog {} {
     # docs_dir row (entry + browse button)
     frame $w.tab_misc.behaviour_sec.fdocs -bg $::bg
     pack  $w.tab_misc.behaviour_sec.fdocs -fill x -padx 12 -pady 4
-    label $w.tab_misc.behaviour_sec.fdocs.lbl -text [t config_docs_dir] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+    label $w.tab_misc.behaviour_sec.fdocs.lbl -text [t config_docs_dir] -font $::font_sm -width 48 -anchor w -bg $::bg -fg $::fg
     entry $w.tab_misc.behaviour_sec.fdocs.entry -width 32 -font $::font_sm -bg $::bg_bar -fg $::fg \
         -insertbackground $::fg -selectbackground $::bg_sel -selectforeground $::fg
     button $w.tab_misc.behaviour_sec.fdocs.btn -text [t config_browse] -font $::font_sm \
@@ -497,7 +497,7 @@ proc profile-config-dialog {} {
     # browser file filter row (entry)
     frame $w.tab_misc.behaviour_sec.ffilter -bg $::bg
     pack  $w.tab_misc.behaviour_sec.ffilter -fill x -padx 12 -pady 4
-    label $w.tab_misc.behaviour_sec.ffilter.lbl -text [t config_browser_filter] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+    label $w.tab_misc.behaviour_sec.ffilter.lbl -text [t config_browser_filter] -font $::font_sm -width 48 -anchor w -bg $::bg -fg $::fg
     entry $w.tab_misc.behaviour_sec.ffilter.entry -width 32 -font $::font_sm -bg $::bg_bar -fg $::fg \
         -insertbackground $::fg -selectbackground $::bg_sel -selectforeground $::fg
     pack $w.tab_misc.behaviour_sec.ffilter.lbl -side left
@@ -506,7 +506,7 @@ proc profile-config-dialog {} {
     # show all files / bypass filter row (checkbox)
     frame $w.tab_misc.behaviour_sec.fshowall -bg $::bg
     pack  $w.tab_misc.behaviour_sec.fshowall -fill x -padx 12 -pady 3
-    label $w.tab_misc.behaviour_sec.fshowall.lbl -text [t config_browser_show_all] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+    label $w.tab_misc.behaviour_sec.fshowall.lbl -text [t config_browser_show_all] -font $::font_sm -width 48 -anchor w -bg $::bg -fg $::fg
     checkbutton $w.tab_misc.behaviour_sec.fshowall.check -variable profile_config_browser_show_all \
         -font $::font_sm -bg $::bg -fg $::fg \
         -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
@@ -517,7 +517,7 @@ proc profile-config-dialog {} {
     # repetition scope row (spinbox)
     frame $w.tab_misc.behaviour_sec.frpscope -bg $::bg
     pack  $w.tab_misc.behaviour_sec.frpscope -fill x -padx 12 -pady 4
-    label $w.tab_misc.behaviour_sec.frpscope.lbl -text [t config_repetition_scope] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+    label $w.tab_misc.behaviour_sec.frpscope.lbl -text [t config_repetition_scope] -font $::font_sm -width 48 -anchor w -bg $::bg -fg $::fg
     spinbox $w.tab_misc.behaviour_sec.frpscope.spin -from 10 -to 500 -increment 10 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
     pack $w.tab_misc.behaviour_sec.frpscope.lbl -side left
     pack $w.tab_misc.behaviour_sec.frpscope.spin -side left -padx {8 0}
@@ -525,7 +525,7 @@ proc profile-config-dialog {} {
     # hidden repetition min. word length row (spinbox)
     frame $w.tab_misc.behaviour_sec.frpminlen -bg $::bg
     pack  $w.tab_misc.behaviour_sec.frpminlen -fill x -padx 12 -pady 4
-    label $w.tab_misc.behaviour_sec.frpminlen.lbl -text [t config_repetition_min_len] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+    label $w.tab_misc.behaviour_sec.frpminlen.lbl -text [t config_repetition_min_len] -font $::font_sm -width 48 -anchor w -bg $::bg -fg $::fg
     spinbox $w.tab_misc.behaviour_sec.frpminlen.spin -from 3 -to 12 -width 5 -font $::font_sm -bg $::bg_bar -fg $::fg
     pack $w.tab_misc.behaviour_sec.frpminlen.lbl -side left
     pack $w.tab_misc.behaviour_sec.frpminlen.spin -side left -padx {8 0}
@@ -533,9 +533,20 @@ proc profile-config-dialog {} {
     $w.tab_misc.behaviour_sec.frpscope.spin  set $::cfg_repetition_scope
     $w.tab_misc.behaviour_sec.frpminlen.spin set $::cfg_repetition_min_len
 
+    # spell-check dictionary language row (entry)
+    frame $w.tab_misc.behaviour_sec.fspelllang -bg $::bg
+    pack  $w.tab_misc.behaviour_sec.fspelllang -fill x -padx 12 -pady 4
+    label $w.tab_misc.behaviour_sec.fspelllang.lbl -text [t config_spell_lang] -font $::font_sm -width 48 -anchor w -bg $::bg -fg $::fg
+    entry $w.tab_misc.behaviour_sec.fspelllang.entry -width 12 -font $::font_sm -bg $::bg_bar -fg $::fg \
+        -insertbackground $::fg -selectbackground $::bg_sel -selectforeground $::fg
+    pack $w.tab_misc.behaviour_sec.fspelllang.lbl -side left
+    pack $w.tab_misc.behaviour_sec.fspelllang.entry -side left -padx {4 4}
+
     # Boolean behaviour options
     foreach {fname key var} {
+        fspellhl  config_spell_highlight      profile_config_spell_highlight
         frphidden config_repetition_hidden    profile_config_repetition_hidden
+        fignorecomments config_analysis_ignore_comments profile_config_analysis_ignore_comments
         fbrowser  config_browser_startup      profile_config_browser
         fwatch    config_watch_file           profile_config_watch_file
         fhemingway config_hemingway_mode      profile_config_hemingway
@@ -545,7 +556,7 @@ proc profile-config-dialog {} {
     } {
         frame $w.tab_misc.behaviour_sec.$fname -bg $::bg
         pack  $w.tab_misc.behaviour_sec.$fname -fill x -padx 12 -pady 3
-        label $w.tab_misc.behaviour_sec.$fname.lbl -text [t $key] -font $::font_sm -width 30 -anchor w -bg $::bg -fg $::fg
+        label $w.tab_misc.behaviour_sec.$fname.lbl -text [t $key] -font $::font_sm -width 48 -anchor w -bg $::bg -fg $::fg
         checkbutton $w.tab_misc.behaviour_sec.$fname.check -variable $var \
             -font $::font_sm -bg $::bg -fg $::fg \
             -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
@@ -557,8 +568,11 @@ proc profile-config-dialog {} {
     # Load behaviour values
     $w.tab_misc.behaviour_sec.fdocs.entry insert 0 $::cfg_docs_dir
     $w.tab_misc.behaviour_sec.ffilter.entry insert 0 $::cfg_browser_filter
+    $w.tab_misc.behaviour_sec.fspelllang.entry insert 0 $::cfg_spell_lang
     set ::profile_config_browser_show_all $::cfg_browser_show_all
+    set ::profile_config_spell_highlight $::cfg_spell_highlight
     set ::profile_config_repetition_hidden $::cfg_repetition_hidden
+    set ::profile_config_analysis_ignore_comments $::cfg_analysis_ignore_comments
     set ::profile_config_browser        $::cfg_browser
     set ::profile_config_watch_file     $::cfg_watch_file
     set ::profile_config_hemingway      $::cfg_hemingway_mode
@@ -758,7 +772,10 @@ proc profile-config-dialog {} {
             set browser_show_all $::profile_config_browser_show_all
             set repetition_scope   [.profile_config.tab_misc.behaviour_sec.frpscope.spin get]
             set repetition_min_len [.profile_config.tab_misc.behaviour_sec.frpminlen.spin get]
+            set spell_lang  [.profile_config.tab_misc.behaviour_sec.fspelllang.entry get]
+            set spell_highlight    $::profile_config_spell_highlight
             set repetition_hidden  $::profile_config_repetition_hidden
+            set ignore_comments    $::profile_config_analysis_ignore_comments
             set browser     $::profile_config_browser
             set watch_file  $::profile_config_watch_file
             set hemingway   $::profile_config_hemingway
@@ -807,7 +824,10 @@ proc profile-config-dialog {} {
             set ::cfg_browser_show_all  $browser_show_all
             set ::cfg_repetition_scope   $repetition_scope
             set ::cfg_repetition_min_len $repetition_min_len
+            set ::cfg_spell_lang          $spell_lang
+            set ::cfg_spell_highlight      $spell_highlight
             set ::cfg_repetition_hidden  $repetition_hidden
+            set ::cfg_analysis_ignore_comments $ignore_comments
             set ::cfg_browser           $browser
             set ::cfg_watch_file        $watch_file
             set ::cfg_hemingway_mode    $hemingway

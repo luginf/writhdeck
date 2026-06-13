@@ -108,6 +108,9 @@ set ::cfg_browser_show_all 0
 set ::cfg_repetition_scope   100
 set ::cfg_repetition_min_len 4
 set ::cfg_repetition_hidden  0
+set ::cfg_spell_lang ""
+set ::cfg_spell_highlight 0
+set ::cfg_analysis_ignore_comments 0
 set ::cfg_console_margin_cols    6
 set ::cfg_console_margin_rows    4
 set ::cfg_heading_marker    "="
@@ -471,6 +474,9 @@ proc ini-load {} {
                 repetition_scope     { set ::cfg_repetition_scope     $v }
                 repetition_min_len   { set ::cfg_repetition_min_len   $v }
                 repetition_hidden    { set ::cfg_repetition_hidden    [string is true $v] }
+                spell_lang           { set ::cfg_spell_lang           $v }
+                spell_highlight      { set ::cfg_spell_highlight      [string is true $v] }
+                analysis_ignore_comments { set ::cfg_analysis_ignore_comments [string is true $v] }
                 console_center_alert { set ::cfg_console_center_alert [string is true $v] }
                 line_numbers     { set ::cfg_line_numbers   [string is true $v] }
                 cursor_restore   { set ::cfg_cursor_restore [string is true $v] }
@@ -578,6 +584,12 @@ proc ini-save {} {
     puts $fh "repetition_min_len   = $::cfg_repetition_min_len"
     puts $fh "% repetition_hidden: also flag hidden-substring repetitions (e.g. 'tour' in 'alentours')"
     puts $fh "repetition_hidden    = [expr {$::cfg_repetition_hidden    ? "yes" : "no"}]"
+    puts $fh "% spell_lang: hunspell dictionary name (e.g. fr_FR); empty = derive from 'lang'"
+    puts $fh "spell_lang           = $::cfg_spell_lang"
+    puts $fh "% spell_highlight: underline misspelled words (visible lines only) in the editor"
+    puts $fh "spell_highlight      = [expr {$::cfg_spell_highlight ? "yes" : "no"}]"
+    puts $fh "% analysis_ignore_comments: skip commented lines (cfg_comment_marker) in spellcheck, repetitions, word occurrences"
+    puts $fh "analysis_ignore_comments = [expr {$::cfg_analysis_ignore_comments ? "yes" : "no"}]"
     puts $fh "watch_file           = [expr {$::cfg_watch_file           ? "yes" : "no"}]"
     puts $fh "hemingway_mode       = [expr {$::cfg_hemingway_mode       ? "yes" : "no"}]"
     puts $fh "markdown_headings    = [expr {$::cfg_markdown_headings    ? "yes" : "no"}]"

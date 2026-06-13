@@ -730,6 +730,7 @@ scrollbar .ed.sb -orient vertical -command {.ed.t yview} \
 proc ed-yscroll {first last} {
     .ed.sb set $first $last
     catch { .ed.ln yview moveto $first }
+    spell-highlight-update
 }
 .ed.t configure -yscrollcommand ed-yscroll
 after idle apply-line-spacing
@@ -753,6 +754,9 @@ after idle apply-line-spacing
 .ed.t tag configure marker \
     -foreground $::cfg_color_comment
 .ed.t tag raise marker
+.ed.t tag configure misspell \
+    -underline 1 -underlinefg #ff4040
+.ed.t tag raise misspell
 
 frame .ed.bar -bg $bg_bar
 label .ed.bar.left   -textvariable ::ed_bar_left \
@@ -848,6 +852,8 @@ set ::ed_bar_right  ""
 set ::status_update_pending 0
 set ::hl_after_id ""
 set ::ln_last_count 0
+set ::spell_hl_cache {}
+set ::spell_word_cache {}
 
 proc gui-status-state {} {
     set t [active-ed]
@@ -1045,6 +1051,7 @@ bind .ed.t <<Modified>> {
     set ::hl_after_id [after 300 {
         set ::hl_after_id ""
         highlight-headings
+        spell-highlight-update
         ln-update
     }]
 }
@@ -1146,7 +1153,9 @@ proc load-file {path} {
     set ::file_mtime_known [expr {[file exists $path] ? [file mtime $path] : 0}]
     if {$::watch_after_id ne ""} { after cancel $::watch_after_id }
     set ::watch_after_id [after 2000 watch-file]
+    set ::spell_hl_cache {}
     highlight-headings
+    spell-highlight-update
     lassign [cursor-get $path] cy cx
     if {[dict exists $::session_headings $path]} {
         set hs [toc-collect]
@@ -1522,6 +1531,7 @@ bind .br.mid.lst    <$::cfg_key_fullscreen> { toggle-fullscreen }
 bind .ed.t          <$::cfg_key_split>       { split-toggle; break }
 bind .ed.t          <$::cfg_key_split_focus> { split-cycle-focus; break }
 bind .ed.t          <$::cfg_key_workspace>   { workspace-toggle; break }
+bind .ed.t          <Button-3>               { spell-suggest-popup %W %X %Y %x %y; break }
 
 # --- headings & TOC -----------------------------------------------------------
 proc highlight-headings {} {
@@ -1559,6 +1569,102 @@ proc highlight-headings {} {
         }
     }
     if {$::toc_panel_open} { toc-panel-refresh }
+}
+
+# Underlines misspelled words (tag "misspell") in the lines currently
+# visible in .ed.t. Per-line cache (::spell_hl_cache) skips lines whose
+# text hasn't changed; per-word cache (::spell_word_cache) avoids repeat
+# hunspell round-trips for repeated words. Off-screen lines are rechecked
+# lazily when scrolled into view (see ed-yscroll).
+proc spell-highlight-update {} {
+    if {!$::cfg_spell_highlight} return
+    if {[info procs spell-dict-resolve] eq ""} return
+    set dict [spell-dict-resolve]
+    if {$dict eq ""} return
+    set pipe [spell-pipe-get $dict]
+    if {$pipe eq ""} return
+
+    set t .ed.t
+    set first_ln [lindex [split [$t index @0,0] .] 0]
+    set last_ln  [lindex [split [$t index @0,[winfo height $t]] .] 0]
+
+    for {set ln $first_ln} {$ln <= $last_ln} {incr ln} {
+        set line [$t get $ln.0 "$ln.0 lineend"]
+        if {[dict exists $::spell_hl_cache $ln] && [dict get $::spell_hl_cache $ln] eq $line} continue
+        dict set ::spell_hl_cache $ln $line
+        $t tag remove misspell $ln.0 "$ln.0 lineend"
+        if {$::cfg_analysis_ignore_comments && [parse-comment $line]} continue
+        set check_line $line
+        if {$::cfg_underline_marker ne ""} {
+            set check_line [string map [list $::cfg_underline_marker " "] $check_line]
+        }
+        foreach m [regexp -all -inline -indices {[[:alpha:]]+(?:['-][[:alpha:]]+)*} $check_line] {
+            lassign $m a b
+            set word [string range $check_line $a $b]
+            if {[dict exists $::spell_word_cache $word]} {
+                set ok [dict get $::spell_word_cache $word]
+            } else {
+                if {[catch {spell-check-word $pipe $word} res]} return
+                set ok [lindex $res 0]
+                dict set ::spell_word_cache $word $ok
+            }
+            if {!$ok} {
+                $t tag add misspell $ln.$a "$ln.[expr {$b+1}]"
+            }
+        }
+    }
+}
+
+# Right-click on a misspelled word: shows a popup menu with hunspell
+# suggestions; clicking one replaces the word in place.
+proc spell-suggest-popup {t X Y x y} {
+    if {!$::cfg_spell_highlight} return
+    if {[info procs spell-dict-resolve] eq ""} return
+    set idx [$t index @$x,$y]
+    set ln  [lindex [split $idx .] 0]
+    set col [lindex [split $idx .] 1]
+    set line [$t get $ln.0 "$ln.0 lineend"]
+    set check_line $line
+    if {$::cfg_underline_marker ne ""} {
+        set check_line [string map [list $::cfg_underline_marker " "] $check_line]
+    }
+    set word ""
+    foreach m [regexp -all -inline -indices {[[:alpha:]]+(?:['-][[:alpha:]]+)*} $check_line] {
+        lassign $m a b
+        if {$col >= $a && $col <= $b} {
+            set word [string range $check_line $a $b]
+            set wstart $a
+            set wend $b
+            break
+        }
+    }
+    if {$word eq ""} return
+
+    set dict [spell-dict-resolve]
+    if {$dict eq ""} return
+    set pipe [spell-pipe-get $dict]
+    if {$pipe eq ""} return
+    if {[catch {spell-check-word $pipe $word} res]} return
+    lassign $res ok sugg
+    if {$ok} return
+
+    catch { destroy .spell_menu }
+    menu .spell_menu -tearoff 0 -bg $::bg_bar -fg $::fg_bar \
+        -activebackground $::bg_sel -activeforeground $::fg
+    if {$sugg eq ""} {
+        .spell_menu add command -label [t br_spellcheck_no_suggestions] -state disabled
+    } else {
+        foreach s $sugg {
+            .spell_menu add command -label $s \
+                -command [list spell-apply-suggestion $t $ln $wstart $wend $s]
+        }
+    }
+    tk_popup .spell_menu $X $Y
+}
+
+proc spell-apply-suggestion {t ln wstart wend repl} {
+    $t delete $ln.$wstart $ln.[expr {$wend+1}]
+    $t insert $ln.$wstart $repl
 }
 
 proc toc-collect {} {
@@ -2699,7 +2805,9 @@ proc workspace-toggle {} {
     catch { .ed.t mark set insert $new_pos }
     .ed.t see insert
     ed-update-title
+    set ::spell_hl_cache {}
     highlight-headings
+    spell-highlight-update
     ed-status
     focus .ed.t
 }
@@ -2784,7 +2892,9 @@ proc open-scratchpad {} {
     set ::gui_wc_line_cache {}
     set ::gui_wc_last_nlines 0
     ed-update-title
+    set ::spell_hl_cache {}
     highlight-headings
+    spell-highlight-update
     ed-status
     focus .ed.t
 }
