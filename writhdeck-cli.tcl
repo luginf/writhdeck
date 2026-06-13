@@ -1428,6 +1428,14 @@ dict set ::i18n en {
     profile_config_line_numbers  "Line numbers:"
     profile_config_block_cursor  "Block cursor:"
     profile_config_blink_cursor  "Blinking cursor:"
+    ctx_comment                  "Comment"
+    ctx_bold                     "Bold"
+    ctx_italic                   "Italic"
+    ctx_underline                "Underline"
+    ctx_strike                   "Strikethrough"
+    ctx_spellcheck               "Spell check"
+    ctx_on                       "on"
+    ctx_off                      "off"
 }
 
 dict set ::i18n fr {
@@ -1646,6 +1654,14 @@ dict set ::i18n fr {
     profile_config_line_numbers  "Numeros de ligne :"
     profile_config_block_cursor  "Curseur bloc :"
     profile_config_blink_cursor  "Curseur clignotant :"
+    ctx_comment                  "Commentaire"
+    ctx_bold                     "Gras"
+    ctx_italic                   "Italique"
+    ctx_underline                "Souligne"
+    ctx_strike                   "Barre"
+    ctx_spellcheck               "Correction orthographique"
+    ctx_on                       "actif"
+    ctx_off                      "inactif"
 }
 
 

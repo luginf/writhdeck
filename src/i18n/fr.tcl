@@ -214,5 +214,13 @@ dict set ::i18n fr {
     profile_config_line_numbers  "Numeros de ligne :"
     profile_config_block_cursor  "Curseur bloc :"
     profile_config_blink_cursor  "Curseur clignotant :"
+    ctx_comment                  "Commentaire"
+    ctx_bold                     "Gras"
+    ctx_italic                   "Italique"
+    ctx_underline                "Souligne"
+    ctx_strike                   "Barre"
+    ctx_spellcheck               "Correction orthographique"
+    ctx_on                       "actif"
+    ctx_off                      "inactif"
 }
 

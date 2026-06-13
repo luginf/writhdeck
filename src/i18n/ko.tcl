@@ -214,5 +214,13 @@ dict set ::i18n ko {
     profile_config_line_numbers  "줄 번호:"
     profile_config_block_cursor  "블록 커서:"
     profile_config_blink_cursor  "깜빡이는 커서:"
+    ctx_comment                  "주석"
+    ctx_bold                     "굵게"
+    ctx_italic                   "기울임"
+    ctx_underline                "밑줄"
+    ctx_strike                   "취소선"
+    ctx_spellcheck               "맞춤법 검사"
+    ctx_on                       "켜짐"
+    ctx_off                      "꺼짐"
 }
 

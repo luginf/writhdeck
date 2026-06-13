@@ -1531,7 +1531,7 @@ bind .br.mid.lst    <$::cfg_key_fullscreen> { toggle-fullscreen }
 bind .ed.t          <$::cfg_key_split>       { split-toggle; break }
 bind .ed.t          <$::cfg_key_split_focus> { split-cycle-focus; break }
 bind .ed.t          <$::cfg_key_workspace>   { workspace-toggle; break }
-bind .ed.t          <Button-3>               { spell-suggest-popup %W %X %Y %x %y; break }
+bind .ed.t          <Button-3>               { editor-context-menu %W %X %Y %x %y; break }
 
 # --- headings & TOC -----------------------------------------------------------
 proc highlight-headings {} {
@@ -1615,11 +1615,11 @@ proc spell-highlight-update {} {
     }
 }
 
-# Right-click on a misspelled word: shows a popup menu with hunspell
-# suggestions; clicking one replaces the word in place.
-proc spell-suggest-popup {t X Y x y} {
-    if {!$::cfg_spell_highlight} return
-    if {[info procs spell-dict-resolve] eq ""} return
+# Returns {ln wstart wend word suggestions} for the misspelled word at
+# @x,y in $t, or "" if that position isn't a misspelled word (or
+# spellcheck is unavailable).
+proc spell-word-at {t x y} {
+    if {[info procs spell-dict-resolve] eq ""} { return "" }
     set idx [$t index @$x,$y]
     set ln  [lindex [split $idx .] 0]
     set col [lindex [split $idx .] 1]
@@ -1638,33 +1638,279 @@ proc spell-suggest-popup {t X Y x y} {
             break
         }
     }
-    if {$word eq ""} return
+    if {$word eq ""} { return "" }
 
     set dict [spell-dict-resolve]
-    if {$dict eq ""} return
+    if {$dict eq ""} { return "" }
     set pipe [spell-pipe-get $dict]
-    if {$pipe eq ""} return
-    if {[catch {spell-check-word $pipe $word} res]} return
+    if {$pipe eq ""} { return "" }
+    if {[catch {spell-check-word $pipe $word} res]} { return "" }
     lassign $res ok sugg
-    if {$ok} return
-
-    catch { destroy .spell_menu }
-    menu .spell_menu -tearoff 0 -bg $::bg_bar -fg $::fg_bar \
-        -activebackground $::bg_sel -activeforeground $::fg
-    if {$sugg eq ""} {
-        .spell_menu add command -label [t br_spellcheck_no_suggestions] -state disabled
-    } else {
-        foreach s $sugg {
-            .spell_menu add command -label $s \
-                -command [list spell-apply-suggestion $t $ln $wstart $wend $s]
-        }
-    }
-    tk_popup .spell_menu $X $Y
+    if {$ok} { return "" }
+    return [list $ln $wstart $wend $word $sugg]
 }
 
 proc spell-apply-suggestion {t ln wstart wend repl} {
     $t delete $ln.$wstart $ln.[expr {$wend+1}]
     $t insert $ln.$wstart $repl
+}
+
+# Session-only toggle of spell-error highlighting from the editor context
+# menu (mirrors the web version's "Spell check: on/off"). Not persisted to
+# the INI -- the persistent default lives in Settings > Misc.
+proc spell-highlight-toggle {t} {
+    set ::cfg_spell_highlight [expr {!$::cfg_spell_highlight}]
+    set ::spell_hl_cache {}
+    if {$::cfg_spell_highlight} {
+        spell-highlight-update
+    } else {
+        $t tag remove misspell 1.0 end
+    }
+}
+
+# --- markup formatting (right-click context menu) -----------------------------
+
+# Range of lines affected by a formatting command: the lines spanned by the
+# current selection, or the line containing the cursor if there is none. A
+# selection ending exactly at column 0 of a line does not pull that line in.
+proc markup-block-range {t} {
+    if {[$t tag ranges sel] ne ""} {
+        set s [$t index sel.first]
+        set e [$t index sel.last]
+    } else {
+        set s [$t index insert]
+        set e $s
+    }
+    set start_ln [lindex [split $s .] 0]
+    set end_ln   [lindex [split $e .] 0]
+    if {$end_ln > $start_ln && [lindex [split $e .] 1] == 0} {
+        incr end_ln -1
+    }
+    return [list $start_ln $end_ln]
+}
+
+# Heading level of $line for a marker repeated 1-3 times (0 if none).
+proc heading-marker-level {marker line} {
+    set mlen [string length $marker]
+    if {![string equal -length $mlen $marker $line]} { return 0 }
+    set n 1
+    while {$n < 3} {
+        if {[string equal -length [expr {$mlen*($n+1)}] [string repeat $marker [expr {$n+1}]] $line]} {
+            incr n
+        } else break
+    }
+    return $n
+}
+
+# Strips leading/trailing heading marker run(s) and surrounding whitespace.
+# $mq is the regex-quoted marker (see heading-re in common.tcl).
+proc heading-marker-strip {mq line} {
+    regsub "^(?:$mq)+\\s*" $line "" line
+    regsub "\\s*(?:$mq)+\\s*\$" $line "" line
+    return [string trim $line]
+}
+
+# Toggles heading level $level on the current line/selection block, using
+# cfg_heading_marker repeated $level times (mirrors the web version's
+# Editor.applyHeading).
+proc apply-heading {t level} {
+    set marker $::cfg_heading_marker
+    if {$marker eq ""} return
+    lassign [markup-block-range $t] start_ln end_ln
+    set mq [regsub -all {[\\^$.|?*+()\[\]{}]} $marker {\\&}]
+    set prefix [string repeat $marker $level]
+
+    set lines {}
+    for {set ln $start_ln} {$ln <= $end_ln} {incr ln} {
+        lappend lines [$t get $ln.0 "$ln.0 lineend"]
+    }
+
+    set all_at_level 1
+    foreach l $lines {
+        if {[heading-marker-level $marker $l] != $level} { set all_at_level 0; break }
+    }
+
+    set new_lines {}
+    foreach l $lines {
+        if {$all_at_level} {
+            lappend new_lines [heading-marker-strip $mq $l]
+        } else {
+            if {[heading-marker-level $marker $l] > 0} {
+                set content [heading-marker-strip $mq $l]
+            } else {
+                set content [string trim $l]
+            }
+            if {$content ne ""} {
+                lappend new_lines "$prefix $content $prefix"
+            } else {
+                lappend new_lines "$prefix  $prefix"
+            }
+        }
+    }
+
+    $t replace $start_ln.0 "$end_ln.0 lineend" [join $new_lines "\n"]
+    spell-highlight-update
+}
+
+# Toggles a line-level marker (e.g. comment) on the current line/selection
+# block, separating it from the content by exactly one space (mirrors the
+# web version's Editor.applyLineMarker).
+proc apply-line-marker {t marker} {
+    if {$marker eq ""} return
+    set trimmed [string trimright $marker]
+    set tlen [string length $trimmed]
+    lassign [markup-block-range $t] start_ln end_ln
+
+    set lines {}
+    for {set ln $start_ln} {$ln <= $end_ln} {incr ln} {
+        lappend lines [$t get $ln.0 "$ln.0 lineend"]
+    }
+
+    set all_marked 1
+    foreach l $lines {
+        if {![string equal -length $tlen $trimmed $l]} { set all_marked 0; break }
+    }
+
+    set new_lines {}
+    foreach l $lines {
+        if {$all_marked} {
+            set rest [string range $l $tlen end]
+            if {[string index $rest 0] eq " "} { set rest [string range $rest 1 end] }
+            lappend new_lines $rest
+        } else {
+            if {$l eq ""} {
+                lappend new_lines $trimmed
+            } else {
+                lappend new_lines "$trimmed $l"
+            }
+        }
+    }
+
+    $t replace $start_ln.0 "$end_ln.0 lineend" [join $new_lines "\n"]
+    spell-highlight-update
+}
+
+# Wraps/unwraps the current selection with an inline marker (bold, italic,
+# underline, strikethrough); with no selection, inserts an empty marker
+# pair and places the cursor between them (mirrors the web version's
+# Editor.applyInlineMarker).
+proc apply-inline-marker {t marker} {
+    if {$marker eq ""} return
+    set mlen [string length $marker]
+    if {[$t tag ranges sel] eq ""} {
+        set pos [$t index insert]
+        $t insert $pos "$marker$marker"
+        $t mark set insert "$pos +${mlen}c"
+    } else {
+        set s [$t index sel.first]
+        set e [$t index sel.last]
+        set txt [$t get $s $e]
+        set tlen [string length $txt]
+        set is_wrapped 0
+        if {$tlen > $mlen*2 \
+                && [string equal -length $mlen $marker $txt] \
+                && [string equal $marker [string range $txt [expr {$tlen-$mlen}] end]]} {
+            set is_wrapped 1
+        }
+        if {$is_wrapped} {
+            set inner [string range $txt $mlen [expr {$tlen-$mlen-1}]]
+            $t replace $s $e $inner
+            $t tag add sel $s "$s +[string length $inner]c"
+        } else {
+            set wrapped "$marker$txt$marker"
+            $t replace $s $e $wrapped
+            $t tag add sel $s "$s +[string length $wrapped]c"
+        }
+    }
+    spell-highlight-update
+}
+
+# Right-click context menu: spelling suggestions for the clicked word (if
+# any), formatting (headings, comment, inline markers), cut/copy/paste, and
+# a spell-check on/off toggle -- mirrors the web version's editor context
+# menu (buildCtxMenu in app.js).
+proc editor-context-menu {t X Y x y} {
+    # Move the cursor to the click point unless it falls inside the current
+    # selection, so formatting/paste act on the clicked line/position.
+    set click_idx [$t index @$x,$y]
+    set has_sel [expr {[$t tag ranges sel] ne ""}]
+    if {$has_sel} {
+        if {[$t compare $click_idx < sel.first] || [$t compare $click_idx >= sel.last]} {
+            $t tag remove sel 1.0 end
+            $t mark set insert $click_idx
+            set has_sel 0
+        }
+    } else {
+        $t mark set insert $click_idx
+    }
+
+    catch { destroy .ctx_menu }
+    menu .ctx_menu -tearoff 0 -bg $::bg_bar -fg $::fg_bar \
+        -activebackground $::bg_sel -activeforeground $::fg
+
+    # Empty disabled entry at the top: forces the mouse to move into the
+    # menu before any item can be activated, avoiding an accidental click
+    # on the same button-3 release that opened the menu.
+    .ctx_menu add command -label "" -state disabled
+
+    if {$::cfg_spell_highlight} {
+        set winfo [spell-word-at $t $x $y]
+        if {$winfo ne ""} {
+            lassign $winfo wln wstart wend word sugg
+            if {$sugg eq ""} {
+                .ctx_menu add command -label [t br_spellcheck_no_suggestions] -state disabled
+            } else {
+                foreach s $sugg {
+                    .ctx_menu add command -label $s \
+                        -command [list spell-apply-suggestion $t $wln $wstart $wend $s]
+                }
+            }
+            .ctx_menu add separator
+        }
+    }
+
+    set sel_state [expr {$has_sel ? "normal" : "disabled"}]
+
+    if {$::cfg_heading_marker ne ""} {
+        set hm $::cfg_heading_marker
+        .ctx_menu add command -label "$hm H1 $hm" -command [list apply-heading $t 1]
+        .ctx_menu add command -label "[string repeat $hm 2] H2 [string repeat $hm 2]" -command [list apply-heading $t 2]
+        .ctx_menu add command -label "[string repeat $hm 3] H3 [string repeat $hm 3]" -command [list apply-heading $t 3]
+    }
+    if {$::cfg_comment_marker ne ""} {
+        .ctx_menu add command -label "$::cfg_comment_marker [t ctx_comment]" \
+            -command [list apply-line-marker $t $::cfg_comment_marker]
+    }
+    if {$::cfg_bold_marker ne ""} {
+        .ctx_menu add command -label "$::cfg_bold_marker [t ctx_bold]" -state $sel_state \
+            -command [list apply-inline-marker $t $::cfg_bold_marker]
+    }
+    if {$::cfg_italic_marker ne ""} {
+        .ctx_menu add command -label "$::cfg_italic_marker [t ctx_italic]" -state $sel_state \
+            -command [list apply-inline-marker $t $::cfg_italic_marker]
+    }
+    if {$::cfg_underline_marker ne ""} {
+        .ctx_menu add command -label "$::cfg_underline_marker [t ctx_underline]" -state $sel_state \
+            -command [list apply-inline-marker $t $::cfg_underline_marker]
+    }
+    if {$::cfg_strikethrough_marker ne ""} {
+        .ctx_menu add command -label "$::cfg_strikethrough_marker [t ctx_strike]" -state $sel_state \
+            -command [list apply-inline-marker $t $::cfg_strikethrough_marker]
+    }
+
+    .ctx_menu add separator
+    .ctx_menu add command -label [t help_k_cut]   -state $sel_state -command [list tk_textCut $t]
+    .ctx_menu add command -label [t help_k_copy]  -state $sel_state -command [list tk_textCopy $t]
+    .ctx_menu add command -label [t help_k_paste] -command [list tk_textPaste $t]
+
+    if {[info procs spell-dict-resolve] ne ""} {
+        .ctx_menu add separator
+        set onoff [expr {$::cfg_spell_highlight ? [t ctx_on] : [t ctx_off]}]
+        .ctx_menu add command -label "[t ctx_spellcheck]: $onoff" \
+            -command [list spell-highlight-toggle $t]
+    }
+
+    tk_popup .ctx_menu $X $Y
 }
 
 proc toc-collect {} {
