@@ -618,7 +618,7 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
     <p>Writhdeck is a distraction-free writing environment for long-form text — novels, essays, notes, scripts.</p>
     <p>All your documents live in your browser (IndexedDB) — nothing is sent to any server. You can also edit files directly on disk.</p>
     <p>It features a custom colour-syntax overlay, typewriter focus mode, a session timer, daily word goals, and a fully keyboard-driven interface. Compatible with the Writhdeck desktop app via shared <code>.ini</code> settings.</p>
-    <p class="about-version">Build: 2026-06-12 — Open source — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
+    <p class="about-version">Build: 2026-06-14 — Open source — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
   </div>
   <div id="about-footer">
     <button id="about-ok">Close</button>
@@ -728,13 +728,20 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 
     <!-- Profile tab -->
     <div class="stab-content active" data-tab="profile">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <label>Profile <select id="profile-select"></select></label>
+        <button id="profile-new-btn">New</button>
+        <button id="profile-delete-btn">Delete</button>
+      </div>
+      <p class="hint">Margins, fonts, scheme, dark mode, word goal, line numbers, block cursor,
+        heading marker and markdown headings are saved per profile.</p>
       <label>Default scheme
         <select data-key="scheme" id="scheme-select-profile"></select>
       </label>
       <label><input type="checkbox" data-key="darkMode"> Dark mode</label>
       <label>Margin horiz (px)<input type="number" data-key="marginX" min="0" max="400"></label>
       <label>Margin vert (px)<input type="number" data-key="marginY" min="0" max="400"></label>
-      <label>Line spacing (%)<input type="number" data-key="lineSpacing" min="80" max="250"></label>
+      <label>Line spacing<input type="number" data-key="lineSpacing" min="0.8" max="3.0" step="0.1"></label>
       <label>Word goal (words/day, 0=off)<input type="number" data-key="wordGoal" min="0"></label>
       <label><input type="checkbox" data-key="hemingwayMode"> Hemingway mode (no delete)</label>
     </div>
@@ -1056,6 +1063,11 @@ const State = {
   // Cached INI text — the canonical settings format in IDB
   iniText: '',
 
+  // Per-profile overrides (12-key aligned set — see ini.js PROFILE_JS_KEYS)
+  profiles: {},        // {name: {jsKey: value, ...}}
+  activeProfile: 'default',
+  profileNames: [],
+
   // Settings defaults (overwritten from IDB on load)
   settings: {
     scheme: 'default',
@@ -1116,7 +1128,7 @@ async function loadState() {
 
   if (iniText) {
     // Normal path — INI is the source of truth
-    const { settings, schemes } = INI.parseIni(iniText);
+    const { settings, schemes, profiles, activeProfile } = INI.parseIni(iniText);
     Object.assign(State.settings, settings);
     // Only load non-built-in schemes: built-in colors come from code, not IDB
     for (const [n, sc] of Object.entries(schemes)) {
@@ -1124,16 +1136,20 @@ async function loadState() {
     }
     State.customSchemes = { ...customSchemes };
     State.iniText = iniText;
+    applyParsedProfiles(profiles, activeProfile);
   } else if (oldSettings) {
     // One-time migration from legacy JSON format
     Object.assign(State.settings, oldSettings);
     if (oldCs) Object.assign(customSchemes, oldCs);
     State.customSchemes = { ...customSchemes };
+    seedProfilesIfMissing();
     await saveSettings();             // re-persist as INI
     await DB.setMeta('settings', null);
     await DB.setMeta('customSchemes', null);
   }
   // else: first run — defaults are in place, INI saved after init by app.js
+
+  seedProfilesIfMissing();
 
   if (favorites) State.favorites = favorites;
   if (recents)   State.recents   = recents;
@@ -1144,11 +1160,47 @@ async function loadState() {
   State.docs = await DB.getAllDocs();
 }
 
+// ── Profiles ──────────────────────────────────────────────────────────────
+
+// Adopts profiles parsed from an INI file (no-op if the file had none),
+// merging the active profile's overrides onto State.settings.
+function applyParsedProfiles(profiles, activeProfile) {
+  if (Object.keys(profiles).length === 0) return;
+  State.profiles = profiles;
+  State.activeProfile = profiles[activeProfile] ? activeProfile : Object.keys(profiles)[0];
+  State.profileNames = Object.keys(profiles);
+  Object.assign(State.settings, State.profiles[State.activeProfile] || {});
+}
+
+// First-run / older-INI fallback: seed `default` (snapshot of current
+// settings, lossless) plus a `novel` profile, mirroring the Android/Tcl
+// "two starter profiles" set.
+function seedProfilesIfMissing() {
+  if (Object.keys(State.profiles).length > 0) {
+    State.profileNames = Object.keys(State.profiles);
+    return;
+  }
+  const extract = () => Object.fromEntries(INI.PROFILE_JS_KEYS.map(k => [k, State.settings[k]]));
+  const novel = extract();
+  novel.scheme           = 'everforest';
+  novel.marginX          = State.settings.marginX * 2;
+  novel.marginY          = Math.round(State.settings.marginY * 1.5);
+  novel.wordGoal         = 1000;
+  novel.fontSize         = State.settings.fontSize + 2;
+  novel.fontFamily       = 'serif';
+  novel.lineSpacing      = Math.round(State.settings.lineSpacing * 1.2 * 10) / 10;
+  novel.markdownHeadings = false;
+
+  State.profiles = { default: extract(), novel };
+  State.activeProfile = 'default';
+  State.profileNames = Object.keys(State.profiles);
+}
+
 // ── Settings — INI is canonical ───────────────────────────────────────────
 
 async function saveSettings() {
   const allSchemes = { ...SCHEMES, ...customSchemes };
-  const text = INI.writeIni(State.settings, allSchemes);
+  const text = INI.writeIni(State.settings, allSchemes, State.profiles, State.activeProfile);
   State.iniText = text;
   await DB.setMeta('iniText', text);
 }
@@ -1320,6 +1372,15 @@ const SETTINGS_TO_INI = Object.fromEntries(
 SETTINGS_TO_INI['commentMarker']  = 'comment_marker';
 SETTINGS_TO_INI['fontFamily']     = 'font_family';
 
+// Per-profile settings — aligned with the Tcl/Android "profile" key set.
+const PROFILE_KEYS = [
+  'scheme', 'heading_marker', 'markdown_headings',
+  'margin_width', 'margin_height', 'word_goal',
+  'font_size', 'font_family', 'line_spacing',
+  'line_numbers', 'dark_mode', 'block_cursor'
+];
+const PROFILE_JS_KEYS = PROFILE_KEYS.map(k => INI_TO_SETTINGS[k][0]);
+
 // Scheme color key mapping (INI ↔ JS)
 const SCHEME_INI_TO_JS = {
   color_bg:          'bg',         color_fg:          'fg',
@@ -1350,6 +1411,28 @@ function parseBool(v) {
   return /^(yes|1|true|on)$/i.test(String(v).trim());
 }
 
+function coerceValue(type, val) {
+  if (type === 'bool')   return parseBool(val);
+  if (type === 'int')    return parseInt(val, 10);
+  if (type === 'float')  return parseFloat(val);
+  return val;
+}
+
+// `line_spacing` uses incompatible units across versions: the Tcl desktop stores a
+// percentage (100 = normal line height; extra_px = lineHeight*(v-100)/100), while web
+// and Android store a CSS line-height / setLineSpacing multiplier (default 1.5). The two
+// conventions differ by a factor of 100. INI values >= 10 are assumed to use the
+// percentage convention (Tcl, or an already-migrated web/Android file) and are divided
+// by 100; smaller values are pre-conversion web/Android files and used as-is.
+// writeIni() always emits the percentage convention going forward, so a stale value
+// self-heals on the next save.
+function lineSpacingFromIni(raw) {
+  return raw >= 10 ? raw / 100 : raw;
+}
+function lineSpacingToIni(value) {
+  return Math.round(value * 100);
+}
+
 // Strips inline comments (# preceded by whitespace). % is line-start-only.
 // Leading whitespace trimmed; trailing preserved so '% ' marker round-trips correctly.
 function stripComment(v) {
@@ -1360,6 +1443,8 @@ function stripComment(v) {
 function parseIni(text) {
   const settings = {};
   const schemes  = {};   // {name: {jsKey: value}}
+  const profiles = {};   // {name: {jsKey: value}} — per-profile overrides
+  let activeProfile = 'default';
 
   let section    = '';
   let curScheme  = '';
@@ -1371,7 +1456,7 @@ function parseIni(text) {
     if (!line || line.startsWith('#') || line.startsWith('%')) continue;
 
     // Section header [name]
-    const secMatch = line.match(/^\[(\w[\w\s]*)\]$/);
+    const secMatch = line.match(/^\[([^[\]]+)\]$/);
     if (secMatch) {
       const hdr = secMatch[1].trim();
       if (hdr === 'schemes') {
@@ -1382,6 +1467,7 @@ function parseIni(text) {
         curScheme = hdr;
       } else if (section === 'profiles' && !TOPLEVEL.has(hdr)) {
         curProfile = hdr;
+        if (!profiles[curProfile]) profiles[curProfile] = {};
       } else {
         section = hdr; curScheme = ''; curProfile = '';
       }
@@ -1401,8 +1487,17 @@ function parseIni(text) {
         if (!schemes[curScheme]) schemes[curScheme] = {};
         schemes[curScheme][jsKey] = val;
       }
-    } else if (!curProfile) {
+    } else if (curProfile) {
+      // Per-profile override (12-key aligned set)
+      if (PROFILE_KEYS.includes(key)) {
+        const [jsKey, type] = INI_TO_SETTINGS[key];
+        let v = coerceValue(type, val);
+        if (key === 'line_spacing') v = lineSpacingFromIni(v);
+        profiles[curProfile][jsKey] = v;
+      }
+    } else {
       // Global setting
+      if (key === 'profile') { activeProfile = val.trim(); continue; }
       const mapping = INI_TO_SETTINGS[key];
       if (mapping) {
         const [jsKey, type] = mapping;
@@ -1410,6 +1505,9 @@ function parseIni(text) {
         else if (type === 'int')    settings[jsKey] = parseInt(val, 10)  || undefined;
         else if (type === 'float')  settings[jsKey] = parseFloat(val)    || undefined;
         else                        settings[jsKey] = val;
+        if (key === 'line_spacing' && settings[jsKey] !== undefined) {
+          settings[jsKey] = lineSpacingFromIni(settings[jsKey]);
+        }
       }
     }
   }
@@ -1417,11 +1515,11 @@ function parseIni(text) {
   // Remove undefined values
   Object.keys(settings).forEach(k => settings[k] === undefined && delete settings[k]);
 
-  return { settings, schemes };
+  return { settings, schemes, profiles, activeProfile };
 }
 
 // ── Writer ────────────────────────────────────────────────────────────────
-function writeIni(s, allSchemes) {
+function writeIni(s, allSchemes, profiles, activeProfile) {
   const b = (v) => v ? 'yes' : 'no';
   const nl = '\n';
 
@@ -1429,29 +1527,18 @@ function writeIni(s, allSchemes) {
   out += '% https://github.com/luginf/writhdeck' + nl + nl;
 
   out += '= editor =' + nl + '[editor]' + nl;
-  out += `scheme         = ${s.scheme || 'default'}` + nl;
-  if (s.fontFamily)    out += `font_family    = ${s.fontFamily}` + nl;
-  if (s.fontSize)      out += `font_size      = ${s.fontSize}` + nl;
-  out += `margin_width   = ${s.marginX   || 60}` + nl;
-  out += `margin_height  = ${s.marginY   || 40}` + nl;
-  out += `line_spacing   = ${s.lineSpacing || 100}` + nl;
-  out += `word_goal      = ${s.wordGoal  || 0}` + nl;
-  out += `heading_marker       = ${s.headingMarker   || '='}` + nl;
+  out += `profile              = ${activeProfile || 'default'}` + nl;
   out += `comment_marker       = ${s.commentMarker   || '% '}` + nl;
   out += `bold_marker          = ${s.boldMarker      || '**'}` + nl;
   out += `italic_marker        = ${s.italicMarker    || '//'}` + nl;
   out += `underline_marker     = ${s.underlineMarker || '__'}` + nl;
   out += `strikethrough_marker = ${s.strikeMarker    || '--'}` + nl;
-  out += `markdown_headings    = ${b(s.markdownHeadings !== false)}` + nl;
   out += nl;
 
   out += '= behaviour =' + nl + '[behaviour]' + nl;
   out += `hemingway_mode  = ${b(s.hemingwayMode)}` + nl;
   out += `cursor_restore               = ${b(s.cursorRestore !== false)}` + nl;
-  out += `line_numbers                 = ${b(s.lineNumbers)}` + nl;
-  out += `block_cursor                 = ${b(s.blockCursor)}` + nl;
   out += `blink_cursor                 = ${b(s.blinkCursor)}` + nl;
-  out += `dark_mode       = ${b(s.darkMode)}` + nl;
   out += `% browser_filter: space-separated glob patterns (* ? [...]) for the browser file list` + nl;
   out += `browser_filter  = ${s.browserFilter ?? '*.txt *.t2t *.md *.ini'}` + nl;
   out += `% browser_show_all: bypass browser_filter and show all files` + nl;
@@ -1479,6 +1566,25 @@ function writeIni(s, allSchemes) {
   out += `status_right   = ${s.statusRight  || ''}` + nl;
   out += nl;
 
+  out += '= profiles =' + nl + '[profiles]' + nl;
+  for (const [name, p] of Object.entries(profiles || {})) {
+    const pv = (jsKey, dflt) => p[jsKey] !== undefined ? p[jsKey] : (s[jsKey] !== undefined ? s[jsKey] : dflt);
+    out += `[${name}]` + nl;
+    out += `scheme            = ${pv('scheme', 'default')}` + nl;
+    out += `dark_mode         = ${b(pv('darkMode', true))}` + nl;
+    out += `margin_width      = ${pv('marginX', 60)}` + nl;
+    out += `margin_height     = ${pv('marginY', 40)}` + nl;
+    out += `font_size         = ${pv('fontSize', 18)}` + nl;
+    out += `font_family       = ${pv('fontFamily', 'monospace')}` + nl;
+    out += `line_spacing      = ${lineSpacingToIni(pv('lineSpacing', 1.5))}` + nl;
+    out += `word_goal         = ${pv('wordGoal', 0)}` + nl;
+    out += `line_numbers      = ${b(pv('lineNumbers', false))}` + nl;
+    out += `block_cursor      = ${b(pv('blockCursor', false))}` + nl;
+    out += `heading_marker    = ${pv('headingMarker', '=')}` + nl;
+    out += `markdown_headings = ${b(pv('markdownHeadings', true))}` + nl;
+    out += nl;
+  }
+
   out += '= schemes =' + nl + '[schemes]' + nl;
   out += '% colors in #rrggbb format' + nl + nl;
 
@@ -1501,7 +1607,7 @@ function writeIni(s, allSchemes) {
   return out;
 }
 
-const INI = { parseIni, writeIni };
+const INI = { parseIni, writeIni, PROFILE_JS_KEYS };
 
 
 'use strict';
@@ -2083,11 +2189,12 @@ const Editor = (() => {
     // Virtual INI doc — parse and apply, don't write to docs store
     if (State.doc.isIni) {
       try {
-        const { settings, schemes } = INI.parseIni(State.doc.content);
+        const { settings, schemes, profiles, activeProfile } = INI.parseIni(State.doc.content);
         Object.assign(State.settings, settings);
         for (const [n, sc] of Object.entries(schemes)) {
           customSchemes[n] = SCHEMES[n] ? { ...SCHEMES[n], ...sc } : sc;
         }
+        applyParsedProfiles(profiles, activeProfile);
         await saveSettings();   // re-generates canonical INI text → IDB
         State.doc.content = State.iniText; // reflect normalised output
         ta().value = State.iniText;
@@ -2534,6 +2641,10 @@ const Editor = (() => {
 
   function applyLineMarker(marker) {
     if (!marker) return;
+    // Always separate the marker from the line's content with exactly one
+    // space (e.g. "% comment"), regardless of whether the configured marker
+    // itself already ends with whitespace (e.g. "%" or "% ").
+    const trimmed = marker.replace(/\s+$/, '');
     const input = ta();
     const s = input.selectionStart, e = input.selectionEnd;
     const text = input.value;
@@ -2541,8 +2652,13 @@ const Editor = (() => {
     const raw = text.indexOf('\n', e);
     const blockEnd = raw === -1 ? text.length : raw;
     const lines = text.slice(blockStart, blockEnd).split('\n');
-    const allMarked = lines.every(l => l.startsWith(marker));
-    const newLines = allMarked ? lines.map(l => l.slice(marker.length)) : lines.map(l => marker + l);
+    const allMarked = lines.every(l => l.startsWith(trimmed));
+    const newLines = allMarked
+      ? lines.map(l => {
+          const rest = l.slice(trimmed.length);
+          return rest.startsWith(' ') ? rest.slice(1) : rest;
+        })
+      : lines.map(l => l === '' ? trimmed : trimmed + ' ' + l);
     const newBlock = newLines.join('\n');
     input.focus();
     input.setSelectionRange(blockStart, blockEnd);
@@ -3423,6 +3539,18 @@ const Settings = (() => {
   function populate() {
     const s = State.settings;
 
+    // Profile selector
+    const profSel = document.getElementById('profile-select');
+    if (profSel) {
+      profSel.innerHTML = '';
+      State.profileNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = name;
+        if (name === State.activeProfile) opt.selected = true;
+        profSel.appendChild(opt);
+      });
+    }
+
     // Fill all data-key inputs (Profile, Timer, Misc, Display tabs)
     document.querySelectorAll('#settings-dlg [data-key]').forEach(el => {
       const key = el.dataset.key;
@@ -3545,13 +3673,63 @@ const Settings = (() => {
       saveCustomSchemes();
     }
 
+    // Persist the 12 profile-scoped settings into the active profile
+    if (!State.profiles[State.activeProfile]) State.profiles[State.activeProfile] = {};
+    for (const k of INI.PROFILE_JS_KEYS) State.profiles[State.activeProfile][k] = s[k];
+
     saveSettings();
+    refreshAfterSettingsChange();
+  }
+
+  function refreshAfterSettingsChange() {
     applyTheme();
     if (State.doc) {
       Editor.rehighlight();
       Editor.applyLineNumbers();
       Editor.updateStatusBar();
     }
+  }
+
+  // ── Profile actions ───────────────────────────────────────────────────────
+
+  function switchProfile(name) {
+    if (name === State.activeProfile) return;
+    apply(); // commit current edits into the active profile + persist
+
+    State.activeProfile = name;
+    Object.assign(State.settings, State.profiles[name] || {});
+    saveSettings();
+    populate();
+    refreshAfterSettingsChange();
+  }
+
+  function newProfile() {
+    const name = prompt('New profile name:');
+    if (!name || !name.trim()) return;
+    const trimmed = name.trim();
+    if (/[[\]]/.test(trimmed)) { alert('Profile names cannot contain [ or ].'); return; }
+    if (State.profiles[trimmed]) { alert('A profile with this name already exists.'); return; }
+    apply(); // commit current edits first
+
+    State.profiles[trimmed] = Object.fromEntries(INI.PROFILE_JS_KEYS.map(k => [k, State.settings[k]]));
+    State.profileNames.push(trimmed);
+    State.activeProfile = trimmed;
+    saveSettings();
+    populate();
+    refreshAfterSettingsChange();
+  }
+
+  function deleteProfile() {
+    if (State.profileNames.length <= 1) { alert('Cannot delete the only profile.'); return; }
+    const name = State.activeProfile;
+    if (!confirm(`Delete profile "${name}"?`)) return;
+    delete State.profiles[name];
+    State.profileNames = Object.keys(State.profiles);
+    State.activeProfile = State.profileNames[0];
+    Object.assign(State.settings, State.profiles[State.activeProfile] || {});
+    saveSettings();
+    populate();
+    refreshAfterSettingsChange();
   }
 
   // ── Tab switching ─────────────────────────────────────────────────────────
@@ -3571,6 +3749,7 @@ const Settings = (() => {
     const name = prompt('New scheme name:');
     if (!name || !name.trim()) return;
     const trimmed = name.trim();
+    if (/[[\]]/.test(trimmed)) { alert('Scheme names cannot contain [ or ].'); return; }
     if (getAllSchemeNames().includes(trimmed)) { alert('Name already exists.'); return; }
     customSchemes[trimmed] = { ...getScheme(State.settings.scheme) };
     saveCustomSchemes();
@@ -3595,11 +3774,12 @@ const Settings = (() => {
   // ── INI import / export ───────────────────────────────────────────────────
 
   async function importIni(text) {
-    const { settings, schemes } = INI.parseIni(text);
+    const { settings, schemes, profiles, activeProfile } = INI.parseIni(text);
     Object.assign(State.settings, settings);
     for (const [n, sc] of Object.entries(schemes)) {
       customSchemes[n] = SCHEMES[n] ? { ...SCHEMES[n], ...sc } : sc;
     }
+    applyParsedProfiles(profiles, activeProfile);
     await saveSettings();   // re-generates INI text + stores in IDB
     applyTheme();
     populate();
@@ -3609,7 +3789,7 @@ const Settings = (() => {
 
   function exportIni() {
     // State.iniText is always kept in sync with IDB — no need to regenerate
-    const text = State.iniText || INI.writeIni(State.settings, { ...SCHEMES, ...customSchemes });
+    const text = State.iniText || INI.writeIni(State.settings, { ...SCHEMES, ...customSchemes }, State.profiles, State.activeProfile);
     const blob = new Blob([text], { type: 'text/plain' });
     const a = Object.assign(document.createElement('a'), {
       href: URL.createObjectURL(blob),
@@ -3745,6 +3925,13 @@ const Settings = (() => {
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
+    // Profile selector
+    document.getElementById('profile-select').addEventListener('change', e => {
+      switchProfile(e.target.value);
+    });
+    document.getElementById('profile-new-btn').addEventListener('click', newProfile);
+    document.getElementById('profile-delete-btn').addEventListener('click', deleteProfile);
+
     // Scheme selector in Schemes tab → rebuild color grid
     document.getElementById('scheme-select').addEventListener('change', e => {
       buildColorGrid(e.target.value);
@@ -3797,7 +3984,7 @@ const Settings = (() => {
 'use strict';
 // Main entry point
 
-const README_CONTENT = "# Writhdeck\n\nA distraction-free writing app that runs as a single self-contained HTML file \u2014 no server, no install, no internet required. Open `writhdeck.html` directly in any modern browser.\n\n## Features\n\n- **Single-file**: the entire app is one `writhdeck.html` (~180 KB). Copy it anywhere, it just works.\n- **Document browser**: create, rename, delete, and favourite documents stored in IndexedDB. Document names are unique \u2014 duplicates are auto-suggested as `\"Untitled (2)\"` etc.\n- **Disk file support** (Chrome/Edge/Brave): open individual files or watch a folder \u2014 edits go straight back to disk via the File System Access API.\n- **Syntax highlighting overlay**: headings, comments, and inline markers (bold, italic, underline, strikethrough) are coloured in real time without leaving the textarea.\n- **Configurable markers**: choose your own syntax for headings, comments, and each inline style. Enable Markdown-style `#` headings if you prefer.\n- **8 built-in colour schemes** (default, solarized, gruvbox, everforest, nord, + 3 more), dark and light variants, and full custom-scheme support.\n- **Writing timer**: countdown or stopwatch, with optional sound and alert at the end.\n- **Table of contents**: auto-generated from heading lines, shown in a side panel.\n- **Daily writing stats**: tracks words *added* today (not total document size) with a high-water mark across sessions. Optional daily goal.\n- **Hemingway mode**: disables backspace/delete to keep you writing forward.\n- **Typewriter mode**: keeps the cursor vertically centred; dims text outside the current paragraph so only the active paragraph appears at full colour.\n- **Find & replace** with live match highlighting, goto line, line numbers.\n- **Structure analysis**: section-by-section word-count breakdown with progress bars. Accessible from the `\u2261` menu (`a`).\n- **Word occurrences**: frequency table of all words, sorted by count. Accessible from the Analyse dialog or the `\u2261` menu.\n- **Block cursor**: optional solid rectangle cursor, rendered in the highlight overlay. Supports blink on/off.\n- **Export** as `.txt` or `.md`.\n- **INI config**: `writhdeck.ini` is always visible in the browser. Right-click it to open, export, or reset to defaults. The format is compatible with the Tcl/Tk desktop version; web-specific options are in a dedicated `[web]` section.\n- **Status bar**: fully customisable left/centre/right slots with tokens \u2014 see [Status bar tokens](#status-bar-tokens).\n- **`\u2261` menu**: all commands accessible from a single dropdown \u2014 keyboard-navigable (\u2191\u2193 + Enter, or press the hint letter directly), with format options (H1\u2013H3, bold, italic\u2026), search, export, settings, and more. Opening the menu preserves any active text selection.\n- **Right-click context menu**: format, cut/copy/paste, and spell-check toggle (editor); Open / Info / Rename / Export / Delete (browser document list); Open / Export / Reset (writhdeck.ini).\n- **Command mode** (`Esc` or `Alt+C`): interactive status bar showing all commands as clickable buttons. Navigate with `\u2190`/`\u2192`, confirm with `Enter`, or click with the mouse.\n- **About dialog**: accessible from the `?` menu in the browser \u2014 shows the app description and build date.\n- **Undo support**: bold, italic, heading, and comment formatting operations integrate with the browser's native undo stack (via `execCommand('insertText')`).\n\n## Build\n\n```sh\nmake        # produces writhdeck.html (~180 KB)\nmake clean  # removes writhdeck.html\n```\n\n`build.py` reads `src/template.html`, inlines `src/style.css` and all JS modules (in the order defined in `JS_ORDER`), and writes the result to stdout. The build date is embedded as `2026-06-12` (ISO format). Python 3, no dependencies.\n\n## Keyboard shortcuts\n\n### Global\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+D` | Toggle dark / light mode |\n| `Ctrl+O` | Import file copy |\n| `F11` | Toggle table of contents |\n| `Alt+Enter` | Toggle fullscreen |\n| `Ctrl+N` *(opt)* | New document (overrides browser \"new window\", requires setting) |\n\n### Editor\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+S` | Save |\n| `Ctrl+Q` | Close document (`Ctrl+Shift+Q` on Firefox, see [Browser notes](#browser-notes)) |\n| `Ctrl+F` | Find (live match highlighting) |\n| `Ctrl+H` | Find & replace |\n| `Ctrl+G` | Go to line |\n| `Ctrl+L` | Toggle line numbers |\n| `Alt+T` | Toggle timer |\n| `Alt+C` / `Esc` | Enter command mode |\n| `Alt+M` | Open `\u2261` menu |\n\n### Command mode (`Alt+C` or `Esc`)\n\nThe status bar becomes an interactive row of command buttons. Works in fullscreen (`Alt+C`).\n\n| Input | Action |\n|---|---|\n| `\u2190` / `\u2192` | Move selection between commands |\n| `Enter` | Execute selected command |\n| *letter* | Execute command directly (e.g. `f` = Find) |\n| Mouse click | Execute command directly |\n\n| Key | Action | Key | Action |\n|---|---|---|---|\n| `f` | Find | `d` | Dark / light |\n| `r` | Find & replace | `o` | Table of contents |\n| `g` | Go to line | `c` | Settings |\n| `n` | Line numbers | `e` | Export as .txt |\n| `w` | Typewriter mode | `s` | Statistics |\n| `t` | Timer | `a` | Analyse structure |\n| `p` | Timer pause | `i` | File info |\n| `q` | Close document | `m` | Main menu (\u2261) |\n\n### Browser (document list)\n\n| Key | Action |\n|---|---|\n| `\u2191` / `\u2193` | Navigate document list |\n| `Enter` | Open selected document |\n| `n` | New document |\n| `o` | Open file from disk |\n| `w` | Watch a folder |\n| `s` | Stats |\n| `c` | Settings |\n\n## Browser notes\n\n- **Disk file support** (open/watch files, edits saved straight back to disk) requires the File System Access API \u2014 available in Chrome, Edge, Brave, and other Chromium-based browsers. Firefox falls back to IndexedDB-only storage.\n- **Large documents** (tens of thousands of words): Firefox is noticeably slower than Chromium-based browsers, especially when a full re-render is triggered (search highlighting, Typewriter mode, multi-line edits like paste/undo). Chromium-based browsers are recommended for very large documents.\n- **`Ctrl+Q`**: Firefox intercepts the plain shortcut as its own \"Quit\" command before the page sees it \u2014 use `Ctrl+Shift+Q` to close the document (works in both Firefox and Chrome).\n\n## Status bar tokens\n\nThe three status bar zones (left / centre / right) are configured as space-separated token strings in Settings \u2192 Profile.\n\n| Token | Example | Description |\n|---|---|---|\n| `filename` | `my-novel.txt` | Current document name |\n| `dirty` | `[+]` | Unsaved changes indicator |\n| `words` | `1 842w` | Word count |\n| `chars` | `10 240c` | Character count |\n| `lines` | `312L` | Total line count |\n| `line` | `L42` | Current cursor line |\n| `col` | `C7` | Current cursor column |\n| `para` | `18\u00a7` | Paragraph count (blank-line separated) |\n| `pages` | `7p` | Estimated pages at 250 w/page |\n| `percent` | `68%` | Progress toward word goal |\n| `today` | `342\u2191` | Words *added* today (high-water mark across sessions) |\n| `goal` | `342/500` | Today's words / goal (hidden if no goal) |\n| `reading` | `9min` | Estimated reading time at 200 w/min |\n| `clock` | `14:32` | Current time |\n| `timer` | `24:07` | Writing timer display |\n| `space` | ` ` | Single space (explicit separator) |\n| *(anything else)* | literal | Fixed text, separators, etc. |\n\nDefault: Left `filename dirty words` \u00b7 Center *(empty)* \u00b7 Right `goal clock timer`\n\n## INI config\n\n`writhdeck.ini` uses the same format as the Tcl/Tk desktop version. Web-specific options live in a dedicated section so they are silently ignored by the desktop version:\n\n```ini\n[web]\n% Options specific to the web version \u2014 ignored by the desktop version\nopen_last_doc               = no\nintercept_browser_shortcuts = yes\nintercept_context_menu      = yes\n```\n\nOptions shared with the desktop version (`block_cursor`, `blink_cursor`, `line_numbers`, `dark_mode`, etc.) stay in `[behaviour]`.\n\nRight-click `writhdeck.ini` in the browser to export it or reset all settings to defaults (the file is recreated from defaults on next load).\n\n## Project structure\n\n```\nsrc/\n  template.html   HTML skeleton with {{STYLE}} / {{SCRIPT}} / 2026-06-12 placeholders\n  style.css       All CSS (uses CSS custom properties only, no hardcoded colours)\n  schemes.js      Built-in colour schemes + custom-scheme support\n  db.js           IndexedDB wrapper (promise-based)\n  state.js        App state, load/save helpers\n  ini.js          INI config parser/writer (compatible with desktop version)\n  highlight.js    Syntax highlighter + word count + block cursor injection\n  timer.js        Writing timer\n  toc.js          Table of contents\n  stats.js        Daily word-count stats dialog\n  editor.js       Editor panel, textarea/overlay sync, find/replace, formatting\n  browser.js      Document browser panel, FSA integration\n  settings.js     Settings dialog\n  app.js          Entry point, theme, keyboard router, menus, dialogs\nbuild.py          Build script (inlines CSS/JS, stamps build date)\nMakefile          Convenience wrapper around build.py\n```\n\n## Storage\n\nDocuments are stored in IndexedDB (`writhdeck` database, version 1):\n\n- **`documents`** store \u2014 each document: `id`, `name`, `content`, `created`, `modified`.\n- **`meta`** store \u2014 keyed entries: `iniText`, `favorites`, `recents`, `cursors`, `daily`.\n\nNothing is sent to any server.\n\n## Adding a colour scheme\n\nAdd an entry to the `SCHEMES` object in `src/schemes.js`. Each scheme needs 9 dark-mode keys and 9 light-mode (`*Alt`) keys: `bg`, `fg`, `bgBar`, `fgBar`, `bgSel`, `heading`, `comment`, `markup`, `bg2` (+ `Alt` variants). Then run `make`.\n\n## License\n\nCopyright (C) 2026 by Luginfo \u2014 Zero-Clause BSD License\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted. The software is provided \"as is\" without warranty of any kind.\n";
+const README_CONTENT = "# Writhdeck\n\nA distraction-free writing app that runs as a single self-contained HTML file \u2014 no server, no install, no internet required. Open `writhdeck.html` directly in any modern browser.\n\n## Features\n\n- **Single-file**: the entire app is one `writhdeck.html` (~180 KB). Copy it anywhere, it just works.\n- **Document browser**: create, rename, delete, and favourite documents stored in IndexedDB. Document names are unique \u2014 duplicates are auto-suggested as `\"Untitled (2)\"` etc.\n- **Disk file support** (Chrome/Edge/Brave): open individual files or watch a folder \u2014 edits go straight back to disk via the File System Access API.\n- **Syntax highlighting overlay**: headings, comments, and inline markers (bold, italic, underline, strikethrough) are coloured in real time without leaving the textarea.\n- **Configurable markers**: choose your own syntax for headings, comments, and each inline style. Enable Markdown-style `#` headings if you prefer.\n- **8 built-in colour schemes** (default, solarized, gruvbox, everforest, nord, + 3 more), dark and light variants, and full custom-scheme support.\n- **Writing timer**: countdown or stopwatch, with optional sound and alert at the end.\n- **Table of contents**: auto-generated from heading lines, shown in a side panel.\n- **Daily writing stats**: tracks words *added* today (not total document size) with a high-water mark across sessions. Optional daily goal.\n- **Hemingway mode**: disables backspace/delete to keep you writing forward.\n- **Typewriter mode**: keeps the cursor vertically centred; dims text outside the current paragraph so only the active paragraph appears at full colour.\n- **Find & replace** with live match highlighting, goto line, line numbers.\n- **Structure analysis**: section-by-section word-count breakdown with progress bars. Accessible from the `\u2261` menu (`a`).\n- **Word occurrences**: frequency table of all words, sorted by count. Accessible from the Analyse dialog or the `\u2261` menu.\n- **Block cursor**: optional solid rectangle cursor, rendered in the highlight overlay. Supports blink on/off.\n- **Export** as `.txt` or `.md`.\n- **INI config**: `writhdeck.ini` is always visible in the browser. Right-click it to open, export, or reset to defaults. The format is compatible with the Tcl/Tk desktop version; web-specific options are in a dedicated `[web]` section.\n- **Status bar**: fully customisable left/centre/right slots with tokens \u2014 see [Status bar tokens](#status-bar-tokens).\n- **`\u2261` menu**: all commands accessible from a single dropdown \u2014 keyboard-navigable (\u2191\u2193 + Enter, or press the hint letter directly), with format options (H1\u2013H3, bold, italic\u2026), search, export, settings, and more. Opening the menu preserves any active text selection.\n- **Right-click context menu**: format, cut/copy/paste, and spell-check toggle (editor); Open / Info / Rename / Export / Delete (browser document list); Open / Export / Reset (writhdeck.ini).\n- **Command mode** (`Esc` or `Alt+C`): interactive status bar showing all commands as clickable buttons. Navigate with `\u2190`/`\u2192`, confirm with `Enter`, or click with the mouse.\n- **About dialog**: accessible from the `?` menu in the browser \u2014 shows the app description and build date.\n- **Undo support**: bold, italic, heading, and comment formatting operations integrate with the browser's native undo stack (via `execCommand('insertText')`).\n\n## Build\n\n```sh\nmake        # produces writhdeck.html (~180 KB)\nmake clean  # removes writhdeck.html\n```\n\n`build.py` reads `src/template.html`, inlines `src/style.css` and all JS modules (in the order defined in `JS_ORDER`), and writes the result to stdout. The build date is embedded as `2026-06-14` (ISO format). Python 3, no dependencies.\n\n## Keyboard shortcuts\n\n### Global\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+D` | Toggle dark / light mode |\n| `Ctrl+O` | Import file copy |\n| `F11` | Toggle table of contents |\n| `Alt+Enter` | Toggle fullscreen |\n| `Ctrl+N` *(opt)* | New document (overrides browser \"new window\", requires setting) |\n\n### Editor\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+S` | Save |\n| `Ctrl+Q` | Close document (`Ctrl+Shift+Q` on Firefox, see [Browser notes](#browser-notes)) |\n| `Ctrl+F` | Find (live match highlighting) |\n| `Ctrl+H` | Find & replace |\n| `Ctrl+G` | Go to line |\n| `Ctrl+L` | Toggle line numbers |\n| `Alt+T` | Toggle timer |\n| `Alt+C` / `Esc` | Enter command mode |\n| `Alt+M` | Open `\u2261` menu |\n\n### Command mode (`Alt+C` or `Esc`)\n\nThe status bar becomes an interactive row of command buttons. Works in fullscreen (`Alt+C`).\n\n| Input | Action |\n|---|---|\n| `\u2190` / `\u2192` | Move selection between commands |\n| `Enter` | Execute selected command |\n| *letter* | Execute command directly (e.g. `f` = Find) |\n| Mouse click | Execute command directly |\n\n| Key | Action | Key | Action |\n|---|---|---|---|\n| `f` | Find | `d` | Dark / light |\n| `r` | Find & replace | `o` | Table of contents |\n| `g` | Go to line | `c` | Settings |\n| `n` | Line numbers | `e` | Export as .txt |\n| `w` | Typewriter mode | `s` | Statistics |\n| `t` | Timer | `a` | Analyse structure |\n| `p` | Timer pause | `i` | File info |\n| `q` | Close document | `m` | Main menu (\u2261) |\n\n### Browser (document list)\n\n| Key | Action |\n|---|---|\n| `\u2191` / `\u2193` | Navigate document list |\n| `Enter` | Open selected document |\n| `n` | New document |\n| `o` | Open file from disk |\n| `w` | Watch a folder |\n| `s` | Stats |\n| `c` | Settings |\n\n## Browser notes\n\n- **Disk file support** (open/watch files, edits saved straight back to disk) requires the File System Access API \u2014 available in Chrome, Edge, Brave, and other Chromium-based browsers. Firefox falls back to IndexedDB-only storage.\n- **Large documents** (tens of thousands of words): Firefox is noticeably slower than Chromium-based browsers, especially when a full re-render is triggered (search highlighting, Typewriter mode, multi-line edits like paste/undo). Chromium-based browsers are recommended for very large documents.\n- **`Ctrl+Q`**: Firefox intercepts the plain shortcut as its own \"Quit\" command before the page sees it \u2014 use `Ctrl+Shift+Q` to close the document (works in both Firefox and Chrome).\n\n## Status bar tokens\n\nThe three status bar zones (left / centre / right) are configured as space-separated token strings in Settings \u2192 Profile.\n\n| Token | Example | Description |\n|---|---|---|\n| `filename` | `my-novel.txt` | Current document name |\n| `dirty` | `[+]` | Unsaved changes indicator |\n| `words` | `1 842w` | Word count |\n| `chars` | `10 240c` | Character count |\n| `lines` | `312L` | Total line count |\n| `line` | `L42` | Current cursor line |\n| `col` | `C7` | Current cursor column |\n| `para` | `18\u00a7` | Paragraph count (blank-line separated) |\n| `pages` | `7p` | Estimated pages at 250 w/page |\n| `percent` | `68%` | Progress toward word goal |\n| `today` | `342\u2191` | Words *added* today (high-water mark across sessions) |\n| `goal` | `342/500` | Today's words / goal (hidden if no goal) |\n| `reading` | `9min` | Estimated reading time at 200 w/min |\n| `clock` | `14:32` | Current time |\n| `timer` | `24:07` | Writing timer display |\n| `space` | ` ` | Single space (explicit separator) |\n| *(anything else)* | literal | Fixed text, separators, etc. |\n\nDefault: Left `filename dirty words` \u00b7 Center *(empty)* \u00b7 Right `goal clock timer`\n\n## INI config\n\n`writhdeck.ini` uses the same format as the Tcl/Tk desktop version. Web-specific options live in a dedicated section so they are silently ignored by the desktop version:\n\n```ini\n[web]\n% Options specific to the web version \u2014 ignored by the desktop version\nopen_last_doc               = no\nintercept_browser_shortcuts = yes\nintercept_context_menu      = yes\n```\n\nOptions shared with the desktop version (`block_cursor`, `blink_cursor`, `line_numbers`, `dark_mode`, etc.) stay in `[behaviour]`.\n\nRight-click `writhdeck.ini` in the browser to export it or reset all settings to defaults (the file is recreated from defaults on next load).\n\n## Project structure\n\n```\nsrc/\n  template.html   HTML skeleton with {{STYLE}} / {{SCRIPT}} / 2026-06-14 placeholders\n  style.css       All CSS (uses CSS custom properties only, no hardcoded colours)\n  schemes.js      Built-in colour schemes + custom-scheme support\n  db.js           IndexedDB wrapper (promise-based)\n  state.js        App state, load/save helpers\n  ini.js          INI config parser/writer (compatible with desktop version)\n  highlight.js    Syntax highlighter + word count + block cursor injection\n  timer.js        Writing timer\n  toc.js          Table of contents\n  stats.js        Daily word-count stats dialog\n  editor.js       Editor panel, textarea/overlay sync, find/replace, formatting\n  browser.js      Document browser panel, FSA integration\n  settings.js     Settings dialog\n  app.js          Entry point, theme, keyboard router, menus, dialogs\nbuild.py          Build script (inlines CSS/JS, stamps build date)\nMakefile          Convenience wrapper around build.py\n```\n\n## Storage\n\nDocuments are stored in IndexedDB (`writhdeck` database, version 1):\n\n- **`documents`** store \u2014 each document: `id`, `name`, `content`, `created`, `modified`.\n- **`meta`** store \u2014 keyed entries: `iniText`, `favorites`, `recents`, `cursors`, `daily`.\n\nNothing is sent to any server.\n\n## Adding a colour scheme\n\nAdd an entry to the `SCHEMES` object in `src/schemes.js`. Each scheme needs 9 dark-mode keys and 9 light-mode (`*Alt`) keys: `bg`, `fg`, `bgBar`, `fgBar`, `bgSel`, `heading`, `comment`, `markup`, `bg2` (+ `Alt` variants). Then run `make`.\n\n## License\n\nCopyright (C) 2026 by Luginfo \u2014 Zero-Clause BSD License\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted. The software is provided \"as is\" without warranty of any kind.\n";
 
 let _edMenu          = null;
 let _openMenuFn      = null;
@@ -4374,11 +4561,12 @@ async function init() {
         if (State.dirIniHandle) {
           try {
             const f = await State.dirIniHandle.getFile();
-            const { settings, schemes } = INI.parseIni(await f.text());
+            const { settings, schemes, profiles, activeProfile } = INI.parseIni(await f.text());
             Object.assign(State.settings, settings);
             for (const [n, sc] of Object.entries(schemes)) {
               if (!SCHEMES[n]) customSchemes[n] = sc;
             }
+            applyParsedProfiles(profiles, activeProfile);
             await saveSettings();
             applyTheme(); // re-appliquer après maj des settings depuis le dossier
           } catch (_) {}
