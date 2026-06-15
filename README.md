@@ -29,7 +29,7 @@ Whether you're writing on a Raspberry Pi Zero with an E-ink screen, on an Androi
 ## Other versions
 
 - [Try it online!](https://luginf.github.io/writhdeck/)
-- [Android version (work in progress)](https://github.com/luginf/writhdeck-android)
+- [Android version](https://github.com/luginf/writhdeck-android)
 - [ESP32 version (work in progress)](https://github.com/luginf/writhdeck-esp32)
 
 
