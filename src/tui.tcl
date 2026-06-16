@@ -467,6 +467,30 @@ proc tui-getch {{timeout -1}} {
     if {$b == 127} { return BACKSPACE }
     if {$b == 13  || $b == 10} { return ENTER }
     if {$b == 9}               { return TAB }
+    # DOS extended keys: null byte followed by BIOS scan code.
+    # On DOS, 0x08 is also the Backspace key (same byte as Ctrl-H); remap it.
+    if {$::tcl_platform(os) eq "msdosdjgpp"} {
+        if {$b == 8} { return BACKSPACE }
+        if {$b == 0} {
+            set sc [read stdin 1]
+            if {$sc eq ""} { return "" }
+            scan $sc %c sc_b
+            switch -- $sc_b {
+                72 { return UP    }  80 { return DOWN  }
+                75 { return LEFT  }  77 { return RIGHT }
+                71 { return HOME  }  79 { return END   }
+                73 { return PPAGE }  81 { return NPAGE }
+                83 { return DC    }
+                59 { return F1    }  60 { return F2    }
+                61 { return F3    }  62 { return F4    }
+                63 { return F5    }  64 { return F6    }
+                65 { return F7    }  66 { return F8    }
+                67 { return F9    }  68 { return F10   }
+                133 { return F11  }  134 { return F12  }
+                default { return "" }
+            }
+        }
+    }
     return [format %c $b]
 }
 
@@ -592,11 +616,20 @@ proc tui-v2l {vrows vi scx} {
 proc tui-prompt {label rows cols} {
     set buf ""
     set ::tui_escaped 0
+    # On DOS cooked mode, the triggering key (e.g. 'n') was sent with a
+    # trailing CR+LF that still sits in stdin.  Skip all leading ENTERs until
+    # the first real keystroke so the prompt doesn't close immediately.
+    # ESC still cancels at any point.
+    set skip_leading_enters [expr {$::tcl_platform(os) eq "msdosdjgpp"}]
     while 1 {
         set d " $label$buf"
         tui-bar [expr {$rows-1}] $d "" $cols
         puts -nonewline "\033\[?25h"; tui-move [expr {$rows-1}] [string length $d]; flush stdout
         set k [tui-getch]; puts -nonewline "\033\[?25l"
+        if {$skip_leading_enters} {
+            if {$k eq "ENTER"} { continue }
+            set skip_leading_enters 0
+        }
         switch -- $k {
             ESC       { set ::tui_escaped 1; return "" }
             ENTER     { return $buf }
@@ -1672,6 +1705,9 @@ proc tui-editor {filepath {init_state {}}} {
                 set lines [linsert [lreplace $lines [expr {$cy-1}] [expr {$cy-1}] \
                     [string range $l 0 [expr {$cx-1}]]] $cy [string range $l $cx end]]
                 incr cy; set cx 0; tui-mark-dirty
+                if {$::tcl_platform(os) eq "msdosdjgpp"} {
+                    puts -nonewline "\033\[2J\033\[H"
+                }
             }
             TAB {
                 tui-push-undo
@@ -2398,7 +2434,7 @@ proc tui-main {} {
         puts stderr "writhdeck: TUI mode is not supported on Windows"
         exit 1
     }
-    if {[catch {exec stty -g <@stdin}]} {
+    if {[catch {exec stty -g <@stdin}] && $::tcl_platform(os) ne "msdosdjgpp"} {
         puts stderr "writhdeck: not a terminal"
         exit 1
     }

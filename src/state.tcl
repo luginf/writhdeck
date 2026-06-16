@@ -9,7 +9,11 @@ set ::gui_cmd_mode    0
 set ::tui_cmd_mode    0
 
 file mkdir $::DOCS_DIR_DEFAULT
-set ::STATE_FILE        [file join $::DOCS_DIR_DEFAULT ".writhdeck.json"]
+if {$::tcl_platform(os) eq "msdosdjgpp"} {
+    set ::STATE_FILE [file join $::DOCS_DIR_DEFAULT "WDECK.JSN"]
+} else {
+    set ::STATE_FILE [file join $::DOCS_DIR_DEFAULT ".writhdeck.json"]
+}
 set ::cursor_cache      {}
 set ::favorites_list    {}
 set ::recent_list       {}

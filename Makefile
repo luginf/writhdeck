@@ -12,6 +12,7 @@
 #   make ANALYSIS_TOOLS=no                            # writhdeck.tcl/writhdeck-cli.tcl: omit analysis tools (structure, occurrences, repetitions)
 #   make mini MINI_ANALYSIS_TOOLS=yes                 # writhdeck-mini.tcl: include analysis tools (off by default)
 #   make jimtcl JIM_ANALYSIS_TOOLS=yes                # writhdeck-jim.tcl: include analysis tools (off by default)
+#   make dos                                          # writhdeck-dos.tcl: JimTcl build with FreeDOS/NANSI.SYS display shim (see ../writhdeck-dos/NOTES.md)
 #
 # Typical builds:
 #   make                                              # Standard: full GUI, minimal CLI
@@ -51,10 +52,11 @@ GUI_SRCS  := src/state.tcl src/config.tcl $(GUI_SCHEME_FILES) src/common.tcl $(A
 MINI_SCHEME_FILES := $(patsubst %,src/schemes/%.tcl,$(AVAILABLE_SCHEMES))
 CLI_SRCS  := src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl $(ANALYSIS_SRC) src/tui.tcl src/main-cli.tcl
 JIM_SRCS  := src/compat-jim.tcl src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl $(JIM_ANALYSIS_SRC) src/tui.tcl src/main-cli.tcl
+DOS_SRCS  := src/compat-jim.tcl src/compat-dos.tcl src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl $(JIM_ANALYSIS_SRC) src/tui.tcl src/main-cli.tcl
 
 COMPACT_SCRIPT := tools/tcl-compact.tcl
 
-.PHONY: all mini clean compact compact-cli jimtcl sfx .FORCE
+.PHONY: all mini clean compact compact-cli jimtcl dos sfx .FORCE
 
 JIMSH ?= /opt/jimsh
 
@@ -133,6 +135,33 @@ writhdeck-jim.tcl: src/boot-jim.tcl $(JIM_SRCS) $(CLI_I18N_FILES) Makefile
 	@chmod +x $@
 	@echo "Built $@ (JimTcl TUI-only, languages: $(CLI_LANGS), schemes: $(CLI_SCHEMES))"
 
+dos: writhdeck-dos.tcl
+
+writhdeck-dos.tcl: src/boot-jim.tcl $(DOS_SRCS) $(CLI_I18N_FILES) Makefile
+	@rm -f $@
+	@cat src/boot-jim.tcl > $@
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "compat-jim.tcl" "$(SEP)" >> $@
+	@cat src/compat-jim.tcl >> $@
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "compat-dos.tcl" "$(SEP)" >> $@
+	@cat src/compat-dos.tcl >> $@
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "state.tcl" "$(SEP)" >> $@
+	@cat src/state.tcl >> $@
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "config.tcl" "$(SEP)" >> $@
+	@cat src/config.tcl >> $@
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "schemes ($(CLI_SCHEMES))" "$(SEP)" >> $@
+	@for f in $(CLI_SCHEME_FILES); do cat $$f >> $@; done
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "i18n ($(CLI_LANGUAGES))" "$(SEP)" >> $@
+	@for f in $(CLI_I18N_FILES); do cat $$f >> $@; done
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "common.tcl" "$(SEP)" >> $@
+	@cat src/common.tcl >> $@
+	@for f in $(JIM_ANALYSIS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "analysis.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "tui.tcl" "$(SEP)" >> $@
+	@cat src/tui.tcl >> $@
+	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "main-cli.tcl" "$(SEP)" >> $@
+	@cat src/main-cli.tcl >> $@
+	@chmod +x $@
+	@echo "Built $@ (FreeDOS/JimTcl TUI-only, languages: $(CLI_LANGS), schemes: $(CLI_SCHEMES))"
+
 compact: writhdeck.tcl writhdeck-cli.tcl
 	@tclsh $(COMPACT_SCRIPT) writhdeck.tcl writhdeck-compact.tcl
 	@chmod +x writhdeck-compact.tcl
@@ -160,7 +189,7 @@ writhdeck-mini.tcl: src/boot.tcl src/state.tcl src/config.tcl $(MINI_SCHEME_FILE
 	@echo "Built writhdeck-mini.tcl (GUI+TUI compact, en only, no config dialog$(if $(MINI_ANALYSIS_SRC), + analysis tools,))"
 
 clean:
-	rm -f writhdeck.tcl writhdeck-cli.tcl writhdeck-compact.tcl writhdeck-cli-compact.tcl writhdeck-jim.tcl writhdeck-sfx writhdeck-mini.tcl writhdeck-mini-raw.tcl
+	rm -f writhdeck.tcl writhdeck-cli.tcl writhdeck-compact.tcl writhdeck-cli-compact.tcl writhdeck-jim.tcl writhdeck-dos.tcl writhdeck-sfx writhdeck-mini.tcl writhdeck-mini-raw.tcl
 	@echo "Cleaned build artifacts"
 
 .PHONY: test-gui test-cli test test-i18n test-syntax test-langs lint-doc
