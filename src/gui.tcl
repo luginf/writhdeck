@@ -731,6 +731,8 @@ proc ed-yscroll {first last} {
     .ed.sb set $first $last
     catch { .ed.ln yview moveto $first }
     spell-highlight-update
+    # The overlay block is placed by absolute coords, so it must follow scroll.
+    if {$::cfg_block_cursor_gui} { cursor-schedule }
 }
 .ed.t configure -yscrollcommand ed-yscroll
 after idle apply-line-spacing
@@ -969,41 +971,81 @@ proc clock-tick {} {
 }
 if {[status-zone-of clock] ne ""} { clock-tick }
 
-# --- block cursor (inverted, terminal-style) ----------------------------------
-set ::cursor_blink_id      ""
-set ::cursor_blink_visible 1
-set ::cursor_prev_pos      ""
-set ::cursor_mode          ""   ;# "tag" | "block" | ""
+# --- block cursor (terminal-style overlay) ------------------------------------
+# A single label widget (.ed.t.cur) overlaid on the insert position renders the
+# character under the cursor in inverted colours. It is:
+#   - sized to exactly one cell wide  -> never widens on a tab, never stretches
+#     to the window edge at a wrapped line end (both happen with a Text tag or
+#     the native -blockcursor);
+#   - aligned to the glyph box (bbox)  -> sits on the text line instead of
+#     filling the inter-line spacing, so it does not float half a line high when
+#     line spacing is large.
+# Placed synchronously for responsiveness, and re-placed at idle / on scroll so
+# the coordinates are read after Tk settles any auto-scroll.
+set ::cursor_blink_id         ""
+set ::cursor_blink_visible    1
+set ::cursor_overlay_after_id ""
+
+proc cursor-cell-width {} {
+    return [font measure [.ed.t cget -font] "0"]
+}
+
+proc cursor-place {} {
+    if {!$::cfg_block_cursor_gui} return
+    set pos [.ed.t index insert]
+    set bb  [.ed.t bbox $pos]
+    if {[llength $bb] != 4} {
+        if {[winfo exists .ed.t.cur]} { place forget .ed.t.cur }
+        return
+    }
+    lassign $bb x y w h
+    set ch [.ed.t get $pos]
+    # Tab / end-of-line / empty have no glyph (or span a whole tab stop / stretch
+    # to the window edge): draw a fixed one-cell block instead. A normal char
+    # keeps its own glyph width so the block matches it (essential with a
+    # proportional font, where one fixed width would not line up).
+    if {$ch eq "" || [string is space -strict $ch]} {
+        set ch " "
+        set w [cursor-cell-width]
+    }
+    # bbox is relative to the widget window (includes the internal padding), but
+    # a child placed with -bordermode ignore is positioned from the outer corner
+    # too, so the coordinates line up directly. (With the default bordermode the
+    # padding would be added twice, shifting the block down/right by padx/pady -
+    # pady is about half a line, which looked like a half-line vertical offset.)
+    if {![winfo exists .ed.t.cur]} {
+        label .ed.t.cur -bd 0 -padx 0 -pady 0 -highlightthickness 0 \
+            -takefocus 0 -anchor w
+    }
+    .ed.t.cur configure -font [.ed.t cget -font] -bg $::fg -fg $::bg -text $ch
+    place .ed.t.cur -in .ed.t -bordermode ignore \
+        -x $x -y $y -width $w -height $h
+    raise .ed.t.cur
+}
+
+# Coalesced idle re-placement: bbox is authoritative only after Tk has applied
+# any auto-scroll triggered by the cursor move (which happens at idle).
+proc cursor-schedule {} {
+    if {$::cursor_overlay_after_id ne ""} { after cancel $::cursor_overlay_after_id }
+    set ::cursor_overlay_after_id [after idle {
+        set ::cursor_overlay_after_id ""
+        catch { cursor-place }
+    }]
+}
+
+proc cursor-hide {} {
+    if {$::cursor_overlay_after_id ne ""} {
+        after cancel $::cursor_overlay_after_id; set ::cursor_overlay_after_id ""
+    }
+    if {[winfo exists .ed.t.cur]} { place forget .ed.t.cur }
+}
 
 proc cursor-update {} {
     if {!$::cfg_block_cursor_gui} return
     if {$::cursor_blink_id ne ""} { after cancel $::cursor_blink_id; set ::cursor_blink_id "" }
     set ::cursor_blink_visible 1
-    catch {
-        set pos [.ed.t index insert]
-        set ch  [.ed.t get $pos "$pos +1c"]
-        if {$ch ne "\n" && $ch ne ""} {
-            if {$::cursor_mode ne "tag"} {
-                .ed.t configure -blockcursor 0 -insertwidth 0 -insertofftime 0
-                set ::cursor_mode "tag"
-            }
-            if {$::cursor_prev_pos ne ""} {
-                .ed.t tag remove cur $::cursor_prev_pos "$::cursor_prev_pos +1c"
-            }
-            .ed.t tag add cur $pos "$pos +1c"
-            set ::cursor_prev_pos $pos
-        } else {
-            if {$::cursor_prev_pos ne ""} {
-                .ed.t tag remove cur $::cursor_prev_pos "$::cursor_prev_pos +1c"
-                set ::cursor_prev_pos ""
-            }
-            if {$::cursor_mode ne "block"} {
-                .ed.t configure -blockcursor 1 -insertwidth 0 \
-                    -insertofftime 0 -insertbackground $::fg
-                set ::cursor_mode "block"
-            }
-        }
-    }
+    catch { cursor-place }
+    cursor-schedule
     if {$::cfg_blink_cursor} { set ::cursor_blink_id [after 600 cursor-blink-tick] }
 }
 
@@ -1012,13 +1054,10 @@ proc cursor-blink-tick {} {
     if {!$::cfg_block_cursor_gui || !$::cfg_blink_cursor} return
     set ::cursor_blink_visible [expr {!$::cursor_blink_visible}]
     catch {
-        set ch [.ed.t get insert "insert +1c"]
-        if {$ch ne "\n" && $ch ne ""} {
-            if {$::cursor_blink_visible} {
-                .ed.t tag configure cur -background $::fg -foreground $::bg
-            } else {
-                .ed.t tag configure cur -background {} -foreground {}
-            }
+        if {$::cursor_blink_visible} {
+            cursor-place
+        } elseif {[winfo exists .ed.t.cur]} {
+            place forget .ed.t.cur
         }
     }
     set ::cursor_blink_id [after 500 cursor-blink-tick]
@@ -1026,17 +1065,14 @@ proc cursor-blink-tick {} {
 
 proc cursor-setup {} {
     if {$::cursor_blink_id ne ""} { after cancel $::cursor_blink_id; set ::cursor_blink_id "" }
-    set ::cursor_mode ""; set ::cursor_prev_pos ""
     catch {
         if {$::cfg_block_cursor_gui} {
-            .ed.t configure -blockcursor 0 -insertwidth 0 -insertofftime 0 \
-                -insertbackground $::fg
-            .ed.t tag configure cur -background $::fg -foreground $::bg
-            .ed.t tag raise cur
+            .ed.t configure -blockcursor 0 -insertwidth 0 -insertofftime 0
             cursor-update
         } else {
-            .ed.t tag remove cur 1.0 end
+            cursor-hide
             .ed.t configure -blockcursor 0 -insertwidth 2 \
+                -insertbackground $::fg \
                 -insertofftime [expr {$::cfg_blink_cursor ? 300 : 0}]
         }
     }

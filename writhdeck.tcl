@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260613"
+set ::version          "v20260617"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -139,7 +139,11 @@ set ::gui_cmd_mode    0
 set ::tui_cmd_mode    0
 
 file mkdir $::DOCS_DIR_DEFAULT
-set ::STATE_FILE        [file join $::DOCS_DIR_DEFAULT ".writhdeck.json"]
+if {$::tcl_platform(os) eq "msdosdjgpp"} {
+    set ::STATE_FILE [file join $::DOCS_DIR_DEFAULT "WDECK.JSN"]
+} else {
+    set ::STATE_FILE [file join $::DOCS_DIR_DEFAULT ".writhdeck.json"]
+}
 set ::cursor_cache      {}
 set ::favorites_list    {}
 set ::recent_list       {}
@@ -5768,6 +5772,8 @@ proc ed-yscroll {first last} {
     .ed.sb set $first $last
     catch { .ed.ln yview moveto $first }
     spell-highlight-update
+    # The overlay block is placed by absolute coords, so it must follow scroll.
+    if {$::cfg_block_cursor_gui} { cursor-schedule }
 }
 .ed.t configure -yscrollcommand ed-yscroll
 after idle apply-line-spacing
@@ -6006,41 +6012,81 @@ proc clock-tick {} {
 }
 if {[status-zone-of clock] ne ""} { clock-tick }
 
-# --- block cursor (inverted, terminal-style) ----------------------------------
-set ::cursor_blink_id      ""
-set ::cursor_blink_visible 1
-set ::cursor_prev_pos      ""
-set ::cursor_mode          ""   ;# "tag" | "block" | ""
+# --- block cursor (terminal-style overlay) ------------------------------------
+# A single label widget (.ed.t.cur) overlaid on the insert position renders the
+# character under the cursor in inverted colours. It is:
+#   - sized to exactly one cell wide  -> never widens on a tab, never stretches
+#     to the window edge at a wrapped line end (both happen with a Text tag or
+#     the native -blockcursor);
+#   - aligned to the glyph box (bbox)  -> sits on the text line instead of
+#     filling the inter-line spacing, so it does not float half a line high when
+#     line spacing is large.
+# Placed synchronously for responsiveness, and re-placed at idle / on scroll so
+# the coordinates are read after Tk settles any auto-scroll.
+set ::cursor_blink_id         ""
+set ::cursor_blink_visible    1
+set ::cursor_overlay_after_id ""
+
+proc cursor-cell-width {} {
+    return [font measure [.ed.t cget -font] "0"]
+}
+
+proc cursor-place {} {
+    if {!$::cfg_block_cursor_gui} return
+    set pos [.ed.t index insert]
+    set bb  [.ed.t bbox $pos]
+    if {[llength $bb] != 4} {
+        if {[winfo exists .ed.t.cur]} { place forget .ed.t.cur }
+        return
+    }
+    lassign $bb x y w h
+    set ch [.ed.t get $pos]
+    # Tab / end-of-line / empty have no glyph (or span a whole tab stop / stretch
+    # to the window edge): draw a fixed one-cell block instead. A normal char
+    # keeps its own glyph width so the block matches it (essential with a
+    # proportional font, where one fixed width would not line up).
+    if {$ch eq "" || [string is space -strict $ch]} {
+        set ch " "
+        set w [cursor-cell-width]
+    }
+    # bbox is relative to the widget window (includes the internal padding), but
+    # a child placed with -bordermode ignore is positioned from the outer corner
+    # too, so the coordinates line up directly. (With the default bordermode the
+    # padding would be added twice, shifting the block down/right by padx/pady -
+    # pady is about half a line, which looked like a half-line vertical offset.)
+    if {![winfo exists .ed.t.cur]} {
+        label .ed.t.cur -bd 0 -padx 0 -pady 0 -highlightthickness 0 \
+            -takefocus 0 -anchor w
+    }
+    .ed.t.cur configure -font [.ed.t cget -font] -bg $::fg -fg $::bg -text $ch
+    place .ed.t.cur -in .ed.t -bordermode ignore \
+        -x $x -y $y -width $w -height $h
+    raise .ed.t.cur
+}
+
+# Coalesced idle re-placement: bbox is authoritative only after Tk has applied
+# any auto-scroll triggered by the cursor move (which happens at idle).
+proc cursor-schedule {} {
+    if {$::cursor_overlay_after_id ne ""} { after cancel $::cursor_overlay_after_id }
+    set ::cursor_overlay_after_id [after idle {
+        set ::cursor_overlay_after_id ""
+        catch { cursor-place }
+    }]
+}
+
+proc cursor-hide {} {
+    if {$::cursor_overlay_after_id ne ""} {
+        after cancel $::cursor_overlay_after_id; set ::cursor_overlay_after_id ""
+    }
+    if {[winfo exists .ed.t.cur]} { place forget .ed.t.cur }
+}
 
 proc cursor-update {} {
     if {!$::cfg_block_cursor_gui} return
     if {$::cursor_blink_id ne ""} { after cancel $::cursor_blink_id; set ::cursor_blink_id "" }
     set ::cursor_blink_visible 1
-    catch {
-        set pos [.ed.t index insert]
-        set ch  [.ed.t get $pos "$pos +1c"]
-        if {$ch ne "\n" && $ch ne ""} {
-            if {$::cursor_mode ne "tag"} {
-                .ed.t configure -blockcursor 0 -insertwidth 0 -insertofftime 0
-                set ::cursor_mode "tag"
-            }
-            if {$::cursor_prev_pos ne ""} {
-                .ed.t tag remove cur $::cursor_prev_pos "$::cursor_prev_pos +1c"
-            }
-            .ed.t tag add cur $pos "$pos +1c"
-            set ::cursor_prev_pos $pos
-        } else {
-            if {$::cursor_prev_pos ne ""} {
-                .ed.t tag remove cur $::cursor_prev_pos "$::cursor_prev_pos +1c"
-                set ::cursor_prev_pos ""
-            }
-            if {$::cursor_mode ne "block"} {
-                .ed.t configure -blockcursor 1 -insertwidth 0 \
-                    -insertofftime 0 -insertbackground $::fg
-                set ::cursor_mode "block"
-            }
-        }
-    }
+    catch { cursor-place }
+    cursor-schedule
     if {$::cfg_blink_cursor} { set ::cursor_blink_id [after 600 cursor-blink-tick] }
 }
 
@@ -6049,13 +6095,10 @@ proc cursor-blink-tick {} {
     if {!$::cfg_block_cursor_gui || !$::cfg_blink_cursor} return
     set ::cursor_blink_visible [expr {!$::cursor_blink_visible}]
     catch {
-        set ch [.ed.t get insert "insert +1c"]
-        if {$ch ne "\n" && $ch ne ""} {
-            if {$::cursor_blink_visible} {
-                .ed.t tag configure cur -background $::fg -foreground $::bg
-            } else {
-                .ed.t tag configure cur -background {} -foreground {}
-            }
+        if {$::cursor_blink_visible} {
+            cursor-place
+        } elseif {[winfo exists .ed.t.cur]} {
+            place forget .ed.t.cur
         }
     }
     set ::cursor_blink_id [after 500 cursor-blink-tick]
@@ -6063,17 +6106,14 @@ proc cursor-blink-tick {} {
 
 proc cursor-setup {} {
     if {$::cursor_blink_id ne ""} { after cancel $::cursor_blink_id; set ::cursor_blink_id "" }
-    set ::cursor_mode ""; set ::cursor_prev_pos ""
     catch {
         if {$::cfg_block_cursor_gui} {
-            .ed.t configure -blockcursor 0 -insertwidth 0 -insertofftime 0 \
-                -insertbackground $::fg
-            .ed.t tag configure cur -background $::fg -foreground $::bg
-            .ed.t tag raise cur
+            .ed.t configure -blockcursor 0 -insertwidth 0 -insertofftime 0
             cursor-update
         } else {
-            .ed.t tag remove cur 1.0 end
+            cursor-hide
             .ed.t configure -blockcursor 0 -insertwidth 2 \
+                -insertbackground $::fg \
                 -insertofftime [expr {$::cfg_blink_cursor ? 300 : 0}]
         }
     }
@@ -8669,6 +8709,30 @@ proc tui-getch {{timeout -1}} {
     if {$b == 127} { return BACKSPACE }
     if {$b == 13  || $b == 10} { return ENTER }
     if {$b == 9}               { return TAB }
+    # DOS extended keys: null byte followed by BIOS scan code.
+    # On DOS, 0x08 is also the Backspace key (same byte as Ctrl-H); remap it.
+    if {$::tcl_platform(os) eq "msdosdjgpp"} {
+        if {$b == 8} { return BACKSPACE }
+        if {$b == 0} {
+            set sc [read stdin 1]
+            if {$sc eq ""} { return "" }
+            scan $sc %c sc_b
+            switch -- $sc_b {
+                72 { return UP    }  80 { return DOWN  }
+                75 { return LEFT  }  77 { return RIGHT }
+                71 { return HOME  }  79 { return END   }
+                73 { return PPAGE }  81 { return NPAGE }
+                83 { return DC    }
+                59 { return F1    }  60 { return F2    }
+                61 { return F3    }  62 { return F4    }
+                63 { return F5    }  64 { return F6    }
+                65 { return F7    }  66 { return F8    }
+                67 { return F9    }  68 { return F10   }
+                133 { return F11  }  134 { return F12  }
+                default { return "" }
+            }
+        }
+    }
     return [format %c $b]
 }
 
@@ -8794,11 +8858,20 @@ proc tui-v2l {vrows vi scx} {
 proc tui-prompt {label rows cols} {
     set buf ""
     set ::tui_escaped 0
+    # On DOS cooked mode, the triggering key (e.g. 'n') was sent with a
+    # trailing CR+LF that still sits in stdin.  Skip all leading ENTERs until
+    # the first real keystroke so the prompt doesn't close immediately.
+    # ESC still cancels at any point.
+    set skip_leading_enters [expr {$::tcl_platform(os) eq "msdosdjgpp"}]
     while 1 {
         set d " $label$buf"
         tui-bar [expr {$rows-1}] $d "" $cols
         puts -nonewline "\033\[?25h"; tui-move [expr {$rows-1}] [string length $d]; flush stdout
         set k [tui-getch]; puts -nonewline "\033\[?25l"
+        if {$skip_leading_enters} {
+            if {$k eq "ENTER"} { continue }
+            set skip_leading_enters 0
+        }
         switch -- $k {
             ESC       { set ::tui_escaped 1; return "" }
             ENTER     { return $buf }
@@ -9874,6 +9947,9 @@ proc tui-editor {filepath {init_state {}}} {
                 set lines [linsert [lreplace $lines [expr {$cy-1}] [expr {$cy-1}] \
                     [string range $l 0 [expr {$cx-1}]]] $cy [string range $l $cx end]]
                 incr cy; set cx 0; tui-mark-dirty
+                if {$::tcl_platform(os) eq "msdosdjgpp"} {
+                    puts -nonewline "\033\[2J\033\[H"
+                }
             }
             TAB {
                 tui-push-undo
@@ -10600,7 +10676,7 @@ proc tui-main {} {
         puts stderr "writhdeck: TUI mode is not supported on Windows"
         exit 1
     }
-    if {[catch {exec stty -g <@stdin}]} {
+    if {[catch {exec stty -g <@stdin}] && $::tcl_platform(os) ne "msdosdjgpp"} {
         puts stderr "writhdeck: not a terminal"
         exit 1
     }
