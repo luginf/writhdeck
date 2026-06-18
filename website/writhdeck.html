@@ -618,7 +618,7 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
     <p>Writhdeck is a distraction-free writing environment for long-form text — novels, essays, notes, scripts.</p>
     <p>All your documents live in your browser (IndexedDB) — nothing is sent to any server. You can also edit files directly on disk.</p>
     <p>It features a custom colour-syntax overlay, typewriter focus mode, a session timer, daily word goals, and a fully keyboard-driven interface. Compatible with the Writhdeck desktop app via shared <code>.ini</code> settings.</p>
-    <p class="about-version">Build: 2026-06-16 — Open source — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
+    <p class="about-version">Build: 2026-06-18 — Open source — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
   </div>
   <div id="about-footer">
     <button id="about-ok">Close</button>
@@ -818,6 +818,7 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
       <p class="hint" style="margin-top:12px">Watched folder browser</p>
       <label>File filter<input type="text" data-key="browserFilter"></label>
       <label><input type="checkbox" data-key="browserShowAll"> Show all files (ignore filter)</label>
+      <label><input type="checkbox" data-key="browserSubdirs"> Browse subfolders</label>
       <p class="hint" style="margin-top:12px">writhdeck.ini — compatible with the desktop version</p>
       <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
         <button id="misc-ini-import-btn">Import writhdeck.ini</button>
@@ -1058,6 +1059,8 @@ const State = {
   // Watched folder (File System Access API)
   dirHandle:    null,
   dirFiles:     [],   // in-memory only, rebuilt by scanDir()
+  dirSubdirs:   [],   // [{name, handle}] subdirectories of the current folder
+  dirStack:     [],   // [{name, handle}] root..current dir for subfolder navigation
   dirIniHandle: null, // FileSystemFileHandle for writhdeck.ini in folder
 
   // Cached INI text — the canonical settings format in IDB
@@ -1102,7 +1105,8 @@ const State = {
     interceptBrowserShortcuts: true,
     interceptContextMenu: true,
     browserFilter: '*.txt *.t2t *.md *.ini',
-    browserShowAll: false
+    browserShowAll: false,
+    browserSubdirs: true
   },
 
   favorites: [],  // [id, ...]
@@ -1222,6 +1226,8 @@ async function saveDirHandle() { await DB.setMeta('dirHandle', State.dirHandle);
 async function clearDirHandle() {
   State.dirHandle    = null;
   State.dirFiles     = [];
+  State.dirSubdirs   = [];
+  State.dirStack     = [];
   State.dirIniHandle = null;
   await DB.setMeta('dirHandle', null);
 }
@@ -1257,16 +1263,44 @@ function matchesBrowserFilter(name) {
 
 // ── Watched folder ────────────────────────────────────────────────────────
 
+// Handle of the folder currently being browsed (root, or a subfolder when
+// the user has navigated into one via subfolder navigation).
+function currentDir() {
+  if (State.dirStack.length) return State.dirStack[State.dirStack.length - 1].handle;
+  return State.dirHandle;
+}
+
+// Relative path (with trailing '/') from the watched root to the current
+// folder, e.g. "chapters/act1/" — "" when at the root. Used to build unique
+// ids and to display the breadcrumb.
+function dirRelPath() {
+  if (State.dirStack.length <= 1) return '';
+  return State.dirStack.slice(1).map(s => s.name).join('/') + '/';
+}
+
 async function scanDir() {
   if (!State.dirHandle) return false;
+  // Initialise / repair the navigation stack to the root.
+  if (!State.dirStack.length) State.dirStack = [{ name: State.dirHandle.name, handle: State.dirHandle }];
+  // When subfolder navigation is off, never browse below the root.
+  if (!State.settings.browserSubdirs && State.dirStack.length > 1) {
+    State.dirStack = [State.dirStack[0]];
+  }
+  const cur = currentDir();
+  const rel = dirRelPath();
   const files = [];
+  const subdirs = [];
   try {
-    for await (const [name, handle] of State.dirHandle.entries()) {
+    for await (const [name, handle] of cur.entries()) {
+      if (handle.kind === 'directory') {
+        if (State.settings.browserSubdirs && name !== 'backups') subdirs.push({ name, handle });
+        continue;
+      }
       if (handle.kind !== 'file') continue;
       if (!matchesBrowserFilter(name)) continue;
       const file = await handle.getFile();
       files.push({
-        id: `dir:${name}`, name, content: null,
+        id: `dir:${rel}${name}`, name, content: null,
         fileHandle: handle, fromDisk: true, dirFile: true,
         modified: file.lastModified
       });
@@ -1276,13 +1310,30 @@ async function scanDir() {
     return false;
   }
   files.sort((a, b) => a.name.localeCompare(b.name));
+  subdirs.sort((a, b) => a.name.localeCompare(b.name));
   State.dirFiles = files;
+  State.dirSubdirs = subdirs;
   try {
-    State.dirIniHandle = await State.dirHandle.getFileHandle('writhdeck.ini');
+    State.dirIniHandle = await currentDir().getFileHandle('writhdeck.ini');
   } catch (_) {
     State.dirIniHandle = null;
   }
   return true;
+}
+
+// Enter a subfolder (by name, from State.dirSubdirs) and rescan.
+async function dirEnter(name) {
+  const sub = State.dirSubdirs.find(s => s.name === name);
+  if (!sub) return;
+  State.dirStack.push(sub);
+  await scanDir();
+}
+
+// Go up one folder (no-op at the root) and rescan.
+async function dirUp() {
+  if (State.dirStack.length <= 1) return;
+  State.dirStack.pop();
+  await scanDir();
 }
 
 // ── Recents / favorites ───────────────────────────────────────────────────
@@ -1363,6 +1414,7 @@ const INI_TO_SETTINGS = {
   open_last_doc:              ['openLastDoc',               'bool'],
   browser_filter:             ['browserFilter',             'str'],
   browser_show_all:           ['browserShowAll',            'bool'],
+  browser_subdirs:            ['browserSubdirs',            'bool'],
 };
 
 const SETTINGS_TO_INI = Object.fromEntries(
@@ -1543,6 +1595,8 @@ function writeIni(s, allSchemes, profiles, activeProfile) {
   out += `browser_filter  = ${s.browserFilter ?? '*.txt *.t2t *.md *.ini'}` + nl;
   out += `% browser_show_all: bypass browser_filter and show all files` + nl;
   out += `browser_show_all = ${b(s.browserShowAll)}` + nl;
+  out += `% browser_subdirs: scan and browse subfolders inside the watched folder` + nl;
+  out += `browser_subdirs  = ${b(s.browserSubdirs)}` + nl;
   out += nl;
 
   out += '= web =' + nl + '[web]' + nl;
@@ -3237,7 +3291,7 @@ const Browser = (() => {
       }
       let fileHandle;
       try {
-        fileHandle = await State.dirHandle.getFileHandle(safeName, { create: true });
+        fileHandle = await currentDir().getFileHandle(safeName, { create: true });
         const writable = await fileHandle.createWritable();
         await writable.close();
       } catch (e) {
@@ -3245,7 +3299,7 @@ const Browser = (() => {
         return;
       }
       const doc = {
-        id: `dir:${safeName}`, name: safeName, content: '',
+        id: `dir:${dirRelPath()}${safeName}`, name: safeName, content: '',
         fileHandle, fromDisk: true, dirFile: true, modified: Date.now()
       };
       State.dirFiles.push(doc);
@@ -3415,6 +3469,7 @@ const Browser = (() => {
       return;
     }
     State.dirHandle = handle;
+    State.dirStack  = [];   // reset subfolder navigation to the new root
     await saveDirHandle();
     await scanDir();
     render();
@@ -3437,9 +3492,35 @@ const Browser = (() => {
     } catch (_) {}
   }
 
+  // A navigable folder row (subdirectory or "..") inside the watched folder.
+  function dirNavRow(label, title, onActivate) {
+    const row = document.createElement('div');
+    row.className = 'br-item br-nav-item';
+    row.tabIndex = -1;
+    row.dataset.id = '__dir__';
+
+    const ico = document.createElement('span');
+    ico.style.cssText = 'flex-shrink:0;width:1em;';
+    ico.textContent = '📁';
+
+    const name = document.createElement('span');
+    name.className = 'br-item-name';
+    name.textContent = label;
+    if (title) name.title = title;
+
+    row.appendChild(ico);
+    row.appendChild(name);
+    row.addEventListener('click', onActivate);
+    return row;
+  }
+
   function folderSection(container) {
     const dirFiles = State.dirFiles;
-    const dirName  = State.dirHandle.name;
+    const subdirs  = State.settings.browserSubdirs ? State.dirSubdirs : [];
+    // Breadcrumb: root name + any navigated subfolders.
+    const crumb = State.dirStack.length
+      ? State.dirStack.map(s => s.name).join(' / ')
+      : State.dirHandle.name;
 
     // Header row with folder name + clear button
     const hdr = document.createElement('div');
@@ -3449,7 +3530,7 @@ const Browser = (() => {
     hdr.style.justifyContent = 'space-between';
 
     const label = document.createElement('span');
-    label.textContent = `📁 ${dirName}`;
+    label.textContent = `📁 ${crumb}`;
     hdr.appendChild(label);
 
     const clearBtn = document.createElement('span');
@@ -3459,6 +3540,17 @@ const Browser = (() => {
     clearBtn.addEventListener('click', e => { e.stopPropagation(); clearFolder(); });
     hdr.appendChild(clearBtn);
     container.appendChild(hdr);
+
+    // ".." row (only when navigated into a subfolder)
+    if (State.settings.browserSubdirs && State.dirStack.length > 1) {
+      container.appendChild(dirNavRow('..', 'Go up one folder',
+        async () => { await dirUp(); render(); }));
+    }
+    // Subfolder rows
+    subdirs.forEach(sub => {
+      container.appendChild(dirNavRow(`${sub.name}/`, null,
+        async () => { await dirEnter(sub.name); render(); }));
+    });
 
     if (!dirFiles.length) {
       // Check permission state
@@ -4011,7 +4103,7 @@ const Settings = (() => {
 'use strict';
 // Main entry point
 
-const README_CONTENT = "# Writhdeck\n\nA distraction-free writing app that runs as a single self-contained HTML file \u2014 no server, no install, no internet required. Open `writhdeck.html` directly in any modern browser.\n\n\n- [Try it online!](https://luginf.github.io/writhdeck/)\n- [Main project](https://github.com/luginf/writhdeck/)\n\n\n## Features\n\n- **Single-file**: the entire app is one `writhdeck.html` (~180 KB). Copy it anywhere, it just works.\n- **Document browser**: create, rename, delete, and favourite documents stored in IndexedDB. Document names are unique \u2014 duplicates are auto-suggested as `\"Untitled (2)\"` etc.\n- **Disk file support** (Chrome/Edge/Brave): open individual files or watch a folder \u2014 edits go straight back to disk via the File System Access API.\n- **Syntax highlighting overlay**: headings, comments, and inline markers (bold, italic, underline, strikethrough) are coloured in real time without leaving the textarea.\n- **Configurable markers**: choose your own syntax for headings, comments, and each inline style. Enable Markdown-style `#` headings if you prefer.\n- **8 built-in colour schemes** (default, solarized, gruvbox, everforest, nord, + 3 more), dark and light variants, and full custom-scheme support.\n- **Writing timer**: countdown or stopwatch, with optional sound and alert at the end.\n- **Table of contents**: auto-generated from heading lines, shown in a side panel.\n- **Daily writing stats**: tracks words *added* today (not total document size) with a high-water mark across sessions. Optional daily goal.\n- **Hemingway mode**: disables backspace/delete to keep you writing forward.\n- **Typewriter mode**: keeps the cursor vertically centred; dims text outside the current paragraph so only the active paragraph appears at full colour.\n- **Find & replace** with live match highlighting, goto line, line numbers.\n- **Structure analysis**: section-by-section word-count breakdown with progress bars. Accessible from the `\u2261` menu (`a`).\n- **Word occurrences**: frequency table of all words, sorted by count. Accessible from the Analyse dialog or the `\u2261` menu.\n- **Block cursor**: optional solid rectangle cursor, rendered in the highlight overlay. Supports blink on/off.\n- **Export** as `.txt` or `.md`.\n- **INI config**: `writhdeck.ini` is always visible in the browser. Right-click it to open, export, or reset to defaults. The format is compatible with the Tcl/Tk desktop version; web-specific options are in a dedicated `[web]` section.\n- **Status bar**: fully customisable left/centre/right slots with tokens \u2014 see [Status bar tokens](#status-bar-tokens).\n- **`\u2261` menu**: all commands accessible from a single dropdown \u2014 keyboard-navigable (\u2191\u2193 + Enter, or press the hint letter directly), with format options (H1\u2013H3, bold, italic\u2026), search, export, settings, and more. Opening the menu preserves any active text selection.\n- **Right-click context menu**: format, cut/copy/paste, and spell-check toggle (editor); Open / Info / Rename / Export / Delete (browser document list); Open / Export / Reset (writhdeck.ini).\n- **Command mode** (`Esc` or `Alt+C`): interactive status bar showing all commands as clickable buttons. Navigate with `\u2190`/`\u2192`, confirm with `Enter`, or click with the mouse.\n- **About dialog**: accessible from the `?` menu in the browser \u2014 shows the app description and build date.\n- **Undo support**: bold, italic, heading, and comment formatting operations integrate with the browser's native undo stack (via `execCommand('insertText')`).\n\n## Build\n\n```sh\nmake        # produces writhdeck.html (~180 KB)\nmake clean  # removes writhdeck.html\n```\n\n`build.py` reads `src/template.html`, inlines `src/style.css` and all JS modules (in the order defined in `JS_ORDER`), and writes the result to stdout. The build date is embedded as `2026-06-16` (ISO format). Python 3, no dependencies.\n\n## Keyboard shortcuts\n\n### Global\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+D` | Toggle dark / light mode |\n| `Ctrl+O` | Import file copy |\n| `F11` | Toggle table of contents |\n| `Alt+Enter` | Toggle fullscreen |\n| `Ctrl+N` *(opt)* | New document (overrides browser \"new window\", requires setting) |\n\n### Editor\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+S` | Save |\n| `Ctrl+Q` | Close document (`Ctrl+Shift+Q` on Firefox, see [Browser notes](#browser-notes)) |\n| `Ctrl+F` | Find (live match highlighting) |\n| `Ctrl+H` | Find & replace |\n| `Ctrl+G` | Go to line |\n| `Ctrl+L` | Toggle line numbers |\n| `Alt+T` | Toggle timer |\n| `Alt+C` / `Esc` | Enter command mode |\n| `Alt+M` | Open `\u2261` menu |\n\n### Command mode (`Alt+C` or `Esc`)\n\nThe status bar becomes an interactive row of command buttons. Works in fullscreen (`Alt+C`).\n\n| Input | Action |\n|---|---|\n| `\u2190` / `\u2192` | Move selection between commands |\n| `Enter` | Execute selected command |\n| *letter* | Execute command directly (e.g. `f` = Find) |\n| Mouse click | Execute command directly |\n\n| Key | Action | Key | Action |\n|---|---|---|---|\n| `f` | Find | `d` | Dark / light |\n| `r` | Find & replace | `o` | Table of contents |\n| `g` | Go to line | `c` | Settings |\n| `n` | Line numbers | `e` | Export as .txt |\n| `w` | Typewriter mode | `s` | Statistics |\n| `t` | Timer | `a` | Analyse structure |\n| `p` | Timer pause | `i` | File info |\n| `q` | Close document | `m` | Main menu (\u2261) |\n\n### Browser (document list)\n\n| Key | Action |\n|---|---|\n| `\u2191` / `\u2193` | Navigate document list |\n| `Enter` | Open selected document |\n| `n` | New document |\n| `o` | Open file from disk |\n| `w` | Watch a folder |\n| `s` | Stats |\n| `c` | Settings |\n\n## Browser notes\n\n- **Disk file support** (open/watch files, edits saved straight back to disk) requires the File System Access API \u2014 available in Chrome, Edge, Brave, and other Chromium-based browsers. Firefox falls back to IndexedDB-only storage.\n- **Large documents** (tens of thousands of words): Firefox is noticeably slower than Chromium-based browsers, especially when a full re-render is triggered (search highlighting, Typewriter mode, multi-line edits like paste/undo). Chromium-based browsers are recommended for very large documents.\n- **`Ctrl+Q`**: Firefox intercepts the plain shortcut as its own \"Quit\" command before the page sees it \u2014 use `Ctrl+Shift+Q` to close the document (works in both Firefox and Chrome).\n\n## Status bar tokens\n\nThe three status bar zones (left / centre / right) are configured as space-separated token strings in Settings \u2192 Profile.\n\n| Token | Example | Description |\n|---|---|---|\n| `filename` | `my-novel.txt` | Current document name |\n| `dirty` | `[+]` | Unsaved changes indicator |\n| `words` | `1 842w` | Word count |\n| `chars` | `10 240c` | Character count |\n| `lines` | `312L` | Total line count |\n| `line` | `L42` | Current cursor line |\n| `col` | `C7` | Current cursor column |\n| `para` | `18\u00a7` | Paragraph count (blank-line separated) |\n| `pages` | `7p` | Estimated pages at 250 w/page |\n| `percent` | `68%` | Progress toward word goal |\n| `today` | `342\u2191` | Words *added* today (high-water mark across sessions) |\n| `goal` | `342/500` | Today's words / goal (hidden if no goal) |\n| `reading` | `9min` | Estimated reading time at 200 w/min |\n| `clock` | `14:32` | Current time |\n| `timer` | `24:07` | Writing timer display |\n| `space` | ` ` | Single space (explicit separator) |\n| *(anything else)* | literal | Fixed text, separators, etc. |\n\nDefault: Left `filename dirty words` \u00b7 Center *(empty)* \u00b7 Right `goal clock timer`\n\n## INI config\n\n`writhdeck.ini` uses the same format as the Tcl/Tk desktop version. Web-specific options live in a dedicated section so they are silently ignored by the desktop version:\n\n```ini\n[web]\n% Options specific to the web version \u2014 ignored by the desktop version\nopen_last_doc               = no\nintercept_browser_shortcuts = yes\nintercept_context_menu      = yes\n```\n\nOptions shared with the desktop version (`block_cursor`, `blink_cursor`, `line_numbers`, `dark_mode`, etc.) stay in `[behaviour]`.\n\nRight-click `writhdeck.ini` in the browser to export it or reset all settings to defaults (the file is recreated from defaults on next load).\n\n## Project structure\n\n```\nsrc/\n  template.html   HTML skeleton with {{STYLE}} / {{SCRIPT}} / 2026-06-16 placeholders\n  style.css       All CSS (uses CSS custom properties only, no hardcoded colours)\n  schemes.js      Built-in colour schemes + custom-scheme support\n  db.js           IndexedDB wrapper (promise-based)\n  state.js        App state, load/save helpers\n  ini.js          INI config parser/writer (compatible with desktop version)\n  highlight.js    Syntax highlighter + word count + block cursor injection\n  timer.js        Writing timer\n  toc.js          Table of contents\n  stats.js        Daily word-count stats dialog\n  editor.js       Editor panel, textarea/overlay sync, find/replace, formatting\n  browser.js      Document browser panel, FSA integration\n  settings.js     Settings dialog\n  app.js          Entry point, theme, keyboard router, menus, dialogs\nbuild.py          Build script (inlines CSS/JS, stamps build date)\nMakefile          Convenience wrapper around build.py\n```\n\n## Storage\n\nDocuments are stored in IndexedDB (`writhdeck` database, version 1):\n\n- **`documents`** store \u2014 each document: `id`, `name`, `content`, `created`, `modified`.\n- **`meta`** store \u2014 keyed entries: `iniText`, `favorites`, `recents`, `cursors`, `daily`.\n\nNothing is sent to any server.\n\n## Adding a colour scheme\n\nAdd an entry to the `SCHEMES` object in `src/schemes.js`. Each scheme needs 9 dark-mode keys and 9 light-mode (`*Alt`) keys: `bg`, `fg`, `bgBar`, `fgBar`, `bgSel`, `heading`, `comment`, `markup`, `bg2` (+ `Alt` variants). Then run `make`.\n\n## License\n\nCopyright (C) 2026 by Luginfo \u2014 Zero-Clause BSD License\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted. The software is provided \"as is\" without warranty of any kind.\n";
+const README_CONTENT = "# Writhdeck\n\nA distraction-free writing app that runs as a single self-contained HTML file \u2014 no server, no install, no internet required. Open `writhdeck.html` directly in any modern browser.\n\n\n- [Try it online!](https://luginf.github.io/writhdeck/)\n- [Main project](https://github.com/luginf/writhdeck/)\n\n\n## Features\n\n- **Single-file**: the entire app is one `writhdeck.html` (~180 KB). Copy it anywhere, it just works.\n- **Document browser**: create, rename, delete, and favourite documents stored in IndexedDB. Document names are unique \u2014 duplicates are auto-suggested as `\"Untitled (2)\"` etc.\n- **Disk file support** (Chrome/Edge/Brave): open individual files or watch a folder \u2014 edits go straight back to disk via the File System Access API.\n- **Syntax highlighting overlay**: headings, comments, and inline markers (bold, italic, underline, strikethrough) are coloured in real time without leaving the textarea.\n- **Configurable markers**: choose your own syntax for headings, comments, and each inline style. Enable Markdown-style `#` headings if you prefer.\n- **8 built-in colour schemes** (default, solarized, gruvbox, everforest, nord, + 3 more), dark and light variants, and full custom-scheme support.\n- **Writing timer**: countdown or stopwatch, with optional sound and alert at the end.\n- **Table of contents**: auto-generated from heading lines, shown in a side panel.\n- **Daily writing stats**: tracks words *added* today (not total document size) with a high-water mark across sessions. Optional daily goal.\n- **Hemingway mode**: disables backspace/delete to keep you writing forward.\n- **Typewriter mode**: keeps the cursor vertically centred; dims text outside the current paragraph so only the active paragraph appears at full colour.\n- **Find & replace** with live match highlighting, goto line, line numbers.\n- **Structure analysis**: section-by-section word-count breakdown with progress bars. Accessible from the `\u2261` menu (`a`).\n- **Word occurrences**: frequency table of all words, sorted by count. Accessible from the Analyse dialog or the `\u2261` menu.\n- **Block cursor**: optional solid rectangle cursor, rendered in the highlight overlay. Supports blink on/off.\n- **Export** as `.txt` or `.md`.\n- **INI config**: `writhdeck.ini` is always visible in the browser. Right-click it to open, export, or reset to defaults. The format is compatible with the Tcl/Tk desktop version; web-specific options are in a dedicated `[web]` section.\n- **Status bar**: fully customisable left/centre/right slots with tokens \u2014 see [Status bar tokens](#status-bar-tokens).\n- **`\u2261` menu**: all commands accessible from a single dropdown \u2014 keyboard-navigable (\u2191\u2193 + Enter, or press the hint letter directly), with format options (H1\u2013H3, bold, italic\u2026), search, export, settings, and more. Opening the menu preserves any active text selection.\n- **Right-click context menu**: format, cut/copy/paste, and spell-check toggle (editor); Open / Info / Rename / Export / Delete (browser document list); Open / Export / Reset (writhdeck.ini).\n- **Command mode** (`Esc` or `Alt+C`): interactive status bar showing all commands as clickable buttons. Navigate with `\u2190`/`\u2192`, confirm with `Enter`, or click with the mouse.\n- **About dialog**: accessible from the `?` menu in the browser \u2014 shows the app description and build date.\n- **Undo support**: bold, italic, heading, and comment formatting operations integrate with the browser's native undo stack (via `execCommand('insertText')`).\n\n## Build\n\n```sh\nmake        # produces writhdeck.html (~180 KB)\nmake clean  # removes writhdeck.html\n```\n\n`build.py` reads `src/template.html`, inlines `src/style.css` and all JS modules (in the order defined in `JS_ORDER`), and writes the result to stdout. The build date is embedded as `2026-06-18` (ISO format). Python 3, no dependencies.\n\n## Keyboard shortcuts\n\n### Global\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+D` | Toggle dark / light mode |\n| `Ctrl+O` | Import file copy |\n| `F11` | Toggle table of contents |\n| `Alt+Enter` | Toggle fullscreen |\n| `Ctrl+N` *(opt)* | New document (overrides browser \"new window\", requires setting) |\n\n### Editor\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+S` | Save |\n| `Ctrl+Q` | Close document (`Ctrl+Shift+Q` on Firefox, see [Browser notes](#browser-notes)) |\n| `Ctrl+F` | Find (live match highlighting) |\n| `Ctrl+H` | Find & replace |\n| `Ctrl+G` | Go to line |\n| `Ctrl+L` | Toggle line numbers |\n| `Alt+T` | Toggle timer |\n| `Alt+C` / `Esc` | Enter command mode |\n| `Alt+M` | Open `\u2261` menu |\n\n### Command mode (`Alt+C` or `Esc`)\n\nThe status bar becomes an interactive row of command buttons. Works in fullscreen (`Alt+C`).\n\n| Input | Action |\n|---|---|\n| `\u2190` / `\u2192` | Move selection between commands |\n| `Enter` | Execute selected command |\n| *letter* | Execute command directly (e.g. `f` = Find) |\n| Mouse click | Execute command directly |\n\n| Key | Action | Key | Action |\n|---|---|---|---|\n| `f` | Find | `d` | Dark / light |\n| `r` | Find & replace | `o` | Table of contents |\n| `g` | Go to line | `c` | Settings |\n| `n` | Line numbers | `e` | Export as .txt |\n| `w` | Typewriter mode | `s` | Statistics |\n| `t` | Timer | `a` | Analyse structure |\n| `p` | Timer pause | `i` | File info |\n| `q` | Close document | `m` | Main menu (\u2261) |\n\n### Browser (document list)\n\n| Key | Action |\n|---|---|\n| `\u2191` / `\u2193` | Navigate document list |\n| `Enter` | Open selected document |\n| `n` | New document |\n| `o` | Open file from disk |\n| `w` | Watch a folder |\n| `s` | Stats |\n| `c` | Settings |\n\n## Browser notes\n\n- **Disk file support** (open/watch files, edits saved straight back to disk) requires the File System Access API \u2014 available in Chrome, Edge, Brave, and other Chromium-based browsers. Firefox falls back to IndexedDB-only storage.\n- **Large documents** (tens of thousands of words): Firefox is noticeably slower than Chromium-based browsers, especially when a full re-render is triggered (search highlighting, Typewriter mode, multi-line edits like paste/undo). Chromium-based browsers are recommended for very large documents.\n- **`Ctrl+Q`**: Firefox intercepts the plain shortcut as its own \"Quit\" command before the page sees it \u2014 use `Ctrl+Shift+Q` to close the document (works in both Firefox and Chrome).\n\n## Status bar tokens\n\nThe three status bar zones (left / centre / right) are configured as space-separated token strings in Settings \u2192 Profile.\n\n| Token | Example | Description |\n|---|---|---|\n| `filename` | `my-novel.txt` | Current document name |\n| `dirty` | `[+]` | Unsaved changes indicator |\n| `words` | `1 842w` | Word count |\n| `chars` | `10 240c` | Character count |\n| `lines` | `312L` | Total line count |\n| `line` | `L42` | Current cursor line |\n| `col` | `C7` | Current cursor column |\n| `para` | `18\u00a7` | Paragraph count (blank-line separated) |\n| `pages` | `7p` | Estimated pages at 250 w/page |\n| `percent` | `68%` | Progress toward word goal |\n| `today` | `342\u2191` | Words *added* today (high-water mark across sessions) |\n| `goal` | `342/500` | Today's words / goal (hidden if no goal) |\n| `reading` | `9min` | Estimated reading time at 200 w/min |\n| `clock` | `14:32` | Current time |\n| `timer` | `24:07` | Writing timer display |\n| `space` | ` ` | Single space (explicit separator) |\n| *(anything else)* | literal | Fixed text, separators, etc. |\n\nDefault: Left `filename dirty words` \u00b7 Center *(empty)* \u00b7 Right `goal clock timer`\n\n## INI config\n\n`writhdeck.ini` uses the same format as the Tcl/Tk desktop version. Web-specific options live in a dedicated section so they are silently ignored by the desktop version:\n\n```ini\n[web]\n% Options specific to the web version \u2014 ignored by the desktop version\nopen_last_doc               = no\nintercept_browser_shortcuts = yes\nintercept_context_menu      = yes\n```\n\nOptions shared with the desktop version (`block_cursor`, `blink_cursor`, `line_numbers`, `dark_mode`, etc.) stay in `[behaviour]`.\n\nRight-click `writhdeck.ini` in the browser to export it or reset all settings to defaults (the file is recreated from defaults on next load).\n\n## Project structure\n\n```\nsrc/\n  template.html   HTML skeleton with {{STYLE}} / {{SCRIPT}} / 2026-06-18 placeholders\n  style.css       All CSS (uses CSS custom properties only, no hardcoded colours)\n  schemes.js      Built-in colour schemes + custom-scheme support\n  db.js           IndexedDB wrapper (promise-based)\n  state.js        App state, load/save helpers\n  ini.js          INI config parser/writer (compatible with desktop version)\n  highlight.js    Syntax highlighter + word count + block cursor injection\n  timer.js        Writing timer\n  toc.js          Table of contents\n  stats.js        Daily word-count stats dialog\n  editor.js       Editor panel, textarea/overlay sync, find/replace, formatting\n  browser.js      Document browser panel, FSA integration\n  settings.js     Settings dialog\n  app.js          Entry point, theme, keyboard router, menus, dialogs\nbuild.py          Build script (inlines CSS/JS, stamps build date)\nMakefile          Convenience wrapper around build.py\n```\n\n## Storage\n\nDocuments are stored in IndexedDB (`writhdeck` database, version 1):\n\n- **`documents`** store \u2014 each document: `id`, `name`, `content`, `created`, `modified`.\n- **`meta`** store \u2014 keyed entries: `iniText`, `favorites`, `recents`, `cursors`, `daily`.\n\nNothing is sent to any server.\n\n## Adding a colour scheme\n\nAdd an entry to the `SCHEMES` object in `src/schemes.js`. Each scheme needs 9 dark-mode keys and 9 light-mode (`*Alt`) keys: `bg`, `fg`, `bgBar`, `fgBar`, `bgSel`, `heading`, `comment`, `markup`, `bg2` (+ `Alt` variants). Then run `make`.\n\n## License\n\nCopyright (C) 2026 by Luginfo \u2014 Zero-Clause BSD License\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted. The software is provided \"as is\" without warranty of any kind.\n";
 
 let _edMenu          = null;
 let _openMenuFn      = null;
@@ -4537,6 +4629,13 @@ function onKeydown(e) {
     if (key === 'Enter') {
       const cur = document.querySelector('#br-list .br-nav-item.br-focused');
       if (cur) { e.preventDefault(); cur.click(); return; }
+    }
+    // Backspace — go up one folder in the watched-folder subfolder navigation
+    if (key === 'Backspace' && Browser.hasFSA &&
+        State.settings.browserSubdirs && State.dirStack.length > 1) {
+      e.preventDefault();
+      dirUp().then(() => Browser.render());
+      return;
     }
     if (lkey === 'n') { e.preventDefault(); Browser.newDoc();        return; }
     if (lkey === 'o' && Browser.hasFSA) { e.preventDefault(); Browser.openFromDisk(); return; }
