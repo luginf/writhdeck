@@ -38,7 +38,21 @@ Modular language system with 6 supported languages. Store translations in `src/i
 - `src/i18n/ko.tcl` — 한국어 (Korean)
 - `src/i18n/no.tcl` — Norsk (Norwegian)
 
-Each file defines `dict set ::i18n LANG { key "value" ... }` with all 135 keys required for completeness.
+Each file is split into **two dicts** so TUI-only builds don't ship GUI-only strings:
+
+```tcl
+dict set ::i18n LANG { ...keys needed by the TUI/CLI build (common)... }
+# >>> GUI-ONLY  (stripped from TUI/CLI builds by the Makefile)
+dict set ::i18n_gui LANG { ...keys used only by gui.tcl / gui-config.tcl... }
+# <<< GUI-ONLY
+```
+
+- **`::i18n`** — keys referenced anywhere in the TUI build path (`tui.tcl`, `common.tcl`, `analysis.tcl`, `config.tcl`, `state.tcl`, `main-cli.tcl`). Always included.
+- **`::i18n_gui`** — keys used only by `gui.tcl` / `gui-config.tcl`. Present in the GUI build (`writhdeck.tcl`, GUI+TUI) and the mini build, **stripped** from `writhdeck-cli.tcl`, `writhdeck-jim.tcl`, `writhdeck-dos.tcl` (the Makefile runs `sed '/>>> GUI-ONLY/,/<<< GUI-ONLY/d'` when concatenating their i18n files).
+
+`proc t` (in `src/config.tcl`) looks up `::i18n` first, then `::i18n_gui` (guarded by `info exists` — absent in TUI builds), then falls back to English, then returns the key name itself. So a GUI-only key accidentally requested in a TUI build degrades gracefully instead of erroring.
+
+**Re-deriving the split** — `tools/i18n-split.tcl` regenerates the two-dict partition of every `src/i18n/*.tcl`: a key is "common" if its name appears as a whole word anywhere in the TUI build-path files, otherwise GUI-only. Run it after adding keys or moving a string between GUI and TUI code, then `make test-i18n`. **Adding a key by hand:** put it in the right block of all language files; if a TUI code path references it, it must be in the `::i18n` block (before the marker).
 
 **Build with specific languages:**
 ```bash
@@ -63,6 +77,19 @@ make test-i18n    # Validates all languages have complete keys + matching format
 ```
 
 See `src/i18n/README.md` for adding new languages and comprehensive i18n documentation.
+
+## DOS-only code stripping
+
+The FreeDOS/DJGPP port is maintained as a separate project (`../writhdeck-dos/`) and the DOS build is non-functional/anecdotal here. The handful of `$::tcl_platform(os) eq "msdosdjgpp"` branches in `src/state.tcl` and `src/tui.tcl` are wrapped in markers:
+
+```tcl
+set ::STATE_FILE [file join $::DOCS_DIR_DEFAULT ".writhdeck.json"]   ;# default
+# >>> DOS-ONLY (stripped from non-DOS builds by the Makefile)
+if {$::tcl_platform(os) eq "msdosdjgpp"} { set ::STATE_FILE ... }     ;# DOS override
+# <<< DOS-ONLY
+```
+
+**Rule:** the non-DOS default must come *before* the marked block and be valid on its own, because the Makefile deletes everything between the markers (`$(DOS_FILTER)` = `sed '/>>> DOS-ONLY/,/<<< DOS-ONLY/d'`) for **every build except `writhdeck-dos.tcl`**. The dos target overrides `DOS_FILTER = cat` (target-specific variable) to keep the blocks — it is the source for `../writhdeck-dos/`. `DOS_FILTER` is applied only to `src/state.tcl` and `src/tui.tcl` (the only files with markers). Inline DOS conditions are refactored into a default value + a marked override (see `_stty_fail`, `skip_leading_enters`) so a clean strip leaves correct non-DOS code. `src/compat-dos.tcl` stays dos-only via `DOS_SRCS`.
 
 ## JimTcl compatibility (`make jimtcl`)
 
@@ -98,3 +125,15 @@ make sfx JIMSH=/usr/local/jimsh  # override interpreter path
 ```
 
 File structure: `[shell stub ~214B][jimsh binary][writhdeck-jim.tcl]`. Offsets are calculated by `tools/make-sfx.py` and embedded in the stub. Portability depends on the jimsh binary: if dynamically linked (check with `ldd /opt/jimsh`), target systems need compatible shared libraries (`libssl`, `libcrypto`, `libc`…). For a fully portable SFX, recompile jimsh as a static binary (musl or `--disable-shared -static`).
+
+## selfx (`make selfx`)
+
+**Self-extracting, zlib-compressed pure-Tcl build** — `writhdeck-selfx.tcl`, ~110 KB vs ~470 KB for `writhdeck.tcl` (-76%). Unlike SFX it bundles **no** binary: it needs a `tclsh`/`wish` already on the machine, but **Tcl/Tk 8.6+** (for `zlib` and `binary decode base64`). Runs both GUI and TUI exactly like the normal build (same `--tui`/`--gui`/`--help` handling).
+
+```sh
+make selfx          # → writhdeck-selfx.tcl
+wish writhdeck-selfx.tcl            # GUI
+tclsh writhdeck-selfx.tcl --tui     # TUI
+```
+
+Built by `tools/make-selfx.tcl`: it gzip-compresses the **compact** GUI build (`make selfx` runs `tcl-compact` on `writhdeck.tcl` into a temp file first), base64-encodes it, and writes a tiny wrapper. The wrapper keeps the same sh/Tcl polyglot header as `src/boot.tcl`, then `eval [zlib gunzip [binary decode base64 $_wd_payload]]` at global scope (equivalent to sourcing the program). A `package vcompare [info patchlevel] 8.6` guard prints a friendly error on Tcl 8.5. Trade-offs vs the normal build: not human-readable, and drops the Tcl 8.5 floor — so it is a distribution-only artifact (not part of `make all`, like `sfx`/`dos`).

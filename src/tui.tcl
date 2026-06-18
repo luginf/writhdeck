@@ -467,6 +467,7 @@ proc tui-getch {{timeout -1}} {
     if {$b == 127} { return BACKSPACE }
     if {$b == 13  || $b == 10} { return ENTER }
     if {$b == 9}               { return TAB }
+    # >>> DOS-ONLY (stripped from non-DOS builds by the Makefile - see CLAUDE.build.md)
     # DOS extended keys: null byte followed by BIOS scan code.
     # On DOS, 0x08 is also the Backspace key (same byte as Ctrl-H); remap it.
     if {$::tcl_platform(os) eq "msdosdjgpp"} {
@@ -491,6 +492,7 @@ proc tui-getch {{timeout -1}} {
             }
         }
     }
+    # <<< DOS-ONLY
     return [format %c $b]
 }
 
@@ -620,7 +622,10 @@ proc tui-prompt {label rows cols} {
     # trailing CR+LF that still sits in stdin.  Skip all leading ENTERs until
     # the first real keystroke so the prompt doesn't close immediately.
     # ESC still cancels at any point.
+    set skip_leading_enters 0
+    # >>> DOS-ONLY (stripped from non-DOS builds by the Makefile - see CLAUDE.build.md)
     set skip_leading_enters [expr {$::tcl_platform(os) eq "msdosdjgpp"}]
+    # <<< DOS-ONLY
     while 1 {
         set d " $label$buf"
         tui-bar [expr {$rows-1}] $d "" $cols
@@ -1705,9 +1710,11 @@ proc tui-editor {filepath {init_state {}}} {
                 set lines [linsert [lreplace $lines [expr {$cy-1}] [expr {$cy-1}] \
                     [string range $l 0 [expr {$cx-1}]]] $cy [string range $l $cx end]]
                 incr cy; set cx 0; tui-mark-dirty
+                # >>> DOS-ONLY (stripped from non-DOS builds by the Makefile - see CLAUDE.build.md)
                 if {$::tcl_platform(os) eq "msdosdjgpp"} {
                     puts -nonewline "\033\[2J\033\[H"
                 }
+                # <<< DOS-ONLY
             }
             TAB {
                 tui-push-undo
@@ -2434,7 +2441,12 @@ proc tui-main {} {
         puts stderr "writhdeck: TUI mode is not supported on Windows"
         exit 1
     }
-    if {[catch {exec stty -g <@stdin}] && $::tcl_platform(os) ne "msdosdjgpp"} {
+    set _stty_fail [catch {exec stty -g <@stdin}]
+    # >>> DOS-ONLY (stripped from non-DOS builds by the Makefile - see CLAUDE.build.md)
+    # DOS has no stty; never treat it as 'not a terminal'.
+    if {$::tcl_platform(os) eq "msdosdjgpp"} { set _stty_fail 0 }
+    # <<< DOS-ONLY
+    if {$_stty_fail} {
         puts stderr "writhdeck: not a terminal"
         exit 1
     }

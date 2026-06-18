@@ -9,11 +9,12 @@ set ::gui_cmd_mode    0
 set ::tui_cmd_mode    0
 
 file mkdir $::DOCS_DIR_DEFAULT
+set ::STATE_FILE [file join $::DOCS_DIR_DEFAULT ".writhdeck.json"]
+# >>> DOS-ONLY (stripped from non-DOS builds by the Makefile - see CLAUDE.build.md)
 if {$::tcl_platform(os) eq "msdosdjgpp"} {
     set ::STATE_FILE [file join $::DOCS_DIR_DEFAULT "WDECK.JSN"]
-} else {
-    set ::STATE_FILE [file join $::DOCS_DIR_DEFAULT ".writhdeck.json"]
 }
+# <<< DOS-ONLY
 set ::cursor_cache      {}
 set ::favorites_list    {}
 set ::recent_list       {}

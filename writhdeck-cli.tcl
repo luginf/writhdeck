@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260527b"
+set ::version          "v20260618"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -92,11 +92,7 @@ set ::gui_cmd_mode    0
 set ::tui_cmd_mode    0
 
 file mkdir $::DOCS_DIR_DEFAULT
-if {$::tcl_platform(os) eq "msdosdjgpp"} {
-    set ::STATE_FILE [file join $::DOCS_DIR_DEFAULT "WDECK.JSN"]
-} else {
-    set ::STATE_FILE [file join $::DOCS_DIR_DEFAULT ".writhdeck.json"]
-}
+set ::STATE_FILE [file join $::DOCS_DIR_DEFAULT ".writhdeck.json"]
 set ::cursor_cache      {}
 set ::favorites_list    {}
 set ::recent_list       {}
@@ -1129,7 +1125,19 @@ proc keys-init {} {
 set ::i18n [dict create]
 proc t {key args} {
     set lang [expr {[dict exists $::i18n $::cfg_lang] ? $::cfg_lang : "en"}]
-    set s [dict get $::i18n $lang $key]
+    # Look in the common dict, then the GUI-only dict (absent in TUI/CLI builds),
+    # falling back to English for either when a key is missing in $lang.
+    if {[dict exists $::i18n $lang $key]} {
+        set s [dict get $::i18n $lang $key]
+    } elseif {[info exists ::i18n_gui] && [dict exists $::i18n_gui $lang $key]} {
+        set s [dict get $::i18n_gui $lang $key]
+    } elseif {[dict exists $::i18n en $key]} {
+        set s [dict get $::i18n en $key]
+    } elseif {[info exists ::i18n_gui] && [dict exists $::i18n_gui en $key]} {
+        set s [dict get $::i18n_gui en $key]
+    } else {
+        return $key
+    }
     if {[llength $args]} { return [format $s {*}$args] }
     return $s
 }
@@ -1222,11 +1230,9 @@ dict set ::scheme_defs alt01 {
 # ===========================================================================
 dict set ::i18n en {
     toc_title          "Table of contents"
-    toc_no_headings    "no headings found"
     toc_jump_bar       "Enter jump  esc/ctrl+q cancel"
     toc_headings       "%d heading%s"
     br_no_docs         "No documents yet. Press n to create one."
-    br_help_gui        "h:help  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  c:config  z:reload  %s:sections  q:quit"
     br_help_tui        "h:%s  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  a:analyse  c:config  w:words  %s:sections  q:quit"
     br_backed_up       "backup %s -> %s  (%s)"
     br_favorites       "Favorites"
@@ -1234,8 +1240,6 @@ dict set ::i18n en {
     br_stats_no_data   "No writing stats yet for this file."
     br_stats_today     "Today"
     br_stats_total     "Total"
-    br_stats_total_words "Total words"
-    br_stats_total_chars "Total characters"
     br_stats_clear     "Clear stats"
     br_stats_clear_confirm "Clear all writing stats for \"%s\"?"
     br_fav_added       "[+] added to favorites: %s"
@@ -1249,15 +1253,12 @@ dict set ::i18n en {
     ed_saved           "saved"
     ed_watch_reload       "\"%s\" was modified externally. Reload?"
     ed_watch_reload_dirty "\"%s\" was modified externally and you have unsaved changes. Reload?"
-    ed_save_before     "Save \"%s\" before closing?"
     ed_save_before_tui "save before closing? (y/n/c=cancel)"
     help_date_time     "Date & Time"
     help_cur_time      "Current time:  %-12s  Date: %s"
     help_file_info     "File info"
     help_sel_info      "Selection info"
     help_words_chars   "Words: %-8d  Chars: %d"
-    help_shortcuts     "Writhdeck - keyboard shortcuts"
-    help_close         "Press any key to close"
     help_k_save        "Save"
     help_k_undo        "Undo"
     help_k_redo        "Redo"
@@ -1276,63 +1277,10 @@ dict set ::i18n en {
     help_k_ctrl_arrows "Ctrl+Up/Dn  Paragraph  |  Ctrl+Lt/Rt / Alt+BF  Word"
     help_k_toc         "Table of contents"
     help_k_help        "This help"
-    help_shift_arrows  "Shift+Arrows  Extend selection"
-    help_k_split       "Split view (toggle)"
-    help_k_split_focus "Split view - cycle focus"
     help_k_workspace   "Second workspace (toggle WS1/WS2)"
     br_toc_title       "Browser sections"
-    br_toc_empty       "no sections"
     br_toc_bar         "Up/Dn nav  Enter jump  esc cancel"
-    dlg_yes            "Yes"
-    dlg_no             "No"
-    dlg_cancel         "Cancel"
-    goto_title         "Go to line"
-    goto_prompt        "Line:"
-    profile_config_title   "Configuration"
-    profile_config_default_profile "Default profile:"
-    profile_config_default_scheme  "Default color scheme:"
-    profile_config_language        "Language:"
-    profile_config_edit_profile "Edit profile:"
-    profile_config_font    "Font family:"
-    profile_config_size    "Font size:"
-    profile_config_margin_w "Margin width:"
-    profile_config_margin_h "Margin height:"
-    profile_config_word_goal "Daily word goal:"
-    profile_config_dark_mode "Dark mode:"
-    profile_config_apply   "Apply"
-    profile_config_cancel  "Cancel"
     br_key_help            "help"
-    br_key_new             "new"
-    br_key_scratchpad      "scratchpad"
-    br_key_fav             "fav"
-    br_key_stats           "stats"
-    br_key_backup          "backup"
-    br_key_delete          "delete"
-    br_key_rename          "rename"
-    br_key_info            "info"
-    br_key_analyse         "analyse"
-    br_key_words           "words"
-    br_key_config          "config"
-    br_key_reload          "reload"
-    br_key_quit            "quit"
-    br_help_new_file       "New file"
-    br_help_scratchpad     "Scratchpad (temp, no disk file)"
-    br_help_toggle_fav     "Toggle favorite"
-    br_help_writing_stats  "Writing stats"
-    br_help_backup         "Backup (copies to backups/ with timestamp)"
-    br_help_show_path      "Show full path"
-    br_help_analyse        "Analyse document structure"
-    br_help_word_occ       "Word occurrences"
-    br_help_delete_file    "Delete"
-    br_help_rename_file    "Rename"
-    br_help_font_settings  "Font settings by profile"
-    br_help_reload         "Reload"
-    br_help_browser_sections "Browser sections"
-    br_help_fullscreen_br  "Fullscreen"
-    br_help_open_file_br   "Open file"
-    br_help_help           "Help"
-    br_help_quit_app       "Quit"
-    br_key_sections        "sections"
     br_analyse_title       "Structure"
     br_analyse_intro       "(intro)"
     br_analyse_empty       "No content to analyse."
@@ -1351,109 +1299,23 @@ dict set ::i18n en {
     br_spellcheck_suggestions "suggestions: %s"
     br_spellcheck_no_suggestions "(no suggestions)"
     br_spellcheck_unavailable "Spell checker unavailable (dictionary '%s' not found)."
-    help_writhdeck         "WRITHDECK"
-    help_version           "Version"
-    help_date_time_sect    "DATE & TIME"
-    help_current_time      "Current time"
-    help_date              "Date"
-    help_editor_sect       "EDITOR"
-    help_save_as           "Save as"
-    help_return_browser    "Return to browser"
-    help_find_next         "Find (Enter: next  Shift+Enter: prev)"
-    help_find_replace      "Find & Replace (Enter: replace one  Ctrl+Enter: all)"
-    help_para_word         "Paragraph / word navigation"
-    help_toc_marker        "Table of contents  (%s)"
-    help_browser_sect      "BROWSER"
-    help_open              "Open"
-    help_double_click      "Enter / double-click"
-    help_key_open_text     "Open"
-    help_k_fullscreen      "Fullscreen"
-    config_tab_profile     "Profile"
     config_tab_timer       "Timer"
     timer_section          "Settings"
     timer_duration         "Duration (min):"
     timer_sound            "Sound at end:"
     timer_alert            "Alert message:"
     timer_type             "Type:"
-    timer_type_countdown   "countdown"
-    timer_type_stopwatch   "stopwatch"
     chrono_show            "Show in status bar:"
     config_tab_misc        "Misc"
     autosave_section       "Autosave"
     autosave_enabled       "Autosave:"
     autosave_interval      "Interval (min):"
-    config_tab_fonts       "Fonts"
-    config_tab_display     "Display"
-    config_statusbar_section "Status bar"
-    config_statusbar_left  "Left:"
-    config_statusbar_center "Center:"
-    config_statusbar_right "Right:"
-    config_statusbar_tokens "Tokens: workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
-    config_editor_section  "Editor"
-    config_heading_marker  "Heading marker:"
-    config_tab_schemes     "Schemes"
-    config_scheme_select   "Scheme:"
-    config_scheme_new      "New"
-    config_scheme_delete   "Delete"
-    config_scheme_dark     "Dark"
-    config_scheme_light    "Light"
-    config_scheme_save     "Save"
-    config_color_bg        "Background"
-    config_color_fg        "Text"
-    config_color_bg_bar    "Bar BG"
-    config_color_fg_bar    "Bar text"
-    config_color_bg_sel    "Selection"
-    config_color_heading   "Heading"
-    config_color_comment   "Comment"
-    config_color_markup    "Markup"
-    config_color_bg2       "Frame BG"
-    config_markup_section        "Markup markers"
-    config_comment_marker        "Comment marker:"
-    config_bold_marker           "Bold marker:"
-    config_italic_marker         "Italic marker:"
-    config_underline_marker      "Underline marker:"
-    config_strikethrough_marker  "Strikethrough marker:"
-    config_markdown_headings     "Markdown headings (#):"
-    config_behaviour_section     "Behaviour"
-    config_docs_dir              "Extra documents folder:"
-    config_browse                "Browse"
-    config_browser_startup       "Show browser on start:"
-    config_show_bar              "Show editor status bar:"
-    config_browser_filter        "Browser file filter:"
-    config_browser_show_all      "Show all files (ignore filter):"
-    config_repetition_scope      "Repetition scope (words):"
-    config_repetition_min_len    "Hidden repetition min. length:"
-    config_spell_lang            "Spell-check language (empty=auto):"
-    config_spell_highlight       "Highlight spelling errors (visible text):"
-    config_repetition_hidden     "Detect hidden repetitions:"
-    config_analysis_ignore_comments "Ignore commented lines (analysis):"
-    config_watch_file            "Watch for external changes:"
-    config_hemingway_mode        "Hemingway mode (no delete):"
-    config_split_shrink_margin   "Shrink margin in split view:"
-    config_cursor_restore        "Restore cursor position:"
-    config_toc_pinned            "Pin TOC to right panel:"
-    profile_config_line_spacing  "Line spacing (%):"
-    profile_config_bar_height    "Bar height:"
-    profile_config_line_numbers  "Line numbers:"
-    profile_config_block_cursor  "Block cursor:"
-    profile_config_blink_cursor  "Blinking cursor:"
-    ctx_comment                  "Comment"
-    ctx_bold                     "Bold"
-    ctx_italic                   "Italic"
-    ctx_underline                "Underline"
-    ctx_strike                   "Strikethrough"
-    ctx_spellcheck               "Spell check"
-    ctx_on                       "on"
-    ctx_off                      "off"
 }
-
 dict set ::i18n fr {
     toc_title          "Table des matières"
-    toc_no_headings    "aucun titre trouvé"
     toc_jump_bar       "Enter aller  esc/ctrl+q annuler"
     toc_headings       "%d titre%s"
     br_no_docs         "Aucun document. Appuyez sur n pour en créer un."
-    br_help_gui        "h:aide  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  c:config  z:recharger  %s:sections  q:quitter"
     br_help_tui        "h:%s  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  a:analyse  c:config  w:mots  %s:sections  q:quitter"
     br_backed_up       "sauvegarde %s -> %s  (%s)"
     br_favorites       "Favoris"
@@ -1461,8 +1323,6 @@ dict set ::i18n fr {
     br_stats_no_data   "Aucune statistique d'écriture pour ce fichier."
     br_stats_today     "Aujourd'hui"
     br_stats_total     "Total"
-    br_stats_total_words "Nombre de mots"
-    br_stats_total_chars "Nombre de lettres"
     br_stats_clear     "Effacer les stats"
     br_stats_clear_confirm "Effacer toutes les statistiques de \"%s\" ?"
     br_fav_added       "[+] ajouté aux favoris : %s"
@@ -1476,15 +1336,12 @@ dict set ::i18n fr {
     ed_saved           "enregistré"
     ed_watch_reload       "\"%s\" a été modifié externement. Recharger ?"
     ed_watch_reload_dirty "\"%s\" a été modifié externement et vous avez des modifications non sauvegardées. Recharger ?"
-    ed_save_before     "Enregistrer \"%s\" avant de fermer ?"
     ed_save_before_tui "enregistrer avant de fermer ? (o/n/c=annuler)"
     help_date_time     "Date & Heure"
     help_cur_time      "Heure actuelle: %-12s  Date : %s"
     help_file_info     "Infos fichier"
     help_sel_info      "Infos sélection"
     help_words_chars   "Mots : %-8d  Caract. : %d"
-    help_shortcuts     "Writhdeck - raccourcis clavier"
-    help_close         "Appuyer sur une touche pour fermer"
     help_k_save        "Enregistrer"
     help_k_undo        "Annuler"
     help_k_redo        "Rétablir"
@@ -1503,63 +1360,10 @@ dict set ::i18n fr {
     help_k_ctrl_arrows "Ctrl+Up/Dn  Paragraphe  |  Ctrl+Lt/Rt / Alt+BF  Mot"
     help_k_toc         "Table des matières"
     help_k_help        "Cette aide"
-    help_shift_arrows  "Maj+Flèches   Étendre la sélection"
-    help_k_split       "Vue partagée (bascule)"
-    help_k_split_focus "Vue partagée - changer de fenêtre"
     help_k_workspace   "Second espace de travail (bascule ES1/ES2)"
     br_toc_title       "Sections du navigateur"
-    br_toc_empty       "aucune section"
     br_toc_bar         "Up/Dn nav  Enter aller  esc annuler"
-    dlg_yes            "Oui"
-    dlg_no             "Non"
-    dlg_cancel         "Annuler"
-    goto_title         "Aller à la ligne"
-    goto_prompt        "Ligne :"
-    profile_config_title   "Configuration"
-    profile_config_default_profile "Profil par défaut :"
-    profile_config_default_scheme  "Schéma de couleurs par défaut :"
-    profile_config_language        "Langue :"
-    profile_config_edit_profile "Éditer le profil :"
-    profile_config_font    "Police :"
-    profile_config_size    "Taille :"
-    profile_config_margin_w "Largeur marge :"
-    profile_config_margin_h "Hauteur marge :"
-    profile_config_word_goal "Objectif quotidien :"
-    profile_config_dark_mode "Mode sombre :"
-    profile_config_apply   "Appliquer"
-    profile_config_cancel  "Annuler"
     br_key_help            "aide"
-    br_key_new             "nouveau"
-    br_key_scratchpad      "bloc-notes"
-    br_key_fav             "fav"
-    br_key_stats           "stats"
-    br_key_backup          "backup"
-    br_key_delete          "supprimer"
-    br_key_rename          "renommer"
-    br_key_info            "infos"
-    br_key_analyse         "analyse"
-    br_key_words           "mots"
-    br_key_config          "config"
-    br_key_reload          "recharger"
-    br_key_quit            "quitter"
-    br_help_new_file       "Nouveau fichier"
-    br_help_scratchpad     "Bloc-notes (temp, pas de fichier)"
-    br_help_toggle_fav     "Basculer en favoris"
-    br_help_writing_stats  "Statistiques d'écriture"
-    br_help_backup         "Sauvegarde (copie dans backups/ avec timestamp)"
-    br_help_show_path      "Afficher le chemin complet"
-    br_help_analyse        "Analyser la structure du document"
-    br_help_word_occ       "Occurrences de mots"
-    br_help_delete_file    "Supprimer"
-    br_help_rename_file    "Renommer"
-    br_help_font_settings  "Paramètres de police par profil"
-    br_help_reload         "Recharger"
-    br_help_browser_sections "Sections du navigateur"
-    br_help_fullscreen_br  "Plein écran"
-    br_help_open_file_br   "Ouvrir un fichier"
-    br_help_help           "Aide"
-    br_help_quit_app       "Quitter"
-    br_key_sections        "sections"
     br_analyse_title       "Structure"
     br_analyse_intro       "(début)"
     br_analyse_empty       "Aucun contenu à analyser."
@@ -1578,102 +1382,18 @@ dict set ::i18n fr {
     br_spellcheck_suggestions "suggestions : %s"
     br_spellcheck_no_suggestions "(aucune suggestion)"
     br_spellcheck_unavailable "Correcteur orthographique indisponible (dictionnaire '%s' introuvable)."
-    help_writhdeck         "WRITHDECK"
-    help_version           "Version"
-    help_date_time_sect    "DATE & HEURE"
-    help_current_time      "Heure actuelle"
-    help_date              "Date"
-    help_editor_sect       "ÉDITEUR"
-    help_save_as           "Enregistrer sous"
-    help_return_browser    "Retour au navigateur"
-    help_find_next         "Chercher (Entrée : suivant  Maj+Entrée : précédent)"
-    help_find_replace      "Chercher et remplacer (Entrée : remplacer un  Ctrl+Entrée : tout)"
-    help_para_word         "Navigation par paragraphe / mot"
-    help_toc_marker        "Table des matières  (%s)"
-    help_browser_sect      "NAVIGATEUR"
-    help_open              "Ouvrir"
-    help_double_click      "Entrée / double-clic"
-    help_key_open_text     "Ouvrir"
-    help_k_fullscreen      "Plein écran"
-    config_tab_profile     "Profil"
     config_tab_timer       "Minuterie"
     timer_section          "Parametres"
     timer_duration         "Duree (min) :"
     timer_sound            "Son a la fin :"
     timer_alert            "Message d'alerte :"
     timer_type             "Type :"
-    timer_type_countdown   "compte a rebours"
-    timer_type_stopwatch   "chronometre"
     chrono_show            "Afficher dans la barre :"
     config_tab_misc        "Divers"
     autosave_section       "Sauvegarde auto"
     autosave_enabled       "Sauvegarde auto :"
     autosave_interval      "Intervalle (min) :"
-    config_tab_fonts       "Polices"
-    config_tab_display     "Affichage"
-    config_statusbar_section "Barre de statut"
-    config_statusbar_left  "Gauche :"
-    config_statusbar_center "Centre :"
-    config_statusbar_right "Droite :"
-    config_statusbar_tokens "Tokens : workspace  filename  dirty  sel  ln  col  words  chars  goal  clock  timer  space  help_bar"
-    config_editor_section  "Editeur"
-    config_heading_marker  "Marqueur de titre :"
-    config_tab_schemes     "Schemas"
-    config_scheme_select   "Schema :"
-    config_scheme_new      "Nouveau"
-    config_scheme_delete   "Supprimer"
-    config_scheme_dark     "Sombre"
-    config_scheme_light    "Clair"
-    config_scheme_save     "Sauvegarder"
-    config_color_bg        "Fond"
-    config_color_fg        "Texte"
-    config_color_bg_bar    "Fond barre"
-    config_color_fg_bar    "Texte barre"
-    config_color_bg_sel    "Selection"
-    config_color_heading   "Titre"
-    config_color_comment   "Commentaire"
-    config_color_markup    "Balisage"
-    config_color_bg2       "Fond cadre"
-    config_markup_section        "Marqueurs inline"
-    config_comment_marker        "Marqueur commentaire :"
-    config_bold_marker           "Marqueur gras :"
-    config_italic_marker         "Marqueur italique :"
-    config_underline_marker      "Marqueur souligne :"
-    config_strikethrough_marker  "Marqueur barre :"
-    config_markdown_headings     "Titres Markdown (# ...) :"
-    config_behaviour_section     "Comportement"
-    config_docs_dir              "Dossier documents extra :"
-    config_browse                "Parcourir"
-    config_browser_startup       "Navigateur au demarrage :"
-    config_show_bar              "Afficher la barre d'etat (editeur) :"
-    config_browser_filter        "Filtre de fichiers (navigateur) :"
-    config_browser_show_all      "Afficher tous les fichiers (ignorer filtre) :"
-    config_repetition_scope      "Portée de répétition (mots) :"
-    config_repetition_min_len    "Longueur min. (répétitions cachées) :"
-    config_spell_lang             "Langue du correcteur (vide=auto) :"
-    config_spell_highlight        "Surligner les fautes d'orthographe (texte visible) :"
-    config_repetition_hidden     "Détecter les répétitions cachées :"
-    config_analysis_ignore_comments "Ignorer les lignes commentées (analyse) :"
-    config_watch_file            "Surveiller modifications externes :"
-    config_hemingway_mode        "Mode Hemingway (sans suppression) :"
-    config_split_shrink_margin   "Reduire marge en vue split :"
-    config_cursor_restore        "Restaurer position curseur :"
-    config_toc_pinned            "Ancrer table des matieres (droite) :"
-    profile_config_line_spacing  "Interligne (%) :"
-    profile_config_bar_height    "Hauteur barre :"
-    profile_config_line_numbers  "Numeros de ligne :"
-    profile_config_block_cursor  "Curseur bloc :"
-    profile_config_blink_cursor  "Curseur clignotant :"
-    ctx_comment                  "Commentaire"
-    ctx_bold                     "Gras"
-    ctx_italic                   "Italique"
-    ctx_underline                "Souligne"
-    ctx_strike                   "Barre"
-    ctx_spellcheck               "Correction orthographique"
-    ctx_on                       "actif"
-    ctx_off                      "inactif"
 }
-
 
 # ===========================================================================
 # common.tcl
@@ -3518,30 +3238,6 @@ proc tui-getch {{timeout -1}} {
     if {$b == 127} { return BACKSPACE }
     if {$b == 13  || $b == 10} { return ENTER }
     if {$b == 9}               { return TAB }
-    # DOS extended keys: null byte followed by BIOS scan code.
-    # On DOS, 0x08 is also the Backspace key (same byte as Ctrl-H); remap it.
-    if {$::tcl_platform(os) eq "msdosdjgpp"} {
-        if {$b == 8} { return BACKSPACE }
-        if {$b == 0} {
-            set sc [read stdin 1]
-            if {$sc eq ""} { return "" }
-            scan $sc %c sc_b
-            switch -- $sc_b {
-                72 { return UP    }  80 { return DOWN  }
-                75 { return LEFT  }  77 { return RIGHT }
-                71 { return HOME  }  79 { return END   }
-                73 { return PPAGE }  81 { return NPAGE }
-                83 { return DC    }
-                59 { return F1    }  60 { return F2    }
-                61 { return F3    }  62 { return F4    }
-                63 { return F5    }  64 { return F6    }
-                65 { return F7    }  66 { return F8    }
-                67 { return F9    }  68 { return F10   }
-                133 { return F11  }  134 { return F12  }
-                default { return "" }
-            }
-        }
-    }
     return [format %c $b]
 }
 
@@ -3671,7 +3367,7 @@ proc tui-prompt {label rows cols} {
     # trailing CR+LF that still sits in stdin.  Skip all leading ENTERs until
     # the first real keystroke so the prompt doesn't close immediately.
     # ESC still cancels at any point.
-    set skip_leading_enters [expr {$::tcl_platform(os) eq "msdosdjgpp"}]
+    set skip_leading_enters 0
     while 1 {
         set d " $label$buf"
         tui-bar [expr {$rows-1}] $d "" $cols
@@ -4756,9 +4452,6 @@ proc tui-editor {filepath {init_state {}}} {
                 set lines [linsert [lreplace $lines [expr {$cy-1}] [expr {$cy-1}] \
                     [string range $l 0 [expr {$cx-1}]]] $cy [string range $l $cx end]]
                 incr cy; set cx 0; tui-mark-dirty
-                if {$::tcl_platform(os) eq "msdosdjgpp"} {
-                    puts -nonewline "\033\[2J\033\[H"
-                }
             }
             TAB {
                 tui-push-undo
@@ -5485,7 +5178,8 @@ proc tui-main {} {
         puts stderr "writhdeck: TUI mode is not supported on Windows"
         exit 1
     }
-    if {[catch {exec stty -g <@stdin}] && $::tcl_platform(os) ne "msdosdjgpp"} {
+    set _stty_fail [catch {exec stty -g <@stdin}]
+    if {$_stty_fail} {
         puts stderr "writhdeck: not a terminal"
         exit 1
     }

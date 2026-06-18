@@ -889,7 +889,19 @@ proc keys-init {} {
 set ::i18n [dict create]
 proc t {key args} {
     set lang [expr {[dict exists $::i18n $::cfg_lang] ? $::cfg_lang : "en"}]
-    set s [dict get $::i18n $lang $key]
+    # Look in the common dict, then the GUI-only dict (absent in TUI/CLI builds),
+    # falling back to English for either when a key is missing in $lang.
+    if {[dict exists $::i18n $lang $key]} {
+        set s [dict get $::i18n $lang $key]
+    } elseif {[info exists ::i18n_gui] && [dict exists $::i18n_gui $lang $key]} {
+        set s [dict get $::i18n_gui $lang $key]
+    } elseif {[dict exists $::i18n en $key]} {
+        set s [dict get $::i18n en $key]
+    } elseif {[info exists ::i18n_gui] && [dict exists $::i18n_gui en $key]} {
+        set s [dict get $::i18n_gui en $key]
+    } else {
+        return $key
+    }
     if {[llength $args]} { return [format $s {*}$args] }
     return $s
 }

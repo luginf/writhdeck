@@ -20,12 +20,21 @@ if {[llength $langs] == 0} {
 puts "Testing i18n translations..."
 puts "Languages found: $langs\n"
 
-# Initialize i18n dictionary
+# Initialize i18n dictionaries (common + GUI-only)
 set ::i18n {}
+set ::i18n_gui {}
 
 # Load all translations
 foreach lang $langs {
     source src/i18n/${lang}.tcl
+}
+
+# Merge the GUI-only dict into ::i18n so completeness/format checks cover all
+# keys regardless of which build (GUI vs TUI) they ship in.
+foreach lang [dict keys $::i18n_gui] {
+    dict for {k v} [dict get $::i18n_gui $lang] {
+        dict set ::i18n $lang $k $v
+    }
 }
 
 # Get keys from English
