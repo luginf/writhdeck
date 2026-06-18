@@ -7,16 +7,17 @@
 WrithDeck is a distraction-free text editor designed for writers using a dedicated writerdeck — a DIY prototype or a computer configured specifically for writing. It runs as a graphical application (GUI) or directly in a terminal/TTY (TUI), all from a single executable file with no installation required.
 
 **Features:**
-- Inline syntax highlighting with support for markdown markers
-- File browser with favorites and recent files
-- Split view editing (GUI and TUI)
+- Inline syntax highlighting with support for markdown and txt2tags markers
+- File browser with favorites, recent files, and subfolder navigation
+- Split view editing, customise margins size (GUI and TUI)
 - Second workspace (F10) for side-by-side editing of two independent files (GUI and TUI)
 - Table of contents with heading navigation
 - Fully themeable interface (dark/light mode, 6 built-in color schemes)
 - ANSI color support in TUI (16-color and 256-color, TTY-compatible, configurable in INI)
 - Multi-language support (English, French, German, Spanish, Korean, Norwegian)
 - Clickable toolbar shortcuts
-- Writing statistics and daily progress tracking
+- Document analysis tools: structure outline, word occurrences, repetition detection, and spell checking
+- Writing statistics and daily progress tracking, with a configurable daily word goal
 - Configurable timer (countdown) and stopwatch with visual alerts and audio notifications
 - Modal command mode (ESC key) for quick access to timer, stats, and word occurrences
 - ~5,000 lines of Tcl/Tk, generated from modular source files
@@ -64,6 +65,57 @@ You can also copy `writhdeck.tcl` or `writhdeck-cli.tcl` to your PATH (e.g. `/us
 📖 See the [manual](writhdeck_MANUAL.md) for configuration, keyboard shortcuts, and all features.
 
 ![WrithDeck Screenshot 02](media/writhdeck_screen02.png)
+
+## Writing analysis & statistics
+
+WrithDeck bundles a set of tools to review work in progress, available in both the GUI and the TUI (from the browser via `a` / `w` / `s`, or from the modal command mode while editing):
+
+- **Structure outline** (`a`) — a chapter/section overview built from your headings, with total word and section counts. Pick a heading to jump straight to it.
+- **Word occurrences** (`w`) — a frequency list of every word in the document, sorted by count, to spot overused terms.
+- **Repetition detection** — flags the same word (or lemma) repeated within a configurable range and, optionally, *hidden* repetitions such as "tour" inside "alentours". Scope and minimum length are configurable.
+- **Spell checking** — checks the whole document through Hunspell and lists each misspelling with suggestions; jump to any occurrence directly.
+- **Daily statistics** (`s`) — per-file daily word counts (high-water mark), plus a configurable daily word goal shown live in the status bar.
+
+These analysis tools are optional at build time (`make ANALYSIS_TOOLS=no` to exclude them).
+
+## Example workflow
+
+WrithDeck is deliberately platform-agnostic — same shortcuts, same generous margins, whether you write in a terminal, on the desktop, on Android, or in a browser. A single file can therefore follow you across every device. One possible Git-based workflow:
+
+```mermaid
+flowchart LR
+    subgraph HOME["💻 Home PC · Tcl version"]
+        A["📄 Create file.txt"] --> B["git add · commit · push"]
+        P["⬇️ git pull"] --> U["🔑 Copy to USB stick"]
+    end
+
+    G(["🌿 Private Git repo<br/>GitHub, etc."])
+
+    subgraph PHONE["📱 Android · app"]
+        C["✍️ Edit distraction-free"] --> D["🔄 Sync via GitNote"]
+    end
+
+    subgraph AWAY["🌍 Any computer · web version"]
+        E["✍️ Edit straight from the USB stick<br/>luginf.github.io/writhdeck"]
+    end
+
+    B --> G
+    G -->|"clone · GitNote"| C
+    D --> G
+    G --> P
+    U --> E
+```
+
+1. Create a private Git repository on GitHub (or elsewhere).
+2. Create a new file on your PC with the Tcl version.
+3. Stage it: `git add file.txt`.
+4. Commit and push.
+5. Clone the repository on an Android phone using [GitNote](https://f-droid.org/packages/io.github.wiiznokes.gitnote/).
+6. Edit the file in distraction-free mode from the Android app (or from Termux).
+7. Sync your changes back with GitNote.
+8. Pull the file back to your PC with `git pull`.
+9. Copy the file onto a USB stick.
+10. On any outside computer (a library, a friend's place), open [the web version](https://luginf.github.io/writhdeck/writhdeck.html) and edit the file directly from the USB stick.
 
 ## Building from Source
 

@@ -7,8 +7,8 @@
 WrithDeck est un éditeur de texte sans distraction conçu pour les auteurs utilisant un writerdeck dédié — prototype fait maison ou ordinateur configuré spécifiquement pour l'écriture. Il fonctionne comme une application graphique (GUI) ou directement dans un terminal/TTY (TUI), le tout depuis un seul fichier exécutable sans installation.
 
 **Fonctionnalités :**
-- Coloration syntaxique inline avec support des marqueurs Markdown
-- Navigateur de fichiers avec favoris et fichiers récents
+- Coloration syntaxique inline avec support des marqueurs Markdown et txt2tags
+- Navigateur de fichiers avec favoris, fichiers récents et navigation dans les sous-dossiers
 - Édition en vue fractionnée (GUI et TUI)
 - Second espace de travail (F10) pour éditer deux fichiers indépendants côte à côte (GUI et TUI)
 - Table des matières avec navigation par en-têtes
@@ -16,7 +16,8 @@ WrithDeck est un éditeur de texte sans distraction conçu pour les auteurs util
 - Couleurs ANSI en mode TUI (16 couleurs et 256 couleurs, compatible TTY, configurables dans le INI)
 - Support multi-langue (Anglais, Français, Allemand, Espagnol, Coréen, Norvégien)
 - Raccourcis cliquables dans la barre d'outils
-- Statistiques d'écriture et suivi du progrès quotidien
+- Outils d'analyse du document : plan de structure, occurrences de mots, détection des répétitions et correction orthographique
+- Statistiques d'écriture et suivi du progrès quotidien, avec objectif de mots journalier configurable
 - Minuterie configurable (compte à rebours) et chronomètre avec alertes visuelles et notifications sonores
 - Mode commande modal (touche ESC) pour accès rapide au minuteur, aux stats et aux occurrences de mots
 - ~5 000 lignes de Tcl/Tk, générées à partir de modules source
@@ -55,6 +56,57 @@ Vous pouvez aussi copier `writhdeck.tcl` ou `writhdeck-cli.tcl` dans votre PATH 
 📖 Voir le [manuel](writhdeck_MANUAL.md) pour la configuration, les raccourcis clavier et toutes les fonctionnalités.
 
 ![WrithDeck Screenshot 02](media/writhdeck_screen02.png)
+
+## Analyse et statistiques d'écriture
+
+WrithDeck embarque un ensemble d'outils pour relire un travail en cours, disponibles aussi bien en GUI qu'en TUI (depuis le navigateur via `a` / `w` / `s`, ou depuis le mode commande modal pendant l'édition) :
+
+- **Plan de structure** (`a`) — un aperçu des chapitres/sections construit à partir de vos en-têtes, avec le total de mots et de sections. Sélectionnez un en-tête pour y sauter directement.
+- **Occurrences de mots** (`w`) — la liste de fréquence de chaque mot du document, triée par nombre, pour repérer les termes surutilisés.
+- **Détection des répétitions** — signale un même mot (ou lemme) répété dans une portée configurable et, en option, les répétitions *cachées* comme « tour » dans « alentours ». Portée et longueur minimale réglables.
+- **Correction orthographique** — vérifie tout le document via Hunspell et liste chaque faute avec des suggestions ; sautez à n'importe quelle occurrence.
+- **Statistiques quotidiennes** (`s`) — comptage de mots par jour et par fichier (high-water mark), plus un objectif de mots journalier affiché en direct dans la barre d'état.
+
+Ces outils d'analyse sont optionnels à la compilation (`make ANALYSIS_TOOLS=no` pour les exclure).
+
+## Exemple de workflow
+
+WrithDeck est volontairement agnostique de la plateforme — mêmes raccourcis, mêmes marges larges, que vous écriviez dans un terminal, sur le bureau, sous Android ou dans un navigateur. Un même fichier peut donc vous suivre sur tous vos appareils. Un workflow possible, basé sur Git :
+
+```mermaid
+flowchart LR
+    subgraph HOME["💻 PC maison · version Tcl"]
+        A["📄 Créer fichier.txt"] --> B["git add · commit · push"]
+        P["⬇️ git pull"] --> U["🔑 Copie sur clé USB"]
+    end
+
+    G(["🌿 Dépôt Git privé<br/>GitHub, etc."])
+
+    subgraph PHONE["📱 Android · application"]
+        C["✍️ Édition sans distraction"] --> D["🔄 Synchro via GitNote"]
+    end
+
+    subgraph AWAY["🌍 N'importe quel PC · version web"]
+        E["✍️ Édition directe depuis la clé USB<br/>luginf.github.io/writhdeck"]
+    end
+
+    B --> G
+    G -->|"clone · GitNote"| C
+    D --> G
+    G --> P
+    U --> E
+```
+
+1. Création d'un dépôt Git privé sur GitHub (ou ailleurs).
+2. Création d'un nouveau fichier sur le PC depuis la version Tcl.
+3. Ajout au suivi Git : `git add fichier.txt`.
+4. Commit et push.
+5. Récupération du dépôt sur un téléphone Android via [GitNote](https://f-droid.org/packages/io.github.wiiznokes.gitnote/).
+6. Édition du fichier en mode « sans distraction » depuis l'app Android (ou depuis Termux).
+7. Mise à jour avec GitNote.
+8. Récupération du fichier sur le PC via `git pull`.
+9. Copie du fichier sur une clé USB.
+10. Sur un PC extérieur (bibliothèque, amis), ouverture de [la version web](https://luginf.github.io/writhdeck/writhdeck.html) et travail directement sur la clé USB.
 
 ## Compilation depuis les sources
 
