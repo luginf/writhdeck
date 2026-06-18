@@ -69,6 +69,9 @@ WrithDeck embarque un ensemble d'outils pour relire un travail en cours, disponi
 
 Ces outils d'analyse sont optionnels à la compilation (`make ANALYSIS_TOOLS=no` pour les exclure).
 
+![WrithDeck tools](media/writhdeck_tools.png)
+
+
 ## Exemple de workflow
 
 WrithDeck est volontairement agnostique de la plateforme — mêmes raccourcis, mêmes marges larges, que vous écriviez dans un terminal, sur le bureau, sous Android ou dans un navigateur. Un même fichier peut donc vous suivre sur tous vos appareils. Un workflow possible, basé sur Git :

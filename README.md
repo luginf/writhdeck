@@ -78,6 +78,8 @@ WrithDeck bundles a set of tools to review work in progress, available in both t
 
 These analysis tools are optional at build time (`make ANALYSIS_TOOLS=no` to exclude them).
 
+![WrithDeck tools](media/writhdeck_tools.png)
+
 ## Example workflow
 
 WrithDeck is deliberately platform-agnostic — same shortcuts, same generous margins, whether you write in a terminal, on the desktop, on Android, or in a browser. A single file can therefore follow you across every device. One possible Git-based workflow:
