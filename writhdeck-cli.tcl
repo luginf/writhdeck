@@ -387,6 +387,7 @@ set ::cfg_block_cursor_console 1
 set ::cfg_blink_cursor         0
 set ::cfg_line_spacing   100
 set ::cfg_bar_height     18
+set ::cfg_bar_show       1
 set ::cfg_lang           "en"
 set ::cfg_help_bar       "^S save   ^Q close   F10 workspace   ^H help"
 set ::cfg_word_goal      500
@@ -728,6 +729,7 @@ proc ini-load {} {
                 blink_cursor         { set ::cfg_blink_cursor         [string is true $v] }
                 line_spacing     { set ::cfg_line_spacing   $v }
                 bar_height       { set ::cfg_bar_height     $v }
+                bar              { set ::cfg_bar_show       [string is true $v] }
                 lang             { set ::cfg_lang           $v }
                 help_bar         { set ::cfg_help_bar       $v }
                 status_left      { set ::cfg_status_left    $v }
@@ -835,6 +837,8 @@ proc ini-save {} {
     puts $fh "markdown_headings    = [expr {$::cfg_markdown_headings    ? "yes" : "no"}]"
     puts $fh "split_shrink_margin  = [expr {$::cfg_split_shrink_margin  ? "yes" : "no"}]"
     puts $fh "console_center_alert = [expr {$::cfg_console_center_alert ? "yes" : "no"}]"
+    puts $fh "% bar: show the editor status bar (no = hide it; the browser bar is unaffected; search field and ESC menu still appear, sized by bar_height)"
+    puts $fh "bar                  = [expr {$::cfg_bar_show            ? "yes" : "no"}]"
     puts $fh "line_numbers         = [expr {$::cfg_line_numbers         ? "yes" : "no"}]"
     puts $fh "cursor_restore       = [expr {$::cfg_cursor_restore       ? "yes" : "no"}]"
     puts $fh "toc_pinned           = [expr {$::cfg_toc_pinned           ? "yes" : "no"}]"
@@ -1414,6 +1418,7 @@ dict set ::i18n en {
     config_docs_dir              "Extra documents folder:"
     config_browse                "Browse"
     config_browser_startup       "Show browser on start:"
+    config_show_bar              "Show editor status bar:"
     config_browser_filter        "Browser file filter:"
     config_browser_show_all      "Show all files (ignore filter):"
     config_repetition_scope      "Repetition scope (words):"
@@ -1640,6 +1645,7 @@ dict set ::i18n fr {
     config_docs_dir              "Dossier documents extra :"
     config_browse                "Parcourir"
     config_browser_startup       "Navigateur au demarrage :"
+    config_show_bar              "Afficher la barre d'etat (editeur) :"
     config_browser_filter        "Filtre de fichiers (navigateur) :"
     config_browser_show_all      "Afficher tous les fichiers (ignorer filtre) :"
     config_repetition_scope      "Portée de répétition (mots) :"

@@ -196,6 +196,7 @@ dict set ::i18n en {
     config_docs_dir              "Extra documents folder:"
     config_browse                "Browse"
     config_browser_startup       "Show browser on start:"
+    config_show_bar              "Show editor status bar:"
     config_browser_filter        "Browser file filter:"
     config_browser_show_all      "Show all files (ignore filter):"
     config_repetition_scope      "Repetition scope (words):"

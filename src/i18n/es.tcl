@@ -196,6 +196,7 @@ dict set ::i18n es {
     config_docs_dir              "Carpeta extra de documentos:"
     config_browse                "Explorar"
     config_browser_startup       "Mostrar navegador al inicio:"
+    config_show_bar              "Mostrar barra de estado (editor):"
     config_browser_filter        "Filtro de archivos (navegador):"
     config_browser_show_all      "Mostrar todos los archivos (ignorar filtro):"
     config_repetition_scope      "Alcance de repeticion (palabras):"

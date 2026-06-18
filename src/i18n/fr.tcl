@@ -196,6 +196,7 @@ dict set ::i18n fr {
     config_docs_dir              "Dossier documents extra :"
     config_browse                "Parcourir"
     config_browser_startup       "Navigateur au demarrage :"
+    config_show_bar              "Afficher la barre d'etat (editeur) :"
     config_browser_filter        "Filtre de fichiers (navigateur) :"
     config_browser_show_all      "Afficher tous les fichiers (ignorer filtre) :"
     config_repetition_scope      "Portée de répétition (mots) :"

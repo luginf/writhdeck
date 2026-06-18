@@ -196,6 +196,7 @@ dict set ::i18n ko {
     config_docs_dir              "추가 문서 폴더:"
     config_browse                "찾아보기"
     config_browser_startup       "시작 시 브라우저 표시:"
+    config_show_bar              "편집기 상태 표시줄 표시:"
     config_browser_filter        "파일 필터 (브라우저):"
     config_browser_show_all      "모든 파일 표시 (필터 무시):"
     config_repetition_scope      "반복 검사 범위 (단어 수):"

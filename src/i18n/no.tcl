@@ -196,6 +196,7 @@ dict set ::i18n no {
     config_docs_dir              "Ekstra dokumentmappe:"
     config_browse                "Bla gjennom"
     config_browser_startup       "Vis nettleser ved oppstart:"
+    config_show_bar              "Vis statuslinje (redigering):"
     config_browser_filter        "Filfilter (nettleser):"
     config_browser_show_all      "Vis alle filer (ignorer filter):"
     config_repetition_scope      "Repetisjonsomfang (ord):"

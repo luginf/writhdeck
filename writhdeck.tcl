@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260617"
+set ::version          "v20260618"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -434,6 +434,7 @@ set ::cfg_block_cursor_console 1
 set ::cfg_blink_cursor         0
 set ::cfg_line_spacing   100
 set ::cfg_bar_height     18
+set ::cfg_bar_show       1
 set ::cfg_lang           "en"
 set ::cfg_help_bar       "^S save   ^Q close   F10 workspace   ^H help"
 set ::cfg_word_goal      500
@@ -775,6 +776,7 @@ proc ini-load {} {
                 blink_cursor         { set ::cfg_blink_cursor         [string is true $v] }
                 line_spacing     { set ::cfg_line_spacing   $v }
                 bar_height       { set ::cfg_bar_height     $v }
+                bar              { set ::cfg_bar_show       [string is true $v] }
                 lang             { set ::cfg_lang           $v }
                 help_bar         { set ::cfg_help_bar       $v }
                 status_left      { set ::cfg_status_left    $v }
@@ -882,6 +884,8 @@ proc ini-save {} {
     puts $fh "markdown_headings    = [expr {$::cfg_markdown_headings    ? "yes" : "no"}]"
     puts $fh "split_shrink_margin  = [expr {$::cfg_split_shrink_margin  ? "yes" : "no"}]"
     puts $fh "console_center_alert = [expr {$::cfg_console_center_alert ? "yes" : "no"}]"
+    puts $fh "% bar: show the editor status bar (no = hide it; the browser bar is unaffected; search field and ESC menu still appear, sized by bar_height)"
+    puts $fh "bar                  = [expr {$::cfg_bar_show            ? "yes" : "no"}]"
     puts $fh "line_numbers         = [expr {$::cfg_line_numbers         ? "yes" : "no"}]"
     puts $fh "cursor_restore       = [expr {$::cfg_cursor_restore       ? "yes" : "no"}]"
     puts $fh "toc_pinned           = [expr {$::cfg_toc_pinned           ? "yes" : "no"}]"
@@ -1599,6 +1603,7 @@ dict set ::i18n en {
     config_docs_dir              "Extra documents folder:"
     config_browse                "Browse"
     config_browser_startup       "Show browser on start:"
+    config_show_bar              "Show editor status bar:"
     config_browser_filter        "Browser file filter:"
     config_browser_show_all      "Show all files (ignore filter):"
     config_repetition_scope      "Repetition scope (words):"
@@ -1825,6 +1830,7 @@ dict set ::i18n de {
     config_docs_dir              "Zusaetzl. Dokumentenordner:"
     config_browse                "Durchsuchen"
     config_browser_startup       "Browser beim Start anzeigen:"
+    config_show_bar              "Editor-Statusleiste anzeigen:"
     config_browser_filter        "Dateifilter (Browser):"
     config_browser_show_all      "Alle Dateien anzeigen (Filter ignorieren):"
     config_repetition_scope      "Wiederholungsbereich (Woerter):"
@@ -2051,6 +2057,7 @@ dict set ::i18n es {
     config_docs_dir              "Carpeta extra de documentos:"
     config_browse                "Explorar"
     config_browser_startup       "Mostrar navegador al inicio:"
+    config_show_bar              "Mostrar barra de estado (editor):"
     config_browser_filter        "Filtro de archivos (navegador):"
     config_browser_show_all      "Mostrar todos los archivos (ignorar filtro):"
     config_repetition_scope      "Alcance de repeticion (palabras):"
@@ -2277,6 +2284,7 @@ dict set ::i18n fr {
     config_docs_dir              "Dossier documents extra :"
     config_browse                "Parcourir"
     config_browser_startup       "Navigateur au demarrage :"
+    config_show_bar              "Afficher la barre d'etat (editeur) :"
     config_browser_filter        "Filtre de fichiers (navigateur) :"
     config_browser_show_all      "Afficher tous les fichiers (ignorer filtre) :"
     config_repetition_scope      "Portée de répétition (mots) :"
@@ -2503,6 +2511,7 @@ dict set ::i18n ko {
     config_docs_dir              "추가 문서 폴더:"
     config_browse                "찾아보기"
     config_browser_startup       "시작 시 브라우저 표시:"
+    config_show_bar              "편집기 상태 표시줄 표시:"
     config_browser_filter        "파일 필터 (브라우저):"
     config_browser_show_all      "모든 파일 표시 (필터 무시):"
     config_repetition_scope      "반복 검사 범위 (단어 수):"
@@ -2729,6 +2738,7 @@ dict set ::i18n no {
     config_docs_dir              "Ekstra dokumentmappe:"
     config_browse                "Bla gjennom"
     config_browser_startup       "Vis nettleser ved oppstart:"
+    config_show_bar              "Vis statuslinje (redigering):"
     config_browser_filter        "Filfilter (nettleser):"
     config_browser_show_all      "Vis alle filer (ignorer filter):"
     config_repetition_scope      "Repetisjonsomfang (ord):"
@@ -4678,6 +4688,7 @@ proc profile-config-dialog {} {
 
     # Boolean behaviour options
     foreach {fname key var} {
+        fbar      config_show_bar             profile_config_bar_show
         fspellhl  config_spell_highlight      profile_config_spell_highlight
         frphidden config_repetition_hidden    profile_config_repetition_hidden
         fignorecomments config_analysis_ignore_comments profile_config_analysis_ignore_comments
@@ -4704,6 +4715,7 @@ proc profile-config-dialog {} {
     $w.tab_misc.behaviour_sec.ffilter.entry insert 0 $::cfg_browser_filter
     $w.tab_misc.behaviour_sec.fspelllang.entry insert 0 $::cfg_spell_lang
     set ::profile_config_browser_show_all $::cfg_browser_show_all
+    set ::profile_config_bar_show       $::cfg_bar_show
     set ::profile_config_spell_highlight $::cfg_spell_highlight
     set ::profile_config_repetition_hidden $::cfg_repetition_hidden
     set ::profile_config_analysis_ignore_comments $::cfg_analysis_ignore_comments
@@ -4911,6 +4923,7 @@ proc profile-config-dialog {} {
             set repetition_hidden  $::profile_config_repetition_hidden
             set ignore_comments    $::profile_config_analysis_ignore_comments
             set browser     $::profile_config_browser
+            set bar_show    $::profile_config_bar_show
             set watch_file  $::profile_config_watch_file
             set hemingway   $::profile_config_hemingway
             set split_shrink $::profile_config_split_shrink
@@ -4963,6 +4976,7 @@ proc profile-config-dialog {} {
             set ::cfg_repetition_hidden  $repetition_hidden
             set ::cfg_analysis_ignore_comments $ignore_comments
             set ::cfg_browser           $browser
+            set ::cfg_bar_show          $bar_show
             set ::cfg_watch_file        $watch_file
             set ::cfg_hemingway_mode    $hemingway
             set ::cfg_split_shrink_margin $split_shrink
@@ -5835,6 +5849,7 @@ if {$::cfg_bar_height > 0} {
     .ed.bar configure -height $::cfg_bar_height
     pack propagate .ed.bar 0
 }
+if {!$::cfg_bar_show} { catch { pack forget .ed.bar } }
 unset _helpzone
 pack .ed.sb  -side right  -fill y
 if {$::cfg_line_numbers} {
@@ -5933,7 +5948,25 @@ proc gui-status-state {} {
                 clock $clk timer $timer_display ws $::ws_n]
 }
 
+# When the status bar is hidden (cfg_bar_show=0), temporarily show it while in
+# modal command mode so the ESC menu remains visible, then hide it again on exit.
+# Idempotent: pack/forget only happens on an actual state change (winfo manager
+# guard), so it is safe to call on every status update.
+proc cmd-mode-bar-sync {} {
+    if {$::cfg_bar_show} return
+    if {$::gui_cmd_mode} {
+        if {[winfo manager .ed.bar] eq ""} {
+            if {[catch {pack .ed.bar -side bottom -fill x -before .ed.sb}]} {
+                catch { pack .ed.bar -side bottom -fill x }
+            }
+        }
+    } else {
+        catch { pack forget .ed.bar }
+    }
+}
+
 proc gui-status-update {} {
+    cmd-mode-bar-sync
     if {$::gui_cmd_mode} {
         set ::ed_bar_left ""
         set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats"
@@ -6280,10 +6313,22 @@ proc save-as {} {
     save-file
 }
 
+# Pack the search/replace frame just above the status bar. When the status bar
+# is hidden (cfg_bar_show=0) .ed.bar is not managed, so anchor on .ed.sb instead.
+proc search-bar-pack {} {
+    if {[winfo manager .ed.bar] ne ""} {
+        pack .ed.sf -before .ed.bar -side bottom -fill x
+    } elseif {[winfo manager .ed.sb] ne ""} {
+        pack .ed.sf -before .ed.sb -side bottom -fill x
+    } else {
+        pack .ed.sf -side bottom -fill x
+    }
+}
+
 proc search-open {} {
     set ::search_ed [active-ed]
     if {![winfo ismapped .ed.sf]} {
-        pack .ed.sf -before .ed.bar -side bottom -fill x
+        search-bar-pack
     }
     catch { pack forget .ed.sf.r }
     .ed.sf.e delete 0 end
@@ -6295,7 +6340,7 @@ proc search-open {} {
 proc replace-open {} {
     set ::search_ed [active-ed]
     if {![winfo ismapped .ed.sf]} {
-        pack .ed.sf -before .ed.bar -side bottom -fill x
+        search-bar-pack
     }
     pack .ed.sf.r -fill x
     .ed.sf.e delete 0 end
@@ -7760,10 +7805,12 @@ proc typewriter-toggle {} {
             catch { .ed.pw.${side}.t configure -padx $_sp_in -pady [expr {$_mh/3}] }
             catch { pack configure .ed.pw.${side}.t -padx $_sp_out -pady [expr {$_mh - $_mh/3}] }
         }
-        if {$::typewriter_mode} {
-            catch { pack forget .ed.bar }
-        } else {
-            catch { pack .ed.bar -side bottom -fill x -before .ed.sb }
+        if {$::cfg_bar_show} {
+            if {$::typewriter_mode} {
+                catch { pack forget .ed.bar }
+            } else {
+                catch { pack .ed.bar -side bottom -fill x -before .ed.sb }
+            }
         }
     }
     if {$::typewriter_mode} { typewriter-tick [active-ed] }

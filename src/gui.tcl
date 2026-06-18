@@ -794,6 +794,7 @@ if {$::cfg_bar_height > 0} {
     .ed.bar configure -height $::cfg_bar_height
     pack propagate .ed.bar 0
 }
+if {!$::cfg_bar_show} { catch { pack forget .ed.bar } }
 unset _helpzone
 pack .ed.sb  -side right  -fill y
 if {$::cfg_line_numbers} {
@@ -892,7 +893,25 @@ proc gui-status-state {} {
                 clock $clk timer $timer_display ws $::ws_n]
 }
 
+# When the status bar is hidden (cfg_bar_show=0), temporarily show it while in
+# modal command mode so the ESC menu remains visible, then hide it again on exit.
+# Idempotent: pack/forget only happens on an actual state change (winfo manager
+# guard), so it is safe to call on every status update.
+proc cmd-mode-bar-sync {} {
+    if {$::cfg_bar_show} return
+    if {$::gui_cmd_mode} {
+        if {[winfo manager .ed.bar] eq ""} {
+            if {[catch {pack .ed.bar -side bottom -fill x -before .ed.sb}]} {
+                catch { pack .ed.bar -side bottom -fill x }
+            }
+        }
+    } else {
+        catch { pack forget .ed.bar }
+    }
+}
+
 proc gui-status-update {} {
+    cmd-mode-bar-sync
     if {$::gui_cmd_mode} {
         set ::ed_bar_left ""
         set ::ed_bar_center "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats"
@@ -1239,10 +1258,22 @@ proc save-as {} {
     save-file
 }
 
+# Pack the search/replace frame just above the status bar. When the status bar
+# is hidden (cfg_bar_show=0) .ed.bar is not managed, so anchor on .ed.sb instead.
+proc search-bar-pack {} {
+    if {[winfo manager .ed.bar] ne ""} {
+        pack .ed.sf -before .ed.bar -side bottom -fill x
+    } elseif {[winfo manager .ed.sb] ne ""} {
+        pack .ed.sf -before .ed.sb -side bottom -fill x
+    } else {
+        pack .ed.sf -side bottom -fill x
+    }
+}
+
 proc search-open {} {
     set ::search_ed [active-ed]
     if {![winfo ismapped .ed.sf]} {
-        pack .ed.sf -before .ed.bar -side bottom -fill x
+        search-bar-pack
     }
     catch { pack forget .ed.sf.r }
     .ed.sf.e delete 0 end
@@ -1254,7 +1285,7 @@ proc search-open {} {
 proc replace-open {} {
     set ::search_ed [active-ed]
     if {![winfo ismapped .ed.sf]} {
-        pack .ed.sf -before .ed.bar -side bottom -fill x
+        search-bar-pack
     }
     pack .ed.sf.r -fill x
     .ed.sf.e delete 0 end
@@ -2719,10 +2750,12 @@ proc typewriter-toggle {} {
             catch { .ed.pw.${side}.t configure -padx $_sp_in -pady [expr {$_mh/3}] }
             catch { pack configure .ed.pw.${side}.t -padx $_sp_out -pady [expr {$_mh - $_mh/3}] }
         }
-        if {$::typewriter_mode} {
-            catch { pack forget .ed.bar }
-        } else {
-            catch { pack .ed.bar -side bottom -fill x -before .ed.sb }
+        if {$::cfg_bar_show} {
+            if {$::typewriter_mode} {
+                catch { pack forget .ed.bar }
+            } else {
+                catch { pack .ed.bar -side bottom -fill x -before .ed.sb }
+            }
         }
     }
     if {$::typewriter_mode} { typewriter-tick [active-ed] }

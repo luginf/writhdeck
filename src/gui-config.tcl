@@ -544,6 +544,7 @@ proc profile-config-dialog {} {
 
     # Boolean behaviour options
     foreach {fname key var} {
+        fbar      config_show_bar             profile_config_bar_show
         fspellhl  config_spell_highlight      profile_config_spell_highlight
         frphidden config_repetition_hidden    profile_config_repetition_hidden
         fignorecomments config_analysis_ignore_comments profile_config_analysis_ignore_comments
@@ -570,6 +571,7 @@ proc profile-config-dialog {} {
     $w.tab_misc.behaviour_sec.ffilter.entry insert 0 $::cfg_browser_filter
     $w.tab_misc.behaviour_sec.fspelllang.entry insert 0 $::cfg_spell_lang
     set ::profile_config_browser_show_all $::cfg_browser_show_all
+    set ::profile_config_bar_show       $::cfg_bar_show
     set ::profile_config_spell_highlight $::cfg_spell_highlight
     set ::profile_config_repetition_hidden $::cfg_repetition_hidden
     set ::profile_config_analysis_ignore_comments $::cfg_analysis_ignore_comments
@@ -777,6 +779,7 @@ proc profile-config-dialog {} {
             set repetition_hidden  $::profile_config_repetition_hidden
             set ignore_comments    $::profile_config_analysis_ignore_comments
             set browser     $::profile_config_browser
+            set bar_show    $::profile_config_bar_show
             set watch_file  $::profile_config_watch_file
             set hemingway   $::profile_config_hemingway
             set split_shrink $::profile_config_split_shrink
@@ -829,6 +832,7 @@ proc profile-config-dialog {} {
             set ::cfg_repetition_hidden  $repetition_hidden
             set ::cfg_analysis_ignore_comments $ignore_comments
             set ::cfg_browser           $browser
+            set ::cfg_bar_show          $bar_show
             set ::cfg_watch_file        $watch_file
             set ::cfg_hemingway_mode    $hemingway
             set ::cfg_split_shrink_margin $split_shrink

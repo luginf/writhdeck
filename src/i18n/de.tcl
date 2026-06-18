@@ -196,6 +196,7 @@ dict set ::i18n de {
     config_docs_dir              "Zusaetzl. Dokumentenordner:"
     config_browse                "Durchsuchen"
     config_browser_startup       "Browser beim Start anzeigen:"
+    config_show_bar              "Editor-Statusleiste anzeigen:"
     config_browser_filter        "Dateifilter (Browser):"
     config_browser_show_all      "Alle Dateien anzeigen (Filter ignorieren):"
     config_repetition_scope      "Wiederholungsbereich (Woerter):"
