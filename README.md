@@ -84,29 +84,7 @@ These analysis tools are optional at build time (`make ANALYSIS_TOOLS=no` to exc
 
 WrithDeck is deliberately platform-agnostic — same shortcuts, same generous margins, whether you write in a terminal, on the desktop, on Android, or in a browser. A single file can therefore follow you across every device. One possible Git-based workflow:
 
-```mermaid
-flowchart LR
-    subgraph HOME["💻 Home PC · Tcl version"]
-        A["📄 Create file.txt"] --> B["git add · commit · push"]
-        P["⬇️ git pull"] --> U["🔑 Copy to USB stick"]
-    end
-
-    G(["🌿 Private Git repo<br/>GitHub, etc."])
-
-    subgraph PHONE["📱 Android · app"]
-        C["✍️ Edit distraction-free"] --> D["🔄 Sync via GitNote"]
-    end
-
-    subgraph AWAY["🌍 Any computer · web version"]
-        E["✍️ Edit straight from the USB stick<br/>luginf.github.io/writhdeck"]
-    end
-
-    B --> G
-    G -->|"clone · GitNote"| C
-    D --> G
-    G --> P
-    U --> E
-```
+![WrithDeck workflow](media/writhdeck_workflow.png)
 
 1. Create a private Git repository on GitHub (or elsewhere).
 2. Create a new file on your PC with the Tcl version.

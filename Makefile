@@ -77,7 +77,11 @@ COMPACT_SCRIPT := tools/tcl-compact.tcl
 STRIP_DOS  := sed '/>>> DOS-ONLY/,/<<< DOS-ONLY/d'
 DOS_FILTER  = $(STRIP_DOS)
 
-.PHONY: all mini clean compact compact-cli jimtcl dos sfx selfx .FORCE
+.PHONY: all mini clean compact compact-cli jimtcl dos sfx selfx diagrams .FORCE
+
+# Render media/*.mmd Mermaid diagrams to PNG (see tools/render-diagrams.sh).
+diagrams:
+	@sh tools/render-diagrams.sh
 
 JIMSH ?= /opt/jimsh
 

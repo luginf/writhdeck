@@ -1,0 +1,23 @@
+flowchart TB
+    subgraph HOME["💻 Home PC · Tcl version"]
+        direction LR
+        A["📄 Create file.txt"] --> B["git add · commit · push"]
+        P["⬇️ git pull"] --> U["🔑 Copy to USB stick"]
+    end
+
+    G(["🌿 Private Git repo<br/>GitHub, etc."])
+
+    subgraph PHONE["📱 Android · app"]
+        direction LR
+        C["✍️ Edit distraction-free"] --> D["🔄 Sync via GitNote"]
+    end
+
+    subgraph AWAY["🌍 Any computer · web version"]
+        E["✍️ Edit straight from the USB stick<br/>luginf.github.io/writhdeck"]
+    end
+
+    B --> G
+    G -->|"clone · GitNote"| C
+    D --> G
+    G --> P
+    U --> E
