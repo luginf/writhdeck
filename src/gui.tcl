@@ -143,15 +143,30 @@ proc br-refresh {} {
     set ::br_entries {}
     set total 0
     set shown {}
-    foreach dir [br-dirs] {
-        foreach f [list-docs $dir] { lappend shown [file join $dir $f] }
-    }
-    foreach e [build-extra-entries $shown] { lappend ::br_entries $e }
-    foreach dir [br-dirs] {
-        lappend ::br_entries [list header $dir ""]
-        foreach f [list-docs $dir] {
-            lappend ::br_entries [list file $dir $f]
+    set _subnav [expr {[info procs list-subdirs] ne "" && $::cfg_browser_subdirs}]
+    if {$_subnav && $::br_cwd ne ""} {
+        # single-folder navigation view (no favorites/recents)
+        lappend ::br_entries [list header $::br_cwd ""]
+        lappend ::br_entries [list updir [file dirname $::br_cwd] ".."]
+        foreach d [list-subdirs $::br_cwd] { lappend ::br_entries [list dir $::br_cwd $d] }
+        foreach f [list-docs $::br_cwd] {
+            lappend ::br_entries [list file $::br_cwd $f]
             incr total
+        }
+    } else {
+        foreach dir [br-dirs] {
+            foreach f [list-docs $dir] { lappend shown [file join $dir $f] }
+        }
+        foreach e [build-extra-entries $shown] { lappend ::br_entries $e }
+        foreach dir [br-dirs] {
+            lappend ::br_entries [list header $dir ""]
+            if {$_subnav} {
+                foreach d [list-subdirs $dir] { lappend ::br_entries [list dir $dir $d] }
+            }
+            foreach f [list-docs $dir] {
+                lappend ::br_entries [list file $dir $f]
+                incr total
+            }
         }
     }
 
@@ -190,6 +205,13 @@ proc br-refresh {} {
             set ::br_line_to_entry($current_line) $i
             incr current_line
             set prev_type "header"
+        } elseif {$type in {dir updir}} {
+            set disp [expr {$type eq "updir" ? "../" : "$name/"}]
+            .br.mid.lst insert end "  $disp\n" file
+            set ::br_line_to_entry($current_line) $i
+            incr current_line
+            set prev_type "file"
+            if {$first_file < 0} { set first_file $i }
         } else {
             set meta [fmt-meta [file join $dir $name]]
             .br.mid.lst insert end "  $name\t$meta\n" file
@@ -257,9 +279,44 @@ proc br-active-dir {} {
 }
 
 proc br-open {} {
+    if {[info procs list-subdirs] ne ""} {
+        set e [br-selected-raw]
+        if {[llength $e]} {
+            set type [lindex $e 0]
+            if {$type eq "dir"}   { br-cwd-enter [file join [lindex $e 1] [lindex $e 2]]; return }
+            if {$type eq "updir"} { br-cwd-up; return }
+        }
+    }
     set e [br-selected]
     if {![llength $e]} return
     show-editor [file join [lindex $e 1] [lindex $e 2]]
+}
+
+# raw selected entry (any type), or {} -- used by subfolder navigation
+proc br-selected-raw {} {
+    set tags [.br.mid.lst tag ranges selected]
+    if {![llength $tags]} { return {} }
+    set line [expr {int([lindex $tags 0])}]
+    if {![info exists ::br_line_to_entry($line)]} { return {} }
+    set i $::br_line_to_entry($line)
+    if {$i < 0 || $i >= [llength $::br_entries]} { return {} }
+    return [lindex $::br_entries $i]
+}
+
+# enter a subdirectory (subfolder navigation)
+proc br-cwd-enter {dir} {
+    set ::br_cwd [file normalize $dir]
+    .br.mid.lst tag remove selected 1.0 end
+    br-refresh
+}
+
+# go up one level; back to the root multi-section view when leaving a root folder
+proc br-cwd-up {} {
+    if {$::br_cwd eq ""} return
+    set parent [file dirname $::br_cwd]
+    set ::br_cwd [expr {[br-is-root $parent] ? "" : $parent}]
+    .br.mid.lst tag remove selected 1.0 end
+    br-refresh
 }
 
 proc br-info-shortcut {} {
@@ -627,6 +684,8 @@ proc br-stats {{path ""}} {
 
 bind .br.mid.lst <Return>      { br-open }
 bind .br.mid.lst <Double-1>    { br-open }
+bind .br.mid.lst <BackSpace>   { if {[info procs list-subdirs] ne ""} { br-cwd-up } }
+bind .br.mid.lst <Left>        { if {[info procs list-subdirs] ne ""} { br-cwd-up; break } }
 bind .br.mid.lst <n>           { br-new }
 bind .br.mid.lst <t>           { open-scratchpad }
 bind .br.mid.lst <f>           { br-toggle-favorite }
@@ -698,7 +757,7 @@ bind .br.mid.lst <Button-1> {
     if {[info exists ::br_line_to_entry($line)]} {
         set entry_idx $::br_line_to_entry($line)
         set e [lindex $::br_entries $entry_idx]
-        if {[lindex $e 0] ni {file recent favorite}} {
+        if {[lindex $e 0] ni {file recent favorite dir updir}} {
             break
         }
         .br.mid.lst tag remove selected 1.0 end

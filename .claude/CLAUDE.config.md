@@ -28,6 +28,8 @@ Hand-rolled JSON (no external parser):
 
 **Browser filter (`[behaviour]`)** — `browser_filter` (default `*.txt *.t2t *.md *.ini`, space-separated glob patterns; empty = show all) and `browser_show_all` (boolean, default `no`, bypasses `browser_filter` entirely) control which files `list-docs` shows. Both are written with explanatory `%` comments above their values.
 
+**Subfolder navigation (`[behaviour]`)** — `browser_subdirs` (boolean, default `yes`) enables explorer-style browsing of subdirectories. Runtime gate for the optional `src/subdirs.tcl` module; ignored when that module is absent (mini/jim builds). See `.claude/CLAUDE.browser.md`.
+
 **Repetition detection (`[behaviour]`)** — `repetition_scope` (default `100`, word distance checked in each direction), `repetition_min_len` (default `4`, minimum word length for hidden-substring checks), `repetition_hidden` (boolean, default `no`, enables the hidden-substring tier). See `find-repetitions` in `src/analysis.tcl` and the Repetitions dialog (`repetitions-dialog` GUI / `tui-repetitions-dialog` TUI).
 
 **`key_toc_pinned` (`[keys]`)** — default `Control-Shift-F11`; toggles the pinned TOC side panel (`toc-panel-toggle`) independently of `key_toc` (F11).

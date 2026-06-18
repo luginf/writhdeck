@@ -202,6 +202,7 @@ dict set ::i18n_gui ko {
     config_show_bar              "편집기 상태 표시줄 표시:"
     config_browser_filter        "파일 필터 (브라우저):"
     config_browser_show_all      "모든 파일 표시 (필터 무시):"
+    config_browser_subdirs       "하위 폴더 탐색:"
     config_repetition_scope      "반복 검사 범위 (단어 수):"
     config_repetition_min_len    "최소 길이 (숨겨진 반복):"
     config_spell_lang             "맞춤법 검사 언어 (비우면 자동):"

@@ -202,6 +202,7 @@ dict set ::i18n_gui es {
     config_show_bar              "Mostrar barra de estado (editor):"
     config_browser_filter        "Filtro de archivos (navegador):"
     config_browser_show_all      "Mostrar todos los archivos (ignorar filtro):"
+    config_browser_subdirs       "Explorar subcarpetas:"
     config_repetition_scope      "Alcance de repeticion (palabras):"
     config_repetition_min_len    "Longitud min. (repeticiones ocultas):"
     config_spell_lang             "Idioma del corrector (vacio=auto):"

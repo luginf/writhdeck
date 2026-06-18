@@ -810,6 +810,7 @@ proc tui-compute-wc {} {
 
 proc tui-browser {} {
     set sel 0; set scroll 0; set msg ""
+    set cwd ""
     set prev_rows -1; set prev_cols -1
     while 1 {
         set ::tui_size_n 14
@@ -818,22 +819,36 @@ proc tui-browser {} {
             set prev_rows $rows; set prev_cols $cols
         }
         # build entries
+        set _subnav [expr {[info procs list-subdirs] ne "" && $::cfg_browser_subdirs}]
         set entries {}; set fcount 0
         set shown {}
-        foreach dir [br-dirs] {
-            foreach f [list-docs $dir] { lappend shown [file join $dir $f] }
-        }
-        foreach e [build-extra-entries $shown] { lappend entries $e }
-        foreach dir [br-dirs] {
-            lappend entries [list header $dir ""]
-            foreach f [list-docs $dir] {
-                lappend entries [list file $dir $f]
+        if {$_subnav && $cwd ne ""} {
+            lappend entries [list header $cwd ""]
+            lappend entries [list updir [file dirname $cwd] ".."]
+            foreach d [list-subdirs $cwd] { lappend entries [list dir $cwd $d] }
+            foreach f [list-docs $cwd] {
+                lappend entries [list file $cwd $f]
                 incr fcount
+            }
+        } else {
+            foreach dir [br-dirs] {
+                foreach f [list-docs $dir] { lappend shown [file join $dir $f] }
+            }
+            foreach e [build-extra-entries $shown] { lappend entries $e }
+            foreach dir [br-dirs] {
+                lappend entries [list header $dir ""]
+                if {$_subnav} {
+                    foreach d [list-subdirs $dir] { lappend entries [list dir $dir $d] }
+                }
+                foreach f [list-docs $dir] {
+                    lappend entries [list file $dir $f]
+                    incr fcount
+                }
             }
         }
         set fidx {}
         for {set i 0} {$i < [llength $entries]} {incr i} {
-            if {[lindex [lindex $entries $i] 0] in {file recent favorite}} { lappend fidx $i }
+            if {[lindex [lindex $entries $i] 0] in {file recent favorite dir updir}} { lappend fidx $i }
         }
         set nf [llength $fidx]
         if {$nf > 0} { set sel [expr {max(0, min($sel, $nf-1))}] }
@@ -858,6 +873,13 @@ proc tui-browser {} {
                 if {$type eq "header"} {
                     set lbl [expr {$name ne "" ? $name : [string map [list $::HOME_DIR ~] $dir]}]
                     tui-attr dim; tui-fill $row " $lbl" $cols; tui-attr off
+                } elseif {$type in {dir updir}} {
+                    set fi [lsearch $fidx $ei]; set issel [expr {$fi == $sel}]
+                    set disp [expr {$type eq "updir" ? ".." : "$name/"}]
+                    set pfx  [expr {$issel ? " \u00bb " : "   "}]
+                    if {$issel} { tui-attr reverse }
+                    tui-fill $row [string range "${pfx}${disp}" 0 [expr {$cols-1}]] $cols
+                    if {$issel} { tui-attr off }
                 } else {
                     set fi [lsearch $fidx $ei]; set issel [expr {$fi == $sel}]
                     set fp [file join $dir $name]
@@ -880,13 +902,15 @@ proc tui-browser {} {
         set plu [expr {$fcount != 1 ? "s" : ""}]
         if {$::cfg_help_bar ne ""} { tui-help [expr {$rows-2}] [format [t br_help_tui] [t br_key_help] $::cfg_lbl_toc] $cols }
         set clk [expr {[status-zone-of clock] ne "" ? "  [clock format [clock seconds] -format {%H:%M}]" : ""}]
+        set _barpath [expr {$_subnav && $cwd ne "" ? $cwd : $::DOCS_DIR_DEFAULT}]
         if {$msg ne ""} { tui-bar [expr {$rows-1}] " $msg" "${clk} " $cols; set msg ""
-        } else { tui-bar [expr {$rows-1}] " [string map [list $::HOME_DIR ~] $::DOCS_DIR_DEFAULT]" \
+        } else { tui-bar [expr {$rows-1}] " [string map [list $::HOME_DIR ~] $_barpath]" \
                          " [t br_files $fcount $plu]${clk} " $cols }
         flush stdout
 
         set key [tui-getch]
         set cfi [expr {$nf > 0 ? [lindex $fidx $sel] : -1}]
+        set ctype [expr {$cfi >= 0 ? [lindex [lindex $entries $cfi] 0] : ""}]
         switch -- $key {
             q - "\x11" {
                 lassign [tui-size] rows cols
@@ -896,8 +920,25 @@ proc tui-browser {} {
             DOWN - j { if {$sel < $nf-1} { incr sel 1 } }
             HOME    { set sel 0 }
             END     { set sel [expr {max(0,$nf-1)}] }
+            BACKSPACE - LEFT {
+                if {$_subnav && $cwd ne ""} {
+                    set _p [file dirname $cwd]
+                    set cwd [expr {[br-is-root $_p] ? "" : $_p}]
+                    set sel 0; set scroll 0
+                }
+            }
             ENTER {
-                if {$cfi >= 0} { lassign [lindex $entries $cfi] _ dir name; return [file join $dir $name] }
+                if {$cfi >= 0} {
+                    lassign [lindex $entries $cfi] _t dir name
+                    if {$_t eq "dir"} {
+                        set cwd [file normalize [file join $dir $name]]; set sel 0; set scroll 0
+                    } elseif {$_t eq "updir"} {
+                        set _p [file dirname $cwd]
+                        set cwd [expr {[br-is-root $_p] ? "" : $_p}]; set sel 0; set scroll 0
+                    } else {
+                        return [file join $dir $name]
+                    }
+                }
             }
             n {
                 set dir [tui-active-dir $entries $cfi]
@@ -914,13 +955,13 @@ proc tui-browser {} {
                 tui-help-dialog $rows $cols 0 0
             }
             i {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && $ctype in {file recent favorite}} {
                     lassign [lindex $entries $cfi] _ dir name
                     tui-info-dialog [file join $dir $name] $rows $cols
                 }
             }
             f {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && $ctype in {file recent favorite}} {
                     lassign [lindex $entries $cfi] _ dir name
                     set _path [file join $dir $name]
                     set _was_fav [expr {$_path in $::favorites_list}]
@@ -929,7 +970,7 @@ proc tui-browser {} {
                 }
             }
             s {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && $ctype in {file recent favorite}} {
                     lassign [lindex $entries $cfi] _ dir name
                     set _path [file join $dir $name]
                     set _r [tui-stats-dialog $_path $rows $cols]
@@ -937,14 +978,14 @@ proc tui-browser {} {
                 }
             }
             b {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && $ctype in {file recent favorite}} {
                     lassign [lindex $entries $cfi] _ dir name
                     set dst [do-backup $dir $name]
                     set msg [t br_backed_up $name [string map [list $::HOME_DIR ~] [file dirname $dst]] [file tail $dst]]
                 }
             }
             d {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && $ctype in {file recent favorite}} {
                     lassign [lindex $entries $cfi] _ dir name
                     if {[tui-confirm [t br_delete $name] $rows $cols]} {
                         set full [file join $dir $name]
@@ -955,7 +996,7 @@ proc tui-browser {} {
                 }
             }
             r {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && $ctype in {file recent favorite}} {
                     lassign [lindex $entries $cfi] _ dir name
                     set new [string trim [tui-prompt "rename '$name' to: " $rows $cols]]
                     if {$new ne ""} {

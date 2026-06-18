@@ -202,6 +202,7 @@ dict set ::i18n_gui de {
     config_show_bar              "Editor-Statusleiste anzeigen:"
     config_browser_filter        "Dateifilter (Browser):"
     config_browser_show_all      "Alle Dateien anzeigen (Filter ignorieren):"
+    config_browser_subdirs       "Unterordner durchsuchen:"
     config_repetition_scope      "Wiederholungsbereich (Woerter):"
     config_repetition_min_len    "Min. Laenge (versteckte Wiederholungen):"
     config_spell_lang             "Rechtschreibsprache (leer=auto):"

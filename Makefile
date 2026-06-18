@@ -12,6 +12,8 @@
 #   make ANALYSIS_TOOLS=no                            # writhdeck.tcl/writhdeck-cli.tcl: omit analysis tools (structure, occurrences, repetitions)
 #   make mini MINI_ANALYSIS_TOOLS=yes                 # writhdeck-mini.tcl: include analysis tools (off by default)
 #   make jimtcl JIM_ANALYSIS_TOOLS=yes                # writhdeck-jim.tcl: include analysis tools (off by default)
+#   make SUBDIRS_NAV=no                               # writhdeck.tcl/writhdeck-cli.tcl: omit subfolder navigation
+#   make mini MINI_SUBDIRS_NAV=yes                    # writhdeck-mini.tcl: include subfolder navigation (off by default)
 #   make dos                                          # writhdeck-dos.tcl: JimTcl build with FreeDOS/NANSI.SYS display shim (see ../writhdeck-dos/NOTES.md)
 #   make selfx                                         # writhdeck-selfx.tcl: self-extracting zlib build (~110 KB vs ~470 KB), Tcl/Tk 8.6+
 #
@@ -49,11 +51,21 @@ ANALYSIS_SRC      := $(if $(filter yes,$(ANALYSIS_TOOLS)),src/analysis.tcl,)
 MINI_ANALYSIS_SRC := $(if $(filter yes,$(MINI_ANALYSIS_TOOLS)),src/analysis.tcl,)
 JIM_ANALYSIS_SRC  := $(if $(filter yes,$(JIM_ANALYSIS_TOOLS)),src/analysis.tcl,)
 
-GUI_SRCS  := src/state.tcl src/config.tcl $(GUI_SCHEME_FILES) src/common.tcl $(ANALYSIS_SRC) $(GUI_CONFIG_SRC) src/gui.tcl src/tui.tcl src/main.tcl
+# Subfolder navigation (browse subdirectories inside document folders): one
+# all-or-nothing module, src/subdirs.tcl. Same default pattern as analysis:
+# on for writhdeck.tcl/writhdeck-cli.tcl, off for writhdeck-mini.tcl/writhdeck-jim.tcl.
+SUBDIRS_NAV      ?= yes
+MINI_SUBDIRS_NAV ?= no
+JIM_SUBDIRS_NAV  ?= no
+SUBDIRS_SRC      := $(if $(filter yes,$(SUBDIRS_NAV)),src/subdirs.tcl,)
+MINI_SUBDIRS_SRC := $(if $(filter yes,$(MINI_SUBDIRS_NAV)),src/subdirs.tcl,)
+JIM_SUBDIRS_SRC  := $(if $(filter yes,$(JIM_SUBDIRS_NAV)),src/subdirs.tcl,)
+
+GUI_SRCS  := src/state.tcl src/config.tcl $(GUI_SCHEME_FILES) src/common.tcl $(ANALYSIS_SRC) $(SUBDIRS_SRC) $(GUI_CONFIG_SRC) src/gui.tcl src/tui.tcl src/main.tcl
 MINI_SCHEME_FILES := $(patsubst %,src/schemes/%.tcl,$(AVAILABLE_SCHEMES))
-CLI_SRCS  := src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl $(ANALYSIS_SRC) src/tui.tcl src/main-cli.tcl
-JIM_SRCS  := src/compat-jim.tcl src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl $(JIM_ANALYSIS_SRC) src/tui.tcl src/main-cli.tcl
-DOS_SRCS  := src/compat-jim.tcl src/compat-dos.tcl src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl $(JIM_ANALYSIS_SRC) src/tui.tcl src/main-cli.tcl
+CLI_SRCS  := src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl $(ANALYSIS_SRC) $(SUBDIRS_SRC) src/tui.tcl src/main-cli.tcl
+JIM_SRCS  := src/compat-jim.tcl src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl $(JIM_ANALYSIS_SRC) $(JIM_SUBDIRS_SRC) src/tui.tcl src/main-cli.tcl
+DOS_SRCS  := src/compat-jim.tcl src/compat-dos.tcl src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl $(JIM_ANALYSIS_SRC) $(JIM_SUBDIRS_SRC) src/tui.tcl src/main-cli.tcl
 
 COMPACT_SCRIPT := tools/tcl-compact.tcl
 
@@ -85,6 +97,7 @@ writhdeck.tcl: src/boot.tcl $(GUI_SRCS) $(GUI_I18N_FILES) Makefile
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "common.tcl" "$(SEP)" >> $@
 	@cat src/common.tcl >> $@
 	@for f in $(ANALYSIS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "analysis.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
+	@for f in $(SUBDIRS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "subdirs.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
 	@for f in $(GUI_CONFIG_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "gui-config.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "gui.tcl" "$(SEP)" >> $@
 	@cat src/gui.tcl >> $@
@@ -109,6 +122,7 @@ writhdeck-cli.tcl: src/boot-cli.tcl $(CLI_SRCS) $(CLI_I18N_FILES) Makefile
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "common.tcl" "$(SEP)" >> $@
 	@cat src/common.tcl >> $@
 	@for f in $(ANALYSIS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "analysis.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
+	@for f in $(SUBDIRS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "subdirs.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "tui.tcl" "$(SEP)" >> $@
 	@$(DOS_FILTER) src/tui.tcl >> $@
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "main-cli.tcl" "$(SEP)" >> $@
@@ -137,6 +151,7 @@ writhdeck-jim.tcl: src/boot-jim.tcl $(JIM_SRCS) $(CLI_I18N_FILES) Makefile
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "common.tcl" "$(SEP)" >> $@
 	@cat src/common.tcl >> $@
 	@for f in $(JIM_ANALYSIS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "analysis.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
+	@for f in $(JIM_SUBDIRS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "subdirs.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "tui.tcl" "$(SEP)" >> $@
 	@$(DOS_FILTER) src/tui.tcl >> $@
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "main-cli.tcl" "$(SEP)" >> $@
@@ -166,6 +181,7 @@ writhdeck-dos.tcl: src/boot-jim.tcl $(DOS_SRCS) $(CLI_I18N_FILES) Makefile
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "common.tcl" "$(SEP)" >> $@
 	@cat src/common.tcl >> $@
 	@for f in $(JIM_ANALYSIS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "analysis.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
+	@for f in $(JIM_SUBDIRS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "subdirs.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "tui.tcl" "$(SEP)" >> $@
 	@$(DOS_FILTER) src/tui.tcl >> $@
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "main-cli.tcl" "$(SEP)" >> $@
@@ -196,7 +212,7 @@ writhdeck-selfx.tcl: writhdeck.tcl $(COMPACT_SCRIPT) tools/make-selfx.tcl
 mini: writhdeck-mini.tcl
 
 writhdeck-mini.tcl: src/boot.tcl src/state.tcl src/config.tcl $(MINI_SCHEME_FILES) \
-                    src/i18n/en.tcl src/common.tcl $(MINI_ANALYSIS_SRC) src/gui.tcl src/tui.tcl src/main.tcl \
+                    src/i18n/en.tcl src/common.tcl $(MINI_ANALYSIS_SRC) $(MINI_SUBDIRS_SRC) src/gui.tcl src/tui.tcl src/main.tcl \
                     $(COMPACT_SCRIPT) Makefile
 	@rm -f writhdeck-mini.tcl writhdeck-mini-raw.tcl
 	@cat src/boot.tcl > writhdeck-mini-raw.tcl
@@ -205,13 +221,14 @@ writhdeck-mini.tcl: src/boot.tcl src/state.tcl src/config.tcl $(MINI_SCHEME_FILE
 	@for f in $(MINI_SCHEME_FILES); do cat $$f >> writhdeck-mini-raw.tcl; done
 	@cat src/i18n/en.tcl src/common.tcl >> writhdeck-mini-raw.tcl
 	@for f in $(MINI_ANALYSIS_SRC); do cat $$f >> writhdeck-mini-raw.tcl; done
+	@for f in $(MINI_SUBDIRS_SRC); do cat $$f >> writhdeck-mini-raw.tcl; done
 	@cat src/gui.tcl >> writhdeck-mini-raw.tcl
 	@$(DOS_FILTER) src/tui.tcl >> writhdeck-mini-raw.tcl
 	@cat src/main.tcl >> writhdeck-mini-raw.tcl
 	@tclsh $(COMPACT_SCRIPT) writhdeck-mini-raw.tcl writhdeck-mini.tcl
 	@rm writhdeck-mini-raw.tcl
 	@chmod +x writhdeck-mini.tcl
-	@echo "Built writhdeck-mini.tcl (GUI+TUI compact, en only, no config dialog$(if $(MINI_ANALYSIS_SRC), + analysis tools,))"
+	@echo "Built writhdeck-mini.tcl (GUI+TUI compact, en only, no config dialog$(if $(MINI_ANALYSIS_SRC), + analysis tools,)$(if $(MINI_SUBDIRS_SRC), + subdir nav,))"
 
 clean:
 	rm -f writhdeck.tcl writhdeck-cli.tcl writhdeck-compact.tcl writhdeck-cli-compact.tcl writhdeck-jim.tcl writhdeck-dos.tcl writhdeck-sfx writhdeck-mini.tcl writhdeck-mini-raw.tcl writhdeck-selfx.tcl writhdeck-selfx-raw.tcl

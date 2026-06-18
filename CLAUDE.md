@@ -48,6 +48,7 @@ After `make`, the generated `writhdeck.tcl` contains these sections (concatenate
 | Config         | `src/config.tcl`       | INI loading/saving, profiles, schemes, keys, i18n system, theme init            |
 | Common         | `src/common.tcl`       | `list-docs`, `br-dirs`, `do-backup`, `build-extra-entries`, inline parsers      |
 | **Analysis**   | `src/analysis.tcl`     | Structure outline, word occurrences, repetitions, spell-check — `get-word-occurrences`, `analyse-structure`, `find-repetitions`, `spell-check-document`, GUI+TUI dialogs |
+| **Subdirs**    | `src/subdirs.tcl`      | Subfolder navigation — `list-subdirs`, `br-is-root`, `::br_cwd` (GUI nav procs live in `gui.tcl`) |
 | **GUI config** | `src/gui-config.tcl`   | `profile-config-dialog`, `config-tab-switch`, `profile-config-update-profile`   |
 | **GUI**        | `src/gui.tcl`          | Wrapped in `if {!$::no_gui}` — browser, editor, dialogs, TOC, split view        |
 | **TUI**        | `src/tui.tcl`          | Terminal UI — `tui-init`, `tui-browser`, `tui-editor`, `tui-main`, helpers      |
@@ -56,6 +57,8 @@ After `make`, the generated `writhdeck.tcl` contains these sections (concatenate
 Both `src/gui-config.tcl` and `src/gui.tcl` are wrapped in `if {!$::no_gui} { ... }`. `src/gui-config.tcl` is optional — excluded with `make GUI_CONFIG=no` (~700 lines, hides `c` key in browser).
 
 `src/analysis.tcl` contains only `proc` definitions (no top-level Tk-building code), so it is **not** wrapped in `if {!$::no_gui}` — safe to load in TUI-only builds. It is an optional all-or-nothing module: included by default in `writhdeck.tcl`/`writhdeck-cli.tcl` (`ANALYSIS_TOOLS=no` to exclude), excluded by default from `writhdeck-mini.tcl`/`writhdeck-jim.tcl` (`MINI_ANALYSIS_TOOLS=yes` / `JIM_ANALYSIS_TOOLS=yes` to include). When excluded, `gui.tcl`/`tui.tcl` guard every call site, binding, button, and help-bar entry with `if {[info procs <proc>] ne ""} { ... }`.
+
+`src/subdirs.tcl` follows the exact same optional-module pattern as `src/analysis.tcl` (proc-only, outside `if {!$::no_gui}`, included by default in `writhdeck.tcl`/`writhdeck-cli.tcl` via `SUBDIRS_NAV`, excluded by default from `writhdeck-mini.tcl`/`writhdeck-jim.tcl` via `MINI_SUBDIRS_NAV` / `JIM_SUBDIRS_NAV`). It adds explorer-style subfolder browsing: every call site in `gui.tcl`/`tui.tcl` is guarded with `[info procs list-subdirs] ne ""`, and is additionally gated at runtime by the `browser_subdirs` setting (`::cfg_browser_subdirs`, default on). See `.claude/CLAUDE.browser.md`.
 
 ### Section headers
 

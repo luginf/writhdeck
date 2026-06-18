@@ -202,6 +202,7 @@ dict set ::i18n_gui fr {
     config_show_bar              "Afficher la barre d'etat (editeur) :"
     config_browser_filter        "Filtre de fichiers (navigateur) :"
     config_browser_show_all      "Afficher tous les fichiers (ignorer filtre) :"
+    config_browser_subdirs       "Naviguer dans les sous-dossiers :"
     config_repetition_scope      "Portée de répétition (mots) :"
     config_repetition_min_len    "Longueur min. (répétitions cachées) :"
     config_spell_lang             "Langue du correcteur (vide=auto) :"

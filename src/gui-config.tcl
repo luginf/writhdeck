@@ -514,6 +514,17 @@ proc profile-config-dialog {} {
     pack $w.tab_misc.behaviour_sec.fshowall.lbl -side left
     pack $w.tab_misc.behaviour_sec.fshowall.check -side left -padx {8 2}
 
+    # browse subfolders row (checkbox)
+    frame $w.tab_misc.behaviour_sec.fsubdirs -bg $::bg
+    pack  $w.tab_misc.behaviour_sec.fsubdirs -fill x -padx 12 -pady 3
+    label $w.tab_misc.behaviour_sec.fsubdirs.lbl -text [t config_browser_subdirs] -font $::font_sm -width 48 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.tab_misc.behaviour_sec.fsubdirs.check -variable profile_config_browser_subdirs \
+        -font $::font_sm -bg $::bg -fg $::fg \
+        -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
+        -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
+    pack $w.tab_misc.behaviour_sec.fsubdirs.lbl -side left
+    pack $w.tab_misc.behaviour_sec.fsubdirs.check -side left -padx {8 2}
+
     # repetition scope row (spinbox)
     frame $w.tab_misc.behaviour_sec.frpscope -bg $::bg
     pack  $w.tab_misc.behaviour_sec.frpscope -fill x -padx 12 -pady 4
@@ -571,6 +582,7 @@ proc profile-config-dialog {} {
     $w.tab_misc.behaviour_sec.ffilter.entry insert 0 $::cfg_browser_filter
     $w.tab_misc.behaviour_sec.fspelllang.entry insert 0 $::cfg_spell_lang
     set ::profile_config_browser_show_all $::cfg_browser_show_all
+    set ::profile_config_browser_subdirs  $::cfg_browser_subdirs
     set ::profile_config_bar_show       $::cfg_bar_show
     set ::profile_config_spell_highlight $::cfg_spell_highlight
     set ::profile_config_repetition_hidden $::cfg_repetition_hidden
@@ -772,6 +784,7 @@ proc profile-config-dialog {} {
             set docs_dir    [.profile_config.tab_misc.behaviour_sec.fdocs.entry get]
             set browser_filter [.profile_config.tab_misc.behaviour_sec.ffilter.entry get]
             set browser_show_all $::profile_config_browser_show_all
+            set browser_subdirs  $::profile_config_browser_subdirs
             set repetition_scope   [.profile_config.tab_misc.behaviour_sec.frpscope.spin get]
             set repetition_min_len [.profile_config.tab_misc.behaviour_sec.frpminlen.spin get]
             set spell_lang  [.profile_config.tab_misc.behaviour_sec.fspelllang.entry get]
@@ -825,6 +838,7 @@ proc profile-config-dialog {} {
             set ::cfg_docs_dir          $docs_dir
             set ::cfg_browser_filter    $browser_filter
             set ::cfg_browser_show_all  $browser_show_all
+            set ::cfg_browser_subdirs   $browser_subdirs
             set ::cfg_repetition_scope   $repetition_scope
             set ::cfg_repetition_min_len $repetition_min_len
             set ::cfg_spell_lang          $spell_lang

@@ -202,6 +202,7 @@ dict set ::i18n_gui no {
     config_show_bar              "Vis statuslinje (redigering):"
     config_browser_filter        "Filfilter (nettleser):"
     config_browser_show_all      "Vis alle filer (ignorer filter):"
+    config_browser_subdirs       "Bla i undermapper:"
     config_repetition_scope      "Repetisjonsomfang (ord):"
     config_repetition_min_len    "Min. lengde (skjulte repetisjoner):"
     config_spell_lang             "Stavekontrollsprak (tom=auto):"

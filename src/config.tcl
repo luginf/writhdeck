@@ -105,6 +105,7 @@ set ::cfg_bg_sel         "#3a5a8a"
 set ::cfg_docs_dir       ""
 set ::cfg_browser_filter "*.txt *.t2t *.md *.ini"
 set ::cfg_browser_show_all 0
+set ::cfg_browser_subdirs 1
 set ::cfg_repetition_scope   100
 set ::cfg_repetition_min_len 4
 set ::cfg_repetition_hidden  0
@@ -472,6 +473,7 @@ proc ini-load {} {
                 browser              { set ::cfg_browser              [string is true $v] }
                 browser_filter       { set ::cfg_browser_filter       $v }
                 browser_show_all     { set ::cfg_browser_show_all     [string is true $v] }
+                browser_subdirs      { set ::cfg_browser_subdirs      [string is true $v] }
                 repetition_scope     { set ::cfg_repetition_scope     $v }
                 repetition_min_len   { set ::cfg_repetition_min_len   $v }
                 repetition_hidden    { set ::cfg_repetition_hidden    [string is true $v] }
@@ -580,6 +582,8 @@ proc ini-save {} {
     puts $fh "browser_filter       = $::cfg_browser_filter"
     puts $fh "% browser_show_all: bypass browser_filter and show all files"
     puts $fh "browser_show_all     = [expr {$::cfg_browser_show_all     ? "yes" : "no"}]"
+    puts $fh "% browser_subdirs: scan and browse subfolders inside document folders"
+    puts $fh "browser_subdirs      = [expr {$::cfg_browser_subdirs      ? "yes" : "no"}]"
     puts $fh "% repetition_scope: word distance (each direction) checked by the repetition tool"
     puts $fh "repetition_scope     = $::cfg_repetition_scope"
     puts $fh "% repetition_min_len: minimum word length for hidden-substring repetition checks"

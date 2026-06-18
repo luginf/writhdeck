@@ -388,6 +388,7 @@ set ::cfg_bg_sel         "#3a5a8a"
 set ::cfg_docs_dir       ""
 set ::cfg_browser_filter "*.txt *.t2t *.md *.ini"
 set ::cfg_browser_show_all 0
+set ::cfg_browser_subdirs 1
 set ::cfg_repetition_scope   100
 set ::cfg_repetition_min_len 4
 set ::cfg_repetition_hidden  0
@@ -755,6 +756,7 @@ proc ini-load {} {
                 browser              { set ::cfg_browser              [string is true $v] }
                 browser_filter       { set ::cfg_browser_filter       $v }
                 browser_show_all     { set ::cfg_browser_show_all     [string is true $v] }
+                browser_subdirs      { set ::cfg_browser_subdirs      [string is true $v] }
                 repetition_scope     { set ::cfg_repetition_scope     $v }
                 repetition_min_len   { set ::cfg_repetition_min_len   $v }
                 repetition_hidden    { set ::cfg_repetition_hidden    [string is true $v] }
@@ -863,6 +865,8 @@ proc ini-save {} {
     puts $fh "browser_filter       = $::cfg_browser_filter"
     puts $fh "% browser_show_all: bypass browser_filter and show all files"
     puts $fh "browser_show_all     = [expr {$::cfg_browser_show_all     ? "yes" : "no"}]"
+    puts $fh "% browser_subdirs: scan and browse subfolders inside document folders"
+    puts $fh "browser_subdirs      = [expr {$::cfg_browser_subdirs      ? "yes" : "no"}]"
     puts $fh "% repetition_scope: word distance (each direction) checked by the repetition tool"
     puts $fh "repetition_scope     = $::cfg_repetition_scope"
     puts $fh "% repetition_min_len: minimum word length for hidden-substring repetition checks"
@@ -1617,6 +1621,7 @@ dict set ::i18n_gui en {
     config_show_bar              "Show editor status bar:"
     config_browser_filter        "Browser file filter:"
     config_browser_show_all      "Show all files (ignore filter):"
+    config_browser_subdirs       "Browse subfolders:"
     config_repetition_scope      "Repetition scope (words):"
     config_repetition_min_len    "Hidden repetition min. length:"
     config_spell_lang            "Spell-check language (empty=auto):"
@@ -1847,6 +1852,7 @@ dict set ::i18n_gui de {
     config_show_bar              "Editor-Statusleiste anzeigen:"
     config_browser_filter        "Dateifilter (Browser):"
     config_browser_show_all      "Alle Dateien anzeigen (Filter ignorieren):"
+    config_browser_subdirs       "Unterordner durchsuchen:"
     config_repetition_scope      "Wiederholungsbereich (Woerter):"
     config_repetition_min_len    "Min. Laenge (versteckte Wiederholungen):"
     config_spell_lang             "Rechtschreibsprache (leer=auto):"
@@ -2077,6 +2083,7 @@ dict set ::i18n_gui es {
     config_show_bar              "Mostrar barra de estado (editor):"
     config_browser_filter        "Filtro de archivos (navegador):"
     config_browser_show_all      "Mostrar todos los archivos (ignorar filtro):"
+    config_browser_subdirs       "Explorar subcarpetas:"
     config_repetition_scope      "Alcance de repeticion (palabras):"
     config_repetition_min_len    "Longitud min. (repeticiones ocultas):"
     config_spell_lang             "Idioma del corrector (vacio=auto):"
@@ -2307,6 +2314,7 @@ dict set ::i18n_gui fr {
     config_show_bar              "Afficher la barre d'etat (editeur) :"
     config_browser_filter        "Filtre de fichiers (navigateur) :"
     config_browser_show_all      "Afficher tous les fichiers (ignorer filtre) :"
+    config_browser_subdirs       "Naviguer dans les sous-dossiers :"
     config_repetition_scope      "Portée de répétition (mots) :"
     config_repetition_min_len    "Longueur min. (répétitions cachées) :"
     config_spell_lang             "Langue du correcteur (vide=auto) :"
@@ -2537,6 +2545,7 @@ dict set ::i18n_gui ko {
     config_show_bar              "편집기 상태 표시줄 표시:"
     config_browser_filter        "파일 필터 (브라우저):"
     config_browser_show_all      "모든 파일 표시 (필터 무시):"
+    config_browser_subdirs       "하위 폴더 탐색:"
     config_repetition_scope      "반복 검사 범위 (단어 수):"
     config_repetition_min_len    "최소 길이 (숨겨진 반복):"
     config_spell_lang             "맞춤법 검사 언어 (비우면 자동):"
@@ -2767,6 +2776,7 @@ dict set ::i18n_gui no {
     config_show_bar              "Vis statuslinje (redigering):"
     config_browser_filter        "Filfilter (nettleser):"
     config_browser_show_all      "Vis alle filer (ignorer filter):"
+    config_browser_subdirs       "Bla i undermapper:"
     config_repetition_scope      "Repetisjonsomfang (ord):"
     config_repetition_min_len    "Min. lengde (skjulte repetisjoner):"
     config_spell_lang             "Stavekontrollsprak (tom=auto):"
@@ -4166,6 +4176,46 @@ proc tui-spellcheck-dialog {fpath rows cols} {
 }
 
 # ===========================================================================
+# subdirs.tcl
+# ===========================================================================
+# Subfolder navigation for the browser (optional all-or-nothing module).
+#
+# Included by default in writhdeck.tcl / writhdeck-cli.tcl; excluded by default
+# from writhdeck-mini.tcl / writhdeck-jim.tcl (SUBDIRS_NAV build flag, mirroring
+# ANALYSIS_TOOLS). Proc-only, no top-level Tk-building code, so it is safe to
+# load in TUI-only builds and is NOT wrapped in `if {!$::no_gui}`.
+#
+# When this module is absent, every call site in gui.tcl / tui.tcl is guarded
+# with `[info procs list-subdirs] ne ""` and the browser behaves exactly as
+# before (flat, files-only listing). When present, scanning is still gated at
+# runtime by the `browser_subdirs` setting (::cfg_browser_subdirs, default on).
+#
+# ::br_cwd is the current browse directory: "" means the normal multi-section
+# root view (Favorites / Recents / document folders); a non-empty path means a
+# single-folder navigation view of that directory.
+
+set ::br_cwd ""
+
+# Immediate subdirectories of $dir (tail names), sorted, hidden dirs and the
+# backups folder skipped. Opens nothing and reads no file content.
+proc list-subdirs {dir} {
+    set out {}
+    foreach f [glob -nocomplain -directory $dir -tails -type d *] {
+        if {[string match .* $f]} continue
+        if {$f eq "backups"} continue
+        lappend out $f
+    }
+    return [lsort -dictionary $out]
+}
+
+# Is $dir one of the configured root document folders (br-dirs)?
+proc br-is-root {dir} {
+    set n [file normalize $dir]
+    foreach d [br-dirs] { if {[file normalize $d] eq $n} { return 1 } }
+    return 0
+}
+
+# ===========================================================================
 # gui-config.tcl
 # ===========================================================================
 if {!$::no_gui} {
@@ -4684,6 +4734,17 @@ proc profile-config-dialog {} {
     pack $w.tab_misc.behaviour_sec.fshowall.lbl -side left
     pack $w.tab_misc.behaviour_sec.fshowall.check -side left -padx {8 2}
 
+    # browse subfolders row (checkbox)
+    frame $w.tab_misc.behaviour_sec.fsubdirs -bg $::bg
+    pack  $w.tab_misc.behaviour_sec.fsubdirs -fill x -padx 12 -pady 3
+    label $w.tab_misc.behaviour_sec.fsubdirs.lbl -text [t config_browser_subdirs] -font $::font_sm -width 48 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.tab_misc.behaviour_sec.fsubdirs.check -variable profile_config_browser_subdirs \
+        -font $::font_sm -bg $::bg -fg $::fg \
+        -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
+        -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
+    pack $w.tab_misc.behaviour_sec.fsubdirs.lbl -side left
+    pack $w.tab_misc.behaviour_sec.fsubdirs.check -side left -padx {8 2}
+
     # repetition scope row (spinbox)
     frame $w.tab_misc.behaviour_sec.frpscope -bg $::bg
     pack  $w.tab_misc.behaviour_sec.frpscope -fill x -padx 12 -pady 4
@@ -4741,6 +4802,7 @@ proc profile-config-dialog {} {
     $w.tab_misc.behaviour_sec.ffilter.entry insert 0 $::cfg_browser_filter
     $w.tab_misc.behaviour_sec.fspelllang.entry insert 0 $::cfg_spell_lang
     set ::profile_config_browser_show_all $::cfg_browser_show_all
+    set ::profile_config_browser_subdirs  $::cfg_browser_subdirs
     set ::profile_config_bar_show       $::cfg_bar_show
     set ::profile_config_spell_highlight $::cfg_spell_highlight
     set ::profile_config_repetition_hidden $::cfg_repetition_hidden
@@ -4942,6 +5004,7 @@ proc profile-config-dialog {} {
             set docs_dir    [.profile_config.tab_misc.behaviour_sec.fdocs.entry get]
             set browser_filter [.profile_config.tab_misc.behaviour_sec.ffilter.entry get]
             set browser_show_all $::profile_config_browser_show_all
+            set browser_subdirs  $::profile_config_browser_subdirs
             set repetition_scope   [.profile_config.tab_misc.behaviour_sec.frpscope.spin get]
             set repetition_min_len [.profile_config.tab_misc.behaviour_sec.frpminlen.spin get]
             set spell_lang  [.profile_config.tab_misc.behaviour_sec.fspelllang.entry get]
@@ -4995,6 +5058,7 @@ proc profile-config-dialog {} {
             set ::cfg_docs_dir          $docs_dir
             set ::cfg_browser_filter    $browser_filter
             set ::cfg_browser_show_all  $browser_show_all
+            set ::cfg_browser_subdirs   $browser_subdirs
             set ::cfg_repetition_scope   $repetition_scope
             set ::cfg_repetition_min_len $repetition_min_len
             set ::cfg_spell_lang          $spell_lang
@@ -5224,15 +5288,30 @@ proc br-refresh {} {
     set ::br_entries {}
     set total 0
     set shown {}
-    foreach dir [br-dirs] {
-        foreach f [list-docs $dir] { lappend shown [file join $dir $f] }
-    }
-    foreach e [build-extra-entries $shown] { lappend ::br_entries $e }
-    foreach dir [br-dirs] {
-        lappend ::br_entries [list header $dir ""]
-        foreach f [list-docs $dir] {
-            lappend ::br_entries [list file $dir $f]
+    set _subnav [expr {[info procs list-subdirs] ne "" && $::cfg_browser_subdirs}]
+    if {$_subnav && $::br_cwd ne ""} {
+        # single-folder navigation view (no favorites/recents)
+        lappend ::br_entries [list header $::br_cwd ""]
+        lappend ::br_entries [list updir [file dirname $::br_cwd] ".."]
+        foreach d [list-subdirs $::br_cwd] { lappend ::br_entries [list dir $::br_cwd $d] }
+        foreach f [list-docs $::br_cwd] {
+            lappend ::br_entries [list file $::br_cwd $f]
             incr total
+        }
+    } else {
+        foreach dir [br-dirs] {
+            foreach f [list-docs $dir] { lappend shown [file join $dir $f] }
+        }
+        foreach e [build-extra-entries $shown] { lappend ::br_entries $e }
+        foreach dir [br-dirs] {
+            lappend ::br_entries [list header $dir ""]
+            if {$_subnav} {
+                foreach d [list-subdirs $dir] { lappend ::br_entries [list dir $dir $d] }
+            }
+            foreach f [list-docs $dir] {
+                lappend ::br_entries [list file $dir $f]
+                incr total
+            }
         }
     }
 
@@ -5271,6 +5350,13 @@ proc br-refresh {} {
             set ::br_line_to_entry($current_line) $i
             incr current_line
             set prev_type "header"
+        } elseif {$type in {dir updir}} {
+            set disp [expr {$type eq "updir" ? "../" : "$name/"}]
+            .br.mid.lst insert end "  $disp\n" file
+            set ::br_line_to_entry($current_line) $i
+            incr current_line
+            set prev_type "file"
+            if {$first_file < 0} { set first_file $i }
         } else {
             set meta [fmt-meta [file join $dir $name]]
             .br.mid.lst insert end "  $name\t$meta\n" file
@@ -5338,9 +5424,44 @@ proc br-active-dir {} {
 }
 
 proc br-open {} {
+    if {[info procs list-subdirs] ne ""} {
+        set e [br-selected-raw]
+        if {[llength $e]} {
+            set type [lindex $e 0]
+            if {$type eq "dir"}   { br-cwd-enter [file join [lindex $e 1] [lindex $e 2]]; return }
+            if {$type eq "updir"} { br-cwd-up; return }
+        }
+    }
     set e [br-selected]
     if {![llength $e]} return
     show-editor [file join [lindex $e 1] [lindex $e 2]]
+}
+
+# raw selected entry (any type), or {} -- used by subfolder navigation
+proc br-selected-raw {} {
+    set tags [.br.mid.lst tag ranges selected]
+    if {![llength $tags]} { return {} }
+    set line [expr {int([lindex $tags 0])}]
+    if {![info exists ::br_line_to_entry($line)]} { return {} }
+    set i $::br_line_to_entry($line)
+    if {$i < 0 || $i >= [llength $::br_entries]} { return {} }
+    return [lindex $::br_entries $i]
+}
+
+# enter a subdirectory (subfolder navigation)
+proc br-cwd-enter {dir} {
+    set ::br_cwd [file normalize $dir]
+    .br.mid.lst tag remove selected 1.0 end
+    br-refresh
+}
+
+# go up one level; back to the root multi-section view when leaving a root folder
+proc br-cwd-up {} {
+    if {$::br_cwd eq ""} return
+    set parent [file dirname $::br_cwd]
+    set ::br_cwd [expr {[br-is-root $parent] ? "" : $parent}]
+    .br.mid.lst tag remove selected 1.0 end
+    br-refresh
 }
 
 proc br-info-shortcut {} {
@@ -5708,6 +5829,8 @@ proc br-stats {{path ""}} {
 
 bind .br.mid.lst <Return>      { br-open }
 bind .br.mid.lst <Double-1>    { br-open }
+bind .br.mid.lst <BackSpace>   { if {[info procs list-subdirs] ne ""} { br-cwd-up } }
+bind .br.mid.lst <Left>        { if {[info procs list-subdirs] ne ""} { br-cwd-up; break } }
 bind .br.mid.lst <n>           { br-new }
 bind .br.mid.lst <t>           { open-scratchpad }
 bind .br.mid.lst <f>           { br-toggle-favorite }
@@ -5779,7 +5902,7 @@ bind .br.mid.lst <Button-1> {
     if {[info exists ::br_line_to_entry($line)]} {
         set entry_idx $::br_line_to_entry($line)
         set e [lindex $::br_entries $entry_idx]
-        if {[lindex $e 0] ni {file recent favorite}} {
+        if {[lindex $e 0] ni {file recent favorite dir updir}} {
             break
         }
         .br.mid.lst tag remove selected 1.0 end
@@ -9096,6 +9219,7 @@ proc tui-compute-wc {} {
 
 proc tui-browser {} {
     set sel 0; set scroll 0; set msg ""
+    set cwd ""
     set prev_rows -1; set prev_cols -1
     while 1 {
         set ::tui_size_n 14
@@ -9104,22 +9228,36 @@ proc tui-browser {} {
             set prev_rows $rows; set prev_cols $cols
         }
         # build entries
+        set _subnav [expr {[info procs list-subdirs] ne "" && $::cfg_browser_subdirs}]
         set entries {}; set fcount 0
         set shown {}
-        foreach dir [br-dirs] {
-            foreach f [list-docs $dir] { lappend shown [file join $dir $f] }
-        }
-        foreach e [build-extra-entries $shown] { lappend entries $e }
-        foreach dir [br-dirs] {
-            lappend entries [list header $dir ""]
-            foreach f [list-docs $dir] {
-                lappend entries [list file $dir $f]
+        if {$_subnav && $cwd ne ""} {
+            lappend entries [list header $cwd ""]
+            lappend entries [list updir [file dirname $cwd] ".."]
+            foreach d [list-subdirs $cwd] { lappend entries [list dir $cwd $d] }
+            foreach f [list-docs $cwd] {
+                lappend entries [list file $cwd $f]
                 incr fcount
+            }
+        } else {
+            foreach dir [br-dirs] {
+                foreach f [list-docs $dir] { lappend shown [file join $dir $f] }
+            }
+            foreach e [build-extra-entries $shown] { lappend entries $e }
+            foreach dir [br-dirs] {
+                lappend entries [list header $dir ""]
+                if {$_subnav} {
+                    foreach d [list-subdirs $dir] { lappend entries [list dir $dir $d] }
+                }
+                foreach f [list-docs $dir] {
+                    lappend entries [list file $dir $f]
+                    incr fcount
+                }
             }
         }
         set fidx {}
         for {set i 0} {$i < [llength $entries]} {incr i} {
-            if {[lindex [lindex $entries $i] 0] in {file recent favorite}} { lappend fidx $i }
+            if {[lindex [lindex $entries $i] 0] in {file recent favorite dir updir}} { lappend fidx $i }
         }
         set nf [llength $fidx]
         if {$nf > 0} { set sel [expr {max(0, min($sel, $nf-1))}] }
@@ -9144,6 +9282,13 @@ proc tui-browser {} {
                 if {$type eq "header"} {
                     set lbl [expr {$name ne "" ? $name : [string map [list $::HOME_DIR ~] $dir]}]
                     tui-attr dim; tui-fill $row " $lbl" $cols; tui-attr off
+                } elseif {$type in {dir updir}} {
+                    set fi [lsearch $fidx $ei]; set issel [expr {$fi == $sel}]
+                    set disp [expr {$type eq "updir" ? ".." : "$name/"}]
+                    set pfx  [expr {$issel ? " \u00bb " : "   "}]
+                    if {$issel} { tui-attr reverse }
+                    tui-fill $row [string range "${pfx}${disp}" 0 [expr {$cols-1}]] $cols
+                    if {$issel} { tui-attr off }
                 } else {
                     set fi [lsearch $fidx $ei]; set issel [expr {$fi == $sel}]
                     set fp [file join $dir $name]
@@ -9166,13 +9311,15 @@ proc tui-browser {} {
         set plu [expr {$fcount != 1 ? "s" : ""}]
         if {$::cfg_help_bar ne ""} { tui-help [expr {$rows-2}] [format [t br_help_tui] [t br_key_help] $::cfg_lbl_toc] $cols }
         set clk [expr {[status-zone-of clock] ne "" ? "  [clock format [clock seconds] -format {%H:%M}]" : ""}]
+        set _barpath [expr {$_subnav && $cwd ne "" ? $cwd : $::DOCS_DIR_DEFAULT}]
         if {$msg ne ""} { tui-bar [expr {$rows-1}] " $msg" "${clk} " $cols; set msg ""
-        } else { tui-bar [expr {$rows-1}] " [string map [list $::HOME_DIR ~] $::DOCS_DIR_DEFAULT]" \
+        } else { tui-bar [expr {$rows-1}] " [string map [list $::HOME_DIR ~] $_barpath]" \
                          " [t br_files $fcount $plu]${clk} " $cols }
         flush stdout
 
         set key [tui-getch]
         set cfi [expr {$nf > 0 ? [lindex $fidx $sel] : -1}]
+        set ctype [expr {$cfi >= 0 ? [lindex [lindex $entries $cfi] 0] : ""}]
         switch -- $key {
             q - "\x11" {
                 lassign [tui-size] rows cols
@@ -9182,8 +9329,25 @@ proc tui-browser {} {
             DOWN - j { if {$sel < $nf-1} { incr sel 1 } }
             HOME    { set sel 0 }
             END     { set sel [expr {max(0,$nf-1)}] }
+            BACKSPACE - LEFT {
+                if {$_subnav && $cwd ne ""} {
+                    set _p [file dirname $cwd]
+                    set cwd [expr {[br-is-root $_p] ? "" : $_p}]
+                    set sel 0; set scroll 0
+                }
+            }
             ENTER {
-                if {$cfi >= 0} { lassign [lindex $entries $cfi] _ dir name; return [file join $dir $name] }
+                if {$cfi >= 0} {
+                    lassign [lindex $entries $cfi] _t dir name
+                    if {$_t eq "dir"} {
+                        set cwd [file normalize [file join $dir $name]]; set sel 0; set scroll 0
+                    } elseif {$_t eq "updir"} {
+                        set _p [file dirname $cwd]
+                        set cwd [expr {[br-is-root $_p] ? "" : $_p}]; set sel 0; set scroll 0
+                    } else {
+                        return [file join $dir $name]
+                    }
+                }
             }
             n {
                 set dir [tui-active-dir $entries $cfi]
@@ -9200,13 +9364,13 @@ proc tui-browser {} {
                 tui-help-dialog $rows $cols 0 0
             }
             i {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && $ctype in {file recent favorite}} {
                     lassign [lindex $entries $cfi] _ dir name
                     tui-info-dialog [file join $dir $name] $rows $cols
                 }
             }
             f {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && $ctype in {file recent favorite}} {
                     lassign [lindex $entries $cfi] _ dir name
                     set _path [file join $dir $name]
                     set _was_fav [expr {$_path in $::favorites_list}]
@@ -9215,7 +9379,7 @@ proc tui-browser {} {
                 }
             }
             s {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && $ctype in {file recent favorite}} {
                     lassign [lindex $entries $cfi] _ dir name
                     set _path [file join $dir $name]
                     set _r [tui-stats-dialog $_path $rows $cols]
@@ -9223,14 +9387,14 @@ proc tui-browser {} {
                 }
             }
             b {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && $ctype in {file recent favorite}} {
                     lassign [lindex $entries $cfi] _ dir name
                     set dst [do-backup $dir $name]
                     set msg [t br_backed_up $name [string map [list $::HOME_DIR ~] [file dirname $dst]] [file tail $dst]]
                 }
             }
             d {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && $ctype in {file recent favorite}} {
                     lassign [lindex $entries $cfi] _ dir name
                     if {[tui-confirm [t br_delete $name] $rows $cols]} {
                         set full [file join $dir $name]
@@ -9241,7 +9405,7 @@ proc tui-browser {} {
                 }
             }
             r {
-                if {$cfi >= 0} {
+                if {$cfi >= 0 && $ctype in {file recent favorite}} {
                     lassign [lindex $entries $cfi] _ dir name
                     set new [string trim [tui-prompt "rename '$name' to: " $rows $cols]]
                     if {$new ne ""} {

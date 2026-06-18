@@ -64,7 +64,17 @@ Section order: `DOCS_DIR_DEFAULT` → `DOCS_DIR` (if custom) → Favorites → R
 
 `list-docs {dir}` (`src/common.tcl`, shared GUI/TUI) filters the main directory listing by `::cfg_browser_filter` — a space-separated list of glob patterns (default `*.txt *.t2t *.md *.ini`), matched case-insensitively against the filename via `string match`. Empty filter = show everything. `::cfg_browser_show_all` (default off) bypasses the filter entirely regardless of `cfg_browser_filter`.
 
-Both settings are editable on the Misc tab (`ffilter` entry, immediately followed by the standalone `fshowall` checkbox right below it). Note: favorites/recents (`build-extra-entries`) are **not** filtered — only the main directory listing.
+Both settings are editable on the Misc tab (`ffilter` entry, immediately followed by the standalone `fshowall` checkbox right below it, then the `fsubdirs` checkbox for `browser_subdirs`). Note: favorites/recents (`build-extra-entries`) are **not** filtered — only the main directory listing.
+
+## Subfolder navigation (optional module `src/subdirs.tcl`)
+
+Explorer-style browsing of subdirectories inside the document folders. Optional all-or-nothing module (`SUBDIRS_NAV` build flag, excluded by default from `writhdeck-mini.tcl`/`writhdeck-jim.tcl`, same pattern as analysis); every call site is guarded with `[info procs list-subdirs] ne ""`. Also gated at runtime by `::cfg_browser_subdirs` (`browser_subdirs` in `[behaviour]`, default `yes`).
+
+- **Module exports**: `list-subdirs {dir}` (immediate subdirs, tails, sorted, hidden dirs + `backups` skipped), `br-is-root {dir}` (is `dir` one of `br-dirs`?), and the state var `::br_cwd` (`""` = normal multi-section root view; a path = single-folder navigation view of that dir).
+- **Two new `::br_entries` types**: `dir` (`{dir parentdir subname}`, rendered `subname/`) and `updir` (`{updir parentdir ".."}`, rendered `../`). Both are selectable but excluded from `br-selected` (file ops never act on them).
+- **Root view** (`br_cwd == ""`): Favorites/Recents as before, then under each `br-dirs` header the subfolders (`dir` entries) followed by files. **Nav view** (`br_cwd != ""`): single header + `..` + subfolders + files, no Favorites/Recents.
+- **GUI** (`gui.tcl`): `br-open` routes `dir`→`br-cwd-enter`, `updir`→`br-cwd-up`; `br-selected-raw` returns the raw entry. Up-level bound on `<BackSpace>` and `<Left>`. New files (`br-new` via `br-active-dir`) land in the current folder (header dir = `br_cwd`).
+- **TUI** (`tui-browser`): local `cwd` var (not the global), `_subnav` flag, `fidx` includes dir/updir, ENTER navigates, `BACKSPACE`/`LEFT` go up, file ops (i/f/s/b/d/r) guarded by `$ctype in {file recent favorite}`. Bottom bar shows `cwd` when navigating.
 
 ## Pinned TOC panel — F11 vs Shift+Ctrl+F11
 
