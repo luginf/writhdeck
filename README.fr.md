@@ -89,6 +89,10 @@ WrithDeck est volontairement agnostique de la plateforme — mêmes raccourcis, 
 9. Copie du fichier sur une clé USB.
 10. Sur un PC extérieur (bibliothèque, amis), ouverture de [la version web](https://luginf.github.io/writhdeck/writhdeck.html) et travail directement sur la clé USB.
 
+
+Notez qu'au lieu de Git, vous pouvez aussi utiliser un service cloud (Google Drive, OneDrive, mega.nz) ou un service auto-hébergé comme Nextcloud.
+
+
 ## Compilation depuis les sources
 
 Le dépôt contient des fichiers source modulaires dans `src/` :

@@ -1168,6 +1168,25 @@ proc tui-save-file {filepath lines} {
 
 # -- TUI Editor ----------------------------------------------------------------
 
+proc tui-cmd-menu {} {
+    set m {{t timer} {p pause} {b browser} {q quit} {s stats}}
+    if {[info procs tui-analyse-dialog] ne ""} { lappend m {w words} {a analyse} }
+    return $m
+}
+
+proc tui-cmd-message {idx} {
+    set parts {}
+    set i 0
+    foreach item [tui-cmd-menu] {
+        lassign $item k label
+        set txt "$k:$label"
+        if {$i == $idx} { set txt "\[$txt\]" }
+        lappend parts $txt
+        incr i
+    }
+    return "$::cfg_lbl_cmd_mode: exit mode  [join $parts {  }]"
+}
+
 proc tui-scratchpad-save {rows cols linesVar filepathVar dirtyVar} {
     upvar 1 $linesVar lines $filepathVar filepath $dirtyVar dirty
     lassign [tui-size] rows cols
@@ -1605,6 +1624,30 @@ proc tui-editor {filepath {init_state {}}} {
             set vi $split_r_vi; set scx $split_r_scx
             set _fswap [expr {$split_ws2_mode ? 2 : 1}]
         }
+
+        # modal command mode: arrows drive the bottom menu instead of the cursor
+        if {$::tui_cmd_mode} {
+            switch -- $key {
+                LEFT {
+                    set _cm [tui-cmd-menu]
+                    set ::tui_cmd_idx [expr {($::tui_cmd_idx - 1 + [llength $_cm]) % [llength $_cm]}]
+                    set message [tui-cmd-message $::tui_cmd_idx]; set msg_time [clock seconds]
+                    set key ""; set rst 0; set clear_sel 0
+                }
+                RIGHT {
+                    set _cm [tui-cmd-menu]
+                    set ::tui_cmd_idx [expr {($::tui_cmd_idx + 1) % [llength $_cm]}]
+                    set message [tui-cmd-message $::tui_cmd_idx]; set msg_time [clock seconds]
+                    set key ""; set rst 0; set clear_sel 0
+                }
+                ENTER {
+                    set key [lindex [lindex [tui-cmd-menu] $::tui_cmd_idx] 0]
+                }
+                UP - DOWN - SHIFT-UP - SHIFT-DOWN - SHIFT-LEFT - SHIFT-RIGHT - CTRL-UP - CTRL-DOWN - CTRL-LEFT - CTRL-RIGHT - HOME - END - PPAGE - NPAGE - BACKSPACE - DC - TAB {
+                    set key ""; set rst 0; set clear_sel 0
+                }
+            }
+        }
         switch -- $key {
             UP {
                 if {$::typewriter_mode && $::cfg_hemingway_mode} {}  \
@@ -1906,10 +1949,8 @@ proc tui-editor {filepath {init_state {}}} {
                     }
                 } elseif {$key eq $::cfg_tui_cmd_mode} {
                     set ::tui_cmd_mode 1
-                    set message "$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats"
-                    if {[info procs tui-analyse-dialog] ne ""} {
-                        append message "  w: words  a: analyse"
-                    }
+                    set ::tui_cmd_idx 0
+                    set message [tui-cmd-message $::tui_cmd_idx]
                     set msg_time [clock seconds]
                     set clear_sel 0
                 } elseif {$key eq $::cfg_tui_close} {

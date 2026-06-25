@@ -16,17 +16,26 @@ Editor mode activated by pressing the command-mode key (default: ESC) in the edi
 - **cmd-mode key** — toggle modal on/off (press again to exit)
 - **t** — start timer if inactive; reset (stop + return to full duration) if active
 - **p** — pause if running; resume from saved `timer_remaining` if paused (uses `timer-resume`)
+- **b** — go to browser (with save prompt if dirty)
+- **q** — quit/close current file (with save prompt if dirty)
 - **s** — show daily writing statistics (calls `daily-update` first to include unsaved words, then `tui-stats-dialog` / `file-stats-dialog`)
 - **w** — show word occurrences — calls `tui-word-occurrences` (same overlay as browser `w`)
-- **q** — quit/close current file (with save prompt if dirty)
+- **a** — structure/repetitions/spelling analysis — calls `tui-analyse-dialog` (TUI) / `analyse-dialog` (GUI); only when `src/analysis.tcl` is included in the build
 - **Other keys** — exit modal, revert to normal text entry
 
 **Implementation details:**
 - State tracked by `$::gui_cmd_mode` (GUI) and `$::tui_cmd_mode` (TUI)
-- Status message: `"$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  q: quit  s: stats  w: words"`
-- GUI binding: `proc bind-cmd-mode {w}` in `src/gui.tcl` — sets all command-mode bindings (cfg_key_cmd_mode, p/P/t/T/c/C/q/Q/s/S/w/W, Alt-t, Any-KeyPress) on widget `$w`. Called for `.ed.t`, `split-make-pane` peer panes, and `split-ws2-open` independent pane.
+- GUI status message: `"$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats"` (+ `"  w: words  a: analyse"` when `tui-analyse-dialog`/`analyse-dialog` exists) — built in `ed-status` (`src/gui.tcl`)
+- GUI binding: `proc bind-cmd-mode {w}` in `src/gui.tcl` — sets all command-mode bindings (cfg_key_cmd_mode, p/P/t/T/c/C/q/Q/s/S/w/W, Alt-t, Any-KeyPress) on widget `$w`. Called for `.ed.t`, `split-make-pane` peer panes, and `split-ws2-open` independent pane. The catch-all `<Any-KeyPress>` binding (`break` unless the key is the cmd-mode key) is what already blocks arrow-key text movement while modal in the GUI.
 - TUI: `$key eq $::cfg_tui_cmd_mode` in editor key handler
-- After closing `s`/`w` overlay: `set wrap_dirty 1` forces editor redraw (TUI)
+- After closing `s`/`w`/`a` overlay: `set wrap_dirty 1` forces editor redraw (TUI)
+
+**TUI arrow-key menu navigation** — while `::tui_cmd_mode` is active, the editor's main key `switch` is preceded by a guard (`src/tui.tcl`, in `tui-editor`) that intercepts movement/edit keys before they reach the normal text-editing cases:
+- `LEFT`/`RIGHT` cycle `::tui_cmd_idx` (with wraparound) through the menu returned by `tui-cmd-menu` and redraw the bottom bar via `tui-cmd-message`, which wraps the highlighted entry in `[brackets]` (e.g. `[b:browser]`)
+- `ENTER` rewrites `$key` to the letter of the currently highlighted entry (e.g. `t`), so it falls through to the same dispatch used for a direct letter press
+- `UP`/`DOWN`/`SHIFT-*`/`CTRL-*`/`HOME`/`END`/`PPAGE`/`NPAGE`/`BACKSPACE`/`DC`/`TAB` are neutralized (rewritten to `""`) — none of them move the cursor or edit text while modal
+- `tui-cmd-menu` returns `{t timer} {p pause} {b browser} {q quit} {s stats}` plus `{w words} {a analyse}` when `tui-analyse-dialog` exists — kept in sync with the letters actually dispatched inside the `elseif {$::tui_cmd_mode}` block, so the menu always lists every option
+- `::tui_cmd_idx` (declared in `src/state.tcl`) is reset to `0` every time modal mode is entered
 
 ## Second workspace (F10)
 

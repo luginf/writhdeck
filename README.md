@@ -97,6 +97,11 @@ WrithDeck is deliberately platform-agnostic — same shortcuts, same generous ma
 9. Copy the file onto a USB stick.
 10. On any outside computer (a library, a friend's place), open [the web version](https://luginf.github.io/writhdeck/writhdeck.html) and edit the file directly from the USB stick.
 
+
+Note that instead of using Git, you can also use a cloud-based service (Google Drive, OneDrive, mega.nz) or a self-hosted service such as Nextcloud.
+
+
+
 ## Building from Source
 
 The repository contains modular source files in `src/`:

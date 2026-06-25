@@ -7,6 +7,7 @@ set ::watch_after_id  ""
 set ::session_headings {}
 set ::gui_cmd_mode    0
 set ::tui_cmd_mode    0
+set ::tui_cmd_idx     0
 
 file mkdir $::DOCS_DIR_DEFAULT
 set ::STATE_FILE [file join $::DOCS_DIR_DEFAULT ".writhdeck.json"]
