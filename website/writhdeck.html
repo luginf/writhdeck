@@ -454,9 +454,16 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
   padding: 3px 8px;
   cursor: pointer;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 .font-item:hover { background: var(--bg-bar); }
 .font-item.selected { background: var(--bg-sel); color: var(--fg); }
+.font-del { color: var(--fg-bar); cursor: pointer; flex-shrink: 0; font-size: 0.9em; }
+.font-del:hover { color: var(--fg); }
+#font-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
 
 /* Scheme colors grid */
 #scheme-colors {
@@ -582,23 +589,23 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
   <div id="br-header">
     <span id="br-title">Writhdeck</span>
     <div id="br-header-btns">
-      <button id="br-folder-btn"  title="Watch a folder — all files editable in place (w)">📁</button>
-      <button id="br-opendisk-btn" title="Open a file from disk — edit in place (o)">📄</button>
-      <button id="br-import-btn" title="Import copy of file (Ctrl+O)">↑</button>
-      <button id="br-new-btn" title="New document (n)">+</button>
+      <button id="br-folder-btn" data-i18n-title="tpl_browser_folder_btn" title="Watch a folder — all files editable in place (w)">📁</button>
+      <button id="br-opendisk-btn" data-i18n-title="tpl_browser_opendisk_btn" title="Open a file from disk — edit in place (o)">📄</button>
+      <button id="br-import-btn" data-i18n-title="tpl_browser_import_btn" title="Import copy of file (Ctrl+O)">↑</button>
+      <button id="br-new-btn" data-i18n-title="tpl_browser_new_btn" title="New document (n)">+</button>
       <details id="br-help-details">
-        <summary id="br-help-btn" title="Help">?</summary>
+        <summary id="br-help-btn" data-i18n-title="tpl_browser_help_btn" title="Help">?</summary>
         <div id="br-help-menu">
   <div id="br-help-logo-wrap">
     <img id="br-help-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAQAAABIkb+zAAAAw3pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjabVBRDsMgCP3nFDuCAiIeh65dshvs+EOlTdv0JT6BR54IbL/vB14dmBm4VJUmkhzcuKF5oGnCBufEgwckJM8vdTgE9BL5TTPVEPJez4fBvMyjcjLSdwjLVWgc/nozioeoT4QerGHUwohwCjkMzOIrTev5C8uWrtB5oBPV4X2Y3HOuvr21eJEQN8qUnIlkDkD9CJB5IINLb/QG89bOhfZJfCFPe9oBf+ptWSIIGeL0AAABI2lDQ1BJQ0MgcHJvZmlsZQAAeJydkL9Kw1AUxn+pWkXq5J9BHDLo2NFMDlaFICjEWMHqlCYpFpMYkpTiG/gm+jAdBMGHcFRw9rvRwcEsXjh8Pw7nfN+9F1p2Eqbl/D6kWVW4fm9wObiyF99os8A6HXaCsMx7nndC4/l8xTL60jVezXN/nnYUl6F0psrCvKjA2hM70yo3rGLttu8fih/EdpRmkfhJvB2lkWGz66fJJPzxNLfpxNnFuemrtnA55hQPmyETxiRUdKWZOkc47EpdCgLuKQmlCbF6U81U3IhKObkciPoi3aYhb7PO85QylMdYXibhjlSeJg/zv99rH2f1prUxy4MiqFtzqtZoBO+PsDKA1WdYvm7IWvr9toYZp5755xu/APYmUGsqZCvqAAAOW2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNC40LjAtRXhpdjIiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iCiAgICB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIgogICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICAgeG1sbnM6R0lNUD0iaHR0cDovL3d3dy5naW1wLm9yZy94bXAvIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgIHhtcE1NOkRvY3VtZW50SUQ9ImdpbXA6ZG9jaWQ6Z2ltcDplZjBhMzc3Yi0wZDI4LTQwZWEtOTBkMi1kZmZhNDQ2NzdjYmUiCiAgIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OTIwMzQ1ZTAtMTBkMS00NmI3LWE3MjYtYTU2M2I1YmZjYjZjIgogICB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6NDY4NjQzNWItMWY0MS00MmQ4LWI2ZDgtZjYyZTEwODhiZDcwIgogICBkYzpGb3JtYXQ9ImltYWdlL3BuZyIKICAgR0lNUDpBUEk9IjIuMCIKICAgR0lNUDpQbGF0Zm9ybT0iTGludXgiCiAgIEdJTVA6VGltZVN0YW1wPSIxNzgwNjk0MDM0MzYyNzU0IgogICBHSU1QOlZlcnNpb249IjIuMTAuMzYiCiAgIHRpZmY6T3JpZW50YXRpb249IjEiCiAgIHhtcDpDcmVhdG9yVG9vbD0iR0lNUCAyLjEwIgogICB4bXA6TWV0YWRhdGFEYXRlPSIyMDI2OjA2OjA1VDIzOjEzOjU0KzAyOjAwIgogICB4bXA6TW9kaWZ5RGF0ZT0iMjAyNjowNjowNVQyMzoxMzo1NCswMjowMCI+CiAgIDx4bXBNTTpIaXN0b3J5PgogICAgPHJkZjpTZXE+CiAgICAgPHJkZjpsaQogICAgICBzdEV2dDphY3Rpb249InNhdmVkIgogICAgICBzdEV2dDpjaGFuZ2VkPSIvIgogICAgICBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjE0Yjc3ZjU1LTBhOTQtNDY1OC1iZDZjLWY0ODVkZjNhOGY0ZSIKICAgICAgc3RFdnQ6c29mdHdhcmVBZ2VudD0iR2ltcCAyLjEwIChMaW51eCkiCiAgICAgIHN0RXZ0OndoZW49IjIwMjYtMDUtMTFUMDk6Mjk6MjcrMDI6MDAiLz4KICAgICA8cmRmOmxpCiAgICAgIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiCiAgICAgIHN0RXZ0OmNoYW5nZWQ9Ii8iCiAgICAgIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6Nzc1NGU1NzQtZDlmOS00N2M0LWIxZGUtZTUwZGNhN2Y2ZDRjIgogICAgICBzdEV2dDpzb2Z0d2FyZUFnZW50PSJHaW1wIDIuMTAgKExpbnV4KSIKICAgICAgc3RFdnQ6d2hlbj0iMjAyNi0wNi0wNVQyMzoxMzo1NCswMjowMCIvPgogICAgPC9yZGY6U2VxPgogICA8L3htcE1NOkhpc3Rvcnk+CiAgPC9yZGY6RGVzY3JpcHRpb24+CiA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgCjw/eHBhY2tldCBlbmQ9InciPz7YPx0fAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH6gYFFQ02o2wdmQAAA8xJREFUeNrtW2tuwyAMLohT5Hw9Vs7Xc+wHQgnBb5uQSWHSprYMvs/4hZ1+Pu94xzvesXKk6AW3nfr0930ogR42DbPOjaKS4qBrIW17BI0UAd4DY9t9JNI66MtU6DngTQRiTfBmAs+SvZrA02SvIvBE2SsI3C37bf99paExPQs+nohg+6f/AJ/aPT8D/rbb4DMncCd8a/aa18Jvku93OV5t+7bTCXpaB/8M7PA6V//DYcj3Xj8wAR2vaHmPo8zM1XVjlL0EQ1qvPiN4zc6Jh8/p5PVKwkEZdR+SvZRI4bX/rJmSJdt8eG6fJlDwZSPLfDIO3BZ+aM3XrJAj4EolePXpkNf5feuPdJ8ij4nQZx5C9IoQBei9HOP9JcGnzWlOgqKJYRj/p8glV7e8+hybCcrzfY5Y8cgfrunwqjaSlnu56545IoJy3r/flDozPnkjbIBPH0ao948rfccJyBWor6ByAtA5kWyDTp0MnljEwEdsQJZ/4hmShC4FHw9ftACL13jpJBy+tOAJvD4GFav+a+P0CC0mXc9WuUs8Nvda6zIJAv6FKiGMFq4+lYZu//NqOSKcy6/suAFbBVeiDDjOFdxCQAOFK5T4umRlhtQ49bFlooGRODa38TnyCQTOVQ3efG+PAxoavy+l3x7fM8WIYRL2Tv6iE8ANNCLu3nACfRnMfnVcaAN93W1uGJxCgEr3NFm/bJcyQ/q+audyL9RXnI+/cwjkSK3sa81VWWbAR66U3kePGtCzAs3v8pR4H6RJ9fzeqczyQZJI0Yc5TWfumJXjDrvJ3tYgbO6V91/9jGK/WmA1OLso4Pr3BBWCPEvdtnXArCT0FIr86g2pCqR8jcjMNB1NJSwFw1oWaaYZk3PK18hWNwYXFv3XFMljy04baFreF3qPo539mEK/dhnByZrZ8p7lrMuS8QSafK+F9rNh+zyRTsWyTLZnD9TPgK6Q46xZ8ldeaKqXPysZfkUcH520xxjKxLNUv5tv5zroxxlYKegca8FMFO+VjzkL1AfzpRTycyka9TnDkmaNEfkVtWPWuEmqbAVB0CoQ1iej1ilW2TUth9+lHmSlgOGdZwxL1gYrCn6jTUPHsyU9fMYGqMIs9mlsJ54vCeQodwZdaLyxWFLRyHLXxhWtmt73ZmwnISvIGE4ANlHMKubCVxM4ro3tJNrv0Xw9speXw5JW+vJH+qwKpCvBJ70CSWOmBb6+fzDpi3C2+4Cl/RH6XUpPTdTau0kRvsJntr5ScPg3uu8EH0bA0gOIcbihJ8BL0/INjSUqFPtg5Tve8Q5q/AGEcnBTH2q81QAAAABJRU5ErkJggg==" alt="Writhdeck">
   </div>
-  <button id="br-help-about">About</button>
+  <button id="br-help-about" data-i18n="tpl_browser_help_about">About</button>
   <div class="more-sep"></div>
   <button id="br-help-readme">README.md</button>
   <div class="more-sep"></div>
-  <a id="br-help-source" href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">source code ↗</a>
+  <a id="br-help-source" href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener" data-i18n="tpl_browser_help_source">source code ↗</a>
   <div class="more-sep"></div>
-  <button id="br-help-settings">Settings</button>
+  <button id="br-help-settings" data-i18n="tpl_browser_help_settings">Settings</button>
         </div>
       </details>
     </div>
@@ -610,18 +617,18 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 <!-- About dialog -->
 <dialog id="about-dlg">
   <div id="about-header">
-    <button id="about-close">✕</button>
+    <button id="about-close" data-i18n-title="tpl_dialog_close_btn" title="Close">✕</button>
   </div>
   <div id="about-body">
     <img id="about-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAQAAABIkb+zAAAAw3pUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjabVBRDsMgCP3nFDuCAiIeh65dshvs+EOlTdv0JT6BR54IbL/vB14dmBm4VJUmkhzcuKF5oGnCBufEgwckJM8vdTgE9BL5TTPVEPJez4fBvMyjcjLSdwjLVWgc/nozioeoT4QerGHUwohwCjkMzOIrTev5C8uWrtB5oBPV4X2Y3HOuvr21eJEQN8qUnIlkDkD9CJB5IINLb/QG89bOhfZJfCFPe9oBf+ptWSIIGeL0AAABI2lDQ1BJQ0MgcHJvZmlsZQAAeJydkL9Kw1AUxn+pWkXq5J9BHDLo2NFMDlaFICjEWMHqlCYpFpMYkpTiG/gm+jAdBMGHcFRw9rvRwcEsXjh8Pw7nfN+9F1p2Eqbl/D6kWVW4fm9wObiyF99os8A6HXaCsMx7nndC4/l8xTL60jVezXN/nnYUl6F0psrCvKjA2hM70yo3rGLttu8fih/EdpRmkfhJvB2lkWGz66fJJPzxNLfpxNnFuemrtnA55hQPmyETxiRUdKWZOkc47EpdCgLuKQmlCbF6U81U3IhKObkciPoi3aYhb7PO85QylMdYXibhjlSeJg/zv99rH2f1prUxy4MiqFtzqtZoBO+PsDKA1WdYvm7IWvr9toYZp5755xu/APYmUGsqZCvqAAAOW2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNC40LjAtRXhpdjIiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iCiAgICB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIgogICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICAgeG1sbnM6R0lNUD0iaHR0cDovL3d3dy5naW1wLm9yZy94bXAvIgogICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iCiAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgIHhtcE1NOkRvY3VtZW50SUQ9ImdpbXA6ZG9jaWQ6Z2ltcDplZjBhMzc3Yi0wZDI4LTQwZWEtOTBkMi1kZmZhNDQ2NzdjYmUiCiAgIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OTIwMzQ1ZTAtMTBkMS00NmI3LWE3MjYtYTU2M2I1YmZjYjZjIgogICB4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ9InhtcC5kaWQ6NDY4NjQzNWItMWY0MS00MmQ4LWI2ZDgtZjYyZTEwODhiZDcwIgogICBkYzpGb3JtYXQ9ImltYWdlL3BuZyIKICAgR0lNUDpBUEk9IjIuMCIKICAgR0lNUDpQbGF0Zm9ybT0iTGludXgiCiAgIEdJTVA6VGltZVN0YW1wPSIxNzgwNjk0MDM0MzYyNzU0IgogICBHSU1QOlZlcnNpb249IjIuMTAuMzYiCiAgIHRpZmY6T3JpZW50YXRpb249IjEiCiAgIHhtcDpDcmVhdG9yVG9vbD0iR0lNUCAyLjEwIgogICB4bXA6TWV0YWRhdGFEYXRlPSIyMDI2OjA2OjA1VDIzOjEzOjU0KzAyOjAwIgogICB4bXA6TW9kaWZ5RGF0ZT0iMjAyNjowNjowNVQyMzoxMzo1NCswMjowMCI+CiAgIDx4bXBNTTpIaXN0b3J5PgogICAgPHJkZjpTZXE+CiAgICAgPHJkZjpsaQogICAgICBzdEV2dDphY3Rpb249InNhdmVkIgogICAgICBzdEV2dDpjaGFuZ2VkPSIvIgogICAgICBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjE0Yjc3ZjU1LTBhOTQtNDY1OC1iZDZjLWY0ODVkZjNhOGY0ZSIKICAgICAgc3RFdnQ6c29mdHdhcmVBZ2VudD0iR2ltcCAyLjEwIChMaW51eCkiCiAgICAgIHN0RXZ0OndoZW49IjIwMjYtMDUtMTFUMDk6Mjk6MjcrMDI6MDAiLz4KICAgICA8cmRmOmxpCiAgICAgIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiCiAgICAgIHN0RXZ0OmNoYW5nZWQ9Ii8iCiAgICAgIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6Nzc1NGU1NzQtZDlmOS00N2M0LWIxZGUtZTUwZGNhN2Y2ZDRjIgogICAgICBzdEV2dDpzb2Z0d2FyZUFnZW50PSJHaW1wIDIuMTAgKExpbnV4KSIKICAgICAgc3RFdnQ6d2hlbj0iMjAyNi0wNi0wNVQyMzoxMzo1NCswMjowMCIvPgogICAgPC9yZGY6U2VxPgogICA8L3htcE1NOkhpc3Rvcnk+CiAgPC9yZGY6RGVzY3JpcHRpb24+CiA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgCjw/eHBhY2tldCBlbmQ9InciPz7YPx0fAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH6gYFFQ02o2wdmQAAA8xJREFUeNrtW2tuwyAMLohT5Hw9Vs7Xc+wHQgnBb5uQSWHSprYMvs/4hZ1+Pu94xzvesXKk6AW3nfr0930ogR42DbPOjaKS4qBrIW17BI0UAd4DY9t9JNI66MtU6DngTQRiTfBmAs+SvZrA02SvIvBE2SsI3C37bf99paExPQs+nohg+6f/AJ/aPT8D/rbb4DMncCd8a/aa18Jvku93OV5t+7bTCXpaB/8M7PA6V//DYcj3Xj8wAR2vaHmPo8zM1XVjlL0EQ1qvPiN4zc6Jh8/p5PVKwkEZdR+SvZRI4bX/rJmSJdt8eG6fJlDwZSPLfDIO3BZ+aM3XrJAj4EolePXpkNf5feuPdJ8ij4nQZx5C9IoQBei9HOP9JcGnzWlOgqKJYRj/p8glV7e8+hybCcrzfY5Y8cgfrunwqjaSlnu56545IoJy3r/flDozPnkjbIBPH0ao948rfccJyBWor6ByAtA5kWyDTp0MnljEwEdsQJZ/4hmShC4FHw9ftACL13jpJBy+tOAJvD4GFav+a+P0CC0mXc9WuUs8Nvda6zIJAv6FKiGMFq4+lYZu//NqOSKcy6/suAFbBVeiDDjOFdxCQAOFK5T4umRlhtQ49bFlooGRODa38TnyCQTOVQ3efG+PAxoavy+l3x7fM8WIYRL2Tv6iE8ANNCLu3nACfRnMfnVcaAN93W1uGJxCgEr3NFm/bJcyQ/q+audyL9RXnI+/cwjkSK3sa81VWWbAR66U3kePGtCzAs3v8pR4H6RJ9fzeqczyQZJI0Yc5TWfumJXjDrvJ3tYgbO6V91/9jGK/WmA1OLso4Pr3BBWCPEvdtnXArCT0FIr86g2pCqR8jcjMNB1NJSwFw1oWaaYZk3PK18hWNwYXFv3XFMljy04baFreF3qPo539mEK/dhnByZrZ8p7lrMuS8QSafK+F9rNh+zyRTsWyTLZnD9TPgK6Q46xZ8ldeaKqXPysZfkUcH520xxjKxLNUv5tv5zroxxlYKegca8FMFO+VjzkL1AfzpRTycyka9TnDkmaNEfkVtWPWuEmqbAVB0CoQ1iej1ilW2TUth9+lHmSlgOGdZwxL1gYrCn6jTUPHsyU9fMYGqMIs9mlsJ54vCeQodwZdaLyxWFLRyHLXxhWtmt73ZmwnISvIGE4ANlHMKubCVxM4ro3tJNrv0Xw9speXw5JW+vJH+qwKpCvBJ70CSWOmBb6+fzDpi3C2+4Cl/RH6XUpPTdTau0kRvsJntr5ScPg3uu8EH0bA0gOIcbihJ8BL0/INjSUqFPtg5Tve8Q5q/AGEcnBTH2q81QAAAABJRU5ErkJggg==" alt="Writhdeck logo">
-    <p class="about-title">About Writhdeck</p>
-    <p>Writhdeck is a distraction-free writing environment for long-form text — novels, essays, notes, scripts.</p>
-    <p>All your documents live in your browser (IndexedDB) — nothing is sent to any server. You can also edit files directly on disk.</p>
-    <p>It features a custom colour-syntax overlay, typewriter focus mode, a session timer, daily word goals, and a fully keyboard-driven interface. Compatible with the Writhdeck desktop app via shared <code>.ini</code> settings.</p>
-    <p class="about-version">Build: 2026-06-18 — Open source — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
+    <p class="about-title" data-i18n="tpl_about_title">About Writhdeck</p>
+    <p data-i18n="tpl_about_p1">Writhdeck is a distraction-free writing environment for long-form text — novels, essays, notes, scripts.</p>
+    <p data-i18n="tpl_about_p2">All your documents live in your browser (IndexedDB) — nothing is sent to any server. You can also edit files directly on disk.</p>
+    <p data-i18n="tpl_about_p3">It features a custom colour-syntax overlay, typewriter focus mode, a session timer, daily word goals, and a fully keyboard-driven interface. Compatible with the Writhdeck desktop app via shared <code>.ini</code> settings.</p>
+    <p class="about-version"><span data-i18n="tpl_about_build">Build:</span> 2026-06-25 — <span data-i18n="tpl_about_opensource">Open source</span> — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
   </div>
   <div id="about-footer">
-    <button id="about-ok">Close</button>
+    <button id="about-ok" data-i18n="tpl_about_close">Close</button>
   </div>
 </dialog>
 
@@ -633,8 +640,8 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 <div id="editor" hidden>
   <div id="ed-header">
     <div id="ed-actions">
-      <button id="ed-menu-btn" title="Menu">≡</button>
-      <button id="ed-close-btn" title="Back to browser (Ctrl+Q, or Ctrl+Shift+Q on Firefox)">✕</button>
+      <button id="ed-menu-btn" data-i18n-title="tpl_editor_menu_btn" title="Menu">≡</button>
+      <button id="ed-close-btn" data-i18n-title="tpl_editor_close_btn" title="Quit">✕</button>
     </div>
   </div>
   <div id="ed-body">
@@ -646,26 +653,26 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
     <!-- TOC side panel -->
     <div id="toc-panel">
       <div id="toc-panel-header">
-        <span id="toc-panel-title">Contents</span>
-        <span id="toc-pin-btn" class="toc-pin-btn" title="Pin TOC (stays open when selecting a chapter)">📌</span>
+        <span id="toc-panel-title" data-i18n="tpl_toc_title">Contents</span>
+        <span id="toc-pin-btn" class="toc-pin-btn" data-i18n-title="tpl_toc_pin_btn" title="Pin TOC (stays open when selecting a chapter)">📌</span>
       </div>
       <div id="toc-list" tabindex="-1"></div>
     </div>
   </div>
   <div id="search-bar" hidden>
-    <label>Find: <input id="search-input" type="text" autocomplete="off"></label>
+    <label><span data-i18n="tpl_search_find_label">Find:</span> <input id="search-input" type="text" autocomplete="off"></label>
     <span id="search-count"></span>
-    <button id="search-prev">▲</button>
-    <button id="search-next">▼</button>
-    <label id="replace-row" hidden>Replace: <input id="replace-input" type="text" autocomplete="off"></label>
-    <button id="replace-one" hidden>Replace</button>
-    <button id="replace-all" hidden>All</button>
-    <button id="search-close">✕</button>
+    <button id="search-prev" data-i18n-title="tpl_search_prev_btn" title="Previous match">▲</button>
+    <button id="search-next" data-i18n-title="tpl_search_next_btn" title="Next match">▼</button>
+    <label id="replace-row" hidden><span data-i18n="tpl_search_replace_label">Replace:</span> <input id="replace-input" type="text" autocomplete="off"></label>
+    <button id="replace-one" hidden data-i18n="tpl_search_replace_btn">Replace</button>
+    <button id="replace-all" hidden data-i18n="tpl_search_replace_all_btn">All</button>
+    <button id="search-close" data-i18n-title="tpl_search_close_btn" title="Close">✕</button>
   </div>
   <div id="goto-bar" hidden>
-    <label>Line: <input id="goto-input" type="number" min="1" autocomplete="off"></label>
-    <button id="goto-go">Go</button>
-    <button id="goto-close">✕</button>
+    <label><span data-i18n="tpl_goto_line_label">Line:</span> <input id="goto-input" type="number" min="1" autocomplete="off"></label>
+    <button id="goto-go" data-i18n="tpl_goto_go_btn">Go</button>
+    <button id="goto-close" data-i18n-title="tpl_goto_close_btn" title="Close">✕</button>
   </div>
   <div id="ed-bar">
     <span id="ed-bar-left"></span>
@@ -676,20 +683,26 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 
 <!-- Main editor menu -->
 <div id="ed-menu" hidden>
-  <button id="ed-more-cmd">⌨ Command mode <span class="hint">Esc / Alt+C</span></button>
+  <button id="ed-more-cmd">⌨ <span data-i18n="tpl_menu_command_mode">Command mode</span> <span class="hint">Esc / Alt+C</span></button>
+  <button data-cmd="config"><span data-i18n="tpl_menu_settings">Settings</span> <span class="hint">c</span></button>
   <div class="more-sep"></div>
-  <div class="more-label">View</div>
-  <button data-cmd="toc">Table of contents <span class="hint">o</span></button>
-  <button data-cmd="dark">Dark / light <span class="hint">d</span></button>
-  <button data-cmd="linenos">Line numbers <span class="hint">n</span></button>
-  <button data-cmd="typewriter">Typewriter <span class="hint">w</span></button>
+  <button data-cmd="save">💾 <span data-i18n="tpl_menu_save">Save</span> <span class="hint">Ctrl+S</span></button>
+  <button data-cmd="save-as"><span data-i18n="tpl_menu_save_as">Save as…</span> <span class="hint">Ctrl+Shift+S</span></button>
+  <button data-cmd="close"><span data-i18n="tpl_menu_quit">Quit</span> <span class="hint">Ctrl+Shift+Q</span></button>
+  <button data-cmd="browser" data-i18n="tpl_menu_browser">Browser</button>
   <div class="more-sep"></div>
-  <div class="more-label">Search</div>
-  <button data-cmd="find">Find <span class="hint">f</span></button>
-  <button data-cmd="replace">Find &amp; Replace <span class="hint">r</span></button>
-  <button data-cmd="goto">Go to line <span class="hint">g</span></button>
+  <div class="more-label" data-i18n="tpl_menu_section_view">View</div>
+  <button data-cmd="toc"><span data-i18n="tpl_menu_toc">Table of contents</span> <span class="hint">o</span></button>
+  <button data-cmd="dark"><span data-i18n="tpl_menu_dark_light">Dark / light</span> <span class="hint">d</span></button>
+  <button data-cmd="linenos"><span data-i18n="tpl_menu_linenos">Line numbers</span> <span class="hint">n</span></button>
+  <button data-cmd="typewriter"><span data-i18n="tpl_menu_typewriter">Typewriter</span> <span class="hint">w</span></button>
   <div class="more-sep"></div>
-  <div class="more-label">Format</div>
+  <div class="more-label" data-i18n="tpl_menu_section_search">Search</div>
+  <button data-cmd="find"><span data-i18n="tpl_menu_find">Find</span> <span class="hint">f</span></button>
+  <button data-cmd="replace"><span data-i18n="tpl_menu_find_replace">Find &amp; Replace</span> <span class="hint">r</span></button>
+  <button data-cmd="goto"><span data-i18n="tpl_menu_goto_line">Go to line</span> <span class="hint">g</span></button>
+  <div class="more-sep"></div>
+  <div class="more-label" data-i18n="tpl_menu_section_format">Format</div>
   <button data-markup="h1"></button>
   <button data-markup="h2"></button>
   <button data-markup="h3"></button>
@@ -699,152 +712,165 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
   <button data-markup="underline"></button>
   <button data-markup="strike"></button>
   <div class="more-sep"></div>
-  <div class="more-label">Document</div>
-  <button data-cmd="export-txt">Export as .txt <span class="hint">e</span></button>
-  <button data-cmd="export-md">Export as .md</button>
-  <button data-cmd="stats">Statistics <span class="hint">s</span></button>
-  <button data-cmd="analyse">Analyse <span class="hint">a</span></button>
-  <button data-cmd="word-occ">Word occurrences</button>
-  <button data-cmd="info">File info <span class="hint">i</span></button>
+  <div class="more-label" data-i18n="tpl_menu_section_document">Document</div>
+  <button data-cmd="export-txt"><span data-i18n="tpl_menu_export_txt">Export as .txt</span> <span class="hint">e</span></button>
+  <button data-cmd="export-md" data-i18n="tpl_menu_export_md">Export as .md</button>
+  <button data-cmd="stats"><span data-i18n="tpl_menu_statistics">Statistics</span> <span class="hint">s</span></button>
+  <button data-cmd="analyse"><span data-i18n="tpl_menu_analyse">Analyse</span> <span class="hint">a</span></button>
+  <button data-cmd="word-occ" data-i18n="tpl_menu_word_occ">Word occurrences</button>
+  <button data-cmd="info"><span data-i18n="tpl_menu_file_info">File info</span> <span class="hint">i</span></button>
   <div class="more-sep"></div>
-  <div class="more-label">App</div>
-  <button data-cmd="timer">Timer <span class="hint">t</span></button>
-  <button data-cmd="block-cursor">Block cursor</button>
-  <button data-cmd="ctx-menu">Right-click menu</button>
-  <button data-cmd="config">Settings <span class="hint">c</span></button>
+  <div class="more-label" data-i18n="tpl_menu_section_app">App</div>
+  <button data-cmd="timer"><span data-i18n="tpl_menu_timer">Timer</span> <span class="hint">t</span></button>
+  <button data-cmd="block-cursor" data-i18n="tpl_menu_block_cursor">Block cursor</button>
+  <button data-cmd="ctx-menu" data-i18n="tpl_menu_ctx_menu">Right-click menu</button>
 </div>
 
 <!-- Settings dialog -->
 <dialog id="settings-dlg">
   <div id="settings-tabs">
-    <button class="stab active" data-tab="profile">Profile</button>
-    <button class="stab" data-tab="display">Display</button>
-    <button class="stab" data-tab="fonts">Fonts</button>
-    <button class="stab" data-tab="schemes">Schemes</button>
-    <button class="stab" data-tab="timer">Timer</button>
-    <button class="stab" data-tab="misc">Misc</button>
+    <button class="stab active" data-tab="profile" data-i18n="tpl_settings_tab_profile">Profile</button>
+    <button class="stab" data-tab="display" data-i18n="tpl_settings_tab_display">Display</button>
+    <button class="stab" data-tab="fonts" data-i18n="tpl_settings_tab_fonts">Fonts</button>
+    <button class="stab" data-tab="schemes" data-i18n="tpl_settings_tab_schemes">Schemes</button>
+    <button class="stab" data-tab="timer" data-i18n="tpl_settings_tab_timer">Timer</button>
+    <button class="stab" data-tab="misc" data-i18n="tpl_settings_tab_misc">Misc</button>
   </div>
   <div id="settings-body">
 
     <!-- Profile tab -->
     <div class="stab-content active" data-tab="profile">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <label>Profile <select id="profile-select"></select></label>
-        <button id="profile-new-btn">New</button>
-        <button id="profile-delete-btn">Delete</button>
+        <label><span data-i18n="tpl_settings_profile_label">Profile</span> <select id="profile-select"></select></label>
+        <button id="profile-new-btn" data-i18n="tpl_settings_profile_new_btn">New</button>
+        <button id="profile-delete-btn" data-i18n="tpl_settings_profile_delete_btn">Delete</button>
       </div>
-      <p class="hint">Margins, fonts, scheme, dark mode, word goal, line numbers, block cursor,
+      <p class="hint" data-i18n="tpl_settings_profile_hint">Margins, fonts, scheme, dark mode, word goal, line numbers, block cursor,
         heading marker and markdown headings are saved per profile.</p>
-      <label>Default scheme
+      <label><span data-i18n="tpl_settings_profile_default_scheme">Default scheme</span>
         <select data-key="scheme" id="scheme-select-profile"></select>
       </label>
-      <label><input type="checkbox" data-key="darkMode"> Dark mode</label>
-      <label>Margin horiz (px)<input type="number" data-key="marginX" min="0" max="400"></label>
-      <label>Margin vert (px)<input type="number" data-key="marginY" min="0" max="400"></label>
-      <label>Line spacing<input type="number" data-key="lineSpacing" min="0.8" max="3.0" step="0.1"></label>
-      <label>Word goal (words/day, 0=off)<input type="number" data-key="wordGoal" min="0"></label>
-      <label><input type="checkbox" data-key="hemingwayMode"> Hemingway mode (no delete)</label>
+      <label><input type="checkbox" data-key="darkMode"> <span data-i18n="tpl_settings_profile_dark_mode">Dark mode</span></label>
+      <label><span data-i18n="tpl_settings_profile_margin_x">Margin horiz (px)</span><input type="number" data-key="marginX" min="0" max="400"></label>
+      <label><span data-i18n="tpl_settings_profile_margin_y">Margin vert (px)</span><input type="number" data-key="marginY" min="0" max="400"></label>
+      <label><span data-i18n="tpl_settings_profile_line_spacing">Line spacing</span><input type="number" data-key="lineSpacing" min="0.8" max="3.0" step="0.1"></label>
+      <label><span data-i18n="tpl_settings_profile_word_goal">Word goal (words/day, 0=off)</span><input type="number" data-key="wordGoal" min="0"></label>
+      <label><input type="checkbox" data-key="hemingwayMode"> <span data-i18n="tpl_settings_profile_hemingway">Hemingway mode (no delete)</span></label>
     </div>
 
     <!-- Display tab -->
     <div class="stab-content" data-tab="display">
-      <p class="hint">Status bar zones</p>
-      <label>Left<input type="text" data-key="statusLeft"></label>
-      <label>Center<input type="text" data-key="statusCenter"></label>
-      <label>Right<input type="text" data-key="statusRight"></label>
-      <p class="hint">Tokens: filename dirty words chars lines line col para pages percent today goal reading clock timer</p>
-      <p class="hint" style="margin-top:10px">Editor options</p>
-      <label><input type="checkbox" data-key="lineNumbers"> Line numbers (Ctrl+L)</label>
-      <label><input type="checkbox" data-key="blockCursor"> Block cursor</label>
-      <label><input type="checkbox" data-key="blinkCursor"> Blinking cursor</label>
-      <p class="hint" style="margin-top:10px">Keyboard shortcuts</p>
+      <p class="hint" data-i18n="tpl_settings_display_statusbar_zones">Status bar zones</p>
+      <label><span data-i18n="tpl_settings_display_left">Left</span><input type="text" data-key="statusLeft"></label>
+      <label><span data-i18n="tpl_settings_display_center">Center</span><input type="text" data-key="statusCenter"></label>
+      <label><span data-i18n="tpl_settings_display_right">Right</span><input type="text" data-key="statusRight"></label>
+      <p class="hint" data-i18n="tpl_settings_display_tokens_hint">Tokens: filename dirty words chars lines line col para pages percent today goal reading clock timer</p>
+      <p class="hint" style="margin-top:10px" data-i18n="tpl_settings_display_editor_options">Editor options</p>
+      <label><input type="checkbox" data-key="lineNumbers"> <span data-i18n="tpl_settings_display_line_numbers">Line numbers (Ctrl+L)</span></label>
+      <label><input type="checkbox" data-key="blockCursor"> <span data-i18n="tpl_settings_display_block_cursor">Block cursor</span></label>
+      <label><input type="checkbox" data-key="blinkCursor"> <span data-i18n="tpl_settings_display_blink_cursor">Blinking cursor</span></label>
+      <p class="hint" style="margin-top:10px" data-i18n="tpl_settings_display_keyboard_shortcuts">Keyboard shortcuts</p>
       <label><input type="checkbox" data-key="interceptBrowserShortcuts">
-        Override browser shortcuts
-        <span class="hint" style="display:block;margin-top:2px">
+        <span data-i18n="tpl_settings_display_override_shortcuts">Override browser shortcuts</span>
+        <span class="hint" style="display:block;margin-top:2px" data-i18n="tpl_settings_display_ctrln_hint">
           Ctrl+N = new document (instead of browser new window)
         </span>
       </label>
-      <p class="hint" style="margin-top:10px">Syntax markers</p>
-      <label>Heading marker<input type="text" data-key="headingMarker" maxlength="4"></label>
-      <label>Comment marker<input type="text" data-key="commentMarker" maxlength="4"></label>
-      <label>Bold marker<input type="text" data-key="boldMarker" maxlength="4"></label>
-      <label>Italic marker<input type="text" data-key="italicMarker" maxlength="4"></label>
-      <label>Underline marker<input type="text" data-key="underlineMarker" maxlength="4"></label>
-      <label>Strikethrough marker<input type="text" data-key="strikeMarker" maxlength="4"></label>
-      <label><input type="checkbox" data-key="markdownHeadings"> Markdown headings (#)</label>
+      <p class="hint" style="margin-top:10px" data-i18n="tpl_settings_display_syntax_markers">Syntax markers</p>
+      <label><span data-i18n="tpl_settings_display_heading_marker">Heading marker</span><input type="text" data-key="headingMarker" maxlength="4"></label>
+      <label><span data-i18n="tpl_settings_display_comment_marker">Comment marker</span><input type="text" data-key="commentMarker" maxlength="4"></label>
+      <label><span data-i18n="tpl_settings_display_bold_marker">Bold marker</span><input type="text" data-key="boldMarker" maxlength="4"></label>
+      <label><span data-i18n="tpl_settings_display_italic_marker">Italic marker</span><input type="text" data-key="italicMarker" maxlength="4"></label>
+      <label><span data-i18n="tpl_settings_display_underline_marker">Underline marker</span><input type="text" data-key="underlineMarker" maxlength="4"></label>
+      <label><span data-i18n="tpl_settings_display_strike_marker">Strikethrough marker</span><input type="text" data-key="strikeMarker" maxlength="4"></label>
+      <label><input type="checkbox" data-key="markdownHeadings"> <span data-i18n="tpl_settings_display_markdown_headings">Markdown headings (#)</span></label>
     </div>
 
     <!-- Fonts tab -->
     <div class="stab-content" data-tab="fonts">
-      <label>Font family<input type="text" data-key="fontFamily" id="font-family-input"></label>
-      <label>Font size (px)<input type="number" data-key="fontSize" min="8" max="48"></label>
+      <label><span data-i18n="tpl_settings_fonts_family">Font family</span><input type="text" data-key="fontFamily" id="font-family-input"></label>
+      <label><span data-i18n="tpl_settings_fonts_size">Font size (px)</span><input type="number" data-key="fontSize" min="8" max="48"></label>
       <div id="font-preview-wrap">
-        <span class="hint">Preview:</span>
-        <div id="font-preview">The quick brown fox</div>
+        <span class="hint" data-i18n="tpl_settings_fonts_preview_label">Preview:</span>
+        <div id="font-preview" data-i18n="tpl_settings_fonts_preview_text">The quick brown fox</div>
       </div>
-      <label class="hint-label"><span class="hint">Available system fonts (click to select):</span></label>
+      <div id="font-actions">
+        <button type="button" id="font-upload-btn" data-i18n="tpl_settings_fonts_upload_btn">Upload font file…</button>
+        <button type="button" id="font-scan-btn" data-i18n="tpl_settings_fonts_scan_btn">Scan all system fonts</button>
+        <input type="file" id="font-upload-input" accept=".ttf,.otf,.woff,.woff2" multiple hidden>
+      </div>
+      <label class="hint-label"><span class="hint" data-i18n="tpl_settings_fonts_available_label">Available fonts (click to select):</span></label>
       <div id="font-list"></div>
     </div>
 
     <!-- Schemes tab -->
     <div class="stab-content" data-tab="schemes">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <label>Scheme <select data-key="scheme" id="scheme-select"></select></label>
-        <button id="scheme-new-btn">New</button>
-        <button id="scheme-delete-btn">Delete</button>
+        <label><span data-i18n="tpl_settings_schemes_label">Scheme</span> <select data-key="scheme" id="scheme-select"></select></label>
+        <button id="scheme-new-btn" data-i18n="tpl_settings_schemes_new_btn">New</button>
+        <button id="scheme-delete-btn" data-i18n="tpl_settings_schemes_delete_btn">Delete</button>
       </div>
-      <label style="margin-top:8px"><input type="checkbox" data-key="darkMode" id="scheme-dark-check"> Dark mode</label>
+      <label style="margin-top:8px"><input type="checkbox" data-key="darkMode" id="scheme-dark-check"> <span data-i18n="tpl_settings_schemes_dark_mode">Dark mode</span></label>
       <div id="scheme-colors"></div>
     </div>
 
     <!-- Timer tab -->
     <div class="stab-content" data-tab="timer">
-      <label>Type
+      <label><span data-i18n="tpl_settings_timer_type">Type</span>
         <select data-key="timerType">
-          <option value="countdown">Countdown</option>
-          <option value="stopwatch">Stopwatch</option>
+          <option value="countdown" data-i18n="tpl_settings_timer_countdown">Countdown</option>
+          <option value="stopwatch" data-i18n="tpl_settings_timer_stopwatch">Stopwatch</option>
         </select>
       </label>
-      <label>Duration (min)<input type="number" data-key="timerDuration" min="1" max="240"></label>
-      <label><input type="checkbox" data-key="timerSound"> Sound at end</label>
-      <label><input type="checkbox" data-key="timerAlert"> Alert dialog</label>
-      <label><input type="checkbox" data-key="timerShow"> Show in status bar</label>
+      <label><span data-i18n="tpl_settings_timer_duration">Duration (min)</span><input type="number" data-key="timerDuration" min="1" max="240"></label>
+      <label><input type="checkbox" data-key="timerSound"> <span data-i18n="tpl_settings_timer_sound">Sound at end</span></label>
+      <label><input type="checkbox" data-key="timerAlert"> <span data-i18n="tpl_settings_timer_alert">Alert dialog</span></label>
+      <label><input type="checkbox" data-key="timerShow"> <span data-i18n="tpl_settings_timer_show">Show in status bar</span></label>
     </div>
 
     <!-- Misc tab -->
     <div class="stab-content" data-tab="misc">
-      <label><input type="checkbox" data-key="cursorRestore"> Restore cursor position on open</label>
-      <label><input type="checkbox" data-key="openLastDoc"> Open last document on startup</label>
-      <p class="hint" style="margin-top:12px">Watched folder browser</p>
-      <label>File filter<input type="text" data-key="browserFilter"></label>
-      <label><input type="checkbox" data-key="browserShowAll"> Show all files (ignore filter)</label>
-      <label><input type="checkbox" data-key="browserSubdirs"> Browse subfolders</label>
-      <p class="hint" style="margin-top:12px">writhdeck.ini — compatible with the desktop version</p>
+      <p class="hint" data-i18n="tpl_settings_misc_language">Language</p>
+      <label><span data-i18n="tpl_settings_misc_app_language">App language</span>
+        <select data-key="language">
+          <option value="auto">System / browser default</option>
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+        </select>
+      </label>
+      <label><input type="checkbox" data-key="cursorRestore"> <span data-i18n="tpl_settings_misc_cursor_restore">Restore cursor position on open</span></label>
+      <label><input type="checkbox" data-key="openLastDoc"> <span data-i18n="tpl_settings_misc_open_last_doc">Open last document on startup</span></label>
+      <p class="hint" style="margin-top:12px" data-i18n="tpl_settings_misc_watched_folder">Watched folder browser</p>
+      <label><span data-i18n="tpl_settings_misc_file_filter">File filter</span><input type="text" data-key="browserFilter"></label>
+      <label><input type="checkbox" data-key="browserShowAll"> <span data-i18n="tpl_settings_misc_show_all_files">Show all files (ignore filter)</span></label>
+      <label><input type="checkbox" data-key="browserSubdirs"> <span data-i18n="tpl_settings_misc_browse_subfolders">Browse subfolders</span></label>
+      <p class="hint" style="margin-top:12px" data-i18n="tpl_settings_misc_ini_hint">writhdeck.ini — compatible with the desktop version</p>
       <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
-        <button id="misc-ini-import-btn">Import writhdeck.ini</button>
-        <button id="misc-ini-export-btn">Export writhdeck.ini</button>
+        <button id="misc-ini-import-btn" data-i18n="tpl_settings_misc_ini_import_btn">Import writhdeck.ini</button>
+        <button id="misc-ini-export-btn" data-i18n="tpl_settings_misc_ini_export_btn">Export writhdeck.ini</button>
       </div>
-      <p class="hint" style="margin-top:12px">Documents</p>
+      <p class="hint" style="margin-top:12px" data-i18n="tpl_settings_misc_documents">Documents</p>
       <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
-        <button id="misc-import-btn">Import file from disk</button>
-        <button id="misc-export-all-btn">Export all (.txt)</button>
-        <button id="misc-export-zip-btn">Export all (ZIP)</button>
+        <button id="misc-import-btn" data-i18n="tpl_settings_misc_import_btn">Import file from disk</button>
+        <button id="misc-export-all-btn" data-i18n="tpl_settings_misc_export_all_btn">Export all (.txt)</button>
+        <button id="misc-export-zip-btn" data-i18n="tpl_settings_misc_export_zip_btn">Export all (ZIP)</button>
       </div>
     </div>
 
   </div>
   <div id="settings-footer">
-    <button id="settings-apply">Apply</button>
-    <button id="settings-close">Close</button>
-    <button id="settings-reset" style="margin-left:auto;color:var(--comment)">Reset to defaults</button>
+    <button id="settings-apply" data-i18n="tpl_settings_apply_btn">Apply</button>
+    <button id="settings-close" data-i18n="tpl_settings_close_btn">Close</button>
+    <button id="settings-reset" style="margin-left:auto;color:var(--comment)" data-i18n="tpl_settings_reset_btn">Reset to defaults</button>
   </div>
 </dialog>
 
 <!-- File info dialog -->
 <dialog id="info-dlg">
   <div id="info-header">
-    <span>Document info</span>
-    <button id="info-close">✕</button>
+    <span data-i18n="tpl_dialog_info_title">Document info</span>
+    <button id="info-close" data-i18n-title="tpl_dialog_close_btn" title="Close">✕</button>
   </div>
   <div id="info-body"></div>
 </dialog>
@@ -852,9 +878,9 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 <!-- Analyse dialog -->
 <dialog id="analyse-dlg">
   <div id="analyse-header">
-    <span id="analyse-title">Structure</span>
-    <button id="analyse-words-btn" title="Word occurrences">abc</button>
-    <button id="analyse-close">✕</button>
+    <span id="analyse-title" data-i18n="tpl_dialog_analyse_title">Structure</span>
+    <button id="analyse-words-btn" data-i18n-title="tpl_dialog_analyse_words_btn" title="Word occurrences">abc</button>
+    <button id="analyse-close" data-i18n-title="tpl_dialog_close_btn" title="Close">✕</button>
   </div>
   <div id="analyse-body"></div>
 </dialog>
@@ -862,8 +888,8 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 <!-- Word occurrences dialog -->
 <dialog id="words-dlg">
   <div id="words-header">
-    <span id="words-title">Word occurrences</span>
-    <button id="words-close">✕</button>
+    <span id="words-title" data-i18n="tpl_dialog_words_title">Word occurrences</span>
+    <button id="words-close" data-i18n-title="tpl_dialog_close_btn" title="Close">✕</button>
   </div>
   <div id="words-body"></div>
 </dialog>
@@ -871,25 +897,25 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 <!-- Stats dialog -->
 <dialog id="stats-dlg">
   <div id="stats-header">
-    <span>Writing Stats</span>
-    <button id="stats-close">✕</button>
+    <span data-i18n="tpl_dialog_stats_title">Writing Stats</span>
+    <button id="stats-close" data-i18n-title="tpl_dialog_close_btn" title="Close">✕</button>
   </div>
   <div id="stats-body"></div>
 </dialog>
 
 <!-- Timer alert dialog -->
 <dialog id="timer-alert-dlg">
-  <p>Timer finished!</p>
-  <button id="timer-alert-ok">OK</button>
+  <p data-i18n="tpl_dialog_timer_finished">Timer finished!</p>
+  <button id="timer-alert-ok" data-i18n="tpl_dialog_timer_ok_btn">OK</button>
 </dialog>
 
 <!-- Save-before-closing confirmation (Yes = save & close, No = discard & close, Cancel = stay) -->
 <dialog id="close-confirm-dlg">
   <p id="close-confirm-msg"></p>
   <div class="dlg-btn-row">
-    <button id="close-confirm-yes">Yes</button>
-    <button id="close-confirm-no">No</button>
-    <button id="close-confirm-cancel">Cancel</button>
+    <button id="close-confirm-yes" data-i18n="tpl_dialog_close_confirm_yes">Yes</button>
+    <button id="close-confirm-no" data-i18n="tpl_dialog_close_confirm_no">No</button>
+    <button id="close-confirm-cancel" data-i18n="tpl_dialog_close_confirm_cancel">Cancel</button>
   </div>
 </dialog>
 
@@ -961,8 +987,10 @@ function getAllSchemeNames() {
 
 
 'use strict';
-// IndexedDB wrapper — promise-based
-const DB = (() => {
+// IndexedDB wrapper — promise-based.
+// This is the default storage backend. `backend.js` selects the active `DB`
+// implementation (this one, or a host-provided `window.WRITHDECK_BACKEND`).
+const IndexedDbBackend = (() => {
   const DB_NAME = 'writhdeck';
   const DB_VER  = 1;
   let _db = null;
@@ -1049,6 +1077,108 @@ const DB = (() => {
 
 
 'use strict';
+// Storage backend selector.
+//
+// `IndexedDbBackend` (db.js) is the default — used by the standalone
+// writhdeck.html. A host page (e.g. the LionWiki-t2t template) can provide an
+// alternative implementation by defining `window.WRITHDECK_BACKEND` *before*
+// this script runs. The chosen object must expose the same interface as
+// `IndexedDbBackend`: open, saveDoc, getDoc, getAllDocs, deleteDoc,
+// getMeta, setMeta.
+//
+// `IndexedDbBackend` stays globally reachable so an adapter can delegate
+// client-side concerns (settings/theme via getMeta/setMeta) to it while
+// overriding document storage.
+const DB = (typeof window !== 'undefined' && window.WRITHDECK_BACKEND)
+  ? window.WRITHDECK_BACKEND
+  : IndexedDbBackend;
+
+
+'use strict';
+// User-supplied editor fonts — the web counterpart of writhdeck-android's
+// <configDir>/fonts/ folder. The user uploads .ttf/.otf (also .woff/.woff2)
+// files; each is registered at runtime via the CSS Font Loading API
+// (`FontFace`) and the binary is persisted in IndexedDB (`meta['userFonts']`)
+// so it survives reloads. The chosen font name lives in the INI's `font_family`
+// value exactly like a system font — no special INI handling needed.
+const Fonts = (() => {
+  const META_KEY = 'userFonts';
+  const FONT_RE  = /\.(ttf|otf|woff2?)$/i;
+  let _fonts = [];        // uploaded, persisted in IndexedDB: [{ name, data: ArrayBuffer }]
+  let _folderFonts = [];  // names found in <watchedFolder>/fonts/ (on disk, not persisted)
+
+  // Registers a FontFace from a binary buffer and adds it to document.fonts.
+  async function register(name, data) {
+    try {
+      const face = new FontFace(name, data);
+      await face.load();
+      document.fonts.add(face);
+      return true;
+    } catch (e) {
+      console.warn('Font load failed:', name, e);
+      return false;
+    }
+  }
+
+  // Called once at startup (app.js init): re-registers every stored font so
+  // custom fonts render immediately, before applyTheme().
+  async function load() {
+    try { _fonts = (await DB.getMeta(META_KEY)) || []; }
+    catch (_) { _fonts = []; }
+    for (const f of _fonts) await register(f.name, f.data);
+  }
+
+  // Adds one uploaded File: registers it and persists the binary. Returns the
+  // derived font name (filename without extension) on success, or null.
+  async function add(file) {
+    const buf  = await file.arrayBuffer();
+    const name = file.name.replace(FONT_RE, '').trim() || file.name;
+    if (!await register(name, buf)) return null;
+    _fonts = _fonts.filter(f => f.name !== name);   // replace same-named font
+    _fonts.push({ name, data: buf });
+    await DB.setMeta(META_KEY, _fonts);
+    return name;
+  }
+
+  // Forgets a stored font. The already-registered FontFace can't be reliably
+  // un-added cross-browser, but it's gone after the next reload.
+  async function remove(name) {
+    _fonts = _fonts.filter(f => f.name !== name);
+    await DB.setMeta(META_KEY, _fonts);
+  }
+
+  // Scans a `fonts/` subfolder of the watched folder (File System Access API,
+  // Chromium only) and registers every .ttf/.otf/.woff(2) it holds — the web
+  // counterpart of writhdeck-android's docsDir/fonts. These live on disk, so
+  // they're re-scanned each time access is granted rather than persisted, and
+  // are not removable from the UI. Call after scanDir() at the watched root.
+  async function loadFromFolder(rootHandle) {
+    _folderFonts = [];
+    if (!rootHandle) return _folderFonts;
+    let dir;
+    try { dir = await rootHandle.getDirectoryHandle('fonts'); }
+    catch (_) { return _folderFonts; }   // no fonts/ subfolder
+    try {
+      for await (const [name, handle] of dir.entries()) {
+        if (handle.kind !== 'file' || !FONT_RE.test(name)) continue;
+        try {
+          const buf = await (await handle.getFile()).arrayBuffer();
+          const fontName = name.replace(FONT_RE, '');
+          if (await register(fontName, buf)) _folderFonts.push(fontName);
+        } catch (_) {}
+      }
+    } catch (_) {}
+    return _folderFonts;
+  }
+
+  function names() { return _fonts.map(f => f.name); }
+  function folderNames() { return _folderFonts.slice(); }
+
+  return { load, add, remove, names, loadFromFolder, folderNames };
+})();
+
+
+'use strict';
 // In-memory application state
 const State = {
   doc:   null,  // { id, name, content, created, modified }
@@ -1106,7 +1236,10 @@ const State = {
     interceptContextMenu: true,
     browserFilter: '*.txt *.t2t *.md *.ini',
     browserShowAll: false,
-    browserSubdirs: true
+    browserSubdirs: true,
+    // 'auto' = follow navigator.language; otherwise forces the UI to a specific
+    // language regardless of the browser's locale ('en', 'fr', 'es', ...).
+    language: 'auto'
   },
 
   favorites: [],  // [id, ...]
@@ -1415,6 +1548,7 @@ const INI_TO_SETTINGS = {
   browser_filter:             ['browserFilter',             'str'],
   browser_show_all:           ['browserShowAll',            'bool'],
   browser_subdirs:            ['browserSubdirs',            'bool'],
+  language:                   ['language',                  'str'],
 };
 
 const SETTINGS_TO_INI = Object.fromEntries(
@@ -1580,6 +1714,8 @@ function writeIni(s, allSchemes, profiles, activeProfile) {
 
   out += '= editor =' + nl + '[editor]' + nl;
   out += `profile              = ${activeProfile || 'default'}` + nl;
+  out += `% language: "auto" follows the browser language; otherwise forces the UI ("en"/"fr"/"es")` + nl;
+  out += `language             = ${s.language || 'auto'}` + nl;
   out += `comment_marker       = ${s.commentMarker   || '% '}` + nl;
   out += `bold_marker          = ${s.boldMarker      || '**'}` + nl;
   out += `italic_marker        = ${s.italicMarker    || '//'}` + nl;
@@ -1662,6 +1798,646 @@ function writeIni(s, allSchemes, profiles, activeProfile) {
 }
 
 const INI = { parseIni, writeIni, PROFILE_JS_KEYS };
+
+
+'use strict';
+// i18n engine — no language data lives here. Each language is a separate
+// src/i18n/<code>.js file (`I18N.<code> = {...}`), so adding a language later
+// means adding one new file + one JS_ORDER entry in build.py, without touching
+// this file or any other language's dictionary.
+const I18N = {};
+
+function currentLang() {
+  const setting = State.settings.language || 'auto';
+  if (setting !== 'auto') return I18N[setting] ? setting : 'en';
+  const nav = (navigator.language || navigator.userLanguage || 'en').split('-')[0].toLowerCase();
+  return I18N[nav] ? nav : 'en';
+}
+
+// t(key, fallbackEnglish, vars?) — looks up the active language's dictionary
+// for `key`; falls back to the English text given inline at the call site, so
+// there is no separate 'en' dictionary to keep in sync with the rest of the
+// code. `vars` substitutes `${name}` tokens in the result.
+function t(key, fallbackEnglish, vars) {
+  const lang = currentLang();
+  let text = (I18N[lang] && I18N[lang][key]) || fallbackEnglish;
+  if (vars) {
+    for (const k in vars) text = text.split('${' + k + '}').join(vars[k]);
+  }
+  return text;
+}
+
+// applyTranslations() — walks every translatable DOM node and sets its text/
+// title to the active language, caching the original English on first run so
+// switching back to English restores it exactly (no need for an 'en' dict).
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    if (el.dataset.i18nDefault === undefined) el.dataset.i18nDefault = el.textContent;
+    el.textContent = t(el.dataset.i18n, el.dataset.i18nDefault);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    if (el.dataset.i18nTitleDefault === undefined) el.dataset.i18nTitleDefault = el.title;
+    el.title = t(el.dataset.i18nTitle, el.dataset.i18nTitleDefault);
+  });
+}
+
+
+'use strict';
+// French dictionary — keys populated as the UI is migrated to data-i18n / t().
+I18N.fr = {
+  // template.html
+  tpl_browser_folder_btn: 'Surveiller un dossier — tous les fichiers sont modifiables sur place (w)',
+  tpl_browser_opendisk_btn: 'Ouvrir un fichier depuis le disque — modifier sur place (o)',
+  tpl_browser_import_btn: 'Importer une copie de fichier (Ctrl+O)',
+  tpl_browser_new_btn: 'Nouveau document (n)',
+  tpl_browser_help_btn: 'Aide',
+  tpl_browser_help_about: 'À propos',
+  tpl_browser_help_source: 'code source ↗',
+  tpl_browser_help_settings: 'Réglages',
+  tpl_about_title: 'À propos de Writhdeck',
+  tpl_about_p1: 'Writhdeck est un environnement d\'écriture sans distraction pour les textes longs — romans, essais, notes, scénarios.',
+  tpl_about_p2: 'Tous vos documents vivent dans votre navigateur (IndexedDB) — rien n\'est envoyé à un serveur. Vous pouvez aussi modifier des fichiers directement sur le disque.',
+  tpl_about_p3: 'Il propose une surcouche de coloration syntaxique personnalisée, un mode machine à écrire, une minuterie de session, des objectifs de mots quotidiens, et une interface entièrement pilotable au clavier. Compatible avec l\'application de bureau Writhdeck via des réglages <code>.ini</code> partagés.',
+  tpl_about_build: 'Build :',
+  tpl_about_opensource: 'Open source',
+  tpl_about_close: 'Fermer',
+  tpl_dialog_close_btn: 'Fermer',
+  tpl_editor_menu_btn: 'Menu',
+  tpl_editor_close_btn: 'Quitter',
+  tpl_toc_title: 'Sommaire',
+  tpl_toc_pin_btn: 'Épingler le sommaire (reste ouvert lors de la sélection d\'un chapitre)',
+  tpl_search_find_label: 'Rechercher :',
+  tpl_search_prev_btn: 'Occurrence précédente',
+  tpl_search_next_btn: 'Occurrence suivante',
+  tpl_search_replace_label: 'Remplacer :',
+  tpl_search_replace_btn: 'Remplacer',
+  tpl_search_replace_all_btn: 'Tout',
+  tpl_search_close_btn: 'Fermer',
+  tpl_goto_line_label: 'Ligne :',
+  tpl_goto_go_btn: 'Aller',
+  tpl_goto_close_btn: 'Fermer',
+  tpl_menu_command_mode: 'Mode commande',
+  tpl_menu_settings: 'Réglages',
+  tpl_menu_save: 'Enregistrer',
+  tpl_menu_save_as: 'Enregistrer sous…',
+  tpl_menu_quit: 'Quitter',
+  tpl_menu_browser: 'Navigateur',
+  tpl_menu_section_view: 'Affichage',
+  tpl_menu_toc: 'Table des matières',
+  tpl_menu_dark_light: 'Sombre / clair',
+  tpl_menu_linenos: 'Numéros de ligne',
+  tpl_menu_typewriter: 'Machine à écrire',
+  tpl_menu_section_search: 'Recherche',
+  tpl_menu_find: 'Rechercher',
+  tpl_menu_find_replace: 'Rechercher &amp; remplacer',
+  tpl_menu_goto_line: 'Aller à la ligne',
+  tpl_menu_section_format: 'Format',
+  tpl_menu_section_document: 'Document',
+  tpl_menu_export_txt: 'Exporter en .txt',
+  tpl_menu_export_md: 'Exporter en .md',
+  tpl_menu_statistics: 'Statistiques',
+  tpl_menu_analyse: 'Analyser',
+  tpl_menu_word_occ: 'Fréquence des mots',
+  tpl_menu_file_info: 'Infos fichier',
+  tpl_menu_section_app: 'Application',
+  tpl_menu_timer: 'Minuterie',
+  tpl_menu_block_cursor: 'Curseur bloc',
+  tpl_menu_ctx_menu: 'Menu clic droit',
+  tpl_settings_tab_profile: 'Profil',
+  tpl_settings_tab_display: 'Affichage',
+  tpl_settings_tab_fonts: 'Polices',
+  tpl_settings_tab_schemes: 'Thèmes',
+  tpl_settings_tab_timer: 'Minuterie',
+  tpl_settings_tab_misc: 'Divers',
+  tpl_settings_profile_label: 'Profil',
+  tpl_settings_profile_new_btn: 'Nouveau',
+  tpl_settings_profile_delete_btn: 'Supprimer',
+  tpl_settings_profile_hint: 'Les marges, polices, thème, mode sombre, objectif de mots, numéros de ligne, curseur bloc, marqueur de titre et titres Markdown sont enregistrés par profil.',
+  tpl_settings_profile_default_scheme: 'Thème par défaut',
+  tpl_settings_profile_dark_mode: 'Mode sombre',
+  tpl_settings_profile_margin_x: 'Marge horiz. (px)',
+  tpl_settings_profile_margin_y: 'Marge vert. (px)',
+  tpl_settings_profile_line_spacing: 'Interligne',
+  tpl_settings_profile_word_goal: 'Objectif de mots (mots/jour, 0=désactivé)',
+  tpl_settings_profile_hemingway: 'Mode Hemingway (pas de suppression)',
+  tpl_settings_display_statusbar_zones: 'Zones de la barre de statut',
+  tpl_settings_display_left: 'Gauche',
+  tpl_settings_display_center: 'Centre',
+  tpl_settings_display_right: 'Droite',
+  tpl_settings_display_tokens_hint: 'Jetons : filename dirty words chars lines line col para pages percent today goal reading clock timer',
+  tpl_settings_display_editor_options: 'Options de l\'éditeur',
+  tpl_settings_display_line_numbers: 'Numéros de ligne (Ctrl+L)',
+  tpl_settings_display_block_cursor: 'Curseur bloc',
+  tpl_settings_display_blink_cursor: 'Curseur clignotant',
+  tpl_settings_display_keyboard_shortcuts: 'Raccourcis clavier',
+  tpl_settings_display_override_shortcuts: 'Remplacer les raccourcis du navigateur',
+  tpl_settings_display_ctrln_hint: 'Ctrl+N = nouveau document (au lieu d\'une nouvelle fenêtre du navigateur)',
+  tpl_settings_display_syntax_markers: 'Marqueurs de syntaxe',
+  tpl_settings_display_heading_marker: 'Marqueur de titre',
+  tpl_settings_display_comment_marker: 'Marqueur de commentaire',
+  tpl_settings_display_bold_marker: 'Marqueur de gras',
+  tpl_settings_display_italic_marker: 'Marqueur d\'italique',
+  tpl_settings_display_underline_marker: 'Marqueur de souligné',
+  tpl_settings_display_strike_marker: 'Marqueur de barré',
+  tpl_settings_display_markdown_headings: 'Titres Markdown (#)',
+  tpl_settings_fonts_family: 'Police',
+  tpl_settings_fonts_size: 'Taille de police (px)',
+  tpl_settings_fonts_preview_label: 'Aperçu :',
+  tpl_settings_fonts_preview_text: 'Portez ce vieux whisky',
+  tpl_settings_fonts_upload_btn: 'Importer un fichier de police…',
+  tpl_settings_fonts_scan_btn: 'Analyser toutes les polices système',
+  tpl_settings_fonts_available_label: 'Polices disponibles (cliquer pour sélectionner) :',
+  tpl_settings_schemes_label: 'Thème',
+  tpl_settings_schemes_new_btn: 'Nouveau',
+  tpl_settings_schemes_delete_btn: 'Supprimer',
+  tpl_settings_schemes_dark_mode: 'Mode sombre',
+  tpl_settings_timer_type: 'Type',
+  tpl_settings_timer_countdown: 'Compte à rebours',
+  tpl_settings_timer_stopwatch: 'Chronomètre',
+  tpl_settings_timer_duration: 'Durée (min)',
+  tpl_settings_timer_sound: 'Son à la fin',
+  tpl_settings_timer_alert: 'Boîte de dialogue d\'alerte',
+  tpl_settings_timer_show: 'Afficher dans la barre de statut',
+  tpl_settings_misc_language: 'Langue',
+  tpl_settings_misc_app_language: 'Langue de l\'application',
+  tpl_settings_misc_cursor_restore: 'Restaurer la position du curseur à l\'ouverture',
+  tpl_settings_misc_open_last_doc: 'Ouvrir le dernier document au démarrage',
+  tpl_settings_misc_watched_folder: 'Navigateur de dossier surveillé',
+  tpl_settings_misc_file_filter: 'Filtre de fichiers',
+  tpl_settings_misc_show_all_files: 'Afficher tous les fichiers (ignorer le filtre)',
+  tpl_settings_misc_browse_subfolders: 'Parcourir les sous-dossiers',
+  tpl_settings_misc_ini_hint: 'writhdeck.ini — compatible avec la version de bureau',
+  tpl_settings_misc_ini_import_btn: 'Importer writhdeck.ini',
+  tpl_settings_misc_ini_export_btn: 'Exporter writhdeck.ini',
+  tpl_settings_misc_documents: 'Documents',
+  tpl_settings_misc_import_btn: 'Importer un fichier depuis le disque',
+  tpl_settings_misc_export_all_btn: 'Tout exporter (.txt)',
+  tpl_settings_misc_export_zip_btn: 'Tout exporter (ZIP)',
+  tpl_settings_apply_btn: 'Appliquer',
+  tpl_settings_close_btn: 'Fermer',
+  tpl_settings_reset_btn: 'Réinitialiser',
+  tpl_dialog_info_title: 'Infos document',
+  tpl_dialog_analyse_title: 'Structure',
+  tpl_dialog_analyse_words_btn: 'Fréquence des mots',
+  tpl_dialog_words_title: 'Fréquence des mots',
+  tpl_dialog_stats_title: 'Statistiques d\'écriture',
+  tpl_dialog_timer_finished: 'Minuterie terminée !',
+  tpl_dialog_timer_ok_btn: 'OK',
+  tpl_dialog_close_confirm_yes: 'Oui',
+  tpl_dialog_close_confirm_no: 'Non',
+  tpl_dialog_close_confirm_cancel: 'Annuler',
+
+  // browser.js
+  browser_section_favorites: 'Favoris',
+  browser_section_recent_files: 'Fichiers récents',
+  browser_section_files_from_disk: 'Fichiers du disque',
+  browser_section_documents: 'Documents',
+  browser_no_docs_yet: 'Pas encore de document. Appuyez sur n pour en créer un.',
+  browser_unpin: 'Désépingler',
+  browser_pin_to_favorites: 'Épingler aux favoris',
+  browser_linked_to_file_on_disk: 'Lié à un fichier sur le disque',
+  browser_recently_opened: 'Ouvert récemment',
+  browser_open: 'Ouvrir',
+  browser_export_ini: 'Exporter writhdeck.ini',
+  browser_reset_to_defaults: 'Réinitialiser',
+  browser_reset_settings_confirm: 'Réinitialiser tous les réglages par défaut ?',
+  browser_info: 'Infos',
+  browser_analyse: 'Analyser',
+  browser_rename: 'Renommer',
+  browser_export_as_txt: 'Exporter en .txt',
+  browser_export_as_md: 'Exporter en .md',
+  browser_stats: 'Statistiques',
+  browser_delete: 'Supprimer',
+  browser_document_name_prompt: 'Nom du document :',
+  browser_file_already_exists_in_folder: 'Un fichier nommé "${safeName}" existe déjà dans ce dossier.',
+  browser_could_not_create_file: 'Impossible de créer "${safeName}" : ${message}',
+  browser_document_already_exists: 'Un document nommé "${safeName}" existe déjà.',
+  browser_rename_to_prompt: 'Renommer en :',
+  browser_remove_from_writhdeck_confirm: 'Retirer "${name}" de Writhdeck ?\n\nLe fichier original sur votre disque NE sera PAS supprimé — seule la copie stockée dans le navigateur est retirée.',
+  browser_delete_from_storage_confirm: 'Supprimer "${name}" du stockage du navigateur ?\n\nCette action est irréversible. Le document n\'existe que dans ce navigateur — il n\'est PAS sur votre disque.',
+  browser_shortcut_new: 'nouveau',
+  browser_shortcut_watch_folder: 'surveiller dossier',
+  browser_shortcut_open_file: 'ouvrir fichier',
+  browser_shortcut_import_copy: 'importer copie',
+  browser_shortcut_stats: 'stats',
+  browser_shortcut_config: 'réglages',
+  browser_shortcut_rename: 'renommer',
+  browser_shortcut_delete: 'supprimer',
+  browser_shortcut_backup: 'sauvegarde',
+  browser_shortcut_favorite: 'favori',
+  browser_shortcut_info: 'infos',
+  browser_shortcut_help: 'aide',
+  browser_shortcut_reload: 'recharger',
+  browser_directory_access_requires_chrome: 'L\'accès aux dossiers nécessite Chrome, Edge ou Brave.\nSi vous utilisez Brave, vérifiez les réglages Shields.',
+  browser_remove_folder_confirm: 'Retirer le dossier "${name}" de Writhdeck ?\n\nLes fichiers sur le disque ne sont pas affectés.',
+  browser_remove_folder: 'Retirer le dossier',
+  browser_go_up_one_folder: 'Remonter d\'un dossier',
+  browser_reauthorize_folder_access: 'Réautoriser l\'accès au dossier',
+  browser_no_files_in_folder: 'Aucun fichier .txt / .md / .tcl dans ce dossier.',
+  browser_direct_file_access_unavailable: 'L\'accès direct aux fichiers n\'est pas disponible dans ce navigateur.\n\nUtilisez le bouton ↑ Importer pour charger une copie d\'un fichier, ou passez à Chrome/Edge/Brave.\n\nSi vous utilisez Brave, vérifiez que la protection contre le fingerprinting de Shields n\'est pas réglée sur "Strict".',
+  browser_text_files: 'Fichiers texte',
+
+  // settings.js
+  settings_color_bg_dark: 'Fond (sombre)',
+  settings_color_fg_dark: 'Texte (sombre)',
+  settings_color_bg_bar_dark: 'Fond barre (sombre)',
+  settings_color_fg_bar_dark: 'Texte barre (sombre)',
+  settings_color_bg_sel_dark: 'Sélection (sombre)',
+  settings_color_heading_dark: 'Titre (sombre)',
+  settings_color_comment_dark: 'Commentaire (sombre)',
+  settings_color_markup_dark: 'Mise en forme (sombre)',
+  settings_color_bg_light: 'Fond (clair)',
+  settings_color_fg_light: 'Texte (clair)',
+  settings_color_bg_bar_light: 'Fond barre (clair)',
+  settings_color_fg_bar_light: 'Texte barre (clair)',
+  settings_color_bg_sel_light: 'Sélection (clair)',
+  settings_color_heading_light: 'Titre (clair)',
+  settings_color_comment_light: 'Commentaire (clair)',
+  settings_color_markup_light: 'Mise en forme (clair)',
+  settings_font_tag_custom: '  (personnalisée)',
+  settings_font_tag_folder: '  (dossier)',
+  settings_remove_this_font: 'Retirer cette police',
+  settings_cannot_enumerate_fonts: 'Votre navigateur ne peut pas énumérer toutes les polices système (API Local Font Access — Chrome/Edge uniquement). Affichage du sous-ensemble détecté à la place.',
+  settings_could_not_access_fonts: 'Impossible d\'accéder aux polices système (permission refusée).',
+  settings_new_profile_prompt: 'Nom du nouveau profil :',
+  settings_profile_name_no_brackets: 'Les noms de profil ne peuvent pas contenir [ ou ].',
+  settings_profile_already_exists: 'Un profil avec ce nom existe déjà.',
+  settings_cannot_delete_only_profile: 'Impossible de supprimer le seul profil.',
+  settings_delete_profile_confirm: 'Supprimer le profil "${name}" ?',
+  settings_new_scheme_prompt: 'Nom du nouveau thème :',
+  settings_scheme_name_no_brackets: 'Les noms de thème ne peuvent pas contenir [ ou ].',
+  settings_name_already_exists: 'Ce nom existe déjà.',
+  settings_cannot_delete_builtin_scheme: 'Impossible de supprimer un thème intégré.',
+  settings_delete_scheme_confirm: 'Supprimer le thème "${name}" ?',
+  settings_none: 'aucun',
+  settings_import_success: 'Réglages importés.\nThèmes trouvés : ${schemeList}',
+  settings_no_docs_export: 'Aucun document à exporter.',
+  settings_reset_confirm: 'Réinitialiser tous les réglages par défaut ? Cette action est irréversible.',
+
+  // toc.js
+  toc_unpin_title: 'Désépingler le sommaire (se ferme lors de la sélection d\'un chapitre)',
+  toc_pin_title: 'Épingler le sommaire (reste ouvert lors de la sélection d\'un chapitre)',
+  toc_no_headings: 'Aucun titre trouvé.',
+
+  // stats.js
+  stats_no_stats_yet: 'Pas encore de statistiques d\'écriture.',
+  stats_header_date: 'Date',
+  stats_header_words: 'Mots',
+  stats_today_suffix: '← aujourd\'hui',
+
+  // app.js
+  app_info_path_unavailable: '(dossier non défini — chemin complet indisponible)',
+  app_info_storage_disk: 'Fichier disque — ${path}',
+  app_info_storage_browser: 'Stockage du navigateur (IndexedDB) — pas sur votre disque',
+  app_info_label_name: 'Nom',
+  app_info_label_storage: 'Stockage',
+  app_info_label_words: 'Mots',
+  app_info_label_chars: 'Caractères',
+  app_info_label_created: 'Créé',
+  app_info_label_modified: 'Modifié',
+  app_words_empty: 'Aucun mot trouvé.',
+  app_words_col_word: 'Mot',
+  app_words_col_count: '#',
+  app_words_title: 'Fréquence des mots — ${name}',
+  app_analyse_empty: 'Aucun contenu à analyser.',
+  app_analyse_start_label: '(début)',
+  app_analyse_heading_level: 'H${level}',
+  app_analyse_footer_section_one: '${count} section',
+  app_analyse_footer_section_other: '${count} sections',
+  app_analyse_footer: 'Total : ${total} mots · ${sections}',
+  app_analyse_title: 'Structure — ${name}',
+  app_menu_heading_level: 'H${level}',
+  app_menu_format_comment: 'Commentaire (ligne)',
+  app_menu_format_bold: 'Gras',
+  app_menu_format_italic: 'Italique',
+  app_menu_format_underline: 'Souligné',
+  app_menu_format_strike: 'Barré',
+  app_menu_ctx_menu_label: 'Menu clic droit',
+  app_menu_block_cursor_label: 'Curseur bloc',
+  app_toggle_on: 'actif',
+  app_toggle_off: 'inactif',
+  app_msg_ctx_menu_on: 'Menu clic droit activé',
+  app_msg_ctx_menu_off: 'Menu clic droit désactivé',
+  app_ctxmenu_comment: 'Commentaire',
+  app_ctxmenu_cut: 'Couper',
+  app_ctxmenu_copy: 'Copier',
+  app_ctxmenu_paste: 'Coller',
+  app_ctxmenu_spellcheck_on: 'Correcteur orthographique : actif',
+  app_ctxmenu_spellcheck_off: 'Correcteur orthographique : inactif',
+
+  // editor.js
+  editor_title_doc: '${name} — Writhdeck',
+  editor_confirm_save_before_close: 'Enregistrer "${name}" avant de fermer ?',
+  editor_msg_settings_applied: 'Réglages appliqués',
+  editor_msg_parse_error: 'Erreur d\'analyse',
+  editor_msg_permission_denied: 'Permission refusée',
+  editor_msg_saved_to_disk: 'Enregistré sur le disque',
+  editor_msg_disk_save_failed: 'Échec de l\'enregistrement sur le disque',
+  editor_msg_saved: 'Enregistré',
+  editor_msg_save_as_failed: 'Échec de l\'enregistrement sous',
+  editor_msg_saved_as: 'Enregistré sous ${name}',
+  editor_prompt_save_as: 'Enregistrer sous (nouveau nom) :',
+  editor_alert_name_exists: 'Un document nommé "${name}" existe déjà.'
+};
+
+
+'use strict';
+// Spanish dictionary — keys populated as the UI is migrated to data-i18n / t().
+I18N.es = {
+  // template.html
+  tpl_browser_folder_btn: 'Vigilar una carpeta — todos los archivos editables in situ (w)',
+  tpl_browser_opendisk_btn: 'Abrir un archivo del disco — editar in situ (o)',
+  tpl_browser_import_btn: 'Importar copia de archivo (Ctrl+O)',
+  tpl_browser_new_btn: 'Nuevo documento (n)',
+  tpl_browser_help_btn: 'Ayuda',
+  tpl_browser_help_about: 'Acerca de',
+  tpl_browser_help_source: 'código fuente ↗',
+  tpl_browser_help_settings: 'Ajustes',
+  tpl_about_title: 'Acerca de Writhdeck',
+  tpl_about_p1: 'Writhdeck es un entorno de escritura sin distracciones para textos largos — novelas, ensayos, notas, guiones.',
+  tpl_about_p2: 'Todos tus documentos viven en tu navegador (IndexedDB) — nada se envía a ningún servidor. También puedes editar archivos directamente en el disco.',
+  tpl_about_p3: 'Incluye una superposición de sintaxis en color personalizada, un modo de enfoque tipo máquina de escribir, un temporizador de sesión, objetivos de palabras diarios y una interfaz totalmente manejable con el teclado. Compatible con la aplicación de escritorio Writhdeck mediante ajustes <code>.ini</code> compartidos.',
+  tpl_about_build: 'Compilación:',
+  tpl_about_opensource: 'Código abierto',
+  tpl_about_close: 'Cerrar',
+  tpl_dialog_close_btn: 'Cerrar',
+  tpl_editor_menu_btn: 'Menú',
+  tpl_editor_close_btn: 'Salir',
+  tpl_toc_title: 'Índice',
+  tpl_toc_pin_btn: 'Fijar índice (permanece abierto al seleccionar un capítulo)',
+  tpl_search_find_label: 'Buscar:',
+  tpl_search_prev_btn: 'Coincidencia anterior',
+  tpl_search_next_btn: 'Coincidencia siguiente',
+  tpl_search_replace_label: 'Reemplazar:',
+  tpl_search_replace_btn: 'Reemplazar',
+  tpl_search_replace_all_btn: 'Todo',
+  tpl_search_close_btn: 'Cerrar',
+  tpl_goto_line_label: 'Línea:',
+  tpl_goto_go_btn: 'Ir',
+  tpl_goto_close_btn: 'Cerrar',
+  tpl_menu_command_mode: 'Modo comando',
+  tpl_menu_settings: 'Ajustes',
+  tpl_menu_save: 'Guardar',
+  tpl_menu_save_as: 'Guardar como…',
+  tpl_menu_quit: 'Salir',
+  tpl_menu_browser: 'Navegador',
+  tpl_menu_section_view: 'Vista',
+  tpl_menu_toc: 'Tabla de contenidos',
+  tpl_menu_dark_light: 'Oscuro / claro',
+  tpl_menu_linenos: 'Números de línea',
+  tpl_menu_typewriter: 'Máquina de escribir',
+  tpl_menu_section_search: 'Búsqueda',
+  tpl_menu_find: 'Buscar',
+  tpl_menu_find_replace: 'Buscar &amp; reemplazar',
+  tpl_menu_goto_line: 'Ir a la línea',
+  tpl_menu_section_format: 'Formato',
+  tpl_menu_section_document: 'Documento',
+  tpl_menu_export_txt: 'Exportar como .txt',
+  tpl_menu_export_md: 'Exportar como .md',
+  tpl_menu_statistics: 'Estadísticas',
+  tpl_menu_analyse: 'Analizar',
+  tpl_menu_word_occ: 'Frecuencia de palabras',
+  tpl_menu_file_info: 'Información del archivo',
+  tpl_menu_section_app: 'Aplicación',
+  tpl_menu_timer: 'Temporizador',
+  tpl_menu_block_cursor: 'Cursor de bloque',
+  tpl_menu_ctx_menu: 'Menú clic derecho',
+  tpl_settings_tab_profile: 'Perfil',
+  tpl_settings_tab_display: 'Pantalla',
+  tpl_settings_tab_fonts: 'Fuentes',
+  tpl_settings_tab_schemes: 'Esquemas',
+  tpl_settings_tab_timer: 'Temporizador',
+  tpl_settings_tab_misc: 'Varios',
+  tpl_settings_profile_label: 'Perfil',
+  tpl_settings_profile_new_btn: 'Nuevo',
+  tpl_settings_profile_delete_btn: 'Eliminar',
+  tpl_settings_profile_hint: 'Los márgenes, fuentes, esquema, modo oscuro, objetivo de palabras, números de línea, cursor de bloque, marcador de título y títulos Markdown se guardan por perfil.',
+  tpl_settings_profile_default_scheme: 'Esquema por defecto',
+  tpl_settings_profile_dark_mode: 'Modo oscuro',
+  tpl_settings_profile_margin_x: 'Margen horiz. (px)',
+  tpl_settings_profile_margin_y: 'Margen vert. (px)',
+  tpl_settings_profile_line_spacing: 'Interlineado',
+  tpl_settings_profile_word_goal: 'Objetivo de palabras (palabras/día, 0=desactivado)',
+  tpl_settings_profile_hemingway: 'Modo Hemingway (sin eliminar)',
+  tpl_settings_display_statusbar_zones: 'Zonas de la barra de estado',
+  tpl_settings_display_left: 'Izquierda',
+  tpl_settings_display_center: 'Centro',
+  tpl_settings_display_right: 'Derecha',
+  tpl_settings_display_tokens_hint: 'Tokens: filename dirty words chars lines line col para pages percent today goal reading clock timer',
+  tpl_settings_display_editor_options: 'Opciones del editor',
+  tpl_settings_display_line_numbers: 'Números de línea (Ctrl+L)',
+  tpl_settings_display_block_cursor: 'Cursor de bloque',
+  tpl_settings_display_blink_cursor: 'Cursor intermitente',
+  tpl_settings_display_keyboard_shortcuts: 'Atajos de teclado',
+  tpl_settings_display_override_shortcuts: 'Anular atajos del navegador',
+  tpl_settings_display_ctrln_hint: 'Ctrl+N = nuevo documento (en lugar de una nueva ventana del navegador)',
+  tpl_settings_display_syntax_markers: 'Marcadores de sintaxis',
+  tpl_settings_display_heading_marker: 'Marcador de título',
+  tpl_settings_display_comment_marker: 'Marcador de comentario',
+  tpl_settings_display_bold_marker: 'Marcador de negrita',
+  tpl_settings_display_italic_marker: 'Marcador de cursiva',
+  tpl_settings_display_underline_marker: 'Marcador de subrayado',
+  tpl_settings_display_strike_marker: 'Marcador de tachado',
+  tpl_settings_display_markdown_headings: 'Títulos Markdown (#)',
+  tpl_settings_fonts_family: 'Fuente',
+  tpl_settings_fonts_size: 'Tamaño de fuente (px)',
+  tpl_settings_fonts_preview_label: 'Vista previa:',
+  tpl_settings_fonts_preview_text: 'El veloz murciélago hindú',
+  tpl_settings_fonts_upload_btn: 'Subir archivo de fuente…',
+  tpl_settings_fonts_scan_btn: 'Buscar todas las fuentes del sistema',
+  tpl_settings_fonts_available_label: 'Fuentes disponibles (clic para seleccionar):',
+  tpl_settings_schemes_label: 'Esquema',
+  tpl_settings_schemes_new_btn: 'Nuevo',
+  tpl_settings_schemes_delete_btn: 'Eliminar',
+  tpl_settings_schemes_dark_mode: 'Modo oscuro',
+  tpl_settings_timer_type: 'Tipo',
+  tpl_settings_timer_countdown: 'Cuenta atrás',
+  tpl_settings_timer_stopwatch: 'Cronómetro',
+  tpl_settings_timer_duration: 'Duración (min)',
+  tpl_settings_timer_sound: 'Sonido al finalizar',
+  tpl_settings_timer_alert: 'Cuadro de diálogo de alerta',
+  tpl_settings_timer_show: 'Mostrar en la barra de estado',
+  tpl_settings_misc_language: 'Idioma',
+  tpl_settings_misc_app_language: 'Idioma de la aplicación',
+  tpl_settings_misc_cursor_restore: 'Restaurar posición del cursor al abrir',
+  tpl_settings_misc_open_last_doc: 'Abrir el último documento al iniciar',
+  tpl_settings_misc_watched_folder: 'Navegador de carpeta vigilada',
+  tpl_settings_misc_file_filter: 'Filtro de archivos',
+  tpl_settings_misc_show_all_files: 'Mostrar todos los archivos (ignorar filtro)',
+  tpl_settings_misc_browse_subfolders: 'Explorar subcarpetas',
+  tpl_settings_misc_ini_hint: 'writhdeck.ini — compatible con la versión de escritorio',
+  tpl_settings_misc_ini_import_btn: 'Importar writhdeck.ini',
+  tpl_settings_misc_ini_export_btn: 'Exportar writhdeck.ini',
+  tpl_settings_misc_documents: 'Documentos',
+  tpl_settings_misc_import_btn: 'Importar archivo del disco',
+  tpl_settings_misc_export_all_btn: 'Exportar todo (.txt)',
+  tpl_settings_misc_export_zip_btn: 'Exportar todo (ZIP)',
+  tpl_settings_apply_btn: 'Aplicar',
+  tpl_settings_close_btn: 'Cerrar',
+  tpl_settings_reset_btn: 'Restablecer valores por defecto',
+  tpl_dialog_info_title: 'Información del documento',
+  tpl_dialog_analyse_title: 'Estructura',
+  tpl_dialog_analyse_words_btn: 'Frecuencia de palabras',
+  tpl_dialog_words_title: 'Frecuencia de palabras',
+  tpl_dialog_stats_title: 'Estadísticas de escritura',
+  tpl_dialog_timer_finished: '¡Temporizador terminado!',
+  tpl_dialog_timer_ok_btn: 'Aceptar',
+  tpl_dialog_close_confirm_yes: 'Sí',
+  tpl_dialog_close_confirm_no: 'No',
+  tpl_dialog_close_confirm_cancel: 'Cancelar',
+
+  // browser.js
+  browser_section_favorites: 'Favoritos',
+  browser_section_recent_files: 'Archivos recientes',
+  browser_section_files_from_disk: 'Archivos del disco',
+  browser_section_documents: 'Documentos',
+  browser_no_docs_yet: 'Aún no hay documentos. Pulsa n para crear uno.',
+  browser_unpin: 'Soltar',
+  browser_pin_to_favorites: 'Fijar en favoritos',
+  browser_linked_to_file_on_disk: 'Vinculado a un archivo del disco',
+  browser_recently_opened: 'Abierto recientemente',
+  browser_open: 'Abrir',
+  browser_export_ini: 'Exportar writhdeck.ini',
+  browser_reset_to_defaults: 'Restablecer valores por defecto',
+  browser_reset_settings_confirm: '¿Restablecer todos los ajustes a los valores por defecto?',
+  browser_info: 'Información',
+  browser_analyse: 'Analizar',
+  browser_rename: 'Renombrar',
+  browser_export_as_txt: 'Exportar como .txt',
+  browser_export_as_md: 'Exportar como .md',
+  browser_stats: 'Estadísticas',
+  browser_delete: 'Eliminar',
+  browser_document_name_prompt: 'Nombre del documento:',
+  browser_file_already_exists_in_folder: 'Ya existe un archivo llamado "${safeName}" en esta carpeta.',
+  browser_could_not_create_file: 'No se pudo crear "${safeName}": ${message}',
+  browser_document_already_exists: 'Ya existe un documento llamado "${safeName}".',
+  browser_rename_to_prompt: 'Renombrar a:',
+  browser_remove_from_writhdeck_confirm: '¿Quitar "${name}" de Writhdeck?\n\nEl archivo original en tu disco NO se eliminará — solo se quita la copia almacenada en el navegador.',
+  browser_delete_from_storage_confirm: '¿Eliminar "${name}" del almacenamiento del navegador?\n\nEsta acción no se puede deshacer. El documento solo existe en este navegador — NO está en tu disco.',
+  browser_shortcut_new: 'nuevo',
+  browser_shortcut_watch_folder: 'vigilar carpeta',
+  browser_shortcut_open_file: 'abrir archivo',
+  browser_shortcut_import_copy: 'importar copia',
+  browser_shortcut_stats: 'estadísticas',
+  browser_shortcut_config: 'ajustes',
+  browser_shortcut_rename: 'renombrar',
+  browser_shortcut_delete: 'eliminar',
+  browser_shortcut_backup: 'copia de seguridad',
+  browser_shortcut_favorite: 'favorito',
+  browser_shortcut_info: 'información',
+  browser_shortcut_help: 'ayuda',
+  browser_shortcut_reload: 'recargar',
+  browser_directory_access_requires_chrome: 'El acceso a carpetas requiere Chrome, Edge o Brave.\nSi usas Brave, revisa los ajustes de Shields.',
+  browser_remove_folder_confirm: '¿Quitar la carpeta "${name}" de Writhdeck?\n\nLos archivos del disco no se ven afectados.',
+  browser_remove_folder: 'Quitar carpeta',
+  browser_go_up_one_folder: 'Subir un nivel',
+  browser_reauthorize_folder_access: 'Reautorizar el acceso a la carpeta',
+  browser_no_files_in_folder: 'No hay archivos .txt / .md / .tcl en esta carpeta.',
+  browser_direct_file_access_unavailable: 'El acceso directo a archivos no está disponible en este navegador.\n\nUsa el botón ↑ Importar para cargar una copia de un archivo, o cambia a Chrome/Edge/Brave.\n\nSi usas Brave, comprueba que la protección contra fingerprinting de Shields no esté en modo "Strict".',
+  browser_text_files: 'Archivos de texto',
+
+  // settings.js
+  settings_color_bg_dark: 'Fondo (oscuro)',
+  settings_color_fg_dark: 'Texto (oscuro)',
+  settings_color_bg_bar_dark: 'Fondo de barra (oscuro)',
+  settings_color_fg_bar_dark: 'Texto de barra (oscuro)',
+  settings_color_bg_sel_dark: 'Selección (oscuro)',
+  settings_color_heading_dark: 'Título (oscuro)',
+  settings_color_comment_dark: 'Comentario (oscuro)',
+  settings_color_markup_dark: 'Formato (oscuro)',
+  settings_color_bg_light: 'Fondo (claro)',
+  settings_color_fg_light: 'Texto (claro)',
+  settings_color_bg_bar_light: 'Fondo de barra (claro)',
+  settings_color_fg_bar_light: 'Texto de barra (claro)',
+  settings_color_bg_sel_light: 'Selección (claro)',
+  settings_color_heading_light: 'Título (claro)',
+  settings_color_comment_light: 'Comentario (claro)',
+  settings_color_markup_light: 'Formato (claro)',
+  settings_font_tag_custom: '  (personalizada)',
+  settings_font_tag_folder: '  (carpeta)',
+  settings_remove_this_font: 'Quitar esta fuente',
+  settings_cannot_enumerate_fonts: 'Tu navegador no puede enumerar todas las fuentes del sistema (API Local Font Access — solo Chrome/Edge). Se muestra el subconjunto detectado en su lugar.',
+  settings_could_not_access_fonts: 'No se pudo acceder a las fuentes del sistema (permiso denegado).',
+  settings_new_profile_prompt: 'Nombre del nuevo perfil:',
+  settings_profile_name_no_brackets: 'Los nombres de perfil no pueden contener [ ni ].',
+  settings_profile_already_exists: 'Ya existe un perfil con este nombre.',
+  settings_cannot_delete_only_profile: 'No se puede eliminar el único perfil.',
+  settings_delete_profile_confirm: '¿Eliminar el perfil "${name}"?',
+  settings_new_scheme_prompt: 'Nombre del nuevo esquema:',
+  settings_scheme_name_no_brackets: 'Los nombres de esquema no pueden contener [ ni ].',
+  settings_name_already_exists: 'Este nombre ya existe.',
+  settings_cannot_delete_builtin_scheme: 'No se puede eliminar un esquema integrado.',
+  settings_delete_scheme_confirm: '¿Eliminar el esquema "${name}"?',
+  settings_none: 'ninguno',
+  settings_import_success: 'Ajustes importados.\nEsquemas encontrados: ${schemeList}',
+  settings_no_docs_export: 'No hay documentos para exportar.',
+  settings_reset_confirm: '¿Restablecer todos los ajustes a los valores por defecto? Esta acción no se puede deshacer.',
+
+  // toc.js
+  toc_unpin_title: 'Soltar índice (se cierra al seleccionar un capítulo)',
+  toc_pin_title: 'Fijar índice (permanece abierto al seleccionar un capítulo)',
+  toc_no_headings: 'No se encontraron títulos.',
+
+  // stats.js
+  stats_no_stats_yet: 'Aún no hay estadísticas de escritura.',
+  stats_header_date: 'Fecha',
+  stats_header_words: 'Palabras',
+  stats_today_suffix: '← hoy',
+
+  // app.js
+  app_info_path_unavailable: '(carpeta no definida — ruta completa no disponible)',
+  app_info_storage_disk: 'Archivo del disco — ${path}',
+  app_info_storage_browser: 'Almacenamiento del navegador (IndexedDB) — no está en tu disco',
+  app_info_label_name: 'Nombre',
+  app_info_label_storage: 'Almacenamiento',
+  app_info_label_words: 'Palabras',
+  app_info_label_chars: 'Caracteres',
+  app_info_label_created: 'Creado',
+  app_info_label_modified: 'Modificado',
+  app_words_empty: 'No se encontraron palabras.',
+  app_words_col_word: 'Palabra',
+  app_words_col_count: '#',
+  app_words_title: 'Frecuencia de palabras — ${name}',
+  app_analyse_empty: 'No hay contenido para analizar.',
+  app_analyse_start_label: '(inicio)',
+  app_analyse_heading_level: 'H${level}',
+  app_analyse_footer_section_one: '${count} sección',
+  app_analyse_footer_section_other: '${count} secciones',
+  app_analyse_footer: 'Total: ${total} palabras · ${sections}',
+  app_analyse_title: 'Estructura — ${name}',
+  app_menu_heading_level: 'H${level}',
+  app_menu_format_comment: 'Comentario (línea)',
+  app_menu_format_bold: 'Negrita',
+  app_menu_format_italic: 'Cursiva',
+  app_menu_format_underline: 'Subrayado',
+  app_menu_format_strike: 'Tachado',
+  app_menu_ctx_menu_label: 'Menú clic derecho',
+  app_menu_block_cursor_label: 'Cursor de bloque',
+  app_toggle_on: 'activado',
+  app_toggle_off: 'desactivado',
+  app_msg_ctx_menu_on: 'Menú clic derecho activado',
+  app_msg_ctx_menu_off: 'Menú clic derecho desactivado',
+  app_ctxmenu_comment: 'Comentario',
+  app_ctxmenu_cut: 'Cortar',
+  app_ctxmenu_copy: 'Copiar',
+  app_ctxmenu_paste: 'Pegar',
+  app_ctxmenu_spellcheck_on: 'Corrector ortográfico: activado',
+  app_ctxmenu_spellcheck_off: 'Corrector ortográfico: desactivado',
+
+  // editor.js
+  editor_title_doc: '${name} — Writhdeck',
+  editor_confirm_save_before_close: '¿Guardar "${name}" antes de cerrar?',
+  editor_msg_settings_applied: 'Ajustes aplicados',
+  editor_msg_parse_error: 'Error de análisis',
+  editor_msg_permission_denied: 'Permiso denegado',
+  editor_msg_saved_to_disk: 'Guardado en el disco',
+  editor_msg_disk_save_failed: 'Error al guardar en el disco',
+  editor_msg_saved: 'Guardado',
+  editor_msg_save_as_failed: 'Error al guardar como',
+  editor_msg_saved_as: 'Guardado como ${name}',
+  editor_prompt_save_as: 'Guardar como (nuevo nombre):',
+  editor_alert_name_exists: 'Ya existe un documento llamado "${name}".'
+};
 
 
 'use strict';
@@ -1897,8 +2673,8 @@ const TOC = (() => {
     if (pinBtn) {
       pinBtn.classList.toggle('active', _pinned);
       pinBtn.title = _pinned
-        ? 'Unpin TOC (closes when selecting a chapter)'
-        : 'Pin TOC (stays open when selecting a chapter)';
+        ? t('toc_unpin_title', 'Unpin TOC (closes when selecting a chapter)')
+        : t('toc_pin_title', 'Pin TOC (stays open when selecting a chapter)');
     }
   }
 
@@ -2007,7 +2783,7 @@ const TOC = (() => {
       const div = document.createElement('div');
       div.className = 'toc-item';
       div.style.color = 'var(--fg-bar)';
-      div.textContent = 'No headings found.';
+      div.textContent = t('toc_no_headings', 'No headings found.');
       list.appendChild(div);
       return;
     }
@@ -2069,7 +2845,7 @@ const Stats = (() => {
     const daily = State.daily;
     const docs  = State.docs;
     if (!Object.keys(daily).length) {
-      body.innerHTML = '<p style="color:var(--fg-bar);padding:12px">No writing stats yet.</p>';
+      body.innerHTML = `<p style="color:var(--fg-bar);padding:12px">${t('stats_no_stats_yet', 'No writing stats yet.')}</p>`;
       document.getElementById('stats-dlg').showModal();
       return;
     }
@@ -2086,11 +2862,11 @@ const Stats = (() => {
 
       const table = document.createElement('table');
       table.className = 'stats-table';
-      table.innerHTML = '<tr><th>Date</th><th>Words</th></tr>';
+      table.innerHTML = `<tr><th>${t('stats_header_date', 'Date')}</th><th>${t('stats_header_words', 'Words')}</th></tr>`;
       const today = new Date().toISOString().slice(0, 10);
       Object.entries(days).sort((a,b) => b[0].localeCompare(a[0])).forEach(([date, wc]) => {
         const tr = document.createElement('tr');
-        const suffix = date === today ? ' ← today' : '';
+        const suffix = date === today ? ' ' + t('stats_today_suffix', '← today') : '';
         tr.innerHTML = `<td>${date}${suffix}</td><td>${wc}</td>`;
         table.appendChild(tr);
       });
@@ -2152,7 +2928,7 @@ const Editor = (() => {
 
     document.getElementById('browser').hidden = true;
     document.getElementById('editor').hidden  = false;
-    document.title = `${doc.name} — Writhdeck`;
+    document.title = t('editor_title_doc', '${name} — Writhdeck', { name: doc.name });
 
     const input = ta();
     input.value = doc.content || '';
@@ -2207,7 +2983,7 @@ const Editor = (() => {
     }
     return new Promise(resolve => {
       _closeConfirmResolve = resolve;
-      document.getElementById('close-confirm-msg').textContent = `Save "${name}" before closing?`;
+      document.getElementById('close-confirm-msg').textContent = t('editor_confirm_save_before_close', 'Save "${name}" before closing?', { name });
       document.getElementById('close-confirm-dlg').showModal();
     });
   }
@@ -2234,6 +3010,12 @@ const Editor = (() => {
     Browser.render();
   }
 
+  // Show the document browser. Upstream this is identical to closing the
+  // editor (there is only the browser to go back to); integrations (e.g. the
+  // LionWiki plugin) override Editor.browser to open their own file browser
+  // while keeping Editor.close as a distinct "quit / leave" action.
+  async function browser() { return close(); }
+
   // ── Save ──────────────────────────────────────────────────────────────────
 
   async function save() {
@@ -2255,10 +3037,10 @@ const Editor = (() => {
         rehighlight();
         applyTheme();
         State.dirty = false;
-        setMsg('Settings applied');
+        setMsg(t('editor_msg_settings_applied', 'Settings applied'));
         Browser.render();
       } catch (e) {
-        setMsg('Parse error');
+        setMsg(t('editor_msg_parse_error', 'Parse error'));
         console.error(e);
       }
       return;
@@ -2272,14 +3054,14 @@ const Editor = (() => {
         const perm = await State.doc.fileHandle.queryPermission({ mode: 'readwrite' });
         if (perm !== 'granted') {
           const req = await State.doc.fileHandle.requestPermission({ mode: 'readwrite' });
-          if (req !== 'granted') { setMsg('Permission denied'); return; }
+          if (req !== 'granted') { setMsg(t('editor_msg_permission_denied', 'Permission denied')); return; }
         }
         const writable = await State.doc.fileHandle.createWritable();
         await writable.write(State.doc.content);
         await writable.close();
-        setMsg('Saved to disk');
+        setMsg(t('editor_msg_saved_to_disk', 'Saved to disk'));
       } catch (e) {
-        setMsg('Disk save failed');
+        setMsg(t('editor_msg_disk_save_failed', 'Disk save failed'));
         console.error(e);
         return;
       }
@@ -2288,7 +3070,7 @@ const Editor = (() => {
     // Always update IDB (caches content, persists handle)
     await DB.saveDoc(State.doc);
     State.dirty = false;
-    if (!State.doc.fileHandle) setMsg('Saved');
+    if (!State.doc.fileHandle) setMsg(t('editor_msg_saved', 'Saved'));
 
     // Update docs list
     const idx = State.docs.findIndex(d => d.id === State.doc.id);
@@ -2319,7 +3101,7 @@ const Editor = (() => {
           types: [{ description: 'Text', accept: { 'text/plain': ['.txt', '.md', '.t2t'] } }]
         });
       } catch (e) {
-        if (e.name !== 'AbortError') { setMsg('Save As failed'); console.error(e); }
+        if (e.name !== 'AbortError') { setMsg(t('editor_msg_save_as_failed', 'Save As failed')); console.error(e); }
         return;
       }
       try {
@@ -2327,7 +3109,7 @@ const Editor = (() => {
         await writable.write(ta().value);
         await writable.close();
       } catch (e) {
-        setMsg('Save As failed'); console.error(e);
+        setMsg(t('editor_msg_save_as_failed', 'Save As failed')); console.error(e);
         return;
       }
       State.doc.fileHandle = handle;
@@ -2339,19 +3121,19 @@ const Editor = (() => {
       const idx = State.docs.findIndex(d => d.id === State.doc.id);
       if (idx >= 0) State.docs[idx] = State.doc;
       State.dirty = false;
-      document.title = `${State.doc.name} — Writhdeck`;
-      setMsg('Saved as ' + State.doc.name);
+      document.title = t('editor_title_doc', '${name} — Writhdeck', { name: State.doc.name });
+      setMsg(t('editor_msg_saved_as', 'Saved as ${name}', { name: State.doc.name }));
       updateStatusBar();
       Browser.render();
       return;
     }
 
     // Fallback: save a copy under a new name in browser storage
-    const name = prompt('Save as (new name):', Browser.uniqueName(State.doc.name));
+    const name = prompt(t('editor_prompt_save_as', 'Save as (new name):'), Browser.uniqueName(State.doc.name));
     if (!name || !name.trim()) return;
     const trimmed = name.trim();
     if (Browser.nameExists(trimmed)) {
-      alert(`A document named "${trimmed}" already exists.`);
+      alert(t('editor_alert_name_exists', 'A document named "${name}" already exists.', { name: trimmed }));
       return;
     }
     const copy = { name: trimmed, content: ta().value, created: Date.now(), modified: Date.now() };
@@ -2359,8 +3141,8 @@ const Editor = (() => {
     State.docs.push(copy);
     State.doc   = copy;
     State.dirty = false;
-    document.title = `${copy.name} — Writhdeck`;
-    setMsg('Saved as ' + copy.name);
+    document.title = t('editor_title_doc', '${name} — Writhdeck', { name: copy.name });
+    setMsg(t('editor_msg_saved_as', 'Saved as ${name}', { name: copy.name }));
     updateStatusBar();
     Browser.render();
   }
@@ -2947,6 +3729,9 @@ const Editor = (() => {
 
   function startAutosave() {
     stopAutosave();
+    // Embedders can opt out of autosave (e.g. a server backend that doesn't want
+    // a revision written every 60s) by setting window.WRITHDECK_AUTOSAVE = false.
+    if (typeof window !== 'undefined' && window.WRITHDECK_AUTOSAVE === false) return;
     _autosaveId = setInterval(() => { if (State.dirty) save(); }, 60000);
   }
   function stopAutosave() {
@@ -3064,7 +3849,7 @@ const Editor = (() => {
   }
 
   return {
-    open, close, save, saveAs, onInput, syncScroll, syncGutter, rehighlight, updateStatusBar, setMsg,
+    open, close, browser, save, saveAs, onInput, syncScroll, syncGutter, rehighlight, updateStatusBar, setMsg,
     syncCursorLineCache, syncBlockCursor,
     saveCursorPos, applyLineNumbers,
     toggleTypewriter, isTypewriter, typewriterScroll, toggleLineNumbers, gotoLine, gotoLineGo, gotoLineClose,
@@ -3096,7 +3881,7 @@ const Browser = (() => {
     const localDocs = docs.filter(d => !d.fromDisk).sort((a, b) => b.modified - a.modified);
 
     if (favDocs.length) {
-      section('Favorites', favDocs, list, {});
+      section(t('browser_section_favorites', 'Favorites'), favDocs, list, {});
     }
 
     // writhdeck.ini — always visible
@@ -3112,11 +3897,11 @@ const Browser = (() => {
       const indiv = diskDocs.filter(d => !d.dirFile);
       const recentDisk = indiv.filter(d => recIds.has(d.id));
       const olderDisk  = indiv.filter(d => !recIds.has(d.id));
-      if (recentDisk.length) section('Recent files', recentDisk, list, { disk: true });
-      if (olderDisk.length)  section('Files from disk', olderDisk, list, { disk: true });
+      if (recentDisk.length) section(t('browser_section_recent_files', 'Recent files'), recentDisk, list, { disk: true });
+      if (olderDisk.length)  section(t('browser_section_files_from_disk', 'Files from disk'), olderDisk, list, { disk: true });
     }
 
-    section('Documents', localDocs, list, { showRecent: id => recIds.has(id) });
+    section(t('browser_section_documents', 'Documents'), localDocs, list, { showRecent: id => recIds.has(id) });
 
     buildShortcutBar();
   }
@@ -3131,7 +3916,7 @@ const Browser = (() => {
       empty.className = 'br-item';
       empty.style.color = 'var(--fg-bar)';
       empty.style.fontSize = '0.85em';
-      empty.textContent = 'No documents yet. Press n to create one.';
+      empty.textContent = t('browser_no_docs_yet', 'No documents yet. Press n to create one.');
       container.appendChild(empty);
       return;
     }
@@ -3150,7 +3935,7 @@ const Browser = (() => {
     if (!opts.dirFile) {
       pin.className = 'br-item-pin' + (isFavorite(doc.id) ? ' active' : '');
       pin.textContent = '★';
-      pin.title = isFavorite(doc.id) ? 'Unpin' : 'Pin to favorites';
+      pin.title = isFavorite(doc.id) ? t('browser_unpin', 'Unpin') : t('browser_pin_to_favorites', 'Pin to favorites');
       pin.addEventListener('click', e => {
         e.stopPropagation();
         toggleFavorite(doc.id);
@@ -3176,14 +3961,14 @@ const Browser = (() => {
     if (opts.disk || doc.fromDisk) {
       const ico = document.createElement('span');
       ico.textContent = '💾';
-      ico.title = 'Linked to a file on disk';
+      ico.title = t('browser_linked_to_file_on_disk', 'Linked to a file on disk');
       ico.style.cssText = 'font-size:0.75em;flex-shrink:0;opacity:0.7;';
       row.appendChild(ico);
     }
     // Subtle dot for recently opened storage docs
     if (opts.showRecent && opts.showRecent(doc.id)) {
       const dot = document.createElement('span');
-      dot.title = 'Recently opened';
+      dot.title = t('browser_recently_opened', 'Recently opened');
       dot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:var(--heading);flex-shrink:0;';
       row.appendChild(dot);
     }
@@ -3212,11 +3997,12 @@ const Browser = (() => {
     const menu = document.createElement('div');
     menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;
       background:var(--bg-bar);border:1px solid var(--fg-bar);z-index:200;min-width:160px;`;
+    const resetLabel = t('browser_reset_to_defaults', 'Reset to defaults');
     const items = [
-      ['Open', openIni],
-      ['Export writhdeck.ini', () => Settings.exportIni()],
-      ['Reset to defaults', async () => {
-        if (!confirm('Reset all settings to defaults?')) return;
+      [t('browser_open', 'Open'), openIni],
+      [t('browser_export_ini', 'Export writhdeck.ini'), () => Settings.exportIni()],
+      [resetLabel, async () => {
+        if (!confirm(t('browser_reset_settings_confirm', 'Reset all settings to defaults?'))) return;
         await DB.setMeta('iniText', null);
         location.reload();
       }]
@@ -3225,7 +4011,7 @@ const Browser = (() => {
       const btn = document.createElement('button');
       btn.textContent = label;
       btn.style.cssText = 'display:block;width:100%;text-align:left;padding:6px 14px;border:none;background:none;';
-      btn.style.color = label === 'Reset to defaults' ? 'var(--heading)' : 'var(--fg)';
+      btn.style.color = label === resetLabel ? 'var(--heading)' : 'var(--fg)';
       btn.addEventListener('click', () => { hideContextMenu(); fn(); });
       menu.appendChild(btn);
     });
@@ -3239,14 +4025,14 @@ const Browser = (() => {
     menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;
       background:var(--bg-bar);border:1px solid var(--fg-bar);z-index:200;min-width:140px;`;
     const items = [
-      ['Open',          () => Editor.open(doc)],
-      ['Info',          () => document.dispatchEvent(new CustomEvent('writhdeck-show-info',    { detail: doc }))],
-      ['Analyse',       () => document.dispatchEvent(new CustomEvent('writhdeck-show-analyse', { detail: doc }))],
-      ['Rename',        () => renameDoc(doc)],
-      ['Export as .txt',() => exportDocFrom(doc, 'txt')],
-      ['Export as .md', () => exportDocFrom(doc, 'md')],
-      ['Stats',         () => { Stats.show(); }],
-      ['Delete',        () => deleteDoc(doc)]
+      [t('browser_open', 'Open'),          () => Editor.open(doc)],
+      [t('browser_info', 'Info'),          () => document.dispatchEvent(new CustomEvent('writhdeck-show-info',    { detail: doc }))],
+      [t('browser_analyse', 'Analyse'),       () => document.dispatchEvent(new CustomEvent('writhdeck-show-analyse', { detail: doc }))],
+      [t('browser_rename', 'Rename'),        () => renameDoc(doc)],
+      [t('browser_export_as_txt', 'Export as .txt'),() => exportDocFrom(doc, 'txt')],
+      [t('browser_export_as_md', 'Export as .md'), () => exportDocFrom(doc, 'md')],
+      [t('browser_stats', 'Stats'),         () => { Stats.show(); }],
+      [t('browser_delete', 'Delete'),        () => deleteDoc(doc)]
     ];
     items.forEach(([label, fn]) => {
       const btn = document.createElement('button');
@@ -3279,14 +4065,14 @@ const Browser = (() => {
 
   async function newDoc() {
     const inFolder = hasFSA && !!State.dirHandle;
-    const name = prompt('Document name:', uniqueName('Untitled'));
+    const name = prompt(t('browser_document_name_prompt', 'Document name:'), uniqueName('Untitled'));
     if (!name || !name.trim()) return;
     const trimmed = name.trim();
     const safeName = trimmed.lastIndexOf('.') > 0 ? trimmed : `${trimmed}.txt`;
 
     if (inFolder) {
       if (State.dirFiles.some(f => f.name === safeName)) {
-        alert(`A file named "${safeName}" already exists in this folder.`);
+        alert(t('browser_file_already_exists_in_folder', 'A file named "${safeName}" already exists in this folder.', { safeName }));
         return;
       }
       let fileHandle;
@@ -3295,7 +4081,7 @@ const Browser = (() => {
         const writable = await fileHandle.createWritable();
         await writable.close();
       } catch (e) {
-        alert(`Could not create "${safeName}": ${e.message}`);
+        alert(t('browser_could_not_create_file', 'Could not create "${safeName}": ${message}', { safeName, message: e.message }));
         return;
       }
       const doc = {
@@ -3308,7 +4094,7 @@ const Browser = (() => {
       await Editor.open(doc);
     } else {
       if (nameExists(safeName)) {
-        alert(`A document named "${safeName}" already exists.`);
+        alert(t('browser_document_already_exists', 'A document named "${safeName}" already exists.', { safeName }));
         return;
       }
       const doc = { name: safeName, content: '', created: Date.now(), modified: Date.now() };
@@ -3320,11 +4106,11 @@ const Browser = (() => {
   }
 
   async function renameDoc(doc) {
-    const name = prompt('Rename to:', doc.name);
+    const name = prompt(t('browser_rename_to_prompt', 'Rename to:'), doc.name);
     if (!name || !name.trim() || name.trim() === doc.name) return;
     const trimmed = name.trim();
     if (nameExists(trimmed, doc.id)) {
-      alert(`A document named "${trimmed}" already exists.`);
+      alert(t('browser_document_already_exists', 'A document named "${safeName}" already exists.', { safeName: trimmed }));
       return;
     }
     doc.name = trimmed;
@@ -3337,8 +4123,8 @@ const Browser = (() => {
 
   async function deleteDoc(doc) {
     const msg = doc.fromDisk
-      ? `Remove "${doc.name}" from Writhdeck?\n\nThe original file on your disk will NOT be deleted — only the copy stored in the browser is removed.`
-      : `Delete "${doc.name}" from browser storage?\n\nThis cannot be undone. The document is stored only in this browser — it is NOT on your disk.`;
+      ? t('browser_remove_from_writhdeck_confirm', 'Remove "${name}" from Writhdeck?\n\nThe original file on your disk will NOT be deleted — only the copy stored in the browser is removed.', { name: doc.name })
+      : t('browser_delete_from_storage_confirm', 'Delete "${name}" from browser storage?\n\nThis cannot be undone. The document is stored only in this browser — it is NOT on your disk.', { name: doc.name });
     if (!confirm(msg)) return;
     await DB.deleteDoc(doc.id);
     State.docs      = State.docs.filter(d => d.id !== doc.id);
@@ -3401,24 +4187,24 @@ const Browser = (() => {
     const bar = document.getElementById('br-bar');
     bar.innerHTML = '';
     const shortcuts = [
-      ['n', 'new', newDoc],
+      ['n', t('browser_shortcut_new', 'new'), newDoc],
       ...(hasFSA ? [
-        ['w', 'watch folder', openFolder],
-        ['o', 'open file',   openFromDisk]
+        ['w', t('browser_shortcut_watch_folder', 'watch folder'), openFolder],
+        ['o', t('browser_shortcut_open_file', 'open file'),   openFromDisk]
       ] : []),
-      ['Ctrl+O', 'import copy', () => document.getElementById('file-import-input').click()],
-      ['s', 'stats', () => Stats.show()],
-      ['c', 'config', () => Settings.show()],
-      ['r', 'rename',   withFocused(renameDoc)],
-      ['d', 'delete',   withFocused(deleteDoc)],
-      ['b', 'backup',   withFocused(backupDoc)],
-      ['f', 'favorite', withFocused(doc => { toggleFavorite(doc.id); render(); })],
-      ['i', 'info',     withFocused(doc => document.dispatchEvent(new CustomEvent('writhdeck-show-info', { detail: doc })))],
-      ['h', 'help', () => {
+      ['Ctrl+O', t('browser_shortcut_import_copy', 'import copy'), () => document.getElementById('file-import-input').click()],
+      ['s', t('browser_shortcut_stats', 'stats'), () => Stats.show()],
+      ['c', t('browser_shortcut_config', 'config'), () => Settings.show()],
+      ['r', t('browser_shortcut_rename', 'rename'),   withFocused(renameDoc)],
+      ['d', t('browser_shortcut_delete', 'delete'),   withFocused(deleteDoc)],
+      ['b', t('browser_shortcut_backup', 'backup'),   withFocused(backupDoc)],
+      ['f', t('browser_shortcut_favorite', 'favorite'), withFocused(doc => { toggleFavorite(doc.id); render(); })],
+      ['i', t('browser_shortcut_info', 'info'),     withFocused(doc => document.dispatchEvent(new CustomEvent('writhdeck-show-info', { detail: doc })))],
+      ['h', t('browser_shortcut_help', 'help'), () => {
         const d = document.getElementById('br-help-details');
         d.open = !d.open;
       }],
-      ['z', 'reload', () => location.reload()]
+      ['z', t('browser_shortcut_reload', 'reload'), () => location.reload()]
     ];
     shortcuts.forEach(([key, label, fn]) => {
       const sp = document.createElement('span');
@@ -3458,7 +4244,7 @@ const Browser = (() => {
 
   async function openFolder() {
     if (typeof window.showDirectoryPicker !== 'function') {
-      alert('Directory access requires Chrome, Edge or Brave.\nIf using Brave, check Shields settings.');
+      alert(t('browser_directory_access_requires_chrome', 'Directory access requires Chrome, Edge or Brave.\nIf using Brave, check Shields settings.'));
       return;
     }
     let handle;
@@ -3472,11 +4258,12 @@ const Browser = (() => {
     State.dirStack  = [];   // reset subfolder navigation to the new root
     await saveDirHandle();
     await scanDir();
+    await Fonts.loadFromFolder(State.dirHandle);
     render();
   }
 
   async function clearFolder() {
-    if (!confirm(`Remove folder "${State.dirHandle.name}" from Writhdeck?\n\nFiles on disk are not affected.`)) return;
+    if (!confirm(t('browser_remove_folder_confirm', 'Remove folder "${name}" from Writhdeck?\n\nFiles on disk are not affected.', { name: State.dirHandle.name }))) return;
     await clearDirHandle();
     render();
   }
@@ -3487,6 +4274,7 @@ const Browser = (() => {
       const perm = await State.dirHandle.requestPermission({ mode: 'readwrite' });
       if (perm === 'granted') {
         await scanDir();
+        await Fonts.loadFromFolder(State.dirHandle);
         render();
       }
     } catch (_) {}
@@ -3535,7 +4323,7 @@ const Browser = (() => {
 
     const clearBtn = document.createElement('span');
     clearBtn.textContent = '✕';
-    clearBtn.title = 'Remove folder';
+    clearBtn.title = t('browser_remove_folder', 'Remove folder');
     clearBtn.style.cssText = 'cursor:pointer;color:var(--fg-bar);font-size:0.8em;padding:0 4px;';
     clearBtn.addEventListener('click', e => { e.stopPropagation(); clearFolder(); });
     hdr.appendChild(clearBtn);
@@ -3543,7 +4331,7 @@ const Browser = (() => {
 
     // ".." row (only when navigated into a subfolder)
     if (State.settings.browserSubdirs && State.dirStack.length > 1) {
-      container.appendChild(dirNavRow('..', 'Go up one folder',
+      container.appendChild(dirNavRow('..', t('browser_go_up_one_folder', 'Go up one folder'),
         async () => { await dirUp(); render(); }));
     }
     // Subfolder rows
@@ -3559,7 +4347,7 @@ const Browser = (() => {
           const row = document.createElement('div');
           row.className = 'br-item';
           const btn = document.createElement('button');
-          btn.textContent = 'Re-authorize folder access';
+          btn.textContent = t('browser_reauthorize_folder_access', 'Re-authorize folder access');
           btn.style.cssText = 'font-size:0.85em;margin:4px 0;';
           btn.addEventListener('click', requestFolderPermission);
           row.appendChild(btn);
@@ -3569,7 +4357,7 @@ const Browser = (() => {
           row.className = 'br-item';
           row.style.color = 'var(--fg-bar)';
           row.style.fontSize = '0.85em';
-          row.textContent = 'No .txt / .md / .tcl files in this folder.';
+          row.textContent = t('browser_no_files_in_folder', 'No .txt / .md / .tcl files in this folder.');
           container.appendChild(row);
         }
       });
@@ -3584,14 +4372,14 @@ const Browser = (() => {
 
   async function openFromDisk() {
     if (typeof window.showOpenFilePicker !== 'function') {
-      alert('Direct file access is not available in this browser.\n\nUse the ↑ Import button to load a copy of a file, or switch to Chrome/Edge/Brave.\n\nIf you are using Brave, check that Shields fingerprinting protection is not set to "Strict".');
+      alert(t('browser_direct_file_access_unavailable', 'Direct file access is not available in this browser.\n\nUse the ↑ Import button to load a copy of a file, or switch to Chrome/Edge/Brave.\n\nIf you are using Brave, check that Shields fingerprinting protection is not set to "Strict".'));
       return;
     }
     let handles;
     try {
       handles = await window.showOpenFilePicker({
         multiple: true,
-        types: [{ description: 'Text files', accept: { 'text/plain': ['.txt', '.md', '.tcl', '.text'] } }]
+        types: [{ description: t('browser_text_files', 'Text files'), accept: { 'text/plain': ['.txt', '.md', '.tcl', '.text'] } }]
       });
     } catch (e) {
       if (e.name !== 'AbortError') console.error(e);
@@ -3627,22 +4415,22 @@ const Browser = (() => {
 const Settings = (() => {
 
   const COLOR_KEYS = [
-    ['bg',         'Background (dark)'],
-    ['fg',         'Text (dark)'],
-    ['bgBar',      'Bar BG (dark)'],
-    ['fgBar',      'Bar text (dark)'],
-    ['bgSel',      'Selection (dark)'],
-    ['heading',    'Heading (dark)'],
-    ['comment',    'Comment (dark)'],
-    ['markup',     'Markup (dark)'],
-    ['bgAlt',      'Background (light)'],
-    ['fgAlt',      'Text (light)'],
-    ['bgBarAlt',   'Bar BG (light)'],
-    ['fgBarAlt',   'Bar text (light)'],
-    ['bgSelAlt',   'Selection (light)'],
-    ['headingAlt', 'Heading (light)'],
-    ['commentAlt', 'Comment (light)'],
-    ['markupAlt',  'Markup (light)']
+    ['bg',         () => t('settings_color_bg_dark', 'Background (dark)')],
+    ['fg',         () => t('settings_color_fg_dark', 'Text (dark)')],
+    ['bgBar',      () => t('settings_color_bg_bar_dark', 'Bar BG (dark)')],
+    ['fgBar',      () => t('settings_color_fg_bar_dark', 'Bar text (dark)')],
+    ['bgSel',      () => t('settings_color_bg_sel_dark', 'Selection (dark)')],
+    ['heading',    () => t('settings_color_heading_dark', 'Heading (dark)')],
+    ['comment',    () => t('settings_color_comment_dark', 'Comment (dark)')],
+    ['markup',     () => t('settings_color_markup_dark', 'Markup (dark)')],
+    ['bgAlt',      () => t('settings_color_bg_light', 'Background (light)')],
+    ['fgAlt',      () => t('settings_color_fg_light', 'Text (light)')],
+    ['bgBarAlt',   () => t('settings_color_bg_bar_light', 'Bar BG (light)')],
+    ['fgBarAlt',   () => t('settings_color_fg_bar_light', 'Bar text (light)')],
+    ['bgSelAlt',   () => t('settings_color_bg_sel_light', 'Selection (light)')],
+    ['headingAlt', () => t('settings_color_heading_light', 'Heading (light)')],
+    ['commentAlt', () => t('settings_color_comment_light', 'Comment (light)')],
+    ['markupAlt',  () => t('settings_color_markup_light', 'Markup (light)')]
   ];
 
   // ── Public ────────────────────────────────────────────────────────────────
@@ -3697,10 +4485,10 @@ const Settings = (() => {
   }
 
   function populateFontList(current) {
-    const list = document.getElementById('font-list');
-    list.innerHTML = '';
-    // Detect available fonts via canvas
-    const available = detectFonts([
+    // Detect a curated subset of common fonts via canvas (works in every browser).
+    // For the full system list the user can press "Scan all system fonts"
+    // (Local Font Access API, Chromium only) — see scanAllSystemFonts().
+    const detected = detectFonts([
       'monospace', 'serif', 'sans-serif',
       'Courier New', 'Consolas', 'Fira Code', 'JetBrains Mono', 'Source Code Pro',
       'Liberation Mono', 'DejaVu Sans Mono', 'Ubuntu Mono', 'Inconsolata',
@@ -3708,19 +4496,65 @@ const Settings = (() => {
       'Georgia', 'Palatino', 'Times New Roman', 'Arial', 'Helvetica', 'Verdana',
       'Noto Serif', 'Noto Sans', 'Tahoma', 'Trebuchet MS'
     ]);
-    available.forEach(font => {
+    renderFontList([...Fonts.names(), ...Fonts.folderNames(), ...detected], current);
+  }
+
+  // Renders a de-duplicated font list. Uploaded fonts (Fonts.names()) get a
+  // "(custom)" tag + remove control; fonts found in the watched folder's fonts/
+  // subfolder (Fonts.folderNames()) get a "(folder)" tag and are not removable.
+  function renderFontList(families, current) {
+    const list = document.getElementById('font-list');
+    list.innerHTML = '';
+    const userNames   = new Set(Fonts.names());
+    const folderNames = new Set(Fonts.folderNames());
+    const seen = new Set();
+    families.forEach(font => {
+      if (seen.has(font)) return;
+      seen.add(font);
       const div = document.createElement('div');
       div.className = 'font-item' + (font === current ? ' selected' : '');
-      div.textContent = font;
-      div.style.fontFamily = font;
+      const tag = userNames.has(font) ? '  ' + t('settings_font_tag_custom', '(custom)') : folderNames.has(font) ? '  ' + t('settings_font_tag_folder', '(folder)') : '';
+      const label = document.createElement('span');
+      label.textContent = font + tag;
+      label.style.fontFamily = font;
+      div.appendChild(label);
       div.addEventListener('click', () => {
         document.querySelectorAll('.font-item').forEach(d => d.classList.remove('selected'));
         div.classList.add('selected');
         document.getElementById('font-family-input').value = font;
         updateFontPreview(font);
       });
+      if (userNames.has(font)) {
+        const del = document.createElement('span');
+        del.className = 'font-del';
+        del.textContent = '✕';
+        del.title = t('settings_remove_this_font', 'Remove this font');
+        del.addEventListener('click', async e => {
+          e.stopPropagation();
+          await Fonts.remove(font);
+          populateFontList(document.getElementById('font-family-input').value);
+        });
+        div.appendChild(del);
+      }
       list.appendChild(div);
     });
+  }
+
+  // Lists every installed system font via the Local Font Access API. Only
+  // Chromium-based browsers support it (and it prompts for permission); other
+  // browsers keep the detected subset.
+  async function scanAllSystemFonts() {
+    if (!window.queryLocalFonts) {
+      alert(t('settings_cannot_enumerate_fonts', 'Your browser cannot enumerate all system fonts (Local Font Access API — Chrome/Edge only). Showing the detected subset instead.'));
+      return;
+    }
+    try {
+      const picked = await window.queryLocalFonts();
+      const families = [...new Set(picked.map(f => f.family))].sort((a, b) => a.localeCompare(b));
+      renderFontList([...Fonts.names(), ...Fonts.folderNames(), ...families], document.getElementById('font-family-input').value);
+    } catch (_) {
+      alert(t('settings_could_not_access_fonts', 'Could not access system fonts (permission denied).'));
+    }
   }
 
   function detectFonts(candidates) {
@@ -3753,7 +4587,7 @@ const Settings = (() => {
     grid.innerHTML = '';
     COLOR_KEYS.forEach(([key, label]) => {
       const lbl = document.createElement('label');
-      lbl.textContent = label;
+      lbl.textContent = label();
       lbl.style.fontSize = '0.85em';
       const inp = document.createElement('input');
       inp.type = 'color';
@@ -3802,6 +4636,7 @@ const Settings = (() => {
 
   function refreshAfterSettingsChange() {
     applyTheme();
+    applyTranslations();
     if (State.doc) {
       Editor.rehighlight();
       Editor.applyLineNumbers();
@@ -3823,11 +4658,11 @@ const Settings = (() => {
   }
 
   function newProfile() {
-    const name = prompt('New profile name:');
+    const name = prompt(t('settings_new_profile_prompt', 'New profile name:'));
     if (!name || !name.trim()) return;
     const trimmed = name.trim();
-    if (/[[\]]/.test(trimmed)) { alert('Profile names cannot contain [ or ].'); return; }
-    if (State.profiles[trimmed]) { alert('A profile with this name already exists.'); return; }
+    if (/[[\]]/.test(trimmed)) { alert(t('settings_profile_name_no_brackets', 'Profile names cannot contain [ or ].')); return; }
+    if (State.profiles[trimmed]) { alert(t('settings_profile_already_exists', 'A profile with this name already exists.')); return; }
     apply(); // commit current edits first
 
     State.profiles[trimmed] = Object.fromEntries(INI.PROFILE_JS_KEYS.map(k => [k, State.settings[k]]));
@@ -3839,9 +4674,9 @@ const Settings = (() => {
   }
 
   function deleteProfile() {
-    if (State.profileNames.length <= 1) { alert('Cannot delete the only profile.'); return; }
+    if (State.profileNames.length <= 1) { alert(t('settings_cannot_delete_only_profile', 'Cannot delete the only profile.')); return; }
     const name = State.activeProfile;
-    if (!confirm(`Delete profile "${name}"?`)) return;
+    if (!confirm(t('settings_delete_profile_confirm', 'Delete profile "${name}"?', { name }))) return;
     delete State.profiles[name];
     State.profileNames = Object.keys(State.profiles);
     State.activeProfile = State.profileNames[0];
@@ -3865,11 +4700,11 @@ const Settings = (() => {
   // ── Scheme actions ────────────────────────────────────────────────────────
 
   function newScheme() {
-    const name = prompt('New scheme name:');
+    const name = prompt(t('settings_new_scheme_prompt', 'New scheme name:'));
     if (!name || !name.trim()) return;
     const trimmed = name.trim();
-    if (/[[\]]/.test(trimmed)) { alert('Scheme names cannot contain [ or ].'); return; }
-    if (getAllSchemeNames().includes(trimmed)) { alert('Name already exists.'); return; }
+    if (/[[\]]/.test(trimmed)) { alert(t('settings_scheme_name_no_brackets', 'Scheme names cannot contain [ or ].')); return; }
+    if (getAllSchemeNames().includes(trimmed)) { alert(t('settings_name_already_exists', 'Name already exists.')); return; }
     customSchemes[trimmed] = { ...getScheme(State.settings.scheme) };
     saveCustomSchemes();
     State.settings.scheme = trimmed;
@@ -3880,8 +4715,8 @@ const Settings = (() => {
 
   function deleteScheme() {
     const name = document.getElementById('scheme-select').value;
-    if (SCHEMES[name]) { alert('Cannot delete a built-in scheme.'); return; }
-    if (!confirm(`Delete scheme "${name}"?`)) return;
+    if (SCHEMES[name]) { alert(t('settings_cannot_delete_builtin_scheme', 'Cannot delete a built-in scheme.')); return; }
+    if (!confirm(t('settings_delete_scheme_confirm', 'Delete scheme "${name}"?', { name }))) return;
     delete customSchemes[name];
     saveCustomSchemes();
     State.settings.scheme = 'default';
@@ -3903,7 +4738,8 @@ const Settings = (() => {
     applyTheme();
     populate();
     if (State.doc) { Editor.rehighlight(); Editor.updateStatusBar(); }
-    alert(`Settings imported.\nSchemes found: ${Object.keys(schemes).join(', ') || 'none'}`);
+    const schemeList = Object.keys(schemes).join(', ') || t('settings_none', 'none');
+    alert(t('settings_import_success', 'Settings imported.\nSchemes found: ${schemeList}', { schemeList }));
   }
 
   function exportIni() {
@@ -3941,7 +4777,7 @@ const Settings = (() => {
     const files = State.docs
       .filter(d => d.content)
       .map(d => ({ name: d.name.replace(/\.[^.]+$/, '') + '.txt', content: d.content }));
-    if (!files.length) { alert('No documents to export.'); return; }
+    if (!files.length) { alert(t('settings_no_docs_export', 'No documents to export.')); return; }
     const blob = new Blob([buildZip(files)], { type: 'application/zip' });
     const a = Object.assign(document.createElement('a'), {
       href: URL.createObjectURL(blob),
@@ -4070,12 +4906,42 @@ const Settings = (() => {
       updateFontPreview();
     });
 
+    // Custom font upload (.ttf/.otf/.woff/.woff2 → IndexedDB + FontFace)
+    document.getElementById('font-upload-btn').addEventListener('click', () => {
+      document.getElementById('font-upload-input').click();
+    });
+    document.getElementById('font-upload-input').addEventListener('change', async e => {
+      let last = null;
+      for (const f of [...e.target.files]) {
+        const name = await Fonts.add(f);
+        if (name) last = name;
+      }
+      e.target.value = '';
+      if (last) {
+        document.getElementById('font-family-input').value = last;
+        updateFontPreview(last);
+      }
+      populateFontList(document.getElementById('font-family-input').value);
+    });
+    document.getElementById('font-scan-btn').addEventListener('click', scanAllSystemFonts);
+
+    // Some settings appear on more than one tab (e.g. darkMode on Display and
+    // Schemes). Keep checkboxes that share a data-key in sync, otherwise apply()
+    // — which reads every [data-key] in DOM order — would let a stale duplicate
+    // overwrite the value the user just changed.
+    document.querySelectorAll('#settings-dlg input[type=checkbox][data-key]').forEach(el => {
+      el.addEventListener('change', () => {
+        document.querySelectorAll('#settings-dlg input[type=checkbox][data-key="' + el.dataset.key + '"]')
+          .forEach(other => { if (other !== el) other.checked = el.checked; });
+      });
+    });
+
     document.getElementById('settings-apply').addEventListener('click', apply);
     document.getElementById('settings-close').addEventListener('click', () => {
       document.getElementById('settings-dlg').close();
     });
     document.getElementById('settings-reset').addEventListener('click', async () => {
-      if (!confirm('Reset all settings to defaults? This cannot be undone.')) return;
+      if (!confirm(t('settings_reset_confirm', 'Reset all settings to defaults? This cannot be undone.'))) return;
       await DB.setMeta('iniText', null);
       location.reload();
     });
@@ -4103,7 +4969,7 @@ const Settings = (() => {
 'use strict';
 // Main entry point
 
-const README_CONTENT = "# Writhdeck\n\nA distraction-free writing app that runs as a single self-contained HTML file \u2014 no server, no install, no internet required. Open `writhdeck.html` directly in any modern browser.\n\n\n- [Try it online!](https://luginf.github.io/writhdeck/)\n- [Main project](https://github.com/luginf/writhdeck/)\n\n\n## Features\n\n- **Single-file**: the entire app is one `writhdeck.html` (~180 KB). Copy it anywhere, it just works.\n- **Document browser**: create, rename, delete, and favourite documents stored in IndexedDB. Document names are unique \u2014 duplicates are auto-suggested as `\"Untitled (2)\"` etc.\n- **Disk file support** (Chrome/Edge/Brave): open individual files or watch a folder \u2014 edits go straight back to disk via the File System Access API.\n- **Syntax highlighting overlay**: headings, comments, and inline markers (bold, italic, underline, strikethrough) are coloured in real time without leaving the textarea.\n- **Configurable markers**: choose your own syntax for headings, comments, and each inline style. Enable Markdown-style `#` headings if you prefer.\n- **8 built-in colour schemes** (default, solarized, gruvbox, everforest, nord, + 3 more), dark and light variants, and full custom-scheme support.\n- **Writing timer**: countdown or stopwatch, with optional sound and alert at the end.\n- **Table of contents**: auto-generated from heading lines, shown in a side panel.\n- **Daily writing stats**: tracks words *added* today (not total document size) with a high-water mark across sessions. Optional daily goal.\n- **Hemingway mode**: disables backspace/delete to keep you writing forward.\n- **Typewriter mode**: keeps the cursor vertically centred; dims text outside the current paragraph so only the active paragraph appears at full colour.\n- **Find & replace** with live match highlighting, goto line, line numbers.\n- **Structure analysis**: section-by-section word-count breakdown with progress bars. Accessible from the `\u2261` menu (`a`).\n- **Word occurrences**: frequency table of all words, sorted by count. Accessible from the Analyse dialog or the `\u2261` menu.\n- **Block cursor**: optional solid rectangle cursor, rendered in the highlight overlay. Supports blink on/off.\n- **Export** as `.txt` or `.md`.\n- **INI config**: `writhdeck.ini` is always visible in the browser. Right-click it to open, export, or reset to defaults. The format is compatible with the Tcl/Tk desktop version; web-specific options are in a dedicated `[web]` section.\n- **Status bar**: fully customisable left/centre/right slots with tokens \u2014 see [Status bar tokens](#status-bar-tokens).\n- **`\u2261` menu**: all commands accessible from a single dropdown \u2014 keyboard-navigable (\u2191\u2193 + Enter, or press the hint letter directly), with format options (H1\u2013H3, bold, italic\u2026), search, export, settings, and more. Opening the menu preserves any active text selection.\n- **Right-click context menu**: format, cut/copy/paste, and spell-check toggle (editor); Open / Info / Rename / Export / Delete (browser document list); Open / Export / Reset (writhdeck.ini).\n- **Command mode** (`Esc` or `Alt+C`): interactive status bar showing all commands as clickable buttons. Navigate with `\u2190`/`\u2192`, confirm with `Enter`, or click with the mouse.\n- **About dialog**: accessible from the `?` menu in the browser \u2014 shows the app description and build date.\n- **Undo support**: bold, italic, heading, and comment formatting operations integrate with the browser's native undo stack (via `execCommand('insertText')`).\n\n## Build\n\n```sh\nmake        # produces writhdeck.html (~180 KB)\nmake clean  # removes writhdeck.html\n```\n\n`build.py` reads `src/template.html`, inlines `src/style.css` and all JS modules (in the order defined in `JS_ORDER`), and writes the result to stdout. The build date is embedded as `2026-06-18` (ISO format). Python 3, no dependencies.\n\n## Keyboard shortcuts\n\n### Global\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+D` | Toggle dark / light mode |\n| `Ctrl+O` | Import file copy |\n| `F11` | Toggle table of contents |\n| `Alt+Enter` | Toggle fullscreen |\n| `Ctrl+N` *(opt)* | New document (overrides browser \"new window\", requires setting) |\n\n### Editor\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+S` | Save |\n| `Ctrl+Q` | Close document (`Ctrl+Shift+Q` on Firefox, see [Browser notes](#browser-notes)) |\n| `Ctrl+F` | Find (live match highlighting) |\n| `Ctrl+H` | Find & replace |\n| `Ctrl+G` | Go to line |\n| `Ctrl+L` | Toggle line numbers |\n| `Alt+T` | Toggle timer |\n| `Alt+C` / `Esc` | Enter command mode |\n| `Alt+M` | Open `\u2261` menu |\n\n### Command mode (`Alt+C` or `Esc`)\n\nThe status bar becomes an interactive row of command buttons. Works in fullscreen (`Alt+C`).\n\n| Input | Action |\n|---|---|\n| `\u2190` / `\u2192` | Move selection between commands |\n| `Enter` | Execute selected command |\n| *letter* | Execute command directly (e.g. `f` = Find) |\n| Mouse click | Execute command directly |\n\n| Key | Action | Key | Action |\n|---|---|---|---|\n| `f` | Find | `d` | Dark / light |\n| `r` | Find & replace | `o` | Table of contents |\n| `g` | Go to line | `c` | Settings |\n| `n` | Line numbers | `e` | Export as .txt |\n| `w` | Typewriter mode | `s` | Statistics |\n| `t` | Timer | `a` | Analyse structure |\n| `p` | Timer pause | `i` | File info |\n| `q` | Close document | `m` | Main menu (\u2261) |\n\n### Browser (document list)\n\n| Key | Action |\n|---|---|\n| `\u2191` / `\u2193` | Navigate document list |\n| `Enter` | Open selected document |\n| `n` | New document |\n| `o` | Open file from disk |\n| `w` | Watch a folder |\n| `s` | Stats |\n| `c` | Settings |\n\n## Browser notes\n\n- **Disk file support** (open/watch files, edits saved straight back to disk) requires the File System Access API \u2014 available in Chrome, Edge, Brave, and other Chromium-based browsers. Firefox falls back to IndexedDB-only storage.\n- **Large documents** (tens of thousands of words): Firefox is noticeably slower than Chromium-based browsers, especially when a full re-render is triggered (search highlighting, Typewriter mode, multi-line edits like paste/undo). Chromium-based browsers are recommended for very large documents.\n- **`Ctrl+Q`**: Firefox intercepts the plain shortcut as its own \"Quit\" command before the page sees it \u2014 use `Ctrl+Shift+Q` to close the document (works in both Firefox and Chrome).\n\n## Status bar tokens\n\nThe three status bar zones (left / centre / right) are configured as space-separated token strings in Settings \u2192 Profile.\n\n| Token | Example | Description |\n|---|---|---|\n| `filename` | `my-novel.txt` | Current document name |\n| `dirty` | `[+]` | Unsaved changes indicator |\n| `words` | `1 842w` | Word count |\n| `chars` | `10 240c` | Character count |\n| `lines` | `312L` | Total line count |\n| `line` | `L42` | Current cursor line |\n| `col` | `C7` | Current cursor column |\n| `para` | `18\u00a7` | Paragraph count (blank-line separated) |\n| `pages` | `7p` | Estimated pages at 250 w/page |\n| `percent` | `68%` | Progress toward word goal |\n| `today` | `342\u2191` | Words *added* today (high-water mark across sessions) |\n| `goal` | `342/500` | Today's words / goal (hidden if no goal) |\n| `reading` | `9min` | Estimated reading time at 200 w/min |\n| `clock` | `14:32` | Current time |\n| `timer` | `24:07` | Writing timer display |\n| `space` | ` ` | Single space (explicit separator) |\n| *(anything else)* | literal | Fixed text, separators, etc. |\n\nDefault: Left `filename dirty words` \u00b7 Center *(empty)* \u00b7 Right `goal clock timer`\n\n## INI config\n\n`writhdeck.ini` uses the same format as the Tcl/Tk desktop version. Web-specific options live in a dedicated section so they are silently ignored by the desktop version:\n\n```ini\n[web]\n% Options specific to the web version \u2014 ignored by the desktop version\nopen_last_doc               = no\nintercept_browser_shortcuts = yes\nintercept_context_menu      = yes\n```\n\nOptions shared with the desktop version (`block_cursor`, `blink_cursor`, `line_numbers`, `dark_mode`, etc.) stay in `[behaviour]`.\n\nRight-click `writhdeck.ini` in the browser to export it or reset all settings to defaults (the file is recreated from defaults on next load).\n\n## Project structure\n\n```\nsrc/\n  template.html   HTML skeleton with {{STYLE}} / {{SCRIPT}} / 2026-06-18 placeholders\n  style.css       All CSS (uses CSS custom properties only, no hardcoded colours)\n  schemes.js      Built-in colour schemes + custom-scheme support\n  db.js           IndexedDB wrapper (promise-based)\n  state.js        App state, load/save helpers\n  ini.js          INI config parser/writer (compatible with desktop version)\n  highlight.js    Syntax highlighter + word count + block cursor injection\n  timer.js        Writing timer\n  toc.js          Table of contents\n  stats.js        Daily word-count stats dialog\n  editor.js       Editor panel, textarea/overlay sync, find/replace, formatting\n  browser.js      Document browser panel, FSA integration\n  settings.js     Settings dialog\n  app.js          Entry point, theme, keyboard router, menus, dialogs\nbuild.py          Build script (inlines CSS/JS, stamps build date)\nMakefile          Convenience wrapper around build.py\n```\n\n## Storage\n\nDocuments are stored in IndexedDB (`writhdeck` database, version 1):\n\n- **`documents`** store \u2014 each document: `id`, `name`, `content`, `created`, `modified`.\n- **`meta`** store \u2014 keyed entries: `iniText`, `favorites`, `recents`, `cursors`, `daily`.\n\nNothing is sent to any server.\n\n## Adding a colour scheme\n\nAdd an entry to the `SCHEMES` object in `src/schemes.js`. Each scheme needs 9 dark-mode keys and 9 light-mode (`*Alt`) keys: `bg`, `fg`, `bgBar`, `fgBar`, `bgSel`, `heading`, `comment`, `markup`, `bg2` (+ `Alt` variants). Then run `make`.\n\n## License\n\nCopyright (C) 2026 by Luginfo \u2014 Zero-Clause BSD License\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted. The software is provided \"as is\" without warranty of any kind.\n";
+const README_CONTENT = "# Writhdeck\n\nA distraction-free writing app that runs as a single self-contained HTML file \u2014 no server, no install, no internet required. Open `writhdeck.html` directly in any modern browser.\n\n\n- [Try it online!](https://luginf.github.io/writhdeck/)\n- [Main project](https://github.com/luginf/writhdeck/)\n\n\n## Features\n\n- **Single-file**: the entire app is one `writhdeck.html` (~180 KB). Copy it anywhere, it just works.\n- **Document browser**: create, rename, delete, and favourite documents stored in IndexedDB. Document names are unique \u2014 duplicates are auto-suggested as `\"Untitled (2)\"` etc.\n- **Disk file support** (Chrome/Edge/Brave): open individual files or watch a folder \u2014 edits go straight back to disk via the File System Access API.\n- **Syntax highlighting overlay**: headings, comments, and inline markers (bold, italic, underline, strikethrough) are coloured in real time without leaving the textarea.\n- **Configurable markers**: choose your own syntax for headings, comments, and each inline style. Enable Markdown-style `#` headings if you prefer.\n- **8 built-in colour schemes** (default, solarized, gruvbox, everforest, nord, + 3 more), dark and light variants, and full custom-scheme support.\n- **Writing timer**: countdown or stopwatch, with optional sound and alert at the end.\n- **Table of contents**: auto-generated from heading lines, shown in a side panel.\n- **Daily writing stats**: tracks words *added* today (not total document size) with a high-water mark across sessions. Optional daily goal.\n- **Hemingway mode**: disables backspace/delete to keep you writing forward.\n- **Typewriter mode**: keeps the cursor vertically centred; dims text outside the current paragraph so only the active paragraph appears at full colour.\n- **Find & replace** with live match highlighting, goto line, line numbers.\n- **Structure analysis**: section-by-section word-count breakdown with progress bars. Accessible from the `\u2261` menu (`a`).\n- **Word occurrences**: frequency table of all words, sorted by count. Accessible from the Analyse dialog or the `\u2261` menu.\n- **Block cursor**: optional solid rectangle cursor, rendered in the highlight overlay. Supports blink on/off.\n- **Export** as `.txt` or `.md`.\n- **INI config**: `writhdeck.ini` is always visible in the browser. Right-click it to open, export, or reset to defaults. The format is compatible with the Tcl/Tk desktop version; web-specific options are in a dedicated `[web]` section.\n- **Status bar**: fully customisable left/centre/right slots with tokens \u2014 see [Status bar tokens](#status-bar-tokens).\n- **`\u2261` menu**: all commands accessible from a single dropdown \u2014 keyboard-navigable (\u2191\u2193 + Enter, or press the hint letter directly), with format options (H1\u2013H3, bold, italic\u2026), search, export, settings, and more. Opening the menu preserves any active text selection.\n- **Right-click context menu**: format, cut/copy/paste, and spell-check toggle (editor); Open / Info / Rename / Export / Delete (browser document list); Open / Export / Reset (writhdeck.ini).\n- **Command mode** (`Esc` or `Alt+C`): interactive status bar showing all commands as clickable buttons. Navigate with `\u2190`/`\u2192`, confirm with `Enter`, or click with the mouse.\n- **About dialog**: accessible from the `?` menu in the browser \u2014 shows the app description and build date.\n- **Undo support**: bold, italic, heading, and comment formatting operations integrate with the browser's native undo stack (via `execCommand('insertText')`).\n\n## Build\n\n```sh\nmake        # produces writhdeck.html (~180 KB)\nmake clean  # removes writhdeck.html\n```\n\n`build.py` reads `src/template.html`, inlines `src/style.css` and all JS modules (in the order defined in `JS_ORDER`), and writes the result to stdout. The build date is embedded as `2026-06-25` (ISO format). Python 3, no dependencies.\n\n## Keyboard shortcuts\n\n### Global\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+D` | Toggle dark / light mode |\n| `Ctrl+O` | Import file copy |\n| `F11` | Toggle table of contents |\n| `Alt+Enter` | Toggle fullscreen |\n| `Ctrl+N` *(opt)* | New document (overrides browser \"new window\", requires setting) |\n\n### Editor\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+S` | Save |\n| `Ctrl+Q` | Close document (`Ctrl+Shift+Q` on Firefox, see [Browser notes](#browser-notes)) |\n| `Ctrl+F` | Find (live match highlighting) |\n| `Ctrl+H` | Find & replace |\n| `Ctrl+G` | Go to line |\n| `Ctrl+L` | Toggle line numbers |\n| `Alt+T` | Toggle timer |\n| `Alt+C` / `Esc` | Enter command mode |\n| `Alt+M` | Open `\u2261` menu |\n\n### Command mode (`Alt+C` or `Esc`)\n\nThe status bar becomes an interactive row of command buttons. Works in fullscreen (`Alt+C`).\n\n| Input | Action |\n|---|---|\n| `\u2190` / `\u2192` | Move selection between commands |\n| `Enter` | Execute selected command |\n| *letter* | Execute command directly (e.g. `f` = Find) |\n| Mouse click | Execute command directly |\n\n| Key | Action | Key | Action |\n|---|---|---|---|\n| `f` | Find | `d` | Dark / light |\n| `r` | Find & replace | `o` | Table of contents |\n| `g` | Go to line | `c` | Settings |\n| `n` | Line numbers | `e` | Export as .txt |\n| `w` | Typewriter mode | `s` | Statistics |\n| `t` | Timer | `a` | Analyse structure |\n| `p` | Timer pause | `i` | File info |\n| `q` | Close document | `m` | Main menu (\u2261) |\n\n### Browser (document list)\n\n| Key | Action |\n|---|---|\n| `\u2191` / `\u2193` | Navigate document list |\n| `Enter` | Open selected document |\n| `n` | New document |\n| `o` | Open file from disk |\n| `w` | Watch a folder |\n| `s` | Stats |\n| `c` | Settings |\n\n## Browser notes\n\n- **Disk file support** (open/watch files, edits saved straight back to disk) requires the File System Access API \u2014 available in Chrome, Edge, Brave, and other Chromium-based browsers. Firefox falls back to IndexedDB-only storage.\n- **Large documents** (tens of thousands of words): Firefox is noticeably slower than Chromium-based browsers, especially when a full re-render is triggered (search highlighting, Typewriter mode, multi-line edits like paste/undo). Chromium-based browsers are recommended for very large documents.\n- **`Ctrl+Q`**: Firefox intercepts the plain shortcut as its own \"Quit\" command before the page sees it \u2014 use `Ctrl+Shift+Q` to close the document (works in both Firefox and Chrome).\n\n## Status bar tokens\n\nThe three status bar zones (left / centre / right) are configured as space-separated token strings in Settings \u2192 Profile.\n\n| Token | Example | Description |\n|---|---|---|\n| `filename` | `my-novel.txt` | Current document name |\n| `dirty` | `[+]` | Unsaved changes indicator |\n| `words` | `1 842w` | Word count |\n| `chars` | `10 240c` | Character count |\n| `lines` | `312L` | Total line count |\n| `line` | `L42` | Current cursor line |\n| `col` | `C7` | Current cursor column |\n| `para` | `18\u00a7` | Paragraph count (blank-line separated) |\n| `pages` | `7p` | Estimated pages at 250 w/page |\n| `percent` | `68%` | Progress toward word goal |\n| `today` | `342\u2191` | Words *added* today (high-water mark across sessions) |\n| `goal` | `342/500` | Today's words / goal (hidden if no goal) |\n| `reading` | `9min` | Estimated reading time at 200 w/min |\n| `clock` | `14:32` | Current time |\n| `timer` | `24:07` | Writing timer display |\n| `space` | ` ` | Single space (explicit separator) |\n| *(anything else)* | literal | Fixed text, separators, etc. |\n\nDefault: Left `filename dirty words` \u00b7 Center *(empty)* \u00b7 Right `goal clock timer`\n\n## INI config\n\n`writhdeck.ini` uses the same format as the Tcl/Tk desktop version. Web-specific options live in a dedicated section so they are silently ignored by the desktop version:\n\n```ini\n[web]\n% Options specific to the web version \u2014 ignored by the desktop version\nopen_last_doc               = no\nintercept_browser_shortcuts = yes\nintercept_context_menu      = yes\n```\n\nOptions shared with the desktop version (`block_cursor`, `blink_cursor`, `line_numbers`, `dark_mode`, etc.) stay in `[behaviour]`.\n\nRight-click `writhdeck.ini` in the browser to export it or reset all settings to defaults (the file is recreated from defaults on next load).\n\n## Project structure\n\n```\nsrc/\n  template.html   HTML skeleton with {{STYLE}} / {{SCRIPT}} / 2026-06-25 placeholders\n  style.css       All CSS (uses CSS custom properties only, no hardcoded colours)\n  schemes.js      Built-in colour schemes + custom-scheme support\n  db.js           IndexedDB wrapper (promise-based)\n  state.js        App state, load/save helpers\n  ini.js          INI config parser/writer (compatible with desktop version)\n  highlight.js    Syntax highlighter + word count + block cursor injection\n  timer.js        Writing timer\n  toc.js          Table of contents\n  stats.js        Daily word-count stats dialog\n  editor.js       Editor panel, textarea/overlay sync, find/replace, formatting\n  browser.js      Document browser panel, FSA integration\n  settings.js     Settings dialog\n  app.js          Entry point, theme, keyboard router, menus, dialogs\nbuild.py          Build script (inlines CSS/JS, stamps build date)\nMakefile          Convenience wrapper around build.py\n```\n\n## Storage\n\nDocuments are stored in IndexedDB (`writhdeck` database, version 1):\n\n- **`documents`** store \u2014 each document: `id`, `name`, `content`, `created`, `modified`.\n- **`meta`** store \u2014 keyed entries: `iniText`, `favorites`, `recents`, `cursors`, `daily`.\n\nNothing is sent to any server.\n\n## Adding a colour scheme\n\nAdd an entry to the `SCHEMES` object in `src/schemes.js`. Each scheme needs 9 dark-mode keys and 9 light-mode (`*Alt`) keys: `bg`, `fg`, `bgBar`, `fgBar`, `bgSel`, `heading`, `comment`, `markup`, `bg2` (+ `Alt` variants). Then run `make`.\n\n## License\n\nCopyright (C) 2026 by Luginfo \u2014 Zero-Clause BSD License\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted. The software is provided \"as is\" without warranty of any kind.\n";
 
 let _edMenu          = null;
 let _openMenuFn      = null;
@@ -4145,20 +5011,20 @@ async function showFileInfo(docArg) {
         if (parts) pathDisplay = [State.dirHandle.name, ...parts].join('/');
       } catch (_) {}
     } else if (doc.fileHandle) {
-      pathDisplay = `${doc.fileHandle.name} <span style="color:var(--fg-bar);font-size:0.85em">(folder not set — full path unavailable)</span>`;
+      pathDisplay = `${doc.fileHandle.name} <span style="color:var(--fg-bar);font-size:0.85em">${t('app_info_path_unavailable', '(folder not set — full path unavailable)')}</span>`;
     }
-    storageLabel = `<span class="info-storage-disk">Disk file — ${pathDisplay}</span>`;
+    storageLabel = `<span class="info-storage-disk">${t('app_info_storage_disk', 'Disk file — ${path}', { path: pathDisplay })}</span>`;
   } else {
-    storageLabel = `<span class="info-storage-browser">Browser storage (IndexedDB) — not on your disk</span>`;
+    storageLabel = `<span class="info-storage-browser">${t('app_info_storage_browser', 'Browser storage (IndexedDB) — not on your disk')}</span>`;
   }
 
   const rows = [
-    ['Name',     doc.name],
-    ['Storage',  storageLabel],
-    ['Words',    wc.toLocaleString()],
-    ['Chars',    cc.toLocaleString()],
-    ['Created',  doc.created  ? new Date(doc.created).toLocaleString()  : '—'],
-    ['Modified', doc.modified ? new Date(doc.modified).toLocaleString() : '—']
+    [t('app_info_label_name', 'Name'),     doc.name],
+    [t('app_info_label_storage', 'Storage'),  storageLabel],
+    [t('app_info_label_words', 'Words'),    wc.toLocaleString()],
+    [t('app_info_label_chars', 'Chars'),    cc.toLocaleString()],
+    [t('app_info_label_created', 'Created'),  doc.created  ? new Date(doc.created).toLocaleString()  : '—'],
+    [t('app_info_label_modified', 'Modified'), doc.modified ? new Date(doc.modified).toLocaleString() : '—']
   ];
 
   rows.forEach(([label, value]) => {
@@ -4201,12 +5067,12 @@ async function showWordOcc(docArg) {
   if (!sorted.length) {
     const empty = document.createElement('p');
     empty.style.cssText = 'color:var(--fg-bar);padding:12px 0';
-    empty.textContent = 'No words found.';
+    empty.textContent = t('app_words_empty', 'No words found.');
     body.appendChild(empty);
   } else {
     const table = document.createElement('table');
     table.className = 'words-table';
-    table.innerHTML = '<tr><th>Word</th><th>#</th></tr>';
+    table.innerHTML = `<tr><th>${t('app_words_col_word', 'Word')}</th><th>${t('app_words_col_count', '#')}</th></tr>`;
     sorted.forEach(([word, count]) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${word}</td><td>${count}</td>`;
@@ -4215,7 +5081,7 @@ async function showWordOcc(docArg) {
     body.appendChild(table);
   }
 
-  document.getElementById('words-title').textContent = `Word occurrences — ${doc.name}`;
+  document.getElementById('words-title').textContent = t('app_words_title', 'Word occurrences — ${name}', { name: doc.name });
   document.getElementById('words-dlg').showModal();
 }
 
@@ -4276,14 +5142,14 @@ async function showAnalyse(docArg) {
 
   const total = sections.reduce((acc, sec) => acc + sec.words, 0);
 
-  document.getElementById('analyse-title').textContent = `Structure — ${doc.name}`;
+  document.getElementById('analyse-title').textContent = t('app_analyse_title', 'Structure — ${name}', { name: doc.name });
   const body = document.getElementById('analyse-body');
   body.innerHTML = '';
 
   if (total === 0) {
     const empty = document.createElement('div');
     empty.style.cssText = 'padding:12px 0;color:var(--fg-bar)';
-    empty.textContent = 'No content to analyse.';
+    empty.textContent = t('app_analyse_empty', 'No content to analyse.');
     body.appendChild(empty);
     document.getElementById('analyse-dlg').showModal();
     return;
@@ -4295,7 +5161,7 @@ async function showAnalyse(docArg) {
     const pct = total > 0 ? Math.round(sec.words / total * 100) : 0;
     const barW = Math.max(2, Math.round(pct / 100 * maxBar));
     const indent = sec.level > 1 ? (sec.level - 1) * 14 : 0;
-    const label = sec.title || '(début)';
+    const label = sec.title || t('app_analyse_start_label', '(start)');
 
     const row = document.createElement('div');
     row.className = 'analyse-row';
@@ -4306,7 +5172,7 @@ async function showAnalyse(docArg) {
     if (sec.level > 0) {
       const lvl = document.createElement('span');
       lvl.className = 'analyse-level';
-      lvl.textContent = 'H' + sec.level;
+      lvl.textContent = t('app_analyse_heading_level', 'H${level}', { level: sec.level });
       titleDiv.appendChild(lvl);
     }
     const txt = document.createElement('span');
@@ -4333,7 +5199,13 @@ async function showAnalyse(docArg) {
   const sectionCount = sections.filter(sec => sec.title !== null).length;
   const footer = document.createElement('div');
   footer.className = 'analyse-footer';
-  footer.textContent = `Total : ${total.toLocaleString()} mots · ${sectionCount} section${sectionCount !== 1 ? 's' : ''}`;
+  const sectionLabel = sectionCount === 1
+    ? t('app_analyse_footer_section_one', '${count} section', { count: sectionCount })
+    : t('app_analyse_footer_section_other', '${count} sections', { count: sectionCount });
+  footer.textContent = t('app_analyse_footer', 'Total: ${total} words · ${sections}', {
+    total: total.toLocaleString(),
+    sections: sectionLabel
+  });
   body.appendChild(footer);
 
   document.getElementById('analyse-words-btn').onclick = () => {
@@ -4675,7 +5547,9 @@ function onKeydown(e) {
 async function init() {
   await DB.open();
   await loadState();
+  await Fonts.load();   // register user-uploaded fonts before first paint
   applyTheme();
+  applyTranslations();
 
   // Restore watched folder if permission still granted (silent — no user gesture needed for query)
   if (State.dirHandle) {
@@ -4683,6 +5557,7 @@ async function init() {
       const perm = await State.dirHandle.queryPermission({ mode: 'readwrite' });
       if (perm === 'granted') {
         await scanDir();
+        await Fonts.loadFromFolder(State.dirHandle);   // register <folder>/fonts/*
         // Auto-load writhdeck.ini from the watched folder (silent, no prompt)
         if (State.dirIniHandle) {
           try {
@@ -4772,6 +5647,10 @@ async function init() {
   function execCmd(cmd) {
     edMenu.hidden = true;
     switch (cmd) {
+      case 'save':       Editor.save();             break;
+      case 'save-as':    Editor.saveAs();           break;
+      case 'close':      Editor.close();            break;
+      case 'browser':    Editor.browser();          break;
       case 'toc':        TOC.toggle();              break;
       case 'dark':
         State.settings.darkMode = !State.settings.darkMode;
@@ -4799,7 +5678,7 @@ async function init() {
       case 'ctx-menu':
         State.settings.interceptContextMenu = !State.settings.interceptContextMenu;
         saveSettings();
-        Editor.setMsg(State.settings.interceptContextMenu ? 'Right-click menu on' : 'Right-click menu off');
+        Editor.setMsg(State.settings.interceptContextMenu ? t('app_msg_ctx_menu_on', 'Right-click menu on') : t('app_msg_ctx_menu_off', 'Right-click menu off'));
         break;
       case 'config':     Settings.show();            break;
     }
@@ -4811,15 +5690,16 @@ async function init() {
     [1, 2, 3].forEach(lvl => {
       const btn = edMenu.querySelector(`[data-markup="h${lvl}"]`);
       const p   = hm.repeat(lvl);
-      const txt = hm ? `${p} H${lvl} ${p}` : `H${lvl}`;
+      const hLabel = t('app_menu_heading_level', 'H${level}', { level: lvl });
+      const txt = hm ? `${p} ${hLabel} ${p}` : hLabel;
       btn.innerHTML = `<span>${txt}</span> <span class="hint">${lvl}</span>`;
       btn.disabled  = !hm;
     });
-    [['comment', s.commentMarker, 'Comment (line)', '/'],
-     ['bold',    s.boldMarker,    'Bold',           'b'],
-     ['italic',  s.italicMarker,  'Italic',         null],
-     ['underline', s.underlineMarker, 'Underline',  'u'],
-     ['strike',  s.strikeMarker,  'Strike',         'x'],
+    [['comment', s.commentMarker, t('app_menu_format_comment', 'Comment (line)'), '/'],
+     ['bold',    s.boldMarker,    t('app_menu_format_bold', 'Bold'),           'b'],
+     ['italic',  s.italicMarker,  t('app_menu_format_italic', 'Italic'),         null],
+     ['underline', s.underlineMarker, t('app_menu_format_underline', 'Underline'),  'u'],
+     ['strike',  s.strikeMarker,  t('app_menu_format_strike', 'Strike'),         'x'],
     ].forEach(([type, marker, label, hint]) => {
       const btn = edMenu.querySelector(`[data-markup="${type}"]`);
       const txt = marker ? `${marker} ${label}` : label;
@@ -4828,9 +5708,9 @@ async function init() {
     });
     // Update toggle labels
     const ctxBtn = edMenu.querySelector('[data-cmd="ctx-menu"]');
-    if (ctxBtn) ctxBtn.innerHTML = `Right-click menu <span class="hint">${s.interceptContextMenu ? 'on' : 'off'}</span>`;
+    if (ctxBtn) ctxBtn.innerHTML = `${t('app_menu_ctx_menu_label', 'Right-click menu')} <span class="hint">${s.interceptContextMenu ? t('app_toggle_on', 'on') : t('app_toggle_off', 'off')}</span>`;
     const bcBtn = edMenu.querySelector('[data-cmd="block-cursor"]');
-    if (bcBtn) bcBtn.innerHTML = `Block cursor <span class="hint">${s.blockCursor ? 'on' : 'off'}</span>`;
+    if (bcBtn) bcBtn.innerHTML = `${t('app_menu_block_cursor_label', 'Block cursor')} <span class="hint">${s.blockCursor ? t('app_toggle_on', 'on') : t('app_toggle_off', 'off')}</span>`;
     edMenu.hidden = false;
   }
   _openMenuFn = openMenu;
@@ -4927,22 +5807,22 @@ async function init() {
     // Format
     const hm = s.headingMarker;
     if (hm) {
-      item(`${hm} H1 ${hm}`, () => Editor.applyHeading(1));
-      item(`${hm.repeat(2)} H2 ${hm.repeat(2)}`, () => Editor.applyHeading(2));
-      item(`${hm.repeat(3)} H3 ${hm.repeat(3)}`, () => Editor.applyHeading(3));
+      item(`${hm} ${t('app_menu_heading_level', 'H${level}', { level: 1 })} ${hm}`, () => Editor.applyHeading(1));
+      item(`${hm.repeat(2)} ${t('app_menu_heading_level', 'H${level}', { level: 2 })} ${hm.repeat(2)}`, () => Editor.applyHeading(2));
+      item(`${hm.repeat(3)} ${t('app_menu_heading_level', 'H${level}', { level: 3 })} ${hm.repeat(3)}`, () => Editor.applyHeading(3));
     }
-    if (s.commentMarker)   item(`${s.commentMarker} Comment`, () => Editor.applyLineMarker(s.commentMarker));
-    if (s.boldMarker)      item(`${s.boldMarker} Bold`,       () => Editor.applyInlineMarker(s.boldMarker),      !sel);
-    if (s.italicMarker)    item(`${s.italicMarker} Italic`,   () => Editor.applyInlineMarker(s.italicMarker),    !sel);
-    if (s.underlineMarker) item(`${s.underlineMarker} Underline`, () => Editor.applyInlineMarker(s.underlineMarker), !sel);
-    if (s.strikeMarker)    item(`${s.strikeMarker} Strike`,   () => Editor.applyInlineMarker(s.strikeMarker),    !sel);
+    if (s.commentMarker)   item(`${s.commentMarker} ${t('app_ctxmenu_comment', 'Comment')}`, () => Editor.applyLineMarker(s.commentMarker));
+    if (s.boldMarker)      item(`${s.boldMarker} ${t('app_menu_format_bold', 'Bold')}`,       () => Editor.applyInlineMarker(s.boldMarker),      !sel);
+    if (s.italicMarker)    item(`${s.italicMarker} ${t('app_menu_format_italic', 'Italic')}`,   () => Editor.applyInlineMarker(s.italicMarker),    !sel);
+    if (s.underlineMarker) item(`${s.underlineMarker} ${t('app_menu_format_underline', 'Underline')}`, () => Editor.applyInlineMarker(s.underlineMarker), !sel);
+    if (s.strikeMarker)    item(`${s.strikeMarker} ${t('app_menu_format_strike', 'Strike')}`,   () => Editor.applyInlineMarker(s.strikeMarker),    !sel);
 
     sep();
 
     // Edit
-    item('Cut',   () => document.execCommand('cut'),  !sel);
-    item('Copy',  () => document.execCommand('copy'), !sel);
-    item('Paste', async () => {
+    item(t('app_ctxmenu_cut', 'Cut'),   () => document.execCommand('cut'),  !sel);
+    item(t('app_ctxmenu_copy', 'Copy'),  () => document.execCommand('copy'), !sel);
+    item(t('app_ctxmenu_paste', 'Paste'), async () => {
       try {
         const text = await navigator.clipboard.readText();
         ta.focus();
@@ -4954,7 +5834,7 @@ async function init() {
     sep();
 
     // Spell check toggle
-    item(`Spell check: ${ta.spellcheck ? 'on' : 'off'}`, () => { ta.spellcheck = !ta.spellcheck; });
+    item(ta.spellcheck ? t('app_ctxmenu_spellcheck_on', 'Spell check: on') : t('app_ctxmenu_spellcheck_off', 'Spell check: off'), () => { ta.spellcheck = !ta.spellcheck; });
 
     document.body.appendChild(menu);
     _edCtxMenu = menu;
@@ -5078,6 +5958,15 @@ async function init() {
     const lastId = State.recents[0];
     const doc = State.docs.find(d => d.id === lastId);
     if (doc) await Editor.open(doc);
+  }
+
+  // Embedder hook: a host page (e.g. the LionWiki-t2t writhdeck template) can
+  // define window.WRITHDECK_ON_READY to drive the app once init() has finished
+  // — open a specific document, rewire buttons, etc. Module objects are passed
+  // in because each <script> has its own scope (the embedder's script cannot
+  // reach these consts directly).
+  if (typeof window !== 'undefined' && typeof window.WRITHDECK_ON_READY === 'function') {
+    await window.WRITHDECK_ON_READY({ Editor, Browser, Settings, Stats, State, applyTheme, saveSettings, getScheme });
   }
 }
 
