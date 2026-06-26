@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260625"
+set ::version          "v20260626"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -3083,6 +3083,15 @@ proc do-autosave {ws_n content filepath} {
     set ::autosave_last_time [clock seconds]
 }
 
+proc scratch-tmpfile {content} {
+    set p [file join $::HOME_DIR .writhdeck_scratch_analyse.txt]
+    set fd [open $p w]
+    chan configure $fd -encoding utf-8
+    puts -nonewline $fd $content
+    close $fd
+    return $p
+}
+
 proc toggle-favorite {path} {
     set path [file normalize $path]
     if {!$::state_cache_valid} { state-load }
@@ -3601,7 +3610,8 @@ proc repetitions-dialog {fpath} {
     bind $w <Escape> [list destroy $w]
     bind $w <Destroy> [list repetitions-clear-highlight]
     update
-    grab $w
+    if {![winfo exists $w]} return
+    catch {grab $w}
     focus $w.ok
     tkwait window $w
 }
@@ -7556,15 +7566,21 @@ proc gui-handle-keypress {key} {
             ed-status
             return 1
         } elseif {$key eq "w" || $key eq "W"} {
-            if {$::filename ne "" && [info procs word-occurrences-dialog] ne ""} {
-                word-occurrences-dialog $::filename
+            if {[info procs word-occurrences-dialog] ne ""} {
+                set _ap $::filename
+                if {$_ap eq ""} { set _ap [scratch-tmpfile [[primary-ed] get 1.0 end-1c]] }
+                word-occurrences-dialog $_ap
+                if {$::filename eq ""} { catch {file delete $_ap} }
             }
             set ::gui_cmd_mode 0
             ed-status
             return 1
         } elseif {$key eq "a" || $key eq "A"} {
-            if {$::filename ne "" && [info procs analyse-dialog] ne ""} {
-                analyse-dialog $::filename
+            if {[info procs analyse-dialog] ne ""} {
+                set _ap $::filename
+                if {$_ap eq ""} { set _ap [scratch-tmpfile [[primary-ed] get 1.0 end-1c]] }
+                analyse-dialog $_ap
+                if {$::filename eq ""} { catch {file delete $_ap} }
             }
             set ::gui_cmd_mode 0
             ed-status
@@ -8548,7 +8564,9 @@ proc tui-attr {a} {
                 set _c [tui-ansi-color $::cfg_tui_col_sel_bg 1]
                 if {$_c ne ""} { puts -nonewline "\033\[0m${_c}"; return }
             }
-            puts -nonewline "\033\[7m"
+            # In light mode (DECSCNM active), code 7 double-inverts back to normal appearance.
+            # Add underline (code 4) as a mode-independent visible indicator.
+            puts -nonewline [expr {$::cfg_dark_mode ? "\033\[7m" : "\033\[7;4m"}]
         }
         off      { puts -nonewline "\033\[0m" }
     }
@@ -8601,6 +8619,7 @@ proc tui-inline-esc {style in_sel} {
             set sel_esc [tui-ansi-color $::cfg_tui_col_sel_bg 1]
         } else {
             lappend codes 7
+            if {!$::cfg_dark_mode} { lappend codes 4 }
         }
     }
     if {$codes eq {} && $color_esc eq "" && $sel_esc eq ""} { return "" }
@@ -9804,8 +9823,8 @@ proc tui-editor {filepath {init_state {}}} {
                 continue
             }
             lassign [lindex $vrows $vi2] li scol ecol
-            set seg [string map [list "\t" "    "] \
-                [string range [lindex $lines [expr {$li-1}]] $scol [expr {$ecol-1}]]]
+            set _rl [lindex $lines [expr {$li-1}]]
+            set seg [string map [list "\t" "    "] [string range $_rl $scol [expr {$ecol-1}]]]
             set ish [lindex $ish_cache [expr {$li-1}]]
             set isd [lindex $isd_cache [expr {$li-1}]]
             set seg_len [string length $seg]
@@ -9820,12 +9839,16 @@ proc tui-editor {filepath {init_state {}}} {
             }
 
             # text (with selection highlight) - cursor now at col $coff
+            # sf/st are expanded-column offsets within seg (tabs already expanded to 4 spaces)
             set sf -1; set st -1
             if {$sel_r ne {}} {
-                if      {$li > $_sly && $li < $_ely}         { set sf 0;                              set st $seg_len } \
-                elseif  {$li == $_sly && $li == $_ely}        { set sf [expr {max(0,$_scx_s-$scol)}]; set st [expr {min($seg_len,$_ecx_s-$scol)}] } \
-                elseif  {$li == $_sly}                        { set sf [expr {max(0,$_scx_s-$scol)}]; set st $seg_len } \
-                elseif  {$li == $_ely}                        { set sf 0;                              set st [expr {min($seg_len,$_ecx_s-$scol)}] }
+                # Helper: raw col c → expanded col within seg (from scol)
+                set _xc_s [expr {$_scx_s <= $scol ? 0 : [string length [string map [list "\t" "    "] [string range $_rl $scol [expr {$_scx_s-1}]]]]}]
+                set _xc_e [expr {$_ecx_s <= $scol ? 0 : [string length [string map [list "\t" "    "] [string range $_rl $scol [expr {$_ecx_s-1}]]]]}]
+                if      {$li > $_sly && $li < $_ely}   { set sf 0;    set st $seg_len } \
+                elseif  {$li == $_sly && $li == $_ely} { set sf $_xc_s; set st [expr {min($seg_len,$_xc_e)}] } \
+                elseif  {$li == $_sly}                 { set sf $_xc_s; set st $seg_len } \
+                elseif  {$li == $_ely}                 { set sf 0;    set st [expr {min($seg_len,$_xc_e)}] }
                 if {$sf >= 0 && $sf >= $st} { set sf -1 }
             }
             set _tw_dim [expr {$::typewriter_mode && ($li < $_para_s || $li > $_para_e)}]
@@ -9852,7 +9875,7 @@ proc tui-editor {filepath {init_state {}}} {
                 set _lc_entry [lindex $layout_cache [expr {$li-1}]]
                 set _spans [lindex $_lc_entry 5]
                 if {$_spans eq {}} {
-                    set _spans [tui-parse-inline-spans [lindex $lines [expr {$li-1}]]]
+                    set _spans [tui-parse-inline-spans $_rl]
                     lset layout_cache [expr {$li-1}] [lreplace $_lc_entry 5 5 $_spans]
                 }
                 tui-render-inline-seg $seg $scol $_spans $sf $st
@@ -10296,8 +10319,11 @@ proc tui-editor {filepath {init_state {}}} {
                         set clear_sel 0
                     } elseif {$key eq "w"} {
                         lassign [tui-size] rows cols
-                        if {$filepath ne "" && [info procs tui-word-occurrences] ne ""} {
-                            tui-word-occurrences $filepath $rows $cols
+                        if {[info procs tui-word-occurrences] ne ""} {
+                            set _ap $filepath
+                            if {$_ap eq ""} { set _ap [scratch-tmpfile [join $lines "\n"]] }
+                            tui-word-occurrences $_ap $rows $cols
+                            if {$filepath eq ""} { catch {file delete $_ap} }
                         }
                         set ::tui_cmd_mode 0
                         puts -nonewline "\033\[2J\033\[H"; flush stdout
@@ -10305,8 +10331,11 @@ proc tui-editor {filepath {init_state {}}} {
                         set clear_sel 0
                     } elseif {$key eq "a"} {
                         lassign [tui-size] rows cols
-                        if {$filepath ne "" && [info procs tui-analyse-dialog] ne ""} {
-                            tui-analyse-dialog $filepath $rows $cols
+                        if {[info procs tui-analyse-dialog] ne ""} {
+                            set _ap $filepath
+                            if {$_ap eq ""} { set _ap [scratch-tmpfile [join $lines "\n"]] }
+                            tui-analyse-dialog $_ap $rows $cols
+                            if {$filepath eq ""} { catch {file delete $_ap} }
                             if {$::tui_rep_jump ne ""} {
                                 set cy [expr {min($::tui_rep_jump, [llength $lines])}]; set cx 0
                             }

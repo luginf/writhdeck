@@ -2410,15 +2410,21 @@ proc gui-handle-keypress {key} {
             ed-status
             return 1
         } elseif {$key eq "w" || $key eq "W"} {
-            if {$::filename ne "" && [info procs word-occurrences-dialog] ne ""} {
-                word-occurrences-dialog $::filename
+            if {[info procs word-occurrences-dialog] ne ""} {
+                set _ap $::filename
+                if {$_ap eq ""} { set _ap [scratch-tmpfile [[primary-ed] get 1.0 end-1c]] }
+                word-occurrences-dialog $_ap
+                if {$::filename eq ""} { catch {file delete $_ap} }
             }
             set ::gui_cmd_mode 0
             ed-status
             return 1
         } elseif {$key eq "a" || $key eq "A"} {
-            if {$::filename ne "" && [info procs analyse-dialog] ne ""} {
-                analyse-dialog $::filename
+            if {[info procs analyse-dialog] ne ""} {
+                set _ap $::filename
+                if {$_ap eq ""} { set _ap [scratch-tmpfile [[primary-ed] get 1.0 end-1c]] }
+                analyse-dialog $_ap
+                if {$::filename eq ""} { catch {file delete $_ap} }
             }
             set ::gui_cmd_mode 0
             ed-status

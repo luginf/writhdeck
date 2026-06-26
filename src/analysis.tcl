@@ -501,7 +501,8 @@ proc repetitions-dialog {fpath} {
     bind $w <Escape> [list destroy $w]
     bind $w <Destroy> [list repetitions-clear-highlight]
     update
-    grab $w
+    if {![winfo exists $w]} return
+    catch {grab $w}
     focus $w.ok
     tkwait window $w
 }

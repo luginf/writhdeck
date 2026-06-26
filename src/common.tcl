@@ -273,6 +273,15 @@ proc do-autosave {ws_n content filepath} {
     set ::autosave_last_time [clock seconds]
 }
 
+proc scratch-tmpfile {content} {
+    set p [file join $::HOME_DIR .writhdeck_scratch_analyse.txt]
+    set fd [open $p w]
+    chan configure $fd -encoding utf-8
+    puts -nonewline $fd $content
+    close $fd
+    return $p
+}
+
 proc toggle-favorite {path} {
     set path [file normalize $path]
     if {!$::state_cache_valid} { state-load }
