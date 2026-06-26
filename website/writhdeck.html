@@ -305,6 +305,7 @@ input[type="color"] { width: 40px; height: 24px; padding: 1px; border: 1px solid
 .hl-comment  { color: var(--comment); }
 .hl-markup   { color: var(--markup); }
 .hl-search   { background: var(--bg-sel); }
+.hl-mark     { background: var(--bg-sel); opacity: 0.7; border-radius: 2px; }
 
 /* Search / goto bars */
 #search-bar, #goto-bar {
@@ -551,6 +552,27 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
 .analyse-footer { padding: 8px 0 4px; color: var(--fg-bar); font-size: 0.82em; }
 #analyse-words-btn { font-size: 0.75em; padding: 1px 6px; margin-right: 4px; }
 
+/* Repetitions — non-modal, draggable */
+#rep-dlg {
+  width: 400px; position: fixed; top: 60px; right: 20px; left: auto; margin: 0;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4); z-index: 900;
+}
+#rep-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; background: var(--bg-bar); cursor: grab; user-select: none;
+}
+#rep-header:active { cursor: grabbing; }
+#rep-header button { cursor: default; }
+#rep-body { padding: 8px 16px 4px; font-size: 0.9em; max-height: 60vh; overflow-y: auto; }
+.rep-row { padding: 5px 0; border-bottom: 1px solid var(--bg-bar); display: flex; align-items: baseline; gap: 10px; }
+.rep-row:last-child { border-bottom: none; }
+.rep-word { color: var(--heading); min-width: 120px; flex-shrink: 0; }
+.rep-lines { color: var(--fg-bar); font-size: 0.85em; }
+.rep-line { cursor: pointer; }
+.rep-line:hover { color: var(--fg); text-decoration: underline; }
+.rep-dist { margin-left: auto; color: var(--fg-bar); font-size: 0.78em; white-space: nowrap; }
+#analyse-rep-btn { font-size: 0.75em; padding: 1px 6px; margin-right: 4px; }
+
 /* Word occurrences */
 #words-dlg { width: 340px; }
 #words-header {
@@ -625,7 +647,7 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
     <p data-i18n="tpl_about_p1">Writhdeck is a distraction-free writing environment for long-form text — novels, essays, notes, scripts.</p>
     <p data-i18n="tpl_about_p2">All your documents live in your browser (IndexedDB) — nothing is sent to any server. You can also edit files directly on disk.</p>
     <p data-i18n="tpl_about_p3">It features a custom colour-syntax overlay, typewriter focus mode, a session timer, daily word goals, and a fully keyboard-driven interface. Compatible with the Writhdeck desktop app via shared <code>.ini</code> settings.</p>
-    <p class="about-version"><span data-i18n="tpl_about_build">Build:</span> 2026-06-25 — <span data-i18n="tpl_about_opensource">Open source</span> — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
+    <p class="about-version"><span data-i18n="tpl_about_build">Build:</span> 2026-06-26 — <span data-i18n="tpl_about_opensource">Open source</span> — <a href="https://github.com/luginf/writhdeck-web/" target="_blank" rel="noopener">github.com/luginf/writhdeck-web</a></p>
   </div>
   <div id="about-footer">
     <button id="about-ok" data-i18n="tpl_about_close">Close</button>
@@ -718,6 +740,7 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
   <button data-cmd="stats"><span data-i18n="tpl_menu_statistics">Statistics</span> <span class="hint">s</span></button>
   <button data-cmd="analyse"><span data-i18n="tpl_menu_analyse">Analyse</span> <span class="hint">a</span></button>
   <button data-cmd="word-occ" data-i18n="tpl_menu_word_occ">Word occurrences</button>
+  <button data-cmd="repetitions" data-i18n="tpl_menu_repetitions">Repetitions</button>
   <button data-cmd="info"><span data-i18n="tpl_menu_file_info">File info</span> <span class="hint">i</span></button>
   <div class="more-sep"></div>
   <div class="more-label" data-i18n="tpl_menu_section_app">App</div>
@@ -837,6 +860,8 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
           <option value="en">English</option>
           <option value="fr">Français</option>
           <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+          <option value="pt">Português (BR)</option>
         </select>
       </label>
       <label><input type="checkbox" data-key="cursorRestore"> <span data-i18n="tpl_settings_misc_cursor_restore">Restore cursor position on open</span></label>
@@ -880,9 +905,19 @@ dialog::backdrop { background: rgba(0,0,0,0.5); }
   <div id="analyse-header">
     <span id="analyse-title" data-i18n="tpl_dialog_analyse_title">Structure</span>
     <button id="analyse-words-btn" data-i18n-title="tpl_dialog_analyse_words_btn" title="Word occurrences">abc</button>
+    <button id="analyse-rep-btn" data-i18n-title="tpl_dialog_analyse_rep_btn" title="Repetitions">rep</button>
     <button id="analyse-close" data-i18n-title="tpl_dialog_close_btn" title="Close">✕</button>
   </div>
   <div id="analyse-body"></div>
+</dialog>
+
+<!-- Repetitions dialog -->
+<dialog id="rep-dlg">
+  <div id="rep-header">
+    <span id="rep-title" data-i18n="tpl_dialog_rep_title">Repetitions</span>
+    <button id="rep-close" data-i18n-title="tpl_dialog_close_btn" title="Close">✕</button>
+  </div>
+  <div id="rep-body"></div>
 </dialog>
 
 <!-- Word occurrences dialog -->
@@ -1041,7 +1076,8 @@ const IndexedDbBackend = (() => {
   }
 
   function getDoc(id) {
-    return tx('documents', 'readonly', s => s.get(Number(id)));
+    const key = (typeof id === 'string' && isNaN(Number(id))) ? id : Number(id);
+    return tx('documents', 'readonly', s => s.get(key));
   }
 
   function getAllDocs() {
@@ -2441,6 +2477,604 @@ I18N.es = {
 
 
 'use strict';
+// German dictionary
+I18N.de = {
+  // template.html
+  tpl_browser_folder_btn: 'Ordner überwachen — alle Dateien direkt bearbeitbar (w)',
+  tpl_browser_opendisk_btn: 'Datei vom Datenträger öffnen — direkt bearbeiten (o)',
+  tpl_browser_import_btn: 'Dateikopie importieren (Ctrl+O)',
+  tpl_browser_new_btn: 'Neues Dokument (n)',
+  tpl_browser_help_btn: 'Hilfe',
+  tpl_browser_help_about: 'Über',
+  tpl_browser_help_source: 'Quellcode ↗',
+  tpl_browser_help_settings: 'Einstellungen',
+  tpl_about_title: 'Über Writhdeck',
+  tpl_about_p1: 'Writhdeck ist eine ablenkungsfreie Schreibumgebung für lange Texte — Romane, Essays, Notizen, Drehbücher.',
+  tpl_about_p2: 'Alle Dokumente liegen in Ihrem Browser (IndexedDB) — nichts wird an einen Server gesendet. Sie können Dateien auch direkt auf dem Datenträger bearbeiten.',
+  tpl_about_p3: 'Es bietet anpassbare Syntaxhervorhebung, Schreibmaschinenmodus, Sitzungs-Timer, tägliche Wortziele und eine vollständig tastatursteuerbare Oberfläche. Kompatibel mit der Desktop-App Writhdeck über gemeinsame <code>.ini</code>-Einstellungen.',
+  tpl_about_build: 'Build:',
+  tpl_about_opensource: 'Open Source',
+  tpl_about_close: 'Schließen',
+  tpl_dialog_close_btn: 'Schließen',
+  tpl_editor_menu_btn: 'Menü',
+  tpl_editor_close_btn: 'Beenden',
+  tpl_toc_title: 'Inhaltsverzeichnis',
+  tpl_toc_pin_btn: 'IVZ anheften (bleibt offen bei Kapitelauswahl)',
+  tpl_search_find_label: 'Suchen:',
+  tpl_search_prev_btn: 'Vorheriges Vorkommen',
+  tpl_search_next_btn: 'Nächstes Vorkommen',
+  tpl_search_replace_label: 'Ersetzen:',
+  tpl_search_replace_btn: 'Ersetzen',
+  tpl_search_replace_all_btn: 'Alle',
+  tpl_search_close_btn: 'Schließen',
+  tpl_goto_line_label: 'Zeile:',
+  tpl_goto_go_btn: 'Gehen',
+  tpl_goto_close_btn: 'Schließen',
+  tpl_menu_command_mode: 'Befehlsmodus',
+  tpl_menu_settings: 'Einstellungen',
+  tpl_menu_save: 'Speichern',
+  tpl_menu_save_as: 'Speichern unter…',
+  tpl_menu_quit: 'Beenden',
+  tpl_menu_browser: 'Browser',
+  tpl_menu_section_view: 'Ansicht',
+  tpl_menu_toc: 'Inhaltsverzeichnis',
+  tpl_menu_dark_light: 'Dunkel / Hell',
+  tpl_menu_linenos: 'Zeilennummern',
+  tpl_menu_typewriter: 'Schreibmaschine',
+  tpl_menu_section_search: 'Suche',
+  tpl_menu_find: 'Suchen',
+  tpl_menu_find_replace: 'Suchen &amp; Ersetzen',
+  tpl_menu_goto_line: 'Zur Zeile',
+  tpl_menu_section_format: 'Format',
+  tpl_menu_section_document: 'Dokument',
+  tpl_menu_export_txt: 'Als .txt exportieren',
+  tpl_menu_export_md: 'Als .md exportieren',
+  tpl_menu_statistics: 'Statistiken',
+  tpl_menu_analyse: 'Analysieren',
+  tpl_menu_word_occ: 'Worthäufigkeit',
+  tpl_menu_file_info: 'Dateiinfo',
+  tpl_menu_section_app: 'Anwendung',
+  tpl_menu_timer: 'Timer',
+  tpl_menu_block_cursor: 'Blockcursor',
+  tpl_menu_ctx_menu: 'Kontextmenü',
+  tpl_settings_tab_profile: 'Profil',
+  tpl_settings_tab_display: 'Anzeige',
+  tpl_settings_tab_fonts: 'Schriften',
+  tpl_settings_tab_schemes: 'Themen',
+  tpl_settings_tab_timer: 'Timer',
+  tpl_settings_tab_misc: 'Sonstiges',
+  tpl_settings_profile_label: 'Profil',
+  tpl_settings_profile_new_btn: 'Neu',
+  tpl_settings_profile_delete_btn: 'Löschen',
+  tpl_settings_profile_hint: 'Ränder, Schriften, Thema, Dunkelmodus, Wortziel, Zeilennummern, Blockcursor, Überschriftsmarkierung und Markdown-Überschriften werden pro Profil gespeichert.',
+  tpl_settings_profile_default_scheme: 'Standardthema',
+  tpl_settings_profile_dark_mode: 'Dunkelmodus',
+  tpl_settings_profile_margin_x: 'Horiz. Rand (px)',
+  tpl_settings_profile_margin_y: 'Vert. Rand (px)',
+  tpl_settings_profile_line_spacing: 'Zeilenabstand',
+  tpl_settings_profile_word_goal: 'Wortziel (Wörter/Tag, 0=deaktiviert)',
+  tpl_settings_profile_hemingway: 'Hemingway-Modus (kein Löschen)',
+  tpl_settings_display_statusbar_zones: 'Statusleistenzonen',
+  tpl_settings_display_left: 'Links',
+  tpl_settings_display_center: 'Mitte',
+  tpl_settings_display_right: 'Rechts',
+  tpl_settings_display_tokens_hint: 'Token: filename dirty words chars lines line col para pages percent today goal reading clock timer',
+  tpl_settings_display_editor_options: 'Editoroptionen',
+  tpl_settings_display_line_numbers: 'Zeilennummern (Ctrl+L)',
+  tpl_settings_display_block_cursor: 'Blockcursor',
+  tpl_settings_display_blink_cursor: 'Blinkender Cursor',
+  tpl_settings_display_keyboard_shortcuts: 'Tastenkürzel',
+  tpl_settings_display_override_shortcuts: 'Browser-Tastenkürzel überschreiben',
+  tpl_settings_display_ctrln_hint: 'Ctrl+N = neues Dokument (statt neuem Browserfenster)',
+  tpl_settings_display_syntax_markers: 'Syntaxmarkierungen',
+  tpl_settings_display_heading_marker: 'Überschriftsmarkierung',
+  tpl_settings_display_comment_marker: 'Kommentarmarkierung',
+  tpl_settings_display_bold_marker: 'Fettmarkierung',
+  tpl_settings_display_italic_marker: 'Kursivmarkierung',
+  tpl_settings_display_underline_marker: 'Unterstrichmarkierung',
+  tpl_settings_display_strike_marker: 'Durchstreichmarkierung',
+  tpl_settings_display_markdown_headings: 'Markdown-Überschriften (#)',
+  tpl_settings_fonts_family: 'Schrift',
+  tpl_settings_fonts_size: 'Schriftgröße (px)',
+  tpl_settings_fonts_preview_label: 'Vorschau:',
+  tpl_settings_fonts_preview_text: 'Franz jagt im Taxi quer durch Bayern',
+  tpl_settings_fonts_upload_btn: 'Schriftdatei importieren…',
+  tpl_settings_fonts_scan_btn: 'Alle Systemschriften suchen',
+  tpl_settings_fonts_available_label: 'Verfügbare Schriften (anklicken zum Auswählen):',
+  tpl_settings_schemes_label: 'Thema',
+  tpl_settings_schemes_new_btn: 'Neu',
+  tpl_settings_schemes_delete_btn: 'Löschen',
+  tpl_settings_schemes_dark_mode: 'Dunkelmodus',
+  tpl_settings_timer_type: 'Typ',
+  tpl_settings_timer_countdown: 'Countdown',
+  tpl_settings_timer_stopwatch: 'Stoppuhr',
+  tpl_settings_timer_duration: 'Dauer (Min.)',
+  tpl_settings_timer_sound: 'Ton am Ende',
+  tpl_settings_timer_alert: 'Hinweisdialog',
+  tpl_settings_timer_show: 'In Statusleiste anzeigen',
+  tpl_settings_misc_language: 'Sprache',
+  tpl_settings_misc_app_language: 'App-Sprache',
+  tpl_settings_misc_cursor_restore: 'Cursorposition beim Öffnen wiederherstellen',
+  tpl_settings_misc_open_last_doc: 'Letztes Dokument beim Start öffnen',
+  tpl_settings_misc_watched_folder: 'Überwachter Ordner-Browser',
+  tpl_settings_misc_file_filter: 'Dateifilter',
+  tpl_settings_misc_show_all_files: 'Alle Dateien anzeigen (Filter ignorieren)',
+  tpl_settings_misc_browse_subfolders: 'Unterordner durchsuchen',
+  tpl_settings_misc_ini_hint: 'writhdeck.ini — kompatibel mit der Desktop-Version',
+  tpl_settings_misc_ini_import_btn: 'writhdeck.ini importieren',
+  tpl_settings_misc_ini_export_btn: 'writhdeck.ini exportieren',
+  tpl_settings_misc_documents: 'Dokumente',
+  tpl_settings_misc_import_btn: 'Datei vom Datenträger importieren',
+  tpl_settings_misc_export_all_btn: 'Alle exportieren (.txt)',
+  tpl_settings_misc_export_zip_btn: 'Alle exportieren (ZIP)',
+  tpl_settings_apply_btn: 'Anwenden',
+  tpl_settings_close_btn: 'Schließen',
+  tpl_settings_reset_btn: 'Zurücksetzen',
+  tpl_dialog_info_title: 'Dokumentinfo',
+  tpl_dialog_analyse_title: 'Struktur',
+  tpl_dialog_analyse_words_btn: 'Worthäufigkeit',
+  tpl_dialog_words_title: 'Worthäufigkeit',
+  tpl_dialog_stats_title: 'Schreibstatistiken',
+  tpl_dialog_timer_finished: 'Timer beendet!',
+  tpl_dialog_timer_ok_btn: 'OK',
+  tpl_dialog_close_confirm_yes: 'Ja',
+  tpl_dialog_close_confirm_no: 'Nein',
+  tpl_dialog_close_confirm_cancel: 'Abbrechen',
+
+  // browser.js
+  browser_section_favorites: 'Favoriten',
+  browser_section_recent_files: 'Zuletzt geöffnet',
+  browser_section_files_from_disk: 'Dateien vom Datenträger',
+  browser_section_documents: 'Dokumente',
+  browser_no_docs_yet: 'Noch keine Dokumente. n drücken um eines zu erstellen.',
+  browser_unpin: 'Loslösen',
+  browser_pin_to_favorites: 'Zu Favoriten anheften',
+  browser_linked_to_file_on_disk: 'Mit Datei auf Datenträger verknüpft',
+  browser_recently_opened: 'Zuletzt geöffnet',
+  browser_open: 'Öffnen',
+  browser_export_ini: 'writhdeck.ini exportieren',
+  browser_reset_to_defaults: 'Zurücksetzen',
+  browser_reset_settings_confirm: 'Alle Einstellungen zurücksetzen?',
+  browser_info: 'Info',
+  browser_analyse: 'Analysieren',
+  browser_rename: 'Umbenennen',
+  browser_export_as_txt: 'Als .txt exportieren',
+  browser_export_as_md: 'Als .md exportieren',
+  browser_stats: 'Statistiken',
+  browser_delete: 'Löschen',
+  browser_document_name_prompt: 'Dokumentname:',
+  browser_file_already_exists_in_folder: 'Eine Datei namens "${safeName}" existiert bereits in diesem Ordner.',
+  browser_could_not_create_file: '"${safeName}" konnte nicht erstellt werden: ${message}',
+  browser_document_already_exists: 'Ein Dokument namens "${safeName}" existiert bereits.',
+  browser_rename_to_prompt: 'Umbenennen in:',
+  browser_remove_from_writhdeck_confirm: '"${name}" aus Writhdeck entfernen?\n\nDie Originaldatei auf Ihrem Datenträger wird NICHT gelöscht — nur die im Browser gespeicherte Kopie wird entfernt.',
+  browser_delete_from_storage_confirm: '"${name}" aus dem Browser-Speicher löschen?\n\nDiese Aktion ist unwiderruflich. Das Dokument existiert nur in diesem Browser — es ist NICHT auf Ihrem Datenträger.',
+  browser_shortcut_new: 'neu',
+  browser_shortcut_watch_folder: 'ordner überwachen',
+  browser_shortcut_open_file: 'datei öffnen',
+  browser_shortcut_import_copy: 'kopie importieren',
+  browser_shortcut_stats: 'statistiken',
+  browser_shortcut_config: 'einstellungen',
+  browser_shortcut_rename: 'umbenennen',
+  browser_shortcut_delete: 'löschen',
+  browser_shortcut_backup: 'sicherung',
+  browser_shortcut_favorite: 'favorit',
+  browser_shortcut_info: 'info',
+  browser_shortcut_help: 'hilfe',
+  browser_shortcut_reload: 'neuladen',
+  browser_directory_access_requires_chrome: 'Ordnerzugriff erfordert Chrome, Edge oder Brave.\nBei Brave die Shields-Einstellungen prüfen.',
+  browser_remove_folder_confirm: 'Ordner "${name}" aus Writhdeck entfernen?\n\nDateien auf dem Datenträger bleiben unberührt.',
+  browser_remove_folder: 'Ordner entfernen',
+  browser_go_up_one_folder: 'Einen Ordner aufwärts',
+  browser_reauthorize_folder_access: 'Ordnerzugriff neu autorisieren',
+  browser_no_files_in_folder: 'Keine .txt / .md / .tcl Dateien in diesem Ordner.',
+  browser_direct_file_access_unavailable: 'Direkter Dateizugriff ist in diesem Browser nicht verfügbar.\n\nVerwenden Sie die Schaltfläche ↑ Importieren um eine Dateikopie zu laden, oder wechseln Sie zu Chrome/Edge/Brave.\n\nBei Brave prüfen, ob Shields-Fingerprinting-Schutz nicht auf "Strict" gesetzt ist.',
+  browser_text_files: 'Textdateien',
+
+  // settings.js
+  settings_color_bg_dark: 'Hintergrund (dunkel)',
+  settings_color_fg_dark: 'Text (dunkel)',
+  settings_color_bg_bar_dark: 'Leiste HG (dunkel)',
+  settings_color_fg_bar_dark: 'Leiste VG (dunkel)',
+  settings_color_bg_sel_dark: 'Auswahl (dunkel)',
+  settings_color_heading_dark: 'Überschrift (dunkel)',
+  settings_color_comment_dark: 'Kommentar (dunkel)',
+  settings_color_markup_dark: 'Auszeichnung (dunkel)',
+  settings_color_bg_light: 'Hintergrund (hell)',
+  settings_color_fg_light: 'Text (hell)',
+  settings_color_bg_bar_light: 'Leiste HG (hell)',
+  settings_color_fg_bar_light: 'Leiste VG (hell)',
+  settings_color_bg_sel_light: 'Auswahl (hell)',
+  settings_color_heading_light: 'Überschrift (hell)',
+  settings_color_comment_light: 'Kommentar (hell)',
+  settings_color_markup_light: 'Auszeichnung (hell)',
+  settings_font_tag_custom: '  (benutzerdefiniert)',
+  settings_font_tag_folder: '  (Ordner)',
+  settings_remove_this_font: 'Diese Schrift entfernen',
+  settings_cannot_enumerate_fonts: 'Ihr Browser kann nicht alle Systemschriften auflisten (Local Font Access API — nur Chrome/Edge). Stattdessen wird die erkannte Teilmenge angezeigt.',
+  settings_could_not_access_fonts: 'Zugriff auf Systemschriften fehlgeschlagen (Zugriff verweigert).',
+  settings_new_profile_prompt: 'Name des neuen Profils:',
+  settings_profile_name_no_brackets: 'Profilnamen dürfen kein [ oder ] enthalten.',
+  settings_profile_already_exists: 'Ein Profil mit diesem Namen existiert bereits.',
+  settings_cannot_delete_only_profile: 'Das einzige Profil kann nicht gelöscht werden.',
+  settings_delete_profile_confirm: 'Profil "${name}" löschen?',
+  settings_new_scheme_prompt: 'Name des neuen Themas:',
+  settings_scheme_name_no_brackets: 'Themenamen dürfen kein [ oder ] enthalten.',
+  settings_name_already_exists: 'Dieser Name existiert bereits.',
+  settings_cannot_delete_builtin_scheme: 'Eingebaute Themen können nicht gelöscht werden.',
+  settings_delete_scheme_confirm: 'Thema "${name}" löschen?',
+  settings_none: 'keiner',
+  settings_import_success: 'Einstellungen importiert.\nGefundene Themen: ${schemeList}',
+  settings_no_docs_export: 'Keine Dokumente zum Exportieren.',
+  settings_reset_confirm: 'Alle Einstellungen zurücksetzen? Diese Aktion ist unwiderruflich.',
+
+  // toc.js
+  toc_unpin_title: 'IVZ lösen (schließt sich bei Kapitelauswahl)',
+  toc_pin_title: 'IVZ anheften (bleibt offen bei Kapitelauswahl)',
+  toc_no_headings: 'Keine Überschriften gefunden.',
+
+  // stats.js
+  stats_no_stats_yet: 'Noch keine Schreibstatistiken.',
+  stats_header_date: 'Datum',
+  stats_header_words: 'Wörter',
+  stats_today_suffix: '← heute',
+
+  // app.js
+  app_info_path_unavailable: '(kein Ordner definiert — vollständiger Pfad nicht verfügbar)',
+  app_info_storage_disk: 'Datenträgerdatei — ${path}',
+  app_info_storage_browser: 'Browser-Speicher (IndexedDB) — nicht auf Ihrem Datenträger',
+  app_info_label_name: 'Name',
+  app_info_label_storage: 'Speicher',
+  app_info_label_words: 'Wörter',
+  app_info_label_chars: 'Zeichen',
+  app_info_label_created: 'Erstellt',
+  app_info_label_modified: 'Geändert',
+  app_words_empty: 'Keine Wörter gefunden.',
+  app_words_col_word: 'Wort',
+  app_words_col_count: '#',
+  app_words_title: 'Worthäufigkeit — ${name}',
+  app_analyse_empty: 'Kein Inhalt zum Analysieren.',
+  app_analyse_start_label: '(Anfang)',
+  app_analyse_heading_level: 'H${level}',
+  app_analyse_footer_section_one: '${count} Abschnitt',
+  app_analyse_footer_section_other: '${count} Abschnitte',
+  app_analyse_footer: 'Gesamt: ${total} Wörter · ${sections}',
+  app_analyse_title: 'Struktur — ${name}',
+  app_menu_heading_level: 'H${level}',
+  app_menu_format_comment: 'Kommentar (Zeile)',
+  app_menu_format_bold: 'Fett',
+  app_menu_format_italic: 'Kursiv',
+  app_menu_format_underline: 'Unterstrichen',
+  app_menu_format_strike: 'Durchgestrichen',
+  app_menu_ctx_menu_label: 'Kontextmenü',
+  app_menu_block_cursor_label: 'Blockcursor',
+  app_toggle_on: 'ein',
+  app_toggle_off: 'aus',
+  app_msg_ctx_menu_on: 'Kontextmenü aktiviert',
+  app_msg_ctx_menu_off: 'Kontextmenü deaktiviert',
+  app_ctxmenu_comment: 'Kommentar',
+  app_ctxmenu_cut: 'Ausschneiden',
+  app_ctxmenu_copy: 'Kopieren',
+  app_ctxmenu_paste: 'Einfügen',
+  app_ctxmenu_spellcheck_on: 'Rechtschreibprüfung: ein',
+  app_ctxmenu_spellcheck_off: 'Rechtschreibprüfung: aus',
+
+  // editor.js
+  editor_title_doc: '${name} — Writhdeck',
+  editor_confirm_save_before_close: '"${name}" vor dem Schließen speichern?',
+  editor_msg_settings_applied: 'Einstellungen angewendet',
+  editor_msg_parse_error: 'Parsing-Fehler',
+  editor_msg_permission_denied: 'Zugriff verweigert',
+  editor_msg_saved_to_disk: 'Auf Datenträger gespeichert',
+  editor_msg_disk_save_failed: 'Speichern auf Datenträger fehlgeschlagen',
+  editor_msg_saved: 'Gespeichert',
+  editor_msg_save_as_failed: 'Speichern unter fehlgeschlagen',
+  editor_msg_saved_as: 'Gespeichert als ${name}',
+  editor_prompt_save_as: 'Speichern unter (neuer Name):',
+  editor_alert_name_exists: 'Ein Dokument namens "${name}" existiert bereits.'
+};
+
+
+'use strict';
+// Brazilian Portuguese dictionary
+I18N.pt = {
+  // template.html
+  tpl_browser_folder_btn: 'Monitorar pasta — todos os arquivos editáveis diretamente (w)',
+  tpl_browser_opendisk_btn: 'Abrir arquivo do disco — editar no lugar (o)',
+  tpl_browser_import_btn: 'Importar cópia de arquivo (Ctrl+O)',
+  tpl_browser_new_btn: 'Novo documento (n)',
+  tpl_browser_help_btn: 'Ajuda',
+  tpl_browser_help_about: 'Sobre',
+  tpl_browser_help_source: 'código fonte ↗',
+  tpl_browser_help_settings: 'Configurações',
+  tpl_about_title: 'Sobre o Writhdeck',
+  tpl_about_p1: 'O Writhdeck é um ambiente de escrita sem distração para textos longos — romances, ensaios, notas, roteiros.',
+  tpl_about_p2: 'Todos os seus documentos ficam no seu navegador (IndexedDB) — nada é enviado para um servidor. Você também pode editar arquivos diretamente no disco.',
+  tpl_about_p3: 'Oferece realce de sintaxe personalizável, modo máquina de escrever, cronômetro de sessão, metas diárias de palavras e uma interface totalmente controlável pelo teclado. Compatível com o aplicativo desktop Writhdeck via configurações <code>.ini</code> compartilhadas.',
+  tpl_about_build: 'Build:',
+  tpl_about_opensource: 'Código aberto',
+  tpl_about_close: 'Fechar',
+  tpl_dialog_close_btn: 'Fechar',
+  tpl_editor_menu_btn: 'Menu',
+  tpl_editor_close_btn: 'Sair',
+  tpl_toc_title: 'Índice',
+  tpl_toc_pin_btn: 'Fixar índice (permanece aberto ao selecionar capítulo)',
+  tpl_search_find_label: 'Buscar:',
+  tpl_search_prev_btn: 'Ocorrência anterior',
+  tpl_search_next_btn: 'Próxima ocorrência',
+  tpl_search_replace_label: 'Substituir:',
+  tpl_search_replace_btn: 'Substituir',
+  tpl_search_replace_all_btn: 'Todos',
+  tpl_search_close_btn: 'Fechar',
+  tpl_goto_line_label: 'Linha:',
+  tpl_goto_go_btn: 'Ir',
+  tpl_goto_close_btn: 'Fechar',
+  tpl_menu_command_mode: 'Modo de comando',
+  tpl_menu_settings: 'Configurações',
+  tpl_menu_save: 'Salvar',
+  tpl_menu_save_as: 'Salvar como…',
+  tpl_menu_quit: 'Sair',
+  tpl_menu_browser: 'Navegador',
+  tpl_menu_section_view: 'Visualizar',
+  tpl_menu_toc: 'Índice',
+  tpl_menu_dark_light: 'Escuro / claro',
+  tpl_menu_linenos: 'Números de linha',
+  tpl_menu_typewriter: 'Máquina de escrever',
+  tpl_menu_section_search: 'Busca',
+  tpl_menu_find: 'Buscar',
+  tpl_menu_find_replace: 'Buscar &amp; substituir',
+  tpl_menu_goto_line: 'Ir para linha',
+  tpl_menu_section_format: 'Formato',
+  tpl_menu_section_document: 'Documento',
+  tpl_menu_export_txt: 'Exportar como .txt',
+  tpl_menu_export_md: 'Exportar como .md',
+  tpl_menu_statistics: 'Estatísticas',
+  tpl_menu_analyse: 'Analisar',
+  tpl_menu_word_occ: 'Frequência de palavras',
+  tpl_menu_file_info: 'Informações do arquivo',
+  tpl_menu_section_app: 'Aplicativo',
+  tpl_menu_timer: 'Temporizador',
+  tpl_menu_block_cursor: 'Cursor em bloco',
+  tpl_menu_ctx_menu: 'Menu de contexto',
+  tpl_settings_tab_profile: 'Perfil',
+  tpl_settings_tab_display: 'Exibição',
+  tpl_settings_tab_fonts: 'Fontes',
+  tpl_settings_tab_schemes: 'Temas',
+  tpl_settings_tab_timer: 'Timer',
+  tpl_settings_tab_misc: 'Outros',
+  tpl_settings_profile_label: 'Perfil',
+  tpl_settings_profile_new_btn: 'Novo',
+  tpl_settings_profile_delete_btn: 'Excluir',
+  tpl_settings_profile_hint: 'Margens, fontes, tema, modo escuro, meta de palavras, números de linha, cursor em bloco, marcador de título e títulos Markdown são salvos por perfil.',
+  tpl_settings_profile_default_scheme: 'Tema padrão',
+  tpl_settings_profile_dark_mode: 'Modo escuro',
+  tpl_settings_profile_margin_x: 'Margem horiz. (px)',
+  tpl_settings_profile_margin_y: 'Margem vert. (px)',
+  tpl_settings_profile_line_spacing: 'Espaçamento de linha',
+  tpl_settings_profile_word_goal: 'Meta de palavras (palavras/dia, 0=desativado)',
+  tpl_settings_profile_hemingway: 'Modo Hemingway (sem exclusão)',
+  tpl_settings_display_statusbar_zones: 'Zonas da barra de status',
+  tpl_settings_display_left: 'Esquerda',
+  tpl_settings_display_center: 'Centro',
+  tpl_settings_display_right: 'Direita',
+  tpl_settings_display_tokens_hint: 'Tokens: filename dirty words chars lines line col para pages percent today goal reading clock timer',
+  tpl_settings_display_editor_options: 'Opções do editor',
+  tpl_settings_display_line_numbers: 'Números de linha (Ctrl+L)',
+  tpl_settings_display_block_cursor: 'Cursor em bloco',
+  tpl_settings_display_blink_cursor: 'Cursor piscante',
+  tpl_settings_display_keyboard_shortcuts: 'Atalhos de teclado',
+  tpl_settings_display_override_shortcuts: 'Substituir atalhos do navegador',
+  tpl_settings_display_ctrln_hint: 'Ctrl+N = novo documento (em vez de nova janela do navegador)',
+  tpl_settings_display_syntax_markers: 'Marcadores de sintaxe',
+  tpl_settings_display_heading_marker: 'Marcador de título',
+  tpl_settings_display_comment_marker: 'Marcador de comentário',
+  tpl_settings_display_bold_marker: 'Marcador de negrito',
+  tpl_settings_display_italic_marker: 'Marcador de itálico',
+  tpl_settings_display_underline_marker: 'Marcador de sublinhado',
+  tpl_settings_display_strike_marker: 'Marcador de tachado',
+  tpl_settings_display_markdown_headings: 'Títulos Markdown (#)',
+  tpl_settings_fonts_family: 'Fonte',
+  tpl_settings_fonts_size: 'Tamanho da fonte (px)',
+  tpl_settings_fonts_preview_label: 'Prévia:',
+  tpl_settings_fonts_preview_text: 'A rápida raposa marrom salta sobre o cão preguiçoso',
+  tpl_settings_fonts_upload_btn: 'Importar arquivo de fonte…',
+  tpl_settings_fonts_scan_btn: 'Verificar todas as fontes do sistema',
+  tpl_settings_fonts_available_label: 'Fontes disponíveis (clique para selecionar):',
+  tpl_settings_schemes_label: 'Tema',
+  tpl_settings_schemes_new_btn: 'Novo',
+  tpl_settings_schemes_delete_btn: 'Excluir',
+  tpl_settings_schemes_dark_mode: 'Modo escuro',
+  tpl_settings_timer_type: 'Tipo',
+  tpl_settings_timer_countdown: 'Contagem regressiva',
+  tpl_settings_timer_stopwatch: 'Cronômetro',
+  tpl_settings_timer_duration: 'Duração (min)',
+  tpl_settings_timer_sound: 'Som no final',
+  tpl_settings_timer_alert: 'Caixa de alerta',
+  tpl_settings_timer_show: 'Mostrar na barra de status',
+  tpl_settings_misc_language: 'Idioma',
+  tpl_settings_misc_app_language: 'Idioma do aplicativo',
+  tpl_settings_misc_cursor_restore: 'Restaurar posição do cursor ao abrir',
+  tpl_settings_misc_open_last_doc: 'Abrir último documento na inicialização',
+  tpl_settings_misc_watched_folder: 'Navegador de pasta monitorada',
+  tpl_settings_misc_file_filter: 'Filtro de arquivos',
+  tpl_settings_misc_show_all_files: 'Mostrar todos os arquivos (ignorar filtro)',
+  tpl_settings_misc_browse_subfolders: 'Navegar subpastas',
+  tpl_settings_misc_ini_hint: 'writhdeck.ini — compatível com a versão desktop',
+  tpl_settings_misc_ini_import_btn: 'Importar writhdeck.ini',
+  tpl_settings_misc_ini_export_btn: 'Exportar writhdeck.ini',
+  tpl_settings_misc_documents: 'Documentos',
+  tpl_settings_misc_import_btn: 'Importar arquivo do disco',
+  tpl_settings_misc_export_all_btn: 'Exportar tudo (.txt)',
+  tpl_settings_misc_export_zip_btn: 'Exportar tudo (ZIP)',
+  tpl_settings_apply_btn: 'Aplicar',
+  tpl_settings_close_btn: 'Fechar',
+  tpl_settings_reset_btn: 'Redefinir',
+  tpl_dialog_info_title: 'Informações do documento',
+  tpl_dialog_analyse_title: 'Estrutura',
+  tpl_dialog_analyse_words_btn: 'Frequência de palavras',
+  tpl_dialog_words_title: 'Frequência de palavras',
+  tpl_dialog_stats_title: 'Estatísticas de escrita',
+  tpl_dialog_timer_finished: 'Temporizador concluído!',
+  tpl_dialog_timer_ok_btn: 'OK',
+  tpl_dialog_close_confirm_yes: 'Sim',
+  tpl_dialog_close_confirm_no: 'Não',
+  tpl_dialog_close_confirm_cancel: 'Cancelar',
+
+  // browser.js
+  browser_section_favorites: 'Favoritos',
+  browser_section_recent_files: 'Arquivos recentes',
+  browser_section_files_from_disk: 'Arquivos do disco',
+  browser_section_documents: 'Documentos',
+  browser_no_docs_yet: 'Nenhum documento ainda. Pressione n para criar um.',
+  browser_unpin: 'Desafixar',
+  browser_pin_to_favorites: 'Fixar nos favoritos',
+  browser_linked_to_file_on_disk: 'Vinculado a arquivo no disco',
+  browser_recently_opened: 'Aberto recentemente',
+  browser_open: 'Abrir',
+  browser_export_ini: 'Exportar writhdeck.ini',
+  browser_reset_to_defaults: 'Redefinir',
+  browser_reset_settings_confirm: 'Redefinir todas as configurações padrão?',
+  browser_info: 'Info',
+  browser_analyse: 'Analisar',
+  browser_rename: 'Renomear',
+  browser_export_as_txt: 'Exportar como .txt',
+  browser_export_as_md: 'Exportar como .md',
+  browser_stats: 'Estatísticas',
+  browser_delete: 'Excluir',
+  browser_document_name_prompt: 'Nome do documento:',
+  browser_file_already_exists_in_folder: 'Um arquivo chamado "${safeName}" já existe nesta pasta.',
+  browser_could_not_create_file: 'Não foi possível criar "${safeName}": ${message}',
+  browser_document_already_exists: 'Um documento chamado "${safeName}" já existe.',
+  browser_rename_to_prompt: 'Renomear para:',
+  browser_remove_from_writhdeck_confirm: 'Remover "${name}" do Writhdeck?\n\nO arquivo original no seu disco NÃO será excluído — apenas a cópia armazenada no navegador é removida.',
+  browser_delete_from_storage_confirm: 'Excluir "${name}" do armazenamento do navegador?\n\nEsta ação é irreversível. O documento existe apenas neste navegador — NÃO está no seu disco.',
+  browser_shortcut_new: 'novo',
+  browser_shortcut_watch_folder: 'monitorar pasta',
+  browser_shortcut_open_file: 'abrir arquivo',
+  browser_shortcut_import_copy: 'importar cópia',
+  browser_shortcut_stats: 'stats',
+  browser_shortcut_config: 'configurações',
+  browser_shortcut_rename: 'renomear',
+  browser_shortcut_delete: 'excluir',
+  browser_shortcut_backup: 'backup',
+  browser_shortcut_favorite: 'favorito',
+  browser_shortcut_info: 'info',
+  browser_shortcut_help: 'ajuda',
+  browser_shortcut_reload: 'recarregar',
+  browser_directory_access_requires_chrome: 'O acesso a pastas requer Chrome, Edge ou Brave.\nSe usar o Brave, verifique as configurações do Shields.',
+  browser_remove_folder_confirm: 'Remover pasta "${name}" do Writhdeck?\n\nOs arquivos no disco não são afetados.',
+  browser_remove_folder: 'Remover pasta',
+  browser_go_up_one_folder: 'Subir uma pasta',
+  browser_reauthorize_folder_access: 'Reautorizar acesso à pasta',
+  browser_no_files_in_folder: 'Nenhum arquivo .txt / .md / .tcl nesta pasta.',
+  browser_direct_file_access_unavailable: 'O acesso direto a arquivos não está disponível neste navegador.\n\nUse o botão ↑ Importar para carregar uma cópia de um arquivo, ou mude para Chrome/Edge/Brave.\n\nSe usar o Brave, verifique se a proteção de fingerprinting do Shields não está em "Rígido".',
+  browser_text_files: 'Arquivos de texto',
+
+  // settings.js
+  settings_color_bg_dark: 'Fundo (escuro)',
+  settings_color_fg_dark: 'Texto (escuro)',
+  settings_color_bg_bar_dark: 'BG barra (escuro)',
+  settings_color_fg_bar_dark: 'FG barra (escuro)',
+  settings_color_bg_sel_dark: 'Seleção (escuro)',
+  settings_color_heading_dark: 'Título (escuro)',
+  settings_color_comment_dark: 'Comentário (escuro)',
+  settings_color_markup_dark: 'Marcação (escuro)',
+  settings_color_bg_light: 'Fundo (claro)',
+  settings_color_fg_light: 'Texto (claro)',
+  settings_color_bg_bar_light: 'BG barra (claro)',
+  settings_color_fg_bar_light: 'FG barra (claro)',
+  settings_color_bg_sel_light: 'Seleção (claro)',
+  settings_color_heading_light: 'Título (claro)',
+  settings_color_comment_light: 'Comentário (claro)',
+  settings_color_markup_light: 'Marcação (claro)',
+  settings_font_tag_custom: '  (personalizada)',
+  settings_font_tag_folder: '  (pasta)',
+  settings_remove_this_font: 'Remover esta fonte',
+  settings_cannot_enumerate_fonts: 'Seu navegador não pode enumerar todas as fontes do sistema (API Local Font Access — apenas Chrome/Edge). Exibindo o subconjunto detectado.',
+  settings_could_not_access_fonts: 'Não foi possível acessar as fontes do sistema (permissão negada).',
+  settings_new_profile_prompt: 'Nome do novo perfil:',
+  settings_profile_name_no_brackets: 'Nomes de perfil não podem conter [ ou ].',
+  settings_profile_already_exists: 'Já existe um perfil com este nome.',
+  settings_cannot_delete_only_profile: 'Não é possível excluir o único perfil.',
+  settings_delete_profile_confirm: 'Excluir perfil "${name}"?',
+  settings_new_scheme_prompt: 'Nome do novo tema:',
+  settings_scheme_name_no_brackets: 'Nomes de tema não podem conter [ ou ].',
+  settings_name_already_exists: 'Este nome já existe.',
+  settings_cannot_delete_builtin_scheme: 'Não é possível excluir um tema integrado.',
+  settings_delete_scheme_confirm: 'Excluir tema "${name}"?',
+  settings_none: 'nenhum',
+  settings_import_success: 'Configurações importadas.\nTemas encontrados: ${schemeList}',
+  settings_no_docs_export: 'Nenhum documento para exportar.',
+  settings_reset_confirm: 'Redefinir todas as configurações? Esta ação é irreversível.',
+
+  // toc.js
+  toc_unpin_title: 'Desafixar índice (fecha ao selecionar capítulo)',
+  toc_pin_title: 'Fixar índice (permanece aberto ao selecionar capítulo)',
+  toc_no_headings: 'Nenhum título encontrado.',
+
+  // stats.js
+  stats_no_stats_yet: 'Sem estatísticas de escrita ainda.',
+  stats_header_date: 'Data',
+  stats_header_words: 'Palavras',
+  stats_today_suffix: '← hoje',
+
+  // app.js
+  app_info_path_unavailable: '(pasta não definida — caminho completo indisponível)',
+  app_info_storage_disk: 'Arquivo no disco — ${path}',
+  app_info_storage_browser: 'Armazenamento do navegador (IndexedDB) — não está no seu disco',
+  app_info_label_name: 'Nome',
+  app_info_label_storage: 'Armazenamento',
+  app_info_label_words: 'Palavras',
+  app_info_label_chars: 'Caracteres',
+  app_info_label_created: 'Criado',
+  app_info_label_modified: 'Modificado',
+  app_words_empty: 'Nenhuma palavra encontrada.',
+  app_words_col_word: 'Palavra',
+  app_words_col_count: '#',
+  app_words_title: 'Frequência de palavras — ${name}',
+  app_analyse_empty: 'Nenhum conteúdo para analisar.',
+  app_analyse_start_label: '(início)',
+  app_analyse_heading_level: 'H${level}',
+  app_analyse_footer_section_one: '${count} seção',
+  app_analyse_footer_section_other: '${count} seções',
+  app_analyse_footer: 'Total: ${total} palavras · ${sections}',
+  app_analyse_title: 'Estrutura — ${name}',
+  app_menu_heading_level: 'H${level}',
+  app_menu_format_comment: 'Comentário (linha)',
+  app_menu_format_bold: 'Negrito',
+  app_menu_format_italic: 'Itálico',
+  app_menu_format_underline: 'Sublinhado',
+  app_menu_format_strike: 'Tachado',
+  app_menu_ctx_menu_label: 'Menu de contexto',
+  app_menu_block_cursor_label: 'Cursor em bloco',
+  app_toggle_on: 'ativado',
+  app_toggle_off: 'desativado',
+  app_msg_ctx_menu_on: 'Menu de contexto ativado',
+  app_msg_ctx_menu_off: 'Menu de contexto desativado',
+  app_ctxmenu_comment: 'Comentário',
+  app_ctxmenu_cut: 'Recortar',
+  app_ctxmenu_copy: 'Copiar',
+  app_ctxmenu_paste: 'Colar',
+  app_ctxmenu_spellcheck_on: 'Verificação ortográfica: ativada',
+  app_ctxmenu_spellcheck_off: 'Verificação ortográfica: desativada',
+
+  // editor.js
+  editor_title_doc: '${name} — Writhdeck',
+  editor_confirm_save_before_close: 'Salvar "${name}" antes de fechar?',
+  editor_msg_settings_applied: 'Configurações aplicadas',
+  editor_msg_parse_error: 'Erro de análise',
+  editor_msg_permission_denied: 'Permissão negada',
+  editor_msg_saved_to_disk: 'Salvo no disco',
+  editor_msg_disk_save_failed: 'Falha ao salvar no disco',
+  editor_msg_saved: 'Salvo',
+  editor_msg_save_as_failed: 'Falha ao salvar como',
+  editor_msg_saved_as: 'Salvo como ${name}',
+  editor_prompt_save_as: 'Salvar como (novo nome):',
+  editor_alert_name_exists: 'Já existe um documento chamado "${name}".'
+};
+
+
+'use strict';
 // Syntax highlighting engine — textarea overlay technique
 
 function escapeHtml(s) {
@@ -3020,6 +3654,7 @@ const Editor = (() => {
 
   async function save() {
     if (!State.doc) return;
+    if (State.doc.id === 'scratch') { await saveAs(); return; }
     State.doc.content = ta().value;
 
     // Virtual INI doc — parse and apply, don't write to docs store
@@ -3093,7 +3728,7 @@ const Editor = (() => {
   // in browser storage and switches the editor to that copy.
   async function saveAs() {
     if (!State.doc || State.doc.isIni) return;
-    if (typeof window.showSaveFilePicker === 'function') {
+    if (typeof window.showSaveFilePicker === 'function' && State.doc.id !== 'scratch') {
       let handle;
       try {
         handle = await window.showSaveFilePicker({
@@ -3181,6 +3816,48 @@ const Editor = (() => {
   let _prevCursorLineStart = -1;
   let _prevCursorLineEnd = -1;
 
+  // Word marks — [{line:1-based, col:0-based, len}] — drawn over .hl-line elements
+  let _markWords = null;
+
+  function markWords(words) {
+    _markWords = words && words.length ? words : null;
+    _applyMarks();
+    if (_markWords) ta().addEventListener('input', clearMarks, { once: true });
+  }
+
+  function clearMarks() {
+    if (!_markWords) return;
+    _markWords = null;
+    rehighlight();
+  }
+
+  function _applyMarks() {
+    if (!_markWords || !_markWords.length) return;
+    const textLines = ta().value.split('\n');
+    const hlLines = pre().children;
+    const byLine = {};
+    for (const { line, col, len } of _markWords) {
+      if (!byLine[line]) byLine[line] = [];
+      byLine[line].push({ col, len });
+    }
+    for (const [lineStr, marks] of Object.entries(byLine)) {
+      const idx = parseInt(lineStr) - 1;
+      if (idx < 0 || idx >= hlLines.length) continue;
+      const lineTxt = textLines[idx] || '';
+      marks.sort((a, b) => a.col - b.col);
+      let html = '', pos = 0;
+      for (const { col, len } of marks) {
+        const s = Math.max(pos, col);
+        if (s > pos) html += escapeHtml(lineTxt.slice(pos, s));
+        const e = Math.min(s + len, lineTxt.length);
+        html += `<mark class="hl-mark">${escapeHtml(lineTxt.slice(s, e))}</mark>`;
+        pos = e;
+      }
+      if (pos < lineTxt.length) html += escapeHtml(lineTxt.slice(pos));
+      hlLines[idx].innerHTML = html;
+    }
+  }
+
   // Locate the line containing offset `pos` in `text` without scanning the
   // whole document for its boundaries (lastIndexOf/indexOf walk backward and
   // forward from `pos` only). Still counts newlines before the line to get
@@ -3252,6 +3929,7 @@ const Editor = (() => {
       _prevCursorLineIdx = -1;
     }
     scheduleSyncGutter();
+    _applyMarks();
   }
 
   // Patches the DOM node for a single changed line instead of replacing the
@@ -3462,6 +4140,29 @@ const Editor = (() => {
   function gotoLineClose() {
     document.getElementById('goto-bar').hidden = true;
     ta().focus();
+  }
+
+  function jumpToLine(n) {
+    const input = ta();
+    const lines = input.value.split('\n');
+    const lineIdx = Math.min(n - 1, lines.length - 1);
+    let offset = 0;
+    for (let i = 0; i < lineIdx; i++) offset += lines[i].length + 1;
+    input.focus();
+    input.setSelectionRange(offset, offset);
+    input.scrollTop = Math.max(0, linePixelTop(lineIdx) - input.clientHeight / 3);
+  }
+
+  function jumpToWord(line, col, len) {
+    const input = ta();
+    const lines = input.value.split('\n');
+    const lineIdx = Math.min(line - 1, lines.length - 1);
+    let offset = 0;
+    for (let i = 0; i < lineIdx; i++) offset += lines[i].length + 1;
+    offset += col;
+    input.focus();
+    input.setSelectionRange(offset, offset + len);
+    input.scrollTop = Math.max(0, linePixelTop(lineIdx) - input.clientHeight / 3);
   }
 
   // The `.hl-line` spans in #ed-highlight share the textarea's exact font/padding/
@@ -3732,7 +4433,7 @@ const Editor = (() => {
     // Embedders can opt out of autosave (e.g. a server backend that doesn't want
     // a revision written every 60s) by setting window.WRITHDECK_AUTOSAVE = false.
     if (typeof window !== 'undefined' && window.WRITHDECK_AUTOSAVE === false) return;
-    _autosaveId = setInterval(() => { if (State.dirty) save(); }, 60000);
+    _autosaveId = setInterval(() => { if (State.dirty && State.doc && State.doc.id !== 'scratch') save(); }, 60000);
   }
   function stopAutosave() {
     if (_autosaveId) { clearInterval(_autosaveId); _autosaveId = null; }
@@ -3852,7 +4553,7 @@ const Editor = (() => {
     open, close, browser, save, saveAs, onInput, syncScroll, syncGutter, rehighlight, updateStatusBar, setMsg,
     syncCursorLineCache, syncBlockCursor,
     saveCursorPos, applyLineNumbers,
-    toggleTypewriter, isTypewriter, typewriterScroll, toggleLineNumbers, gotoLine, gotoLineGo, gotoLineClose,
+    toggleTypewriter, isTypewriter, typewriterScroll, toggleLineNumbers, gotoLine, gotoLineGo, gotoLineClose, jumpToLine, jumpToWord, markWords, clearMarks,
     applyLineMarker, applyInlineMarker, applyHeading,
     enterCmdMode, exitCmdMode, isCmdMode, cmdNavMove, getCmdNavKey,
     searchOpen, searchClose, searchUpdate, searchNext, searchPrev, replaceOne, replaceAll,
@@ -3872,7 +4573,7 @@ const Browser = (() => {
     const list = document.getElementById('br-list');
     list.innerHTML = '';
 
-    const docs   = State.docs;
+    const docs   = State.docs.filter(d => d.id !== 'scratch');
     const favIds = new Set(State.favorites);
     const recIds = new Set(State.recents);
 
@@ -4063,6 +4764,11 @@ const Browser = (() => {
     return `${base} (${n})`;
   }
 
+  async function openScratch() {
+    const doc = { id: 'scratch', name: t('browser_scratch_name', 'Scratch'), content: '' };
+    await Editor.open(doc);
+  }
+
   async function newDoc() {
     const inFolder = hasFSA && !!State.dirHandle;
     const name = prompt(t('browser_document_name_prompt', 'Document name:'), uniqueName('Untitled'));
@@ -4188,6 +4894,7 @@ const Browser = (() => {
     bar.innerHTML = '';
     const shortcuts = [
       ['n', t('browser_shortcut_new', 'new'), newDoc],
+      ['t', t('browser_shortcut_scratch', 'scratch'), openScratch],
       ...(hasFSA ? [
         ['w', t('browser_shortcut_watch_folder', 'watch folder'), openFolder],
         ['o', t('browser_shortcut_open_file', 'open file'),   openFromDisk]
@@ -4407,7 +5114,7 @@ const Browser = (() => {
     render();
   }
 
-  return { render, newDoc, renameDoc, deleteDoc, openFromDisk, openFolder, hideContextMenu, hasFSA, nameExists, uniqueName, getFocusedDoc, backupDoc };
+  return { render, newDoc, openScratch, renameDoc, deleteDoc, openFromDisk, openFolder, hideContextMenu, hasFSA, nameExists, uniqueName, getFocusedDoc, backupDoc };
 })();
 
 
@@ -4969,7 +5676,7 @@ const Settings = (() => {
 'use strict';
 // Main entry point
 
-const README_CONTENT = "# Writhdeck\n\nA distraction-free writing app that runs as a single self-contained HTML file \u2014 no server, no install, no internet required. Open `writhdeck.html` directly in any modern browser.\n\n\n- [Try it online!](https://luginf.github.io/writhdeck/)\n- [Main project](https://github.com/luginf/writhdeck/)\n\n\n## Features\n\n- **Single-file**: the entire app is one `writhdeck.html` (~180 KB). Copy it anywhere, it just works.\n- **Document browser**: create, rename, delete, and favourite documents stored in IndexedDB. Document names are unique \u2014 duplicates are auto-suggested as `\"Untitled (2)\"` etc.\n- **Disk file support** (Chrome/Edge/Brave): open individual files or watch a folder \u2014 edits go straight back to disk via the File System Access API.\n- **Syntax highlighting overlay**: headings, comments, and inline markers (bold, italic, underline, strikethrough) are coloured in real time without leaving the textarea.\n- **Configurable markers**: choose your own syntax for headings, comments, and each inline style. Enable Markdown-style `#` headings if you prefer.\n- **8 built-in colour schemes** (default, solarized, gruvbox, everforest, nord, + 3 more), dark and light variants, and full custom-scheme support.\n- **Writing timer**: countdown or stopwatch, with optional sound and alert at the end.\n- **Table of contents**: auto-generated from heading lines, shown in a side panel.\n- **Daily writing stats**: tracks words *added* today (not total document size) with a high-water mark across sessions. Optional daily goal.\n- **Hemingway mode**: disables backspace/delete to keep you writing forward.\n- **Typewriter mode**: keeps the cursor vertically centred; dims text outside the current paragraph so only the active paragraph appears at full colour.\n- **Find & replace** with live match highlighting, goto line, line numbers.\n- **Structure analysis**: section-by-section word-count breakdown with progress bars. Accessible from the `\u2261` menu (`a`).\n- **Word occurrences**: frequency table of all words, sorted by count. Accessible from the Analyse dialog or the `\u2261` menu.\n- **Block cursor**: optional solid rectangle cursor, rendered in the highlight overlay. Supports blink on/off.\n- **Export** as `.txt` or `.md`.\n- **INI config**: `writhdeck.ini` is always visible in the browser. Right-click it to open, export, or reset to defaults. The format is compatible with the Tcl/Tk desktop version; web-specific options are in a dedicated `[web]` section.\n- **Status bar**: fully customisable left/centre/right slots with tokens \u2014 see [Status bar tokens](#status-bar-tokens).\n- **`\u2261` menu**: all commands accessible from a single dropdown \u2014 keyboard-navigable (\u2191\u2193 + Enter, or press the hint letter directly), with format options (H1\u2013H3, bold, italic\u2026), search, export, settings, and more. Opening the menu preserves any active text selection.\n- **Right-click context menu**: format, cut/copy/paste, and spell-check toggle (editor); Open / Info / Rename / Export / Delete (browser document list); Open / Export / Reset (writhdeck.ini).\n- **Command mode** (`Esc` or `Alt+C`): interactive status bar showing all commands as clickable buttons. Navigate with `\u2190`/`\u2192`, confirm with `Enter`, or click with the mouse.\n- **About dialog**: accessible from the `?` menu in the browser \u2014 shows the app description and build date.\n- **Undo support**: bold, italic, heading, and comment formatting operations integrate with the browser's native undo stack (via `execCommand('insertText')`).\n\n## Build\n\n```sh\nmake        # produces writhdeck.html (~180 KB)\nmake clean  # removes writhdeck.html\n```\n\n`build.py` reads `src/template.html`, inlines `src/style.css` and all JS modules (in the order defined in `JS_ORDER`), and writes the result to stdout. The build date is embedded as `2026-06-25` (ISO format). Python 3, no dependencies.\n\n## Keyboard shortcuts\n\n### Global\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+D` | Toggle dark / light mode |\n| `Ctrl+O` | Import file copy |\n| `F11` | Toggle table of contents |\n| `Alt+Enter` | Toggle fullscreen |\n| `Ctrl+N` *(opt)* | New document (overrides browser \"new window\", requires setting) |\n\n### Editor\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+S` | Save |\n| `Ctrl+Q` | Close document (`Ctrl+Shift+Q` on Firefox, see [Browser notes](#browser-notes)) |\n| `Ctrl+F` | Find (live match highlighting) |\n| `Ctrl+H` | Find & replace |\n| `Ctrl+G` | Go to line |\n| `Ctrl+L` | Toggle line numbers |\n| `Alt+T` | Toggle timer |\n| `Alt+C` / `Esc` | Enter command mode |\n| `Alt+M` | Open `\u2261` menu |\n\n### Command mode (`Alt+C` or `Esc`)\n\nThe status bar becomes an interactive row of command buttons. Works in fullscreen (`Alt+C`).\n\n| Input | Action |\n|---|---|\n| `\u2190` / `\u2192` | Move selection between commands |\n| `Enter` | Execute selected command |\n| *letter* | Execute command directly (e.g. `f` = Find) |\n| Mouse click | Execute command directly |\n\n| Key | Action | Key | Action |\n|---|---|---|---|\n| `f` | Find | `d` | Dark / light |\n| `r` | Find & replace | `o` | Table of contents |\n| `g` | Go to line | `c` | Settings |\n| `n` | Line numbers | `e` | Export as .txt |\n| `w` | Typewriter mode | `s` | Statistics |\n| `t` | Timer | `a` | Analyse structure |\n| `p` | Timer pause | `i` | File info |\n| `q` | Close document | `m` | Main menu (\u2261) |\n\n### Browser (document list)\n\n| Key | Action |\n|---|---|\n| `\u2191` / `\u2193` | Navigate document list |\n| `Enter` | Open selected document |\n| `n` | New document |\n| `o` | Open file from disk |\n| `w` | Watch a folder |\n| `s` | Stats |\n| `c` | Settings |\n\n## Browser notes\n\n- **Disk file support** (open/watch files, edits saved straight back to disk) requires the File System Access API \u2014 available in Chrome, Edge, Brave, and other Chromium-based browsers. Firefox falls back to IndexedDB-only storage.\n- **Large documents** (tens of thousands of words): Firefox is noticeably slower than Chromium-based browsers, especially when a full re-render is triggered (search highlighting, Typewriter mode, multi-line edits like paste/undo). Chromium-based browsers are recommended for very large documents.\n- **`Ctrl+Q`**: Firefox intercepts the plain shortcut as its own \"Quit\" command before the page sees it \u2014 use `Ctrl+Shift+Q` to close the document (works in both Firefox and Chrome).\n\n## Status bar tokens\n\nThe three status bar zones (left / centre / right) are configured as space-separated token strings in Settings \u2192 Profile.\n\n| Token | Example | Description |\n|---|---|---|\n| `filename` | `my-novel.txt` | Current document name |\n| `dirty` | `[+]` | Unsaved changes indicator |\n| `words` | `1 842w` | Word count |\n| `chars` | `10 240c` | Character count |\n| `lines` | `312L` | Total line count |\n| `line` | `L42` | Current cursor line |\n| `col` | `C7` | Current cursor column |\n| `para` | `18\u00a7` | Paragraph count (blank-line separated) |\n| `pages` | `7p` | Estimated pages at 250 w/page |\n| `percent` | `68%` | Progress toward word goal |\n| `today` | `342\u2191` | Words *added* today (high-water mark across sessions) |\n| `goal` | `342/500` | Today's words / goal (hidden if no goal) |\n| `reading` | `9min` | Estimated reading time at 200 w/min |\n| `clock` | `14:32` | Current time |\n| `timer` | `24:07` | Writing timer display |\n| `space` | ` ` | Single space (explicit separator) |\n| *(anything else)* | literal | Fixed text, separators, etc. |\n\nDefault: Left `filename dirty words` \u00b7 Center *(empty)* \u00b7 Right `goal clock timer`\n\n## INI config\n\n`writhdeck.ini` uses the same format as the Tcl/Tk desktop version. Web-specific options live in a dedicated section so they are silently ignored by the desktop version:\n\n```ini\n[web]\n% Options specific to the web version \u2014 ignored by the desktop version\nopen_last_doc               = no\nintercept_browser_shortcuts = yes\nintercept_context_menu      = yes\n```\n\nOptions shared with the desktop version (`block_cursor`, `blink_cursor`, `line_numbers`, `dark_mode`, etc.) stay in `[behaviour]`.\n\nRight-click `writhdeck.ini` in the browser to export it or reset all settings to defaults (the file is recreated from defaults on next load).\n\n## Project structure\n\n```\nsrc/\n  template.html   HTML skeleton with {{STYLE}} / {{SCRIPT}} / 2026-06-25 placeholders\n  style.css       All CSS (uses CSS custom properties only, no hardcoded colours)\n  schemes.js      Built-in colour schemes + custom-scheme support\n  db.js           IndexedDB wrapper (promise-based)\n  state.js        App state, load/save helpers\n  ini.js          INI config parser/writer (compatible with desktop version)\n  highlight.js    Syntax highlighter + word count + block cursor injection\n  timer.js        Writing timer\n  toc.js          Table of contents\n  stats.js        Daily word-count stats dialog\n  editor.js       Editor panel, textarea/overlay sync, find/replace, formatting\n  browser.js      Document browser panel, FSA integration\n  settings.js     Settings dialog\n  app.js          Entry point, theme, keyboard router, menus, dialogs\nbuild.py          Build script (inlines CSS/JS, stamps build date)\nMakefile          Convenience wrapper around build.py\n```\n\n## Storage\n\nDocuments are stored in IndexedDB (`writhdeck` database, version 1):\n\n- **`documents`** store \u2014 each document: `id`, `name`, `content`, `created`, `modified`.\n- **`meta`** store \u2014 keyed entries: `iniText`, `favorites`, `recents`, `cursors`, `daily`.\n\nNothing is sent to any server.\n\n## Adding a colour scheme\n\nAdd an entry to the `SCHEMES` object in `src/schemes.js`. Each scheme needs 9 dark-mode keys and 9 light-mode (`*Alt`) keys: `bg`, `fg`, `bgBar`, `fgBar`, `bgSel`, `heading`, `comment`, `markup`, `bg2` (+ `Alt` variants). Then run `make`.\n\n## License\n\nCopyright (C) 2026 by Luginfo \u2014 Zero-Clause BSD License\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted. The software is provided \"as is\" without warranty of any kind.\n";
+const README_CONTENT = "# Writhdeck\n\nA distraction-free writing app that runs as a single self-contained HTML file \u2014 no server, no install, no internet required. Open `writhdeck.html` directly in any modern browser.\n\n\n- [Try it online!](https://luginf.github.io/writhdeck/)\n- [Main project](https://github.com/luginf/writhdeck/)\n\n\n## Features\n\n- **Single-file**: the entire app is one `writhdeck.html` (~180 KB). Copy it anywhere, it just works.\n- **Document browser**: create, rename, delete, and favourite documents stored in IndexedDB. Document names are unique \u2014 duplicates are auto-suggested as `\"Untitled (2)\"` etc.\n- **Disk file support** (Chrome/Edge/Brave): open individual files or watch a folder \u2014 edits go straight back to disk via the File System Access API.\n- **Syntax highlighting overlay**: headings, comments, and inline markers (bold, italic, underline, strikethrough) are coloured in real time without leaving the textarea.\n- **Configurable markers**: choose your own syntax for headings, comments, and each inline style. Enable Markdown-style `#` headings if you prefer.\n- **8 built-in colour schemes** (default, solarized, gruvbox, everforest, nord, + 3 more), dark and light variants, and full custom-scheme support.\n- **Writing timer**: countdown or stopwatch, with optional sound and alert at the end.\n- **Table of contents**: auto-generated from heading lines, shown in a side panel.\n- **Daily writing stats**: tracks words *added* today (not total document size) with a high-water mark across sessions. Optional daily goal.\n- **Hemingway mode**: disables backspace/delete to keep you writing forward.\n- **Typewriter mode**: keeps the cursor vertically centred; dims text outside the current paragraph so only the active paragraph appears at full colour.\n- **Find & replace** with live match highlighting, goto line, line numbers.\n- **Structure analysis**: section-by-section word-count breakdown with progress bars. Accessible from the `\u2261` menu (`a`).\n- **Word occurrences**: frequency table of all words, sorted by count. Accessible from the Analyse dialog or the `\u2261` menu.\n- **Block cursor**: optional solid rectangle cursor, rendered in the highlight overlay. Supports blink on/off.\n- **Export** as `.txt` or `.md`.\n- **INI config**: `writhdeck.ini` is always visible in the browser. Right-click it to open, export, or reset to defaults. The format is compatible with the Tcl/Tk desktop version; web-specific options are in a dedicated `[web]` section.\n- **Status bar**: fully customisable left/centre/right slots with tokens \u2014 see [Status bar tokens](#status-bar-tokens).\n- **`\u2261` menu**: all commands accessible from a single dropdown \u2014 keyboard-navigable (\u2191\u2193 + Enter, or press the hint letter directly), with format options (H1\u2013H3, bold, italic\u2026), search, export, settings, and more. Opening the menu preserves any active text selection.\n- **Right-click context menu**: format, cut/copy/paste, and spell-check toggle (editor); Open / Info / Rename / Export / Delete (browser document list); Open / Export / Reset (writhdeck.ini).\n- **Command mode** (`Esc` or `Alt+C`): interactive status bar showing all commands as clickable buttons. Navigate with `\u2190`/`\u2192`, confirm with `Enter`, or click with the mouse.\n- **About dialog**: accessible from the `?` menu in the browser \u2014 shows the app description and build date.\n- **Undo support**: bold, italic, heading, and comment formatting operations integrate with the browser's native undo stack (via `execCommand('insertText')`).\n\n## Build\n\n```sh\nmake        # produces writhdeck.html (~180 KB)\nmake clean  # removes writhdeck.html\n```\n\n`build.py` reads `src/template.html`, inlines `src/style.css` and all JS modules (in the order defined in `JS_ORDER`), and writes the result to stdout. The build date is embedded as `2026-06-26` (ISO format). Python 3, no dependencies.\n\n## Keyboard shortcuts\n\n### Global\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+D` | Toggle dark / light mode |\n| `Ctrl+O` | Import file copy |\n| `F11` | Toggle table of contents |\n| `Alt+Enter` | Toggle fullscreen |\n| `Ctrl+N` *(opt)* | New document (overrides browser \"new window\", requires setting) |\n\n### Editor\n\n| Shortcut | Action |\n|---|---|\n| `Ctrl+S` | Save |\n| `Ctrl+Q` | Close document (`Ctrl+Shift+Q` on Firefox, see [Browser notes](#browser-notes)) |\n| `Ctrl+F` | Find (live match highlighting) |\n| `Ctrl+H` | Find & replace |\n| `Ctrl+G` | Go to line |\n| `Ctrl+L` | Toggle line numbers |\n| `Alt+T` | Toggle timer |\n| `Alt+C` / `Esc` | Enter command mode |\n| `Alt+M` | Open `\u2261` menu |\n\n### Command mode (`Alt+C` or `Esc`)\n\nThe status bar becomes an interactive row of command buttons. Works in fullscreen (`Alt+C`).\n\n| Input | Action |\n|---|---|\n| `\u2190` / `\u2192` | Move selection between commands |\n| `Enter` | Execute selected command |\n| *letter* | Execute command directly (e.g. `f` = Find) |\n| Mouse click | Execute command directly |\n\n| Key | Action | Key | Action |\n|---|---|---|---|\n| `f` | Find | `d` | Dark / light |\n| `r` | Find & replace | `o` | Table of contents |\n| `g` | Go to line | `c` | Settings |\n| `n` | Line numbers | `e` | Export as .txt |\n| `w` | Typewriter mode | `s` | Statistics |\n| `t` | Timer | `a` | Analyse structure |\n| `p` | Timer pause | `i` | File info |\n| `q` | Close document | `m` | Main menu (\u2261) |\n\n### Browser (document list)\n\n| Key | Action |\n|---|---|\n| `\u2191` / `\u2193` | Navigate document list |\n| `Enter` | Open selected document |\n| `n` | New document |\n| `o` | Open file from disk |\n| `w` | Watch a folder |\n| `s` | Stats |\n| `c` | Settings |\n\n## Browser notes\n\n- **Disk file support** (open/watch files, edits saved straight back to disk) requires the File System Access API \u2014 available in Chrome, Edge, Brave, and other Chromium-based browsers. Firefox falls back to IndexedDB-only storage.\n- **Large documents** (tens of thousands of words): Firefox is noticeably slower than Chromium-based browsers, especially when a full re-render is triggered (search highlighting, Typewriter mode, multi-line edits like paste/undo). Chromium-based browsers are recommended for very large documents.\n- **`Ctrl+Q`**: Firefox intercepts the plain shortcut as its own \"Quit\" command before the page sees it \u2014 use `Ctrl+Shift+Q` to close the document (works in both Firefox and Chrome).\n\n## Status bar tokens\n\nThe three status bar zones (left / centre / right) are configured as space-separated token strings in Settings \u2192 Profile.\n\n| Token | Example | Description |\n|---|---|---|\n| `filename` | `my-novel.txt` | Current document name |\n| `dirty` | `[+]` | Unsaved changes indicator |\n| `words` | `1 842w` | Word count |\n| `chars` | `10 240c` | Character count |\n| `lines` | `312L` | Total line count |\n| `line` | `L42` | Current cursor line |\n| `col` | `C7` | Current cursor column |\n| `para` | `18\u00a7` | Paragraph count (blank-line separated) |\n| `pages` | `7p` | Estimated pages at 250 w/page |\n| `percent` | `68%` | Progress toward word goal |\n| `today` | `342\u2191` | Words *added* today (high-water mark across sessions) |\n| `goal` | `342/500` | Today's words / goal (hidden if no goal) |\n| `reading` | `9min` | Estimated reading time at 200 w/min |\n| `clock` | `14:32` | Current time |\n| `timer` | `24:07` | Writing timer display |\n| `space` | ` ` | Single space (explicit separator) |\n| *(anything else)* | literal | Fixed text, separators, etc. |\n\nDefault: Left `filename dirty words` \u00b7 Center *(empty)* \u00b7 Right `goal clock timer`\n\n## INI config\n\n`writhdeck.ini` uses the same format as the Tcl/Tk desktop version. Web-specific options live in a dedicated section so they are silently ignored by the desktop version:\n\n```ini\n[web]\n% Options specific to the web version \u2014 ignored by the desktop version\nopen_last_doc               = no\nintercept_browser_shortcuts = yes\nintercept_context_menu      = yes\n```\n\nOptions shared with the desktop version (`block_cursor`, `blink_cursor`, `line_numbers`, `dark_mode`, etc.) stay in `[behaviour]`.\n\nRight-click `writhdeck.ini` in the browser to export it or reset all settings to defaults (the file is recreated from defaults on next load).\n\n## Project structure\n\n```\nsrc/\n  template.html   HTML skeleton with {{STYLE}} / {{SCRIPT}} / 2026-06-26 placeholders\n  style.css       All CSS (uses CSS custom properties only, no hardcoded colours)\n  schemes.js      Built-in colour schemes + custom-scheme support\n  db.js           IndexedDB wrapper (promise-based)\n  state.js        App state, load/save helpers\n  ini.js          INI config parser/writer (compatible with desktop version)\n  highlight.js    Syntax highlighter + word count + block cursor injection\n  timer.js        Writing timer\n  toc.js          Table of contents\n  stats.js        Daily word-count stats dialog\n  editor.js       Editor panel, textarea/overlay sync, find/replace, formatting\n  browser.js      Document browser panel, FSA integration\n  settings.js     Settings dialog\n  app.js          Entry point, theme, keyboard router, menus, dialogs\nbuild.py          Build script (inlines CSS/JS, stamps build date)\nMakefile          Convenience wrapper around build.py\n```\n\n## Storage\n\nDocuments are stored in IndexedDB (`writhdeck` database, version 1):\n\n- **`documents`** store \u2014 each document: `id`, `name`, `content`, `created`, `modified`.\n- **`meta`** store \u2014 keyed entries: `iniText`, `favorites`, `recents`, `cursors`, `daily`.\n\nNothing is sent to any server.\n\n## Adding a colour scheme\n\nAdd an entry to the `SCHEMES` object in `src/schemes.js`. Each scheme needs 9 dark-mode keys and 9 light-mode (`*Alt`) keys: `bg`, `fg`, `bgBar`, `fgBar`, `bgSel`, `heading`, `comment`, `markup`, `bg2` (+ `Alt` variants). Then run `make`.\n\n## License\n\nCopyright (C) 2026 by Luginfo \u2014 Zero-Clause BSD License\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted. The software is provided \"as is\" without warranty of any kind.\n";
 
 let _edMenu          = null;
 let _openMenuFn      = null;
@@ -5037,13 +5744,151 @@ async function showFileInfo(docArg) {
   document.getElementById('info-dlg').showModal();
 }
 
+// ── Draggable dialog helper ───────────────────────────────────────────────
+
+function makeDraggable(dlg, handle) {
+  let ox = 0, oy = 0;
+  handle.addEventListener('pointerdown', e => {
+    if (e.target.tagName === 'BUTTON') return;
+    const r = dlg.getBoundingClientRect();
+    dlg.style.left = r.left + 'px';
+    dlg.style.top  = r.top  + 'px';
+    dlg.style.right = 'auto';
+    ox = e.clientX - r.left;
+    oy = e.clientY - r.top;
+    handle.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  handle.addEventListener('pointermove', e => {
+    if (!handle.hasPointerCapture(e.pointerId)) return;
+    dlg.style.left = (e.clientX - ox) + 'px';
+    dlg.style.top  = (e.clientY - oy) + 'px';
+  });
+  handle.addEventListener('pointerup', e => {
+    handle.releasePointerCapture(e.pointerId);
+  });
+}
+
+// ── Repetition detection ──────────────────────────────────────────────────
+
+function findRepetitions(content, options = {}) {
+  const scope  = options.scope  || 100;
+  const minLen = options.minLen || 4;
+  const hidden = options.hidden || false;
+
+  const STOP = new Set([
+    'the','and','for','are','but','not','you','all','can','had','her','was','one','our','out',
+    'get','has','him','his','how','its','may','new','now','old','see','two','way','who','did',
+    'that','this','with','from','have','were','they','their','been','when','then','than','also',
+    'pour','dans','avec','cette','comme','plus','tout','mais','dont','leur','bien','même','sans',
+    'sous','très','aussi','entre','donc','dont','être','avoir','faire','dire','voir','vouloir',
+  ]);
+
+  const words = [];
+  content.split('\n').forEach((line, li) => {
+    for (const m of line.matchAll(/[\wÀ-ɏ]+/g))
+      words.push({ w: m[0].toLowerCase(), wlen: m[0].length, line: li + 1, col: m.index });
+  });
+
+  const reps = [];
+  for (let i = 0; i < words.length; i++) {
+    const wi = words[i];
+    if (wi.w.length < 3 || STOP.has(wi.w)) continue;
+    const start = Math.max(0, i - scope);
+    let found = false;
+    for (let j = start; j < i && !found; j++) {
+      const wj = words[j];
+      if (wj.w === wi.w) {
+        reps.push({ word: wi.w, wlen: wi.wlen, line1: wj.line, col1: wj.col, line2: wi.line, col2: wi.col, dist: i - j, type: 'repeat' });
+        found = true;
+      }
+    }
+    if (!found && hidden && wi.w.length >= minLen) {
+      for (let j = start; j < i && !found; j++) {
+        const wj = words[j];
+        if (wj.w.length >= minLen && wj.w !== wi.w && (wi.w.includes(wj.w) || wj.w.includes(wi.w))) {
+          reps.push({ word: `${wi.w} / ${wj.w}`, wlen: wi.wlen, line1: wj.line, col1: wj.col, line2: wi.line, col2: wi.col, dist: i - j, type: 'hidden' });
+          found = true;
+        }
+      }
+    }
+  }
+  return reps;
+}
+
+async function showRepetitions(docArg) {
+  const doc = docArg || State.doc;
+  if (!doc) return;
+
+  let content = (doc === State.doc) ? document.getElementById('ed-input').value : doc.content;
+  if (content == null) {
+    if (doc.fileHandle) {
+      try { const f = await doc.fileHandle.getFile(); content = await f.text(); }
+      catch(_) { content = ''; }
+    } else if (doc.id && typeof doc.id === 'number') {
+      const full = await DB.getDoc(doc.id);
+      content = full ? full.content : '';
+    } else { content = ''; }
+  }
+
+  const reps = findRepetitions(content);
+  const body = document.getElementById('rep-body');
+  body.innerHTML = '';
+  const inEditor = doc === State.doc;
+
+  if (!reps.length) {
+    const p = document.createElement('p');
+    p.style.cssText = 'color:var(--fg-bar);padding:12px 0';
+    p.textContent = t('app_rep_empty', 'No repetitions found.');
+    body.appendChild(p);
+  } else {
+    reps.forEach(({ word, wlen, line1, col1, line2, col2, dist }) => {
+      const row = document.createElement('div');
+      row.className = 'rep-row';
+      const wSpan = document.createElement('span');
+      wSpan.className = 'rep-word';
+      wSpan.textContent = word;
+      const lSpan = document.createElement('span');
+      lSpan.className = 'rep-lines';
+      const mkLink = (n, col) => {
+        const a = document.createElement('span');
+        a.className = 'rep-line';
+        a.textContent = `L${n}`;
+        if (inEditor) a.onclick = () => {
+          Editor.markWords([{ line: line1, col: col1, len: wlen }, { line: line2, col: col2, len: wlen }]);
+          Editor.jumpToWord(n, col, wlen);
+        };
+        else a.style.cursor = 'default';
+        return a;
+      };
+      lSpan.appendChild(mkLink(line1, col1));
+      lSpan.appendChild(document.createTextNode(' -> '));
+      lSpan.appendChild(mkLink(line2, col2));
+      const dSpan = document.createElement('span');
+      dSpan.className = 'rep-dist';
+      dSpan.textContent = t('app_rep_dist', '${n} words apart', { n: dist });
+      row.appendChild(wSpan);
+      row.appendChild(lSpan);
+      row.appendChild(dSpan);
+      body.appendChild(row);
+    });
+  }
+
+  const dlg = document.getElementById('rep-dlg');
+  document.getElementById('rep-title').textContent =
+    t('app_rep_title', 'Repetitions — ${name}', { name: doc.name });
+  // Reset to default position (top-right) before showing
+  dlg.style.left = ''; dlg.style.top = ''; dlg.style.right = '';
+  if (!dlg.open) dlg.show();
+}
+
 // ── Word occurrences dialog ───────────────────────────────────────────────
 
 async function showWordOcc(docArg) {
   const doc = docArg || State.doc;
   if (!doc) return;
 
-  let content = doc.content;
+  let content = (doc === State.doc) ? document.getElementById('ed-input').value : doc.content;
   if (content == null) {
     if (doc.fileHandle) {
       try { const f = await doc.fileHandle.getFile(); content = await f.text(); }
@@ -5091,7 +5936,7 @@ async function showAnalyse(docArg) {
   const doc = docArg || State.doc;
   if (!doc) return;
 
-  let content = doc.content;
+  let content = (doc === State.doc) ? document.getElementById('ed-input').value : doc.content;
   if (content == null) {
     if (doc.fileHandle) {
       try {
@@ -5211,6 +6056,10 @@ async function showAnalyse(docArg) {
   document.getElementById('analyse-words-btn').onclick = () => {
     document.getElementById('analyse-dlg').close();
     showWordOcc(doc);
+  };
+  document.getElementById('analyse-rep-btn').onclick = () => {
+    document.getElementById('analyse-dlg').close();
+    showRepetitions(doc);
   };
   document.getElementById('analyse-dlg').showModal();
 }
@@ -5510,6 +6359,7 @@ function onKeydown(e) {
       return;
     }
     if (lkey === 'n') { e.preventDefault(); Browser.newDoc();        return; }
+    if (lkey === 't') { e.preventDefault(); Browser.openScratch();  return; }
     if (lkey === 'o' && Browser.hasFSA) { e.preventDefault(); Browser.openFromDisk(); return; }
     if (lkey === 'w' && Browser.hasFSA) { e.preventDefault(); Browser.openFolder();   return; }
     if (lkey === 's') { e.preventDefault(); Stats.show();            return; }
@@ -5667,6 +6517,7 @@ async function init() {
       case 'stats':      Stats.show();               break;
       case 'analyse':    showAnalyse();              break;
       case 'word-occ':   showWordOcc();              break;
+      case 'repetitions': showRepetitions();         break;
       case 'info':       showFileInfo();             break;
       case 'timer':      Timer.toggle(); Editor.updateStatusBar(); break;
       case 'block-cursor':
@@ -5879,6 +6730,8 @@ async function init() {
   // Dialog close buttons
   document.getElementById('info-close').addEventListener('click',     () => document.getElementById('info-dlg').close());
   document.getElementById('analyse-close').addEventListener('click',  () => document.getElementById('analyse-dlg').close());
+  document.getElementById('rep-close').addEventListener('click',      () => { Editor.clearMarks(); document.getElementById('rep-dlg').close(); });
+  makeDraggable(document.getElementById('rep-dlg'), document.getElementById('rep-header'));
   document.getElementById('words-close').addEventListener('click',    () => document.getElementById('words-dlg').close());
   document.getElementById('stats-close').addEventListener('click',    () => document.getElementById('stats-dlg').close());
   document.getElementById('timer-alert-ok').addEventListener('click',  () => document.getElementById('timer-alert-dlg').close());
