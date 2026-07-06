@@ -651,8 +651,8 @@ proc profile-config-dialog {} {
 
     frame $w.tab_display.markup_sec.fmdh -bg $::bg
     pack  $w.tab_display.markup_sec.fmdh -fill x -padx 12 -pady 3
-    label $w.tab_display.markup_sec.fmdh.lbl -text [t config_markdown_headings] -font $::font_sm -width 22 -anchor w -bg $::bg -fg $::fg
-    checkbutton $w.tab_display.markup_sec.fmdh.check -variable profile_config_markdown_headings \
+    label $w.tab_display.markup_sec.fmdh.lbl -text [t config_markdown_support] -font $::font_sm -width 22 -anchor w -bg $::bg -fg $::fg
+    checkbutton $w.tab_display.markup_sec.fmdh.check -variable profile_config_markdown_support \
         -font $::font_sm -bg $::bg -fg $::fg \
         -selectcolor $::bg_sel -activebackground $::bg -activeforeground $::fg \
         -borderwidth 1 -relief raised -highlightthickness 1 -highlightbackground $::fg_bar
@@ -669,7 +669,7 @@ proc profile-config-dialog {} {
     $w.tab_display.markup_sec.fim.entry  insert 0 [marker-val $::cfg_italic_marker]
     $w.tab_display.markup_sec.fum.entry  insert 0 [marker-val $::cfg_underline_marker]
     $w.tab_display.markup_sec.fsm.entry  insert 0 [marker-val $::cfg_strikethrough_marker]
-    set ::profile_config_markdown_headings $::cfg_markdown_headings
+    set ::profile_config_markdown_support $::cfg_markdown_support
 
     # --- Schemes tab content ---
     frame $w.tab_schemes.top -bg $::bg
@@ -807,7 +807,7 @@ proc profile-config-dialog {} {
             set italic_m  [.profile_config.tab_display.markup_sec.fim.entry get]
             set under_m   [.profile_config.tab_display.markup_sec.fum.entry get]
             set strike_m  [.profile_config.tab_display.markup_sec.fsm.entry get]
-            set md_heads  $::profile_config_markdown_headings
+            set md_heads  $::profile_config_markdown_support
 
             if {$font eq "" || $size eq "" || $mw eq "" || $mh eq ""} return
 
@@ -858,7 +858,7 @@ proc profile-config-dialog {} {
             set ::cfg_italic_marker         [marker-val $italic_m]
             set ::cfg_underline_marker      [marker-val $under_m]
             set ::cfg_strikethrough_marker  [marker-val $strike_m]
-            set ::cfg_markdown_headings     $md_heads
+            set ::cfg_markdown_support     $md_heads
             set ::cfg_status_left   $status_l
             set ::cfg_status_center $status_c
             set ::cfg_status_right  $status_r

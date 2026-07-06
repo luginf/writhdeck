@@ -17,6 +17,7 @@ WrithDeck is a distraction-free text editor designed for writers using a dedicat
 - Multi-language support (English, French, German, Spanish, Korean, Norwegian)
 - Clickable toolbar shortcuts
 - Document analysis tools: structure outline, word occurrences, repetition detection, and spell checking
+- Read-only file handling: status bar shows `read-only`, and saving offers to save under a new name
 - Writing statistics and daily progress tracking, with a configurable daily word goal
 - Configurable timer (countdown) and stopwatch with visual alerts and audio notifications
 - Modal command mode (ESC key) for quick access to timer, stats, and word occurrences

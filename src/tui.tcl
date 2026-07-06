@@ -101,6 +101,12 @@ proc tui-attr {a} {
                 puts -nonewline "\033\[2m"
             }
         }
+        markup-line {
+            if {$::cfg_tui_colors && $::cfg_tui_col_markup ne ""} {
+                set _c [tui-ansi-color $::cfg_tui_col_markup 0]
+                if {$_c ne ""} { puts -nonewline $_c }
+            }
+        }
         dim      { puts -nonewline "\033\[2m" }
         underline { puts -nonewline "\033\[4m" }
         reverse  { puts -nonewline "\033\[7m" }
@@ -1227,9 +1233,12 @@ proc tui-editor {filepath {init_state {}}} {
             recent-push $filepath
             set _wc [llength [regexp -all -inline {\S+} [join $lines "\n"]]]
             daily-open $filepath $_wc
+        } else {
+            scratchpad-stats-open [llength [regexp -all -inline {\S+} [join $lines "\n"]]]
         }
         set dirty 0
     }
+    set readonly [expr {$filepath ne "" && [file exists $filepath] && ![file writable $filepath]}]
 
     # -- cursor restore --------------------------------------------------------
     if {[dict size $init_state] == 0} {
@@ -1401,6 +1410,7 @@ proc tui-editor {filepath {init_state {}}} {
             set seg [string map [list "\t" "    "] [string range $_rl $scol [expr {$ecol-1}]]]
             set ish [lindex $ish_cache [expr {$li-1}]]
             set isd [lindex $isd_cache [expr {$li-1}]]
+            set isl [expr {!$ish && !$isd && [parse-list $_rl]}]
             set seg_len [string length $seg]
 
             # left margin + line number - written inline from col 0 (no tui-move within line)
@@ -1436,8 +1446,8 @@ proc tui-editor {filepath {init_state {}}} {
                     puts -nonewline $seg
                 }
                 tui-attr off
-            } elseif {$ish || $isd} {
-                set _a [expr {$ish ? "heading" : "dim-text"}]
+            } elseif {$ish || $isd || $isl} {
+                set _a [expr {$ish ? "heading" : ($isd ? "dim-text" : "markup-line")}]
                 if {$sf >= 0} {
                     if {$sf > 0} { tui-attr $_a; puts -nonewline [string range $seg 0 [expr {$sf-1}]]; tui-attr off }
                     tui-attr sel; puts -nonewline [string range $seg $sf [expr {$st-1}]]; tui-attr off
@@ -1496,9 +1506,10 @@ proc tui-editor {filepath {init_state {}}} {
                     set rseg [string range [lindex $_rsrc_lines [expr {$li-1}]] $scol [expr {$ecol-1}]]
                     set rish [lindex $split_r_ish [expr {$li-1}]]
                     set risd [lindex $split_r_isd [expr {$li-1}]]
-                    if {$rish} { tui-attr heading } elseif {$risd} { tui-attr dim }
+                    set risl [expr {!$rish && !$risd && [parse-list [lindex $_rsrc_lines [expr {$li-1}]]]}]
+                    if {$rish} { tui-attr heading } elseif {$risd} { tui-attr dim } elseif {$risl} { tui-attr markup-line }
                     puts -nonewline "[string range $rseg 0 [expr {$tw_r-1}]]\033\[K"
-                    if {$rish || $risd} { tui-attr off }
+                    if {$rish || $risd || $risl} { tui-attr off }
                 } else {
                     puts -nonewline "\033\[K"
                 }
@@ -1533,7 +1544,8 @@ proc tui-editor {filepath {init_state {}}} {
                 chars $cc_cached \
                 clock [clock format [clock seconds] -format "%H:%M"] \
                 timer $timer_display \
-                ws    $::ws_n]
+                ws    $::ws_n \
+                readonly $readonly]
             if {$::tui_cmd_mode} {
                 set bar_left " $message"
                 set bar_center ""
@@ -1573,7 +1585,7 @@ proc tui-editor {filepath {init_state {}}} {
                     ln $cy total [llength $lines] col [expr {$cx+1}] \
                     words $wc_cached chars $cc_cached \
                     clock [clock format [clock seconds] -format "%H:%M"] \
-                    timer $_td ws $::ws_n]
+                    timer $_td ws $::ws_n readonly $readonly]
                 if {$::tui_cmd_mode} {
                     set _bl " $message"; set _bc ""; set _br ""
                 } else {
@@ -1823,6 +1835,22 @@ proc tui-editor {filepath {init_state {}}} {
                             set file_mtime_known [file mtime $filepath]
                             set message [t ed_saved]; set msg_time [clock seconds]
                         }
+                    } elseif {$readonly} {
+                        if {[tui-confirm [format [t ed_save_readonly] [file tail $filepath]] $rows $cols]} {
+                            set _dir [file dirname $filepath]
+                            set _name [string trim [tui-prompt "[t help_save_as]: " $rows $cols]]
+                            if {$_name ne ""} {
+                                if {[file extension $_name] eq ""} { append _name $::FILE_EXT }
+                                set _fp [file join $_dir $_name]
+                                if {![file exists $_fp] || [tui-confirm "\"[file tail $_fp]\" exists. Overwrite?" $rows $cols]} {
+                                    tui-save-file $_fp $lines
+                                    set filepath $_fp; set readonly 0
+                                    set file_mtime_known [file mtime $filepath]
+                                    recent-push $filepath
+                                    set dirty 0; set message [t ed_saved]; set msg_time [clock seconds]
+                                }
+                            }
+                        }
                     } else {
                         tui-save-file $filepath $lines
                         if {$wc_dirty} { tui-compute-wc }
@@ -1862,20 +1890,31 @@ proc tui-editor {filepath {init_state {}}} {
                         tui-split-save-right $split $::ws_n $_rsl $_rsd $_rsf
                         lassign [tui-size] rows cols
                         if {$dirty} {
-                            set r [tui-yesnocancel [t ed_save_before_tui] $rows $cols]
-                            if {$r eq "cancel"} {
-                                set clear_sel 0
-                            } else {
-                                if {$r eq "yes"} {
-                                    if {$filepath eq ""} {
-                                        tui-scratchpad-save $rows $cols lines filepath dirty
-                                    } else {
-                                        tui-save-file $filepath $lines
+                            if {$readonly} {
+                                if {![tui-confirm [t ed_save_readonly_quit] $rows $cols]} {
+                                    set clear_sel 0
+                                } else {
+                                    if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                                    if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
+                                        set ::session_file ""; return
                                     }
                                 }
-                                if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
-                                if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
-                                    set ::session_file ""; return
+                            } else {
+                                set r [tui-yesnocancel [t ed_save_before_tui] $rows $cols]
+                                if {$r eq "cancel"} {
+                                    set clear_sel 0
+                                } else {
+                                    if {$r eq "yes"} {
+                                        if {$filepath eq ""} {
+                                            tui-scratchpad-save $rows $cols lines filepath dirty
+                                        } else {
+                                            tui-save-file $filepath $lines
+                                        }
+                                    }
+                                    if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                                    if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
+                                        set ::session_file ""; return
+                                    }
                                 }
                             }
                         } else {
@@ -1886,10 +1925,14 @@ proc tui-editor {filepath {init_state {}}} {
                         }
                     } elseif {$key eq "s"} {
                         lassign [tui-size] rows cols
+                        if {$wc_dirty} { tui-compute-wc }
                         if {$filepath ne ""} {
-                            if {$wc_dirty} { tui-compute-wc }
                             daily-update $wc_cached
                             set _r [tui-stats-dialog $filepath $rows $cols]
+                            if {$_r ne ""} { set message $_r; set msg_time [clock seconds] }
+                        } else {
+                            set _sp [scratchpad-stats-record [join $lines "\n"] $wc_cached]
+                            set _r [tui-stats-dialog $_sp $rows $cols]
                             if {$_r ne ""} { set message $_r; set msg_time [clock seconds] }
                         }
                         set ::tui_cmd_mode 0
@@ -1931,20 +1974,31 @@ proc tui-editor {filepath {init_state {}}} {
                         tui-split-save-right $split $::ws_n $_rsl $_rsd $_rsf
                         lassign [tui-size] rows cols
                         if {$dirty} {
-                            set r [tui-yesnocancel [t ed_save_before_tui] $rows $cols]
-                            if {$r eq "cancel"} {
-                                set clear_sel 0
-                            } else {
-                                if {$r eq "yes"} {
-                                    if {$filepath eq ""} {
-                                        tui-scratchpad-save $rows $cols lines filepath dirty
-                                    } else {
-                                        tui-save-file $filepath $lines
+                            if {$readonly} {
+                                if {![tui-confirm [t ed_save_readonly_quit] $rows $cols]} {
+                                    set clear_sel 0
+                                } else {
+                                    if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                                    if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
+                                        set ::session_file ""; return
                                     }
                                 }
-                                if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
-                                if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
-                                    set ::session_file ""; return
+                            } else {
+                                set r [tui-yesnocancel [t ed_save_before_tui] $rows $cols]
+                                if {$r eq "cancel"} {
+                                    set clear_sel 0
+                                } else {
+                                    if {$r eq "yes"} {
+                                        if {$filepath eq ""} {
+                                            tui-scratchpad-save $rows $cols lines filepath dirty
+                                        } else {
+                                            tui-save-file $filepath $lines
+                                        }
+                                    }
+                                    if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                                    if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
+                                        set ::session_file ""; return
+                                    }
                                 }
                             }
                         } else {
@@ -1973,20 +2027,31 @@ proc tui-editor {filepath {init_state {}}} {
                     tui-split-save-right $split $::ws_n $_rsl $_rsd $_rsf
                     lassign [tui-size] rows cols
                     if {$dirty} {
-                        set r [tui-yesnocancel [t ed_save_before_tui] $rows $cols]
-                        if {$r eq "cancel"} {
-                            set clear_sel 0
-                        } else {
-                            if {$r eq "yes"} {
-                                if {$filepath eq ""} {
-                                    tui-scratchpad-save $rows $cols lines filepath dirty
-                                } else {
-                                    tui-save-file $filepath $lines
+                        if {$readonly} {
+                            if {![tui-confirm [t ed_save_readonly_quit] $rows $cols]} {
+                                set clear_sel 0
+                            } else {
+                                if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                                if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
+                                    set ::session_file ""; return
                                 }
                             }
-                            if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
-                            if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
-                                set ::session_file ""; return
+                        } else {
+                            set r [tui-yesnocancel [t ed_save_before_tui] $rows $cols]
+                            if {$r eq "cancel"} {
+                                set clear_sel 0
+                            } else {
+                                if {$r eq "yes"} {
+                                    if {$filepath eq ""} {
+                                        tui-scratchpad-save $rows $cols lines filepath dirty
+                                    } else {
+                                        tui-save-file $filepath $lines
+                                    }
+                                }
+                                if {$filepath ne ""} { daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                                if {![tui-ws-check-inactive-dirty $rows $cols]} { set clear_sel 0 } else {
+                                    set ::session_file ""; return
+                                }
                             }
                         }
                     } else {
@@ -2000,7 +2065,7 @@ proc tui-editor {filepath {init_state {}}} {
                     set _rsd [expr {$_fswap==2 ? $dirty : $split_r_dirty}]
                     set _rsf [expr {$_fswap==2 ? $filepath : $split_r_fp}]
                     tui-split-save-right $split $::ws_n $_rsl $_rsd $_rsf
-                    if {$filepath ne ""} { tui-save-file $filepath $lines; daily-update $wc_cached; cursor-put $filepath $cy $cx }
+                    if {$filepath ne "" && !$readonly} { tui-save-file $filepath $lines; daily-update $wc_cached; cursor-put $filepath $cy $cx }
                     set ::session_file ""; set dirty 0
                     if {$::ws_n == 2} { return "__ws2_open__" }
                     return
@@ -2279,7 +2344,7 @@ proc tui-info-dialog {text rows cols} {
 
 proc tui-stats-dialog {filepath rows cols} {
     if {!$::state_cache_valid} { state-load }
-    set name [file tail $filepath]
+    set name [expr {$filepath eq [scratchpad-stats-path] ? "scratchpad" : [file tail $filepath]}]
     if {![dict exists $::daily_data $filepath] || [dict size [dict get $::daily_data $filepath]] == 0} {
         return [t br_stats_no_data]
     }

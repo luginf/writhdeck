@@ -82,6 +82,16 @@ proc parse-comment {line} {
     return [regexp -- $::cached_comment_re $line]
 }
 
+# A list item line: begins (after optional leading whitespace) with a bullet
+# followed by whitespace (e.g. "- item"). "-" is always recognised; "*" only
+# when Markdown support is enabled. Highlighted whole-line in the markup
+# colour, like bold/italic spans.
+proc parse-list {line} {
+    if {[regexp {^\s*-\s} $line]} { return 1 }
+    if {$::cfg_markdown_support && [regexp {^\s*\*\s} $line]} { return 1 }
+    return 0
+}
+
 proc inline-re {marker} {
     if {$marker eq ""} { return "" }
     set m [regsub -all {[\\^$.|?*+()\[\]{}]} $marker {\\&}]
@@ -113,7 +123,7 @@ proc apply-inline {ln line tag re mlen {content_only 0}} {
 
 proc parse-heading {line} {
     if {[regexp $::cached_heading_re $line -> title]} { return [string trim $title] }
-    if {$::cfg_markdown_headings && \
+    if {$::cfg_markdown_support && \
             [regexp {^\s*(#{1,6})\s+(.+)$} $line -> _ title]} { return [string trim $title] }
     return ""
 }
@@ -127,7 +137,7 @@ proc heading-level {line} {
             return [list [string trim $title] [expr {[string length $markers] / $mlen}]]
         }
     }
-    if {$::cfg_markdown_headings && \
+    if {$::cfg_markdown_support && \
             [regexp {^\s*(#{1,6})\s+(.+)$} $line -> hashes title]} {
         return [list [string trim $title] [string length $hashes]]
     }
@@ -179,6 +189,7 @@ proc status-build {tokens state} {
     set chars [dict get $state chars]
     set clk   [dict get $state clock]
     set timer [dict get $state timer]
+    set rdonly [expr {[dict exists $state readonly] ? [dict get $state readonly] : 0}]
     set result ""
     foreach tok $tokens {
         switch -- $tok {
@@ -186,7 +197,10 @@ proc status-build {tokens state} {
                 set _wsn [expr {[dict exists $state ws] ? [dict get $state ws] : $::ws_n}]
                 append result "\[$_wsn\] "
             } }
-            filename { append result $fn }
+            filename {
+                append result $fn
+                if {$rdonly} { append result " \[[t ed_readonly]\]" }
+            }
             dirty    { if {$dirty}      { append result " \[+\]" } }
             sel      { if {$sel}        { append result " \[sel\]" } }
             ln       { append result [format "  Ln %d/%d" $ln $total] }
@@ -279,6 +293,37 @@ proc scratch-tmpfile {content} {
     chan configure $fd -encoding utf-8
     puts -nonewline $fd $content
     close $fd
+    return $p
+}
+
+# Stable virtual path used to track daily writing stats for the scratchpad
+# (which has no real filename). Also the file the live buffer is snapshotted
+# to, so the stats dialog can compute total words/chars off-disk.
+proc scratchpad-stats-path {} {
+    return [file normalize [file join $::HOME_DIR .writhdeck_scratchpad.txt]]
+}
+
+# Open a daily-stats session for the scratchpad. Call when the scratchpad
+# is (re)entered, with the buffer's current word count, so the baseline is
+# captured before the user starts writing.
+proc scratchpad-stats-open {wc} {
+    daily-open [scratchpad-stats-path] $wc
+}
+
+# Snapshot the scratchpad buffer to its stats file and record today's word
+# count, so the stats dialog works without the text ever being saved to a
+# real document. Returns the stats path. $wc is the current word count.
+# Assumes scratchpad-stats-open was called on scratchpad entry.
+proc scratchpad-stats-record {content wc} {
+    set p [scratchpad-stats-path]
+    catch {
+        set fd [open $p w]
+        chan configure $fd -encoding utf-8
+        puts -nonewline $fd $content
+        close $fd
+    }
+    if {$::session_file ne $p} { scratchpad-stats-open $wc }
+    daily-update $wc
     return $p
 }
 

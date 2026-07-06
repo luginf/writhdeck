@@ -115,7 +115,7 @@ set ::cfg_analysis_ignore_comments 0
 set ::cfg_console_margin_cols    6
 set ::cfg_console_margin_rows    4
 set ::cfg_heading_marker    "="
-set ::cfg_markdown_headings 1
+set ::cfg_markdown_support  1
 set ::cfg_color_heading  "#c8a060"
 set ::cfg_comment_marker "%"
 set ::cfg_color_comment  "#606060"
@@ -445,7 +445,8 @@ proc ini-load {} {
                 margin_rows          { set ::cfg_console_margin_rows $v }
                 color_bg_sel     { set ::cfg_bg_sel         $v }
                 heading_marker      { set ::cfg_heading_marker    $v }
-                markdown_headings  { set ::cfg_markdown_headings [string is true $v] }
+                markdown_support   { set ::cfg_markdown_support [string is true $v] }
+                markdown_headings  { set ::cfg_markdown_support [string is true $v] }
                 color_heading    { set ::cfg_color_heading   $v }
                 dim_marker       { set ::cfg_comment_marker  [marker-val $v] }
                 comment_marker   { set ::cfg_comment_marker  [marker-val $v] }
@@ -598,7 +599,9 @@ proc ini-save {} {
     puts $fh "analysis_ignore_comments = [expr {$::cfg_analysis_ignore_comments ? "yes" : "no"}]"
     puts $fh "watch_file           = [expr {$::cfg_watch_file           ? "yes" : "no"}]"
     puts $fh "hemingway_mode       = [expr {$::cfg_hemingway_mode       ? "yes" : "no"}]"
-    puts $fh "markdown_headings    = [expr {$::cfg_markdown_headings    ? "yes" : "no"}]"
+    puts $fh "%   markdown_headings is a deprecated alias for markdown_support (kept for now)"
+    puts $fh "markdown_headings    = [expr {$::cfg_markdown_support     ? "yes" : "no"}]"
+    puts $fh "markdown_support     = [expr {$::cfg_markdown_support     ? "yes" : "no"}]"
     puts $fh "split_shrink_margin  = [expr {$::cfg_split_shrink_margin  ? "yes" : "no"}]"
     puts $fh "console_center_alert = [expr {$::cfg_console_center_alert ? "yes" : "no"}]"
     puts $fh "% bar: show the editor status bar (no = hide it; the browser bar is unaffected; search field and ESC menu still appear, sized by bar_height)"

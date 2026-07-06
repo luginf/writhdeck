@@ -1,5 +1,11 @@
 ## Editor behavior
 
+**Syntax highlighting** — line-level classification lives in shared parsers (`src/common.tcl`): `parse-heading`, `parse-comment`, `parse-list`. Whole-line precedence is **heading > comment > list**, then inline markup spans (bold/italic/underline/strikethrough). Applied in `highlight-headings` (GUI, `src/gui.tcl`, tags `heading`/`comment`/`list`/`bold`/…) and in the TUI draw loop (`src/tui.tcl`, flags `ish`/`isd` cached + `isl` computed inline via `parse-list`; attr `markup-line` emits the markup colour). `list` and inline markup both use the markup colour (`color_markup` / `tui_col_markup`).
+
+**List highlighting (`parse-list`)** — a line is a list item when it starts (after optional leading whitespace) with `- ` (dash + space, always on) or `* ` (only when `cfg_markdown_support` is on). Whole line coloured in the markup colour. Note: French dialogue lines opening with `- ` are also matched.
+
+**Markdown support (`cfg_markdown_support`)** — canonical config key `markdown_support` (`[behaviour]`, default `yes`) gates all Markdown-flavoured syntax: `#`..`######` headings (`parse-heading`/`heading-level`) and `* ` list bullets (`parse-list`). Legacy key `markdown_headings` is a **deprecated alias** still accepted on load and still written to the INI (both keys emitted, `markdown_support` last so it wins on reload). GUI checkbox on the Display tab (`config_markdown_support` label). More Markdown elements will be added incrementally under this same flag.
+
 **Tab key** — inserts a literal tab character (`\t`), not spaces. Both GUI and TUI preserve tabs in files. In split pane bindings, always use `{%W insert insert "\t"; break}` — **never** `[list $w insert insert {\t}]` which would insert the 2-char literal `\t` instead (braces prevent escape interpretation).
 
 **Reload (z key)** — closes current editor/scratchpad and returns to browser. Always relaunches the program without arguments, even if a file was open. Uses platform-specific process launching (Windows `start` command, Unix shell background execution). Configuration apply button also triggers reload.
@@ -18,7 +24,7 @@ Editor mode activated by pressing the command-mode key (default: ESC) in the edi
 - **p** — pause if running; resume from saved `timer_remaining` if paused (uses `timer-resume`)
 - **b** — go to browser (with save prompt if dirty)
 - **q** — quit/close current file (with save prompt if dirty)
-- **s** — show daily writing statistics (calls `daily-update` first to include unsaved words, then `tui-stats-dialog` / `file-stats-dialog`)
+- **s** — show daily writing statistics (calls `daily-update` first to include unsaved words, then `tui-stats-dialog` / `br-stats`). Works for the **scratchpad** too (no filename): `scratchpad-stats-open`/`scratchpad-stats-record` (`src/common.tcl`) give it a stable virtual path `~/.writhdeck_scratchpad.txt` so daily stats accumulate and totals are read off a live snapshot, independent of ever saving to a real document. `scratchpad-stats-open` is called on scratchpad entry (`open-scratchpad` GUI, `tui-editor` filepath=="" branch) to capture the baseline; the stats dialogs display the name "scratchpad" instead of the dotfile. Same high-water-mark semantics as files (reopening an emptied scratchpad holds the day's count).
 - **w** — show word occurrences — calls `tui-word-occurrences` (same overlay as browser `w`)
 - **a** — structure/repetitions/spelling analysis — calls `tui-analyse-dialog` (TUI) / `analyse-dialog` (GUI); only when `src/analysis.tcl` is included in the build
 - **Other keys** — exit modal, revert to normal text entry

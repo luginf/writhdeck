@@ -634,10 +634,11 @@ proc br-stats {{path ""}} {
         set total_chars [string length $content]
     }
 
+    set _dname [expr {$path eq [scratchpad-stats-path] ? "scratchpad" : [file tail $path]}]
     set w .stats
     catch {destroy $w}
     toplevel $w
-    wm title $w "[t br_stats_title] - [file tail $path]"
+    wm title $w "[t br_stats_title] - $_dname"
     wm resizable $w 0 0
     wm transient $w .
     text $w.t -font $::font_sm -state normal -bg $::bg -fg $::fg \
@@ -645,7 +646,7 @@ proc br-stats {{path ""}} {
         -borderwidth 0 -padx 16 -pady 12 -width 36 \
         -height [expr {$nrows + 9}] -cursor arrow
     $w.t tag configure heading -foreground $::fg_bar -font [concat $::font_sm bold]
-    $w.t insert end "\n  [file tail $path]\n" heading
+    $w.t insert end "\n  $_dname\n" heading
     $w.t insert end [format "  %-26s %d\n" [t br_stats_total_words] $total_words]
     $w.t insert end [format "  %-26s %d\n" [t br_stats_total_chars] $total_chars]
     $w.t insert end [format "\n  %-14s %s\n" "Date" "Words"] heading
@@ -664,12 +665,12 @@ proc br-stats {{path ""}} {
     button $w.btns.ok    -text "Close"           -font $::font_sm \
         -command [list after idle [list destroy $w]]
     button $w.btns.clear -text [t br_stats_clear] -font $::font_sm \
-        -command [list apply {{w path} {
-            if {[confirm-dialog [t br_stats_clear_confirm [file tail $path]]] eq "yes"} {
+        -command [list apply {{w path dname} {
+            if {[confirm-dialog [t br_stats_clear_confirm $dname]] eq "yes"} {
                 daily-clear $path
                 after idle [list destroy $w]
             }
-        }} $w $path]
+        }} $w $path $_dname]
     pack $w.btns.clear -side left  -padx 8 -pady 8
     pack $w.btns.ok    -side right -padx 8 -pady 8
     pack $w.t    -fill both -expand 1
@@ -800,6 +801,8 @@ after idle apply-line-spacing
     -font [list $::cfg_font_family $::cfg_font_size bold]
 .ed.t tag configure comment \
     -foreground $::cfg_color_comment
+.ed.t tag configure list \
+    -foreground $::cfg_color_markup
 .ed.t tag configure bold \
     -foreground $::cfg_color_markup \
     -font [list $::cfg_font_family $::cfg_font_size bold]
@@ -949,7 +952,7 @@ proc gui-status-state {} {
     set total [expr {[lindex [split [$t index end] .] 0] - 1}]
     return [dict create fn $fn dirty $::dirty sel 0 ln $ln total $total \
                 col [expr {$col+1}] words $::gui_wc chars $::gui_cc \
-                clock $clk timer $timer_display ws $::ws_n]
+                clock $clk timer $timer_display ws $::ws_n readonly $::file_readonly]
 }
 
 # When the status bar is hidden (cfg_bar_show=0), temporarily show it while in
@@ -1080,9 +1083,9 @@ proc cursor-place {} {
     set ch [.ed.t get $pos]
     # Tab / end-of-line / empty have no glyph (or span a whole tab stop / stretch
     # to the window edge): draw a fixed one-cell block instead. A normal char
-    # keeps its own glyph width so the block matches it (essential with a
-    # proportional font, where one fixed width would not line up).
-    if {$ch eq "" || [string is space -strict $ch]} {
+    # (including plain space) keeps its own glyph width so the block matches it
+    # (essential with a proportional font, where one fixed width would not line up).
+    if {$ch eq "" || $ch eq "\t" || $ch eq "\n" || $ch eq "\r"} {
         set ch " "
         set w [cursor-cell-width]
     }
@@ -1242,6 +1245,7 @@ proc ed-update-title {} {
 
 proc load-file {path} {
     set ::filename $path
+    set ::file_readonly [expr {[file exists $path] && ![file writable $path]}]
     ed-update-title
     .ed.t configure -undo 0
 
@@ -1288,7 +1292,16 @@ proc load-file {path} {
 
 proc save-file {} {
     if {$::filename eq ""} { if {$::scratchpad} { save-as }; return }
-    set fh [open $::filename w]
+    if {$::file_readonly} {
+        if {[confirm-dialog [format [t ed_save_readonly] [file tail $::filename]]] eq "yes"} { save-as }
+        return
+    }
+    if {[catch {set fh [open $::filename w]} err]} {
+        set ::file_readonly 1
+        ed-status
+        if {[confirm-dialog [format [t ed_save_readonly] [file tail $::filename]]] eq "yes"} { save-as }
+        return
+    }
     chan configure $fh -encoding utf-8
     puts -nonewline $fh [.ed.t get 1.0 {end - 1 chars}]
     close $fh
@@ -1313,6 +1326,7 @@ proc save-as {} {
     }
     set ::filename $new_path
     set ::scratchpad 0
+    set ::file_readonly 0
     ed-update-title
     save-file
 }
@@ -1455,8 +1469,9 @@ proc close-editor {{force_browser 0}} {
         set ::ws2_content    [.ed.t get 1.0 end-1c]
         set ::ws2_cursor     [.ed.t index insert]
     }
-    set ::filename   ""
-    set ::scratchpad 0
+    set ::filename      ""
+    set ::scratchpad    0
+    set ::file_readonly 0
     set ::file_mtime_known 0
     set ::dirty     0
     set ::msg       ""
@@ -1495,6 +1510,7 @@ proc apply-theme {} {
     catch { cursor-setup }
     catch { .ed.t tag configure heading       -foreground $c_heading }
     catch { .ed.t tag configure comment       -foreground $c_comment }
+    catch { .ed.t tag configure list          -foreground $c_markup }
     catch { .ed.t tag configure bold          -foreground $c_markup }
     catch { .ed.t tag configure italic        -foreground $c_markup }
     catch { .ed.t tag configure underline     -foreground $c_markup }
@@ -1543,7 +1559,7 @@ proc ws-check-inactive-dirty {} {
     set _lbl [expr {$isp ? "scratchpad \[$iws\]" : "[file tail $ifn] \[$iws\]"}]
     set r [yesnocancel-dialog [t ed_save_before $_lbl]]
     if {$r eq "cancel"} { return 0 }
-    if {$r eq "yes" && $ifn ne ""} {
+    if {$r eq "yes" && $ifn ne "" && [file writable $ifn]} {
         set fh [open $ifn w];  chan configure $fh -encoding utf-8
         puts -nonewline $fh $icontent;  close $fh
         if {$iws == 1} { set ::ws1_dirty 0 } else { set ::ws2_dirty 0 }
@@ -1666,7 +1682,7 @@ proc highlight-headings {} {
     if {$full} {
         set ::hl_last_count $last
         set ::hl_line_cache {}
-        foreach t {heading comment bold italic underline strikethrough marker} {
+        foreach t {heading comment list bold italic underline strikethrough marker} {
             .ed.t tag remove $t 1.0 end
         }
     }
@@ -1674,7 +1690,7 @@ proc highlight-headings {} {
         set line [.ed.t get $ln.0 "$ln.0 lineend"]
         if {!$full} {
             if {[dict exists $::hl_line_cache $ln] && [dict get $::hl_line_cache $ln] eq $line} continue
-            foreach t {heading comment bold italic underline strikethrough marker} {
+            foreach t {heading comment list bold italic underline strikethrough marker} {
                 .ed.t tag remove $t $ln.0 "$ln.0 lineend"
             }
         }
@@ -1683,6 +1699,8 @@ proc highlight-headings {} {
             .ed.t tag add heading $ln.0 "$ln.0 lineend"
         } elseif {[parse-comment $line]} {
             .ed.t tag add comment $ln.0 "$ln.0 lineend"
+        } elseif {[parse-list $line]} {
+            .ed.t tag add list $ln.0 "$ln.0 lineend"
         } else {
             if {$::cached_bold_re ne "" && [string first $::cfg_bold_marker $line] >= 0} {
                 apply-inline $ln $line bold $::cached_bold_re $::cached_bold_mlen }
@@ -2402,9 +2420,12 @@ proc gui-handle-keypress {key} {
             ed-status
             return 1
         } elseif {$key eq "s" || $key eq "S"} {
+            set _wc [llength [regexp -all -inline {\S+} [[primary-ed] get 1.0 end-1c]]]
             if {$::filename ne ""} {
-                daily-update [llength [regexp -all -inline {\S+} [[primary-ed] get 1.0 end-1c]]]
+                daily-update $_wc
                 br-stats $::filename
+            } else {
+                br-stats [scratchpad-stats-record [[primary-ed] get 1.0 end-1c] $_wc]
             }
             set ::gui_cmd_mode 0
             ed-status
@@ -3069,7 +3090,12 @@ proc split-ws2-track-dirty {} {
 proc split-ws2-save {} {
     set fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
     if {$fn eq ""} { split-ws2-save-as; return }
-    set fh [open $fn w]; chan configure $fh -encoding utf-8
+    if {[file exists $fn] && ![file writable $fn]} {
+        if {[confirm-dialog [format [t ed_save_readonly] [file tail $fn]]] eq "yes"} { split-ws2-save-as }
+        return
+    }
+    if {[catch {set fh [open $fn w]} err]} { return }
+    chan configure $fh -encoding utf-8
     puts -nonewline $fh [.ed.pw.r.t get 1.0 {end - 1 chars}]; close $fh
     if {$::ws_n == 1} {
         set ::ws2_dirty 0; set ::ws2_file_mtime [file mtime $fn]
@@ -3273,6 +3299,7 @@ proc open-scratchpad {} {
     set ::gui_wc_last_nlines 0
     ed-update-title
     set ::spell_hl_cache {}
+    scratchpad-stats-open [llength [regexp -all -inline {\S+} [[primary-ed] get 1.0 end-1c]]]
     highlight-headings
     spell-highlight-update
     ed-status

@@ -27,7 +27,7 @@ Accessible via `c` key in browser. Invoked by `profile-config-dialog` proc. **Si
 - **Fonts tab**: Per-profile font family (entry + available fonts listbox with scrollbar), font preview label (initialized with current font/size on open and on profile switch), font size spinbox
 - **Timer tab**: Type (countdown/stopwatch), duration (spinbox), sound at end (checkbox), alert message (checkbox), show in status bar (checkbox)
 - **Misc tab**: Autosave enabled/interval; Behaviour section: documents folder (entry + Browse button), browser file filter (entry, space-separated glob patterns, default `*.txt *.t2t *.md *.ini`), show all files / bypass filter (checkbox, default off), browser on start, watch file, Hemingway mode, split shrink margin, cursor restore, pinned TOC panel
-- **Display tab**: Status bar zones (left/center/right entries); Editor section (heading marker); Markup section (comment/bold/italic/underline/strikethrough markers, markdown headings)
+- **Display tab**: Status bar zones (left/center/right entries); Editor section (heading marker); Markup section (comment/bold/italic/underline/strikethrough markers, Markdown support)
 - **Apply button**: Packed before tab content via `pack -before` so it stays visible at top; saves all tabs to globals + `ini-save`, applies theme, triggers `br-reload`
 
 Tab switching via `config-tab-switch {w tab}` — `pack forget` all frames, `pack` the active one, update button appearance. Tabs (in display order): `profile`, `display`, `fonts`, `schemes`, `timer`, `misc`.

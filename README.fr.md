@@ -17,6 +17,7 @@ WrithDeck est un éditeur de texte sans distraction conçu pour les auteurs util
 - Support multi-langue (Anglais, Français, Allemand, Espagnol, Coréen, Norvégien)
 - Raccourcis cliquables dans la barre d'outils
 - Outils d'analyse du document : plan de structure, occurrences de mots, détection des répétitions et correction orthographique
+- Gestion des fichiers en lecture seule : la barre de statut affiche `lecture-seule`, et la sauvegarde propose d'enregistrer sous un nouveau nom
 - Statistiques d'écriture et suivi du progrès quotidien, avec objectif de mots journalier configurable
 - Minuterie configurable (compte à rebours) et chronomètre avec alertes visuelles et notifications sonores
 - Mode commande modal (touche ESC) pour accès rapide au minuteur, aux stats et aux occurrences de mots
