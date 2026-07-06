@@ -93,7 +93,7 @@ dict set ::i18n_gui LANG {
 
 ## Key Statistics
 
-- **Total translation keys:** 122
+- **Total translation keys:** ~228 (source of truth: src/i18n/en.tcl; exact count verified by `make test-i18n`)
 - **Coverage:**
   - Table of contents (4 keys)
   - Browser shortcuts (14 keys)
@@ -155,11 +155,11 @@ Create `src/i18n/XX.tcl` with this structure:
 dict set ::i18n XX {
     toc_title          "Your translation here"
     toc_no_headings    "Your translation here"
-    # ... (include all 122 keys from en.tcl)
+    # ... (include all keys from en.tcl)
 }
 ```
 
-**Critical:** Copy all 122 keys from `src/i18n/en.tcl` and translate each value. Missing keys will cause runtime errors.
+**Critical:** Copy all keys from `src/i18n/en.tcl` and translate each value. Missing keys will cause runtime errors.
 
 ### Step 2: Build with your language
 
@@ -242,7 +242,7 @@ All i18n files use **UTF-8 encoding without BOM**. Accented characters are fully
 
 If a key is missing from the selected language, the `t` function returns the English version. This is visible as English text in a non-English UI. To prevent this:
 
-1. Always include all 122 keys from `src/i18n/en.tcl`
+1. Always include all keys from `src/i18n/en.tcl`
 2. Run `make test-i18n` to verify completeness
 3. Use a linter to check for missing translations
 

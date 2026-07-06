@@ -3,7 +3,7 @@ dict set ::i18n ko {
     toc_jump_bar       "이동 입력  esc/ctrl+q 취소"
     toc_headings       "%d개의 제목%s"
     br_no_docs         "문서가 없습니다. n을 눌러서 새 문서를 만드세요."
-    br_help_tui        "h:%s  n:새로운  t:메모장  f:즐겨찾기  s:통계  b:백업  d:삭제  r:이름변경  i:정보  a:분석  c:설정  w:단어  %s:섹션  q:종료"
+    br_help_tui        "h:%s  n:새로운  t:메모장  f:즐겨찾기  s:통계  b:백업  d:삭제  r:이름변경  i:정보  a:분석  c:설정  w:단어  /:필터  %s:섹션  q:종료"
     br_backed_up       "백업 %s -> %s  (%s)"
     br_favorites       "즐겨찾기"
     br_stats_title     "작문 통계"
@@ -87,7 +87,7 @@ dict set ::i18n ko {
 # >>> GUI-ONLY  (stripped from TUI/CLI builds by the Makefile - see CLAUDE.build.md)
 dict set ::i18n_gui ko {
     toc_no_headings    "제목을 찾을 수 없음"
-    br_help_gui        "h:도움말  n:새로운  t:메모장  f:즐겨찾기  s:통계  b:백업  d:삭제  r:이름변경  i:정보  c:설정  z:다시로드  %s:섹션  q:종료"
+    br_help_gui        "h:도움말  n:새로운  t:메모장  f:즐겨찾기  s:통계  b:백업  d:삭제  r:이름변경  i:정보  c:설정  z:다시로드  /:필터  %s:섹션  q:종료"
     br_stats_total_words "총 단어 수"
     br_stats_total_chars "총 글자 수"
     ed_save_before     "종료하기 전에 \"%s\"를 저장하시겠습니까?"
@@ -126,6 +126,7 @@ dict set ::i18n_gui ko {
     br_key_analyse         "분석"
     br_key_words           "단어"
     br_key_config          "설정"
+    br_key_filter          "필터"
     br_key_reload          "다시로드"
     br_key_quit            "종료"
     br_help_new_file       "새 파일"
@@ -140,6 +141,7 @@ dict set ::i18n_gui ko {
     br_help_rename_file    "이름 변경"
     br_help_font_settings  "프로필별 글꼴 설정"
     br_help_reload         "다시 로드"
+    br_help_filter         "입력하는 대로 파일 필터링 (ESC 지우기)"
     br_help_browser_sections "브라우저 섹션"
     br_help_fullscreen_br  "전체 화면"
     br_help_open_file_br   "파일 열기"

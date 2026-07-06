@@ -3,7 +3,7 @@ dict set ::i18n es {
     toc_jump_bar       "Enter saltar  esc/ctrl+q cancelar"
     toc_headings       "%d encabezado%s"
     br_no_docs         "Sin documentos. Presiona n para crear uno."
-    br_help_tui        "h:%s  n:nuevo  t:notas  f:fav  s:estadisticas  b:copia  d:eliminar  r:renombrar  i:info  a:analizar  c:configuracion  w:palabras  %s:secciones  q:salir"
+    br_help_tui        "h:%s  n:nuevo  t:notas  f:fav  s:estadisticas  b:copia  d:eliminar  r:renombrar  i:info  a:analizar  c:configuracion  w:palabras  /:filtro  %s:secciones  q:salir"
     br_backed_up       "copia %s -> %s  (%s)"
     br_favorites       "Favoritos"
     br_stats_title     "Estadisticas de escritura"
@@ -87,7 +87,7 @@ dict set ::i18n es {
 # >>> GUI-ONLY  (stripped from TUI/CLI builds by the Makefile - see CLAUDE.build.md)
 dict set ::i18n_gui es {
     toc_no_headings    "no se encontraron encabezados"
-    br_help_gui        "h:ayuda  n:nuevo  t:notas  f:fav  s:estadisticas  b:copia  d:eliminar  r:renombrar  i:info  c:configuracion  z:recargar  %s:secciones  q:salir"
+    br_help_gui        "h:ayuda  n:nuevo  t:notas  f:fav  s:estadisticas  b:copia  d:eliminar  r:renombrar  i:info  c:configuracion  z:recargar  /:filtro  %s:secciones  q:salir"
     br_stats_total_words "Total de palabras"
     br_stats_total_chars "Total de caracteres"
     ed_save_before     "Guardar \"%s\" antes de cerrar?"
@@ -126,6 +126,7 @@ dict set ::i18n_gui es {
     br_key_analyse         "analizar"
     br_key_words           "palabras"
     br_key_config          "configuracion"
+    br_key_filter          "filtro"
     br_key_reload          "recargar"
     br_key_quit            "salir"
     br_help_new_file       "Nuevo archivo"
@@ -140,6 +141,7 @@ dict set ::i18n_gui es {
     br_help_rename_file    "Renombrar"
     br_help_font_settings  "Configuracion de fuente por perfil"
     br_help_reload         "Recargar"
+    br_help_filter         "Filtrar archivos al escribir (ESC borra)"
     br_help_browser_sections "Secciones del navegador"
     br_help_fullscreen_br  "Pantalla completa"
     br_help_open_file_br   "Abrir archivo"

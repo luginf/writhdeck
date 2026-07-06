@@ -3,7 +3,7 @@ dict set ::i18n en {
     toc_jump_bar       "Enter jump  esc/ctrl+q cancel"
     toc_headings       "%d heading%s"
     br_no_docs         "No documents yet. Press n to create one."
-    br_help_tui        "h:%s  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  a:analyse  c:config  w:words  %s:sections  q:quit"
+    br_help_tui        "h:%s  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  a:analyse  c:config  w:words  /:filter  %s:sections  q:quit"
     br_backed_up       "backup %s -> %s  (%s)"
     br_favorites       "Favorites"
     br_stats_title     "Writing stats"
@@ -87,7 +87,7 @@ dict set ::i18n en {
 # >>> GUI-ONLY  (stripped from TUI/CLI builds by the Makefile - see CLAUDE.build.md)
 dict set ::i18n_gui en {
     toc_no_headings    "no headings found"
-    br_help_gui        "h:help  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  c:config  z:reload  %s:sections  q:quit"
+    br_help_gui        "h:help  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  c:config  z:reload  /:filter  %s:sections  q:quit"
     br_stats_total_words "Total words"
     br_stats_total_chars "Total characters"
     ed_save_before     "Save \"%s\" before closing?"
@@ -126,6 +126,7 @@ dict set ::i18n_gui en {
     br_key_analyse         "analyse"
     br_key_words           "words"
     br_key_config          "config"
+    br_key_filter          "filter"
     br_key_reload          "reload"
     br_key_quit            "quit"
     br_help_new_file       "New file"
@@ -140,6 +141,7 @@ dict set ::i18n_gui en {
     br_help_rename_file    "Rename"
     br_help_font_settings  "Font settings by profile"
     br_help_reload         "Reload"
+    br_help_filter         "Filter files as you type (ESC clears)"
     br_help_browser_sections "Browser sections"
     br_help_fullscreen_br  "Fullscreen"
     br_help_open_file_br   "Open file"

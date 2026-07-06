@@ -1,16 +1,39 @@
 #!/usr/bin/env tclsh
 # Runtime checks for logical errors and missing definitions
+#
+# Loads writhdeck.tcl up to (but excluding) the main.tcl entry-point section,
+# so no UI loop is started. HOME is redirected to a temp sandbox so the
+# checks never touch the developer's real ~/Documents/writhdeck.
 
 set errors 0
 
-# Load the full application
+# --- sandbox HOME so state/INI/docs dirs are created in a temp dir ------------
+set sandbox [file join [expr {[info exists ::env(TMPDIR)] ? $::env(TMPDIR) : "/tmp"}] \
+    "writhdeck-test-runtime-[pid]"]
+file mkdir $sandbox
+set ::env(HOME) $sandbox
+catch {unset ::env(COMP_LINE)}
+catch {unset ::env(COMP_POINT)}
+
+# Force TUI mode: avoids loading Tk (and hanging on a stale DISPLAY)
+set ::argv {--no-gui}
+set ::argc 1
+
+# --- load the application without its entry point ------------------------------
 if {[catch {
     set fp [open writhdeck.tcl r]
     set content [read $fp]
     close $fp
-    eval $content
+    # Cut just before the "# main.tcl" section header (start of the
+    # dispatch code that would enter tui-main / build the Tk UI).
+    set mi [string first "\n# main.tcl\n" $content]
+    if {$mi < 0} { error "section header '# main.tcl' not found" }
+    set cut [string last "\n# ===" $content $mi]
+    if {$cut < 0} { set cut $mi }
+    eval [string range $content 0 $cut]
 } err]} {
     puts "ERROR: Failed to load writhdeck.tcl: $err"
+    file delete -force $sandbox
     exit 1
 }
 
@@ -30,7 +53,6 @@ set required_globals {
     ::cfg_profile
     ::cfg_lang
     ::i18n
-    ::br_entries
 }
 
 foreach var $required_globals {
@@ -49,7 +71,6 @@ set required_procs {
     tilde-expand
     list-docs
     br-dirs
-    br-refresh
     do-backup
     toggle-favorite
     get-word-occurrences
@@ -57,28 +78,26 @@ set required_procs {
     build-extra-entries
     apply-inline
     parse-heading
+    parse-comment
+    parse-list
     heading-level
     markers-update
+    status-build
     theme-colors
+    tui-main
 }
 
-foreach proc $required_procs {
-    if {![llength [info procs $proc]]} {
-        puts "ERROR: Missing procedure: $proc"
+foreach p $required_procs {
+    if {![llength [info procs $p]]} {
+        puts "ERROR: Missing procedure: $p"
         incr errors
     }
 }
 
-# Verify INI file location is readable
-if {![file readable [file dirname $::INI_FILE]]} {
-    puts "WARNING: INI directory not readable: [file dirname $::INI_FILE]"
-}
-
-# Verify DOCS_DIR_DEFAULT exists or can be created
-if {![file exists $::DOCS_DIR_DEFAULT]} {
-    if {[catch {file mkdir $::DOCS_DIR_DEFAULT}]} {
-        puts "WARNING: Cannot create DOCS_DIR_DEFAULT: $::DOCS_DIR_DEFAULT"
-    }
+# Sandbox HOME must have been picked up
+if {$::HOME_DIR ne $sandbox} {
+    puts "ERROR: HOME sandbox not honoured: HOME_DIR=$::HOME_DIR"
+    incr errors
 }
 
 # Check that HOME_DIR is absolute path
@@ -87,17 +106,10 @@ if {[file pathtype $::HOME_DIR] ne "absolute"} {
     incr errors
 }
 
-# Check that key color variables are defined (if in GUI mode)
-if {!$::no_gui} {
-    set required_colors {
-        ::bg ::fg ::bg_bar ::fg_bar ::bg_sel
-    }
-    foreach color $required_colors {
-        if {![info exists $color]} {
-            puts "ERROR: Missing color variable: $color"
-            incr errors
-        }
-    }
+# DOCS_DIR_DEFAULT must exist (created at load time by state.tcl)
+if {![file isdirectory $::DOCS_DIR_DEFAULT]} {
+    puts "ERROR: DOCS_DIR_DEFAULT was not created: $::DOCS_DIR_DEFAULT"
+    incr errors
 }
 
 # Verify i18n has at least English
@@ -106,11 +118,19 @@ if {![dict exists $::i18n en]} {
     incr errors
 }
 
+# t proc must fall back to the key name for unknown keys
+if {[t __no_such_key__] ne "__no_such_key__"} {
+    puts "ERROR: t proc does not fall back to key name"
+    incr errors
+}
+
+file delete -force $sandbox
+
 # Report results
 if {$errors == 0} {
-    puts "✓ Runtime checks passed"
+    puts "OK: runtime checks passed"
     exit 0
 } else {
-    puts "✗ Found $errors error(s)"
+    puts "FAIL: found $errors error(s)"
     exit 1
 }

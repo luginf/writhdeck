@@ -54,7 +54,7 @@ Two independent editor workspaces accessible via `key_workspace` (default F10). 
 - `::ws2_*` — same set for WS2 (initialized with `ws2_scratchpad=1` so WS2 starts as empty scratchpad)
 - `::split_ws2_mode` — 1 when right split pane shows WS2 independently
 
-**GUI — key procs** (`src/gui.tcl`):
+**GUI — key procs** (`src/gui.tcl`, except the `split-*` procs which live in the optional module `src/gui-split.tcl` — see CLAUDE.md **Generated file structure**):
 - `workspace-toggle` — saves active workspace to ws{n}_*, loads other workspace into `.ed.t`; in split mode redirects to `split-ws2-open`/`split-cycle-focus`; sets `ws_dual_mode=1`; cancels/restarts watch-file timer with correct `file_mtime_known`
 - `ed-update-title` — shows `[1]`/`[2]` in window title when `ws_dual_mode==1`
 - `split-pane-padding` — returns `{padx_in padx_out pady_in pady_out}` for pane widgets; shared by `split-make-pane` and `split-ws2-open`

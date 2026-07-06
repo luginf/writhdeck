@@ -311,27 +311,35 @@ Le code est organisé en modules dans le dossier `src/` et construit via un `Mak
 
 | Module | Lignes | Contenu |
 |---|---|---|
-| `src/boot.tcl` | ~80 | Polyglot sh/Tcl, parsing args, détection Tk, setup HOME_DIR |
+| `src/boot.tcl` | ~130 | Polyglot sh/Tcl, parsing args, détection Tk, setup HOME_DIR |
 | `src/boot-cli.tcl` | ~80 | Variante CLI : sans chargement Tk, force `::no_gui 1` |
 | `src/boot-jim.tcl` | ~80 | Variante JimTcl de boot-cli.tcl (polyglot appelle `jimsh`) |
-| `src/compat-jim.tcl` | ~90 | Shim de compatibilité JimTcl 0.84+ — chargé en premier dans les builds jim |
-| `src/state.tcl` | ~147 | Persistance JSON, curseurs, favoris, récents, stats quotidiennes |
-| `src/config.tcl` | ~804 | Chargement INI, profils, thèmes, clés, i18n, init thème |
-| `src/common.tcl` | ~204 | Listing docs, backup, parseurs inline, construction entrées browser |
-| `src/gui.tcl` | ~2001 | Bloc GUI (Tk) complet — enveloppé dans `if {!$::no_gui}` |
-| `src/tui.tcl` | ~1644 | Code mode TUI — interface terminal, browser, éditeur |
-| `src/main.tcl` | ~31 | Point d'entrée dispatch (GUI ou TUI selon `$::no_gui`) |
-| `src/main-cli.tcl` | ~2 | Point d'entrée CLI (appelle toujours `tui-main`) |
+| `src/compat-jim.tcl` | ~160 | Shim de compatibilité JimTcl 0.84+ — chargé en premier dans les builds jim |
+| `src/compat-dos.tcl` | ~90 | Shim FreeDOS/DJGPP — inclus uniquement dans `writhdeck-dos.tcl` |
+| `src/state.tcl` | ~155 | Persistance JSON, curseurs, favoris, récents, stats quotidiennes |
+| `src/config.tcl` | ~950 | Chargement INI, profils, thèmes, clés, i18n, init thème |
+| `src/common.tcl` | ~340 | Listing docs, backup, parseurs inline, status bar, autosave |
+| `src/analysis.tcl` | ~1080 | Module optionnel (proc-only) : structure, occurrences, répétitions, spellcheck |
+| `src/subdirs.tcl` | ~40 | Module optionnel (proc-only) : navigation sous-dossiers du browser |
+| `src/gui-config.tcl` | ~920 | Module optionnel GUI : dialogue de configuration des profils (`GUI_CONFIG=no`) |
+| `src/gui-toc-panel.tcl` | ~160 | Module optionnel GUI : panneau TOC épinglé, procs `toc-panel-*` (`GUI_TOC_PANEL=no`) |
+| `src/gui-split.tcl` | ~300 | Module optionnel GUI : split view + volet WS2, procs `split-*` (`GUI_SPLIT=no`) |
+| `src/gui.tcl` | ~2930 | Bloc GUI (Tk) complet — enveloppé dans `if {!$::no_gui}` |
+| `src/tui.tcl` | ~2630 | Code mode TUI — interface terminal, browser, éditeur |
+| `src/main.tcl` | ~40 | Point d'entrée dispatch (GUI ou TUI selon `$::no_gui`) |
+| `src/main-cli.tcl` | ~10 | Point d'entrée CLI (appelle toujours `tui-main`) |
 
 **Cibles de construction** (via `make`) :
-- `writhdeck.tcl` — version complète (GUI+TUI, ~4979 lignes avec marqueurs de section)
-- `writhdeck-cli.tcl` — TUI seul (~2899 lignes, sans chargement Tk)
+- `writhdeck.tcl` — version complète (GUI+TUI, ~11 000 lignes avec marqueurs de section)
+- `writhdeck-cli.tcl` — TUI seul (~5 500 lignes, sans chargement Tk)
 - `make compact` — génère `writhdeck-compact.tcl` + `writhdeck-cli-compact.tcl` (~-20 à -25%)
 - `make compact-cli` — génère `writhdeck-cli-compact.tcl` seulement
 - `make jimtcl` — génère `writhdeck-jim.tcl` (build TUI compatible JimTcl 0.84+)
-- `make clean` — supprime les fichiers générés (incluant variantes compact et jim)
+- `make mini` — génère `writhdeck-mini.tcl` (GUI+TUI compact, en seul, sans dialogue config)
+- `make sfx` / `make selfx` / `make dos` — variantes de distribution (voir CLAUDE.build.md)
+- `make clean` — supprime les fichiers générés (incluant variantes compact, jim, mini, sfx, selfx)
 
-Les deux fichiers générés sont exécutables, trackés dans git, et ont des marqueurs de section (`# === state.tcl ===`) pour la lisibilité.
+Les fichiers générés sont exécutables, trackés dans git, et ont des marqueurs de section (`# === state.tcl ===`) pour la lisibilité.
 
 **Ajustement après modularisation** :
 - Les deux fichiers générés **remplacent** l'ancien `writhdeck.tcl` monolithique
@@ -345,6 +353,8 @@ Les tests préviennent les bugs et assurent la cohérence. Lancés automatiqueme
 **Tests disponibles** :
 - `make test-i18n` — Valide les traductions (clés complètes, format strings cohérents)
 - `make test-syntax` — Vérifie la syntaxe Tcl via `info complete`
+- `make test-runtime` — Charge `writhdeck.tcl` (tronqué avant `main.tcl`, HOME sandboxé) et vérifie globals/procs requis
+- `make test-units` — Tests unitaires des procs cœur : parseurs de lignes, round-trip `state-save`/`state-load` (échappement JSON `\t`/`\"`), `status-build`, filtre `list-docs`
 - `make test-gui` — Teste le chargement de `writhdeck.tcl` en mode GUI
 - `make test-cli` — Teste le chargement de `writhdeck-cli.tcl` en mode CLI
 - `make test-langs` — Teste différentes combinaisons LANGUAGES
@@ -353,13 +363,15 @@ Les tests préviennent les bugs et assurent la cohérence. Lancés automatiqueme
 Stockés dans `tests/` :
 - `tests/test-i18n.tcl` — Validation des dictionnaires i18n
 - `tests/test-syntax.tcl` — Vérification syntaxe Tcl
+- `tests/test-runtime.tcl` — Vérifications runtime (chargement complet sans point d'entrée)
+- `tests/test-units.tcl` — Tests unitaires des procs partagées
 - `tests/README.md` — Documentation des tests
 
 Avant de committer, s'assurer que `make test` passe sans erreur.
 
 ## Système i18n (6 langues)
 
-Stocké dans `src/i18n/`, chaque fichier définit les traductions d'une langue (122 clés).
+Stocké dans `src/i18n/`, chaque fichier définit les traductions d'une langue (~228 clés — la source de vérité est `src/i18n/en.tcl`, le compte exact est vérifié par `make test-i18n`).
 
 **Langues supportées** :
 - `en.tcl` — English (fallback, toujours incluse)
@@ -384,7 +396,7 @@ make LANGUAGES="en fr"              # Standard : 131 KB
 make LANGUAGES="en fr de es ko no"  # Complet : 280 KB
 ```
 
-Le Makefile détecte automatiquement tous les fichiers `src/i18n/*.tcl` via `AVAILABLE_LANGS`. Ajouter une langue : créer `src/i18n/XX.tcl` avec les 122 clés, puis `make` l'inclut automatiquement.
+Le Makefile détecte automatiquement tous les fichiers `src/i18n/*.tcl` via `AVAILABLE_LANGS`. Ajouter une langue : créer `src/i18n/XX.tcl` avec toutes les clés de `src/i18n/en.tcl`, puis `make` l'inclut automatiquement.
 
 **Validation des traductions** :
 ```bash
@@ -395,7 +407,7 @@ Voir `src/i18n/README.md` pour le guide complet (format, ajout de langue, format
 
 ## Idées non implémentées
 
-- **Filtre browser** : taper des lettres filtre les fichiers en temps réel (~20 lignes)
+- ~~**Filtre browser**~~ — implémenté (session 2026-07-06) : touche `/` dans le browser (GUI et TUI), filtre incrémental insensible à la casse sur les entrées file/favorite/recent. État partagé `::br_type_filter` + `br-filter-match` (`src/common.tcl`). GUI : barre `.br.filter` au-dessus de la status bar (`br-filter-begin`/`br-filter-end`), ESC efface, Entrée/flèches rendent le focus à la liste. TUI : flag local `fmode` dans `tui-browser`, touches imprimables tapent le filtre, barre affiche `/texte_`. Clés i18n `br_key_filter`/`br_help_filter` + `/:filter` dans `br_help_tui`/`br_help_gui` (6 langues). Voir `.claude/CLAUDE.browser.md`.
 - **Temps de lecture** : `words/200` affiché dans le dialogue d'aide (1 ligne)
 - ~~**Auto-save**~~ — implémenté (voir session 2026-05-21)
 - **Renommer depuis l'éditeur** : `Ctrl+Shift+R` sans passer par le browser

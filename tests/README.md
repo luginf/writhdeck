@@ -10,6 +10,8 @@ From the project root, run:
 make test              # Run all tests
 make test-i18n        # Test translations only
 make test-syntax      # Test Tcl syntax only
+make test-runtime     # Runtime checks (globals/procs present after load)
+make test-units       # Unit tests (parsers, state persistence, status bar)
 make test-gui         # Test GUI build only
 make test-cli         # Test CLI build only
 make test-langs       # Test different language combinations
@@ -26,8 +28,8 @@ Validates the i18n translation system:
 
 **Example output:**
 ```
-✓ en: 122 keys (complete)
-✓ fr: 122 keys (complete)
+✓ en: 228 keys (complete)
+✓ fr: 228 keys (complete)
 ✓ All format strings are consistent
 ```
 
@@ -40,6 +42,24 @@ Checks Tcl syntax in all source files:
 **Coverage:**
 - src/*.tcl (main source modules)
 - src/i18n/*.tcl (translation files)
+
+### test-runtime.tcl
+Loads the generated `writhdeck.tcl` up to (but excluding) the `main.tcl`
+entry-point section, with `HOME` redirected to a temp sandbox, then verifies:
+- Required global variables exist (paths, config, i18n dict...)
+- Required core procs are defined (state, INI, parsers, browser, TUI entry)
+- `HOME` sandboxing is honoured and `DOCS_DIR_DEFAULT` is created
+- `t` falls back to the key name for unknown i18n keys
+
+### test-units.tcl
+Unit tests for the core shared procs, run against the generated
+`writhdeck-cli.tcl` (TUI build, no Tk required), sandboxed `HOME`:
+- Line parsers: `parse-heading`, `heading-level`, `parse-comment`,
+  `parse-list` — marker escaping, Markdown on/off
+- State persistence round-trip (`state-save`/`state-load`): cursors,
+  favorites, recents, daily stats — including `\t` and `\"` JSON escaping
+- `status-build`: tokens, literal fallback, timer/workspace/readonly flags
+- `list-docs`: browser filter patterns, `show_all` bypass, mtime ordering
 
 ## What Tests Catch
 

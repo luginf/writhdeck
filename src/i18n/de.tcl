@@ -3,7 +3,7 @@ dict set ::i18n de {
     toc_jump_bar       "Enter springen  esc/ctrl+q abbrechen"
     toc_headings       "%d Ueberschrift%s"
     br_no_docs         "Keine Dokumente. Druecke n, um ein Dokument zu erstellen."
-    br_help_tui        "h:%s  n:neu  t:notizen  f:fav  s:statistiken  b:sicherung  d:loeschen  r:umbenennen  i:info  a:analyse  c:konfiguration  w:woerter  %s:abschnitte  q:beenden"
+    br_help_tui        "h:%s  n:neu  t:notizen  f:fav  s:statistiken  b:sicherung  d:loeschen  r:umbenennen  i:info  a:analyse  c:konfiguration  w:woerter  /:filter  %s:abschnitte  q:beenden"
     br_backed_up       "sicherung %s -> %s  (%s)"
     br_favorites       "Favoriten"
     br_stats_title     "Schreibstatistiken"
@@ -87,7 +87,7 @@ dict set ::i18n de {
 # >>> GUI-ONLY  (stripped from TUI/CLI builds by the Makefile - see CLAUDE.build.md)
 dict set ::i18n_gui de {
     toc_no_headings    "keine Ueberschriften gefunden"
-    br_help_gui        "h:hilfe  n:neu  t:notizen  f:fav  s:statistiken  b:sicherung  d:loeschen  r:umbenennen  i:info  c:konfiguration  z:neuladen  %s:abschnitte  q:beenden"
+    br_help_gui        "h:hilfe  n:neu  t:notizen  f:fav  s:statistiken  b:sicherung  d:loeschen  r:umbenennen  i:info  c:konfiguration  z:neuladen  /:filter  %s:abschnitte  q:beenden"
     br_stats_total_words "Woerter insgesamt"
     br_stats_total_chars "Zeichen insgesamt"
     ed_save_before     "\"%s\" vor dem Schliessen speichern?"
@@ -126,6 +126,7 @@ dict set ::i18n_gui de {
     br_key_analyse         "analyse"
     br_key_words           "woerter"
     br_key_config          "konfiguration"
+    br_key_filter          "filter"
     br_key_reload          "neuladen"
     br_key_quit            "beenden"
     br_help_new_file       "Neue Datei"
@@ -140,6 +141,7 @@ dict set ::i18n_gui de {
     br_help_rename_file    "Umbenennen"
     br_help_font_settings  "Schrifteinstellungen nach Profil"
     br_help_reload         "Neuladen"
+    br_help_filter         "Dateien beim Tippen filtern (ESC loescht)"
     br_help_browser_sections "Browser-Abschnitte"
     br_help_fullscreen_br  "Vollbild"
     br_help_open_file_br   "Datei oeffnen"

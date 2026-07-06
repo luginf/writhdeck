@@ -3,7 +3,7 @@ dict set ::i18n fr {
     toc_jump_bar       "Enter aller  esc/ctrl+q annuler"
     toc_headings       "%d titre%s"
     br_no_docs         "Aucun document. Appuyez sur n pour en créer un."
-    br_help_tui        "h:%s  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  a:analyse  c:config  w:mots  %s:sections  q:quitter"
+    br_help_tui        "h:%s  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  a:analyse  c:config  w:mots  /:filtre  %s:sections  q:quitter"
     br_backed_up       "sauvegarde %s -> %s  (%s)"
     br_favorites       "Favoris"
     br_stats_title     "Statistiques d'écriture"
@@ -87,7 +87,7 @@ dict set ::i18n fr {
 # >>> GUI-ONLY  (stripped from TUI/CLI builds by the Makefile - see CLAUDE.build.md)
 dict set ::i18n_gui fr {
     toc_no_headings    "aucun titre trouvé"
-    br_help_gui        "h:aide  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  c:config  z:recharger  %s:sections  q:quitter"
+    br_help_gui        "h:aide  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  c:config  z:recharger  /:filtre  %s:sections  q:quitter"
     br_stats_total_words "Nombre de mots"
     br_stats_total_chars "Nombre de lettres"
     ed_save_before     "Enregistrer \"%s\" avant de fermer ?"
@@ -126,6 +126,7 @@ dict set ::i18n_gui fr {
     br_key_analyse         "analyse"
     br_key_words           "mots"
     br_key_config          "config"
+    br_key_filter          "filtre"
     br_key_reload          "recharger"
     br_key_quit            "quitter"
     br_help_new_file       "Nouveau fichier"
@@ -140,6 +141,7 @@ dict set ::i18n_gui fr {
     br_help_rename_file    "Renommer"
     br_help_font_settings  "Paramètres de police par profil"
     br_help_reload         "Recharger"
+    br_help_filter         "Filtrer les fichiers en tapant (ESC efface)"
     br_help_browser_sections "Sections du navigateur"
     br_help_fullscreen_br  "Plein écran"
     br_help_open_file_br   "Ouvrir un fichier"

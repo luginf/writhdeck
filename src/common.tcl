@@ -52,6 +52,16 @@ proc list-docs {dir} {
     return $result
 }
 
+# Incremental browser filter ("/" key in the browser): when non-empty, only
+# file/favorite/recent entries whose name contains the string are shown
+# (case-insensitive substring, no glob). Shared GUI/TUI.
+set ::br_type_filter ""
+proc br-filter-match {name} {
+    if {$::br_type_filter eq ""} { return 1 }
+    return [expr {[string first [string tolower $::br_type_filter] \
+                                [string tolower $name]] >= 0}]
+}
+
 proc br-dirs {} {
     if {$::DOCS_DIR ne $::DOCS_DIR_DEFAULT} {
         return [list $::DOCS_DIR $::DOCS_DIR_DEFAULT]

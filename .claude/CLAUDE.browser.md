@@ -6,7 +6,7 @@ The browser status bar displays shortcuts with bold formatting on the first char
 - Click handler uses `.br.bar.help tag bind` for each shortcut to invoke the command
 - Cursor changes to hand2 on hover (Enter/Leave bindings)
 
-Current browser keys (12 total): h (help), n (new), t (scratchpad), f (favorite), s (stats), b (backup), d (delete), r (rename), i (info), c (config), z (reload), q (quit).
+Current browser keys (13 total): h (help), n (new), t (scratchpad), f (favorite), s (stats), b (backup), d (delete), r (rename), i (info), c (config), z (reload), / (incremental filter), q (quit).
 
 ## Adding a new browser key
 
@@ -66,6 +66,14 @@ Section order: `DOCS_DIR_DEFAULT` → `DOCS_DIR` (if custom) → Favorites → R
 
 Both settings are editable on the Misc tab (`ffilter` entry, immediately followed by the standalone `fshowall` checkbox right below it, then the `fsubdirs` checkbox for `browser_subdirs`). Note: favorites/recents (`build-extra-entries`) are **not** filtered — only the main directory listing.
 
+## Incremental filter ("/" key)
+
+Live substring filter on top of the extension filter above. Shared state: `::br_type_filter` + `br-filter-match {name}` (`src/common.tcl`) — case-insensitive `string first` (no glob), empty = match all. Applied to `file`/`favorite`/`recent` entries in `br-refresh` (GUI) and the `tui-browser` entry-building loop; `dir`/`updir`/`header` entries are never filtered. Not persisted (transient, reset on restart).
+
+- **GUI**: `/` calls `br-filter-begin` — packs a `.br.filter` frame (label `/` + entry bound to `::br_type_filter`) above the status bar, `<KeyRelease>` triggers `br-refresh`. ESC in the entry or in the list calls `br-filter-end` (clears + destroys + refocuses list); Return/Up/Down refocus the list keeping the filter (bar stays visible as indicator). Also a clickable `/:filter` shortcut in the help bar (`br_key_filter`).
+- **TUI**: `/` sets the local `fmode` flag in `tui-browser`; while set, printable keys append to `::br_type_filter`, BACKSPACE deletes (exits when empty), ENTER keeps the filter and returns to normal keys, ESC clears; UP/DOWN/HOME/END fall through to navigation. Bottom-left bar shows `/text` (+ trailing `_` while typing). ESC with a filter active (outside fmode) clears it.
+- i18n keys: `br_key_filter`, `br_help_filter` (GUI-only block); `/:filter` added to `br_help_tui`/`br_help_gui` in all 6 languages.
+
 ## Subfolder navigation (optional module `src/subdirs.tcl`)
 
 Explorer-style browsing of subdirectories inside the document folders. Optional all-or-nothing module (`SUBDIRS_NAV` build flag, excluded by default from `writhdeck-mini.tcl`/`writhdeck-jim.tcl`, same pattern as analysis); every call site is guarded with `[info procs list-subdirs] ne ""`. Also gated at runtime by `::cfg_browser_subdirs` (`browser_subdirs` in `[behaviour]`, default `yes`).
@@ -81,6 +89,8 @@ Explorer-style browsing of subdirectories inside the document folders. Optional 
 `cfg_key_toc` (default `F11`) opens the TOC: as a floating popup (`toc-show`) normally, or toggles the pinned side panel (`toc-panel-toggle`) when `cfg_toc_pinned` is on. `cfg_key_toc_pinned` (default `Control-Shift-F11`) always toggles the pinned panel via `toc-panel-toggle`, regardless of `cfg_toc_pinned` — letting users open the panel once even while in popup mode.
 
 `toc-panel-toggle` calls `toc-panel-open`/`toc-panel-close` based on `::toc_panel_open`. Bound (GUI only, not in `writhdeck-cli.tcl`) on: `.ed.t` (main editor), each `split-make-pane` peer, the WS2 pane (`.ed.pw.r.t`), and `.ed.toc.lst` (closes the panel from inside it).
+
+All `toc-panel-*` procs live in the optional module `src/gui-toc-panel.tcl` (`GUI_TOC_PANEL=no` to exclude); every binding/call site is guarded with `[info procs toc-panel-toggle] ne ""` or gated by `::toc_panel_open` (see CLAUDE.md **Generated file structure**).
 
 ## GUI-specific patterns
 

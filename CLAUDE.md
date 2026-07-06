@@ -49,12 +49,19 @@ After `make`, the generated `writhdeck.tcl` contains these sections (concatenate
 | Common         | `src/common.tcl`       | `list-docs`, `br-dirs`, `do-backup`, `build-extra-entries`, inline parsers      |
 | **Analysis**   | `src/analysis.tcl`     | Structure outline, word occurrences, repetitions, spell-check — `get-word-occurrences`, `analyse-structure`, `find-repetitions`, `spell-check-document`, GUI+TUI dialogs |
 | **Subdirs**    | `src/subdirs.tcl`      | Subfolder navigation — `list-subdirs`, `br-is-root`, `::br_cwd` (GUI nav procs live in `gui.tcl`) |
+| **TOC panel**  | `src/gui-toc-panel.tcl`| Pinned TOC side panel — all `toc-panel-*` procs (optional, `GUI_TOC_PANEL=no`)  |
+| **Split view** | `src/gui-split.tcl`    | Split view + WS2 right pane — all `split-*` procs except `primary-ed` (optional, `GUI_SPLIT=no`) |
 | **GUI config** | `src/gui-config.tcl`   | `profile-config-dialog`, `config-tab-switch`, `profile-config-update-profile`   |
-| **GUI**        | `src/gui.tcl`          | Wrapped in `if {!$::no_gui}` — browser, editor, dialogs, TOC, split view        |
+| **GUI**        | `src/gui.tcl`          | Wrapped in `if {!$::no_gui}` — browser, editor, dialogs, TOC popup              |
 | **TUI**        | `src/tui.tcl`          | Terminal UI — `tui-init`, `tui-browser`, `tui-editor`, `tui-main`, helpers      |
 | Entry point    | `src/main.tcl`         | Dispatch: `if {$::no_gui}` → TUI, else → GUI                                   |
 
-Both `src/gui-config.tcl` and `src/gui.tcl` are wrapped in `if {!$::no_gui} { ... }`. `src/gui-config.tcl` is optional — excluded with `make GUI_CONFIG=no` (~700 lines, hides `c` key in browser).
+`src/gui-config.tcl`, `src/gui-toc-panel.tcl`, `src/gui-split.tcl` and `src/gui.tcl` are all wrapped in `if {!$::no_gui} { ... }`. The first three are optional GUI modules, loaded **before** `gui.tcl` so that `[info procs ...]` guards in `gui.tcl` evaluate correctly at load time:
+- `src/gui-config.tcl` — excluded with `make GUI_CONFIG=no` (~700 lines, hides `c` key in browser)
+- `src/gui-toc-panel.tcl` — excluded with `make GUI_TOC_PANEL=no` (~150 lines); state vars `::toc_panel_open`/`::toc_ed` stay in `gui.tcl` so var-gated call sites (`if {$::toc_panel_open} ...`) remain valid when absent; proc call sites are guarded with `[info procs toc-panel-toggle] ne ""`
+- `src/gui-split.tcl` — excluded with `make GUI_SPLIT=no` (~290 lines); `primary-ed` stays in `gui.tcl`; `::split_mode`/`::split_ws2_mode` are defined in `config.tcl` and only ever set to 1 inside the module, so var-gated call sites are dead branches when absent; the F3/F4 bindings and `split-close` in `close-editor` are guarded with `[info procs split-toggle] ne ""`
+
+Both are included by default in `writhdeck.tcl` **and** `writhdeck-mini.tcl` (`MINI_GUI_SPLIT`/`MINI_GUI_TOC_PANEL`, default `yes` — mini keeps its historical feature set).
 
 `src/analysis.tcl` contains only `proc` definitions (no top-level Tk-building code), so it is **not** wrapped in `if {!$::no_gui}` — safe to load in TUI-only builds. It is an optional all-or-nothing module: included by default in `writhdeck.tcl`/`writhdeck-cli.tcl` (`ANALYSIS_TOOLS=no` to exclude), excluded by default from `writhdeck-mini.tcl`/`writhdeck-jim.tcl` (`MINI_ANALYSIS_TOOLS=yes` / `JIM_ANALYSIS_TOOLS=yes` to include). When excluded, `gui.tcl`/`tui.tcl` guard every call site, binding, button, and help-bar entry with `if {[info procs <proc>] ne ""} { ... }`.
 
