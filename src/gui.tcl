@@ -771,6 +771,14 @@ bind .br.mid.lst <Button-1> {
 # --- editor frame -------------------------------------------------------------
 frame .ed -bg $bg2
 
+# writhdeck gère son propre copier/coller via le CLIPBOARD (tk_textCopy / ed-paste)
+# et n'utilise jamais la sélection primaire X. Sans ceci, la sélection interne
+# (surtout en mode "sticky") s'approprie en continu PRIMARY et gèle le clic-milieu
+# de TOUT le système. -exportselection 0 (défaut pour tous les widgets Text :
+# .ed.t, panes split .ed.pw.*, dialogues) découple la sélection interne de PRIMARY
+# sans rien changer au copier/coller de l'app.
+option add *Text.exportSelection 0
+
 text .ed.t \
     -wrap word -font $font \
     -bg $bg -fg $fg \
