@@ -342,6 +342,7 @@ Default mode, requires Tk.
 | i                      | Show full path                                                        |
 | c                      | Configuration — 3 tabs: Profile (fonts, margins, scheme, language), Timer, Misc (autosave) |
 | z                      | Reload — relaunch WrithDeck (returns to browser)                      |
+| /                      | Filter files as you type (Esc clears, Enter/arrows return to the list) |
 | h / Ctrl+H             | Help                                                                  |
 | Ctrl+O                 | Open any file (system dialog)                                         |
 | Ctrl+D                 | Toggle dark/light theme                                               |
@@ -428,6 +429,7 @@ Activated via `--no-gui` / `--tui` / `--ng`, or when no windowing system is avai
 | r              | Rename file                                                           |
 | i              | Show full path                                                        |
 | z              | Reload — relaunch WrithDeck (returns to browser)                      |
+| /              | Filter files as you type (Esc clears, Enter keeps the filter)         |
 | h / Ctrl+H     | Help                                                                  |
 | q / Ctrl+Q     | Quit                                                                  |
 
@@ -837,6 +839,7 @@ Mode par défaut, nécessite Tk.
 | i                      | Afficher le chemin complet                                                 |
 | c                      | Configuration — 3 onglets : Profil (polices, marges, couleurs, langue), Minuterie, Divers (sauvegarde auto) |
 | z                      | Recharger — relancer WrithDeck (retour au browser)                         |
+| /                      | Filtrer les fichiers en tapant (Echap efface, Entrée/flèches rendent la main à la liste) |
 | h / Ctrl+H             | Aide                                                                       |
 | Ctrl+O                 | Ouvrir un fichier quelconque (dialogue système)                            |
 | Ctrl+D                 | Basculer thème sombre/clair                                                |
@@ -924,6 +927,7 @@ Activé via `--no-gui` / `--tui` / `--ng`, ou si aucun système de fenêtrage n'
 | i              | Afficher le chemin complet                                                 |
 | c              | Configuration — profils, polices, marges, couleurs, langue                 |
 | z              | Recharger — relancer WrithDeck (retour au browser)                         |
+| /              | Filtrer les fichiers en tapant (Echap efface, Entrée conserve le filtre)   |
 | h / Ctrl+H     | Aide                                                                       |
 | q / Ctrl+Q     | Quitter                                                                    |
 

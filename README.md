@@ -167,6 +167,8 @@ Comprehensive regression tests prevent bugs and ensure code quality:
 make test           # Run all tests
 make test-i18n      # Test translations
 make test-syntax    # Test Tcl syntax
+make test-runtime   # Runtime checks (globals/procs present after load)
+make test-units     # Unit tests (parsers, state persistence, status bar)
 make test-gui       # Test GUI build
 make test-cli       # Test CLI build
 make test-langs     # Test language combinations

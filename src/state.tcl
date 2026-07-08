@@ -60,22 +60,27 @@ proc state-load {} {
         set cb [string first "\}" $raw [expr {$ob + 1}]]
         if {$ob >= 0 && $cb >= 0} {
             set sub [string range $raw [expr {$ob + 1}] [expr {$cb - 1}]]
-            set re {"([^"\\]*)"\s*:\s*\[(\d+)\s*,\s*(\d+)\]}
+            set re {"((?:[^"\\]|\\.)*)"\s*:\s*\[(\d+)\s*,\s*(\d+)\]}
             set start 0
             while {[regexp -start $start $re $sub -> key cy cx]} {
-                dict set ::cursor_cache $key [list [expr {int($cy)}] [expr {int($cx)}]]
                 set idx [string first "\"$key\"" $sub $start]
                 set start [expr {$idx + [string length $key] + 2}]
+                set key [string map [list {\\} "\\" {\"} "\""] $key]
+                dict set ::cursor_cache $key [list [expr {int($cy)}] [expr {int($cx)}]]
             }
         }
     }
-    foreach p [state-parse-array $raw "favorites"] { lappend ::favorites_list [file normalize $p] }
-    foreach p [state-parse-array $raw "recent"]    { lappend ::recent_list    [file normalize $p] }
+    foreach p [state-parse-array $raw "favorites"] {
+        lappend ::favorites_list [file normalize [string map [list {\\} "\\" {\"} "\""] $p]]
+    }
+    foreach p [state-parse-array $raw "recent"] {
+        lappend ::recent_list [file normalize [string map [list {\\} "\\" {\"} "\""] $p]]
+    }
     set new_cache {}
     dict for {k v} $::cursor_cache { dict set new_cache [file normalize $k] $v }
     set ::cursor_cache $new_cache
     foreach item [state-parse-array $raw "daily"] {
-        set item [string map [list {\t} "\t"] $item]
+        set item [string map [list {\\} "\\" {\"} "\"" {\t} "\t"] $item]
         set parts [split $item "\t"]
         if {[llength $parts] >= 3} {
             set fp [file normalize [lindex $parts 0]]

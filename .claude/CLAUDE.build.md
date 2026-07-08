@@ -7,6 +7,8 @@ Source modules listed in **Generated file structure** above. Build via `Makefile
 - `make LANGUAGES="en"` — build with English only
 - `make LANGUAGES="en fr de es ko"` — build with specific languages
 - `make GUI_CONFIG=no` — omit GUI config dialog from `writhdeck.tcl` (excludes `src/gui-config.tcl`, ~700 lines saved; `c` key hidden from browser)
+- `make GUI_SPLIT=no` — omit split view / WS2 right pane from `writhdeck.tcl` (excludes `src/gui-split.tcl`, ~290 lines; F3/F4 inert)
+- `make GUI_TOC_PANEL=no` — omit pinned TOC panel from `writhdeck.tcl` (excludes `src/gui-toc-panel.tcl`, ~150 lines; F11 always uses the floating popup)
 - `make ANALYSIS_TOOLS=no` — omit analysis tools (structure outline, word occurrences, repetitions; `src/analysis.tcl`) from `writhdeck.tcl`/`writhdeck-cli.tcl` (on by default); `make mini MINI_ANALYSIS_TOOLS=yes` / `make jimtcl JIM_ANALYSIS_TOOLS=yes` add them to those targets (off by default)
 - `make compact` — generate `writhdeck-compact.tcl` + `writhdeck-cli-compact.tcl` (stripped, ~-20 to -25%)
 - `make compact-cli` — generate `writhdeck-cli-compact.tcl` only
@@ -30,7 +32,7 @@ Both generated files are:
 
 Modular language system with 6 supported languages. Store translations in `src/i18n/`:
 
-**Language files** (135 keys each):
+**Language files** (~228 keys each — `src/i18n/en.tcl` is the source of truth; `make test-i18n` verifies the exact count):
 - `src/i18n/en.tcl` — English (always included, fallback language)
 - `src/i18n/fr.tcl` — Français
 - `src/i18n/de.tcl` — Deutsch

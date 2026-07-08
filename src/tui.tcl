@@ -820,6 +820,7 @@ proc tui-compute-wc {} {
 proc tui-browser {} {
     set sel 0; set scroll 0; set msg ""
     set cwd ""
+    set fmode 0    ;# incremental filter typing mode ("/" key)
     set prev_rows -1; set prev_cols -1
     while 1 {
         set ::tui_size_n 14
@@ -836,6 +837,7 @@ proc tui-browser {} {
             lappend entries [list updir [file dirname $cwd] ".."]
             foreach d [list-subdirs $cwd] { lappend entries [list dir $cwd $d] }
             foreach f [list-docs $cwd] {
+                if {![br-filter-match $f]} continue
                 lappend entries [list file $cwd $f]
                 incr fcount
             }
@@ -843,13 +845,17 @@ proc tui-browser {} {
             foreach dir [br-dirs] {
                 foreach f [list-docs $dir] { lappend shown [file join $dir $f] }
             }
-            foreach e [build-extra-entries $shown] { lappend entries $e }
+            foreach e [build-extra-entries $shown] {
+                if {[lindex $e 0] in {favorite recent} && ![br-filter-match [lindex $e 2]]} continue
+                lappend entries $e
+            }
             foreach dir [br-dirs] {
                 lappend entries [list header $dir ""]
                 if {$_subnav} {
                     foreach d [list-subdirs $dir] { lappend entries [list dir $dir $d] }
                 }
                 foreach f [list-docs $dir] {
+                    if {![br-filter-match $f]} continue
                     lappend entries [list file $dir $f]
                     incr fcount
                 }
@@ -912,12 +918,38 @@ proc tui-browser {} {
         if {$::cfg_help_bar ne ""} { tui-help [expr {$rows-2}] [format [t br_help_tui] [t br_key_help] $::cfg_lbl_toc] $cols }
         set clk [expr {[status-zone-of clock] ne "" ? "  [clock format [clock seconds] -format {%H:%M}]" : ""}]
         set _barpath [expr {$_subnav && $cwd ne "" ? $cwd : $::DOCS_DIR_DEFAULT}]
-        if {$msg ne ""} { tui-bar [expr {$rows-1}] " $msg" "${clk} " $cols; set msg ""
+        if {$fmode || $::br_type_filter ne ""} {
+            set _fl " /$::br_type_filter"
+            if {$fmode} { append _fl "_" }
+            tui-bar [expr {$rows-1}] $_fl " [t br_files $fcount $plu]${clk} " $cols
+            set msg ""
+        } elseif {$msg ne ""} { tui-bar [expr {$rows-1}] " $msg" "${clk} " $cols; set msg ""
         } else { tui-bar [expr {$rows-1}] " [string map [list $::HOME_DIR ~] $_barpath]" \
                          " [t br_files $fcount $plu]${clk} " $cols }
         flush stdout
 
         set key [tui-getch]
+        # incremental filter typing mode: printable keys edit ::br_type_filter,
+        # ENTER keeps the filter and returns to normal keys, ESC clears it;
+        # UP/DOWN/HOME/END fall through so the selection can move while typing
+        if {$fmode} {
+            if {$key eq "ESC"} { set ::br_type_filter ""; set fmode 0; set sel 0; continue }
+            if {$key eq "ENTER"} { set fmode 0; continue }
+            if {$key eq "BACKSPACE"} {
+                if {$::br_type_filter eq ""} { set fmode 0 } else {
+                    set ::br_type_filter [string range $::br_type_filter 0 end-1]
+                }
+                set sel 0; continue
+            }
+            if {[string length $key] == 1 && $key >= " "} {
+                append ::br_type_filter $key
+                set sel 0; continue
+            }
+        } elseif {$key eq "/"} {
+            set fmode 1; continue
+        } elseif {$key eq "ESC" && $::br_type_filter ne ""} {
+            set ::br_type_filter ""; set sel 0; continue
+        }
         set cfi [expr {$nf > 0 ? [lindex $fidx $sel] : -1}]
         set ctype [expr {$cfi >= 0 ? [lindex [lindex $entries $cfi] 0] : ""}]
         switch -- $key {

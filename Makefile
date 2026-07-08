@@ -8,6 +8,8 @@
 #   make CLI_LANGUAGES="en fr de es ko no"            # CLI: specific languages (by default: en fr)
 #   make SCHEMES="default solarized gruvbox"          # GUI: specific schemes (by default: all)
 #   make GUI_CONFIG=no                                # GUI: omit config dialog (~700 lines saved)
+#   make GUI_SPLIT=no                                 # GUI: omit split view / WS2 right pane (~290 lines)
+#   make GUI_TOC_PANEL=no                             # GUI: omit pinned TOC panel (~150 lines)
 #   make CLI_SCHEMES="default alt01"                  # CLI: specific schemes (by default: default alt01)
 #   make ANALYSIS_TOOLS=no                            # writhdeck.tcl/writhdeck-cli.tcl: omit analysis tools (structure, occurrences, repetitions)
 #   make mini MINI_ANALYSIS_TOOLS=yes                 # writhdeck-mini.tcl: include analysis tools (off by default)
@@ -40,6 +42,20 @@ SEP       := ===================================================================
 GUI_CONFIG ?= yes
 GUI_CONFIG_SRC := $(if $(filter yes,$(GUI_CONFIG)),src/gui-config.tcl,)
 
+# Split view (F3 + WS2 right pane) and pinned TOC panel (Shift+Ctrl+F11):
+# optional GUI modules following the gui-config.tcl pattern (wrapped in
+# if {!$::no_gui}, loaded before gui.tcl, call sites guarded with
+# [info procs ...] or gated by ::split_mode / ::toc_panel_open).
+# On by default everywhere (mini keeps its historical feature set).
+GUI_SPLIT          ?= yes
+GUI_TOC_PANEL      ?= yes
+MINI_GUI_SPLIT     ?= yes
+MINI_GUI_TOC_PANEL ?= yes
+GUI_SPLIT_SRC          := $(if $(filter yes,$(GUI_SPLIT)),src/gui-split.tcl,)
+GUI_TOC_PANEL_SRC      := $(if $(filter yes,$(GUI_TOC_PANEL)),src/gui-toc-panel.tcl,)
+MINI_GUI_SPLIT_SRC     := $(if $(filter yes,$(MINI_GUI_SPLIT)),src/gui-split.tcl,)
+MINI_GUI_TOC_PANEL_SRC := $(if $(filter yes,$(MINI_GUI_TOC_PANEL)),src/gui-toc-panel.tcl,)
+
 # Analysis tools (structure outline, word occurrences, repetitions): one
 # all-or-nothing module, src/analysis.tcl. On by default for writhdeck.tcl
 # and writhdeck-cli.tcl; off by default for writhdeck-mini.tcl and
@@ -61,7 +77,7 @@ SUBDIRS_SRC      := $(if $(filter yes,$(SUBDIRS_NAV)),src/subdirs.tcl,)
 MINI_SUBDIRS_SRC := $(if $(filter yes,$(MINI_SUBDIRS_NAV)),src/subdirs.tcl,)
 JIM_SUBDIRS_SRC  := $(if $(filter yes,$(JIM_SUBDIRS_NAV)),src/subdirs.tcl,)
 
-GUI_SRCS  := src/state.tcl src/config.tcl $(GUI_SCHEME_FILES) src/common.tcl $(ANALYSIS_SRC) $(SUBDIRS_SRC) $(GUI_CONFIG_SRC) src/gui.tcl src/tui.tcl src/main.tcl
+GUI_SRCS  := src/state.tcl src/config.tcl $(GUI_SCHEME_FILES) src/common.tcl $(ANALYSIS_SRC) $(SUBDIRS_SRC) $(GUI_TOC_PANEL_SRC) $(GUI_SPLIT_SRC) $(GUI_CONFIG_SRC) src/gui.tcl src/tui.tcl src/main.tcl
 MINI_SCHEME_FILES := $(patsubst %,src/schemes/%.tcl,$(AVAILABLE_SCHEMES))
 CLI_SRCS  := src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl $(ANALYSIS_SRC) $(SUBDIRS_SRC) src/tui.tcl src/main-cli.tcl
 JIM_SRCS  := src/compat-jim.tcl src/state.tcl src/config.tcl $(CLI_SCHEME_FILES) src/common.tcl $(JIM_ANALYSIS_SRC) $(JIM_SUBDIRS_SRC) src/tui.tcl src/main-cli.tcl
@@ -78,6 +94,9 @@ STRIP_DOS  := sed '/>>> DOS-ONLY/,/<<< DOS-ONLY/d'
 DOS_FILTER  = $(STRIP_DOS)
 
 .PHONY: all mini clean compact compact-cli jimtcl dos sfx selfx diagrams .FORCE
+
+# "diagrams" is defined before "all"; keep plain "make" building the app.
+.DEFAULT_GOAL := all
 
 # Render media/*.mmd Mermaid diagrams to PNG (see tools/render-diagrams.sh).
 diagrams:
@@ -102,6 +121,8 @@ writhdeck.tcl: src/boot.tcl $(GUI_SRCS) $(GUI_I18N_FILES) Makefile
 	@cat src/common.tcl >> $@
 	@for f in $(ANALYSIS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "analysis.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
 	@for f in $(SUBDIRS_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "subdirs.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
+	@for f in $(GUI_TOC_PANEL_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "gui-toc-panel.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
+	@for f in $(GUI_SPLIT_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "gui-split.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
 	@for f in $(GUI_CONFIG_SRC); do printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "gui-config.tcl" "$(SEP)" >> $@; cat $$f >> $@; done
 	@printf '\n# %s\n# %s\n# %s\n' "$(SEP)" "gui.tcl" "$(SEP)" >> $@
 	@cat src/gui.tcl >> $@
@@ -216,7 +237,8 @@ writhdeck-selfx.tcl: writhdeck.tcl $(COMPACT_SCRIPT) tools/make-selfx.tcl
 mini: writhdeck-mini.tcl
 
 writhdeck-mini.tcl: src/boot.tcl src/state.tcl src/config.tcl $(MINI_SCHEME_FILES) \
-                    src/i18n/en.tcl src/common.tcl $(MINI_ANALYSIS_SRC) $(MINI_SUBDIRS_SRC) src/gui.tcl src/tui.tcl src/main.tcl \
+                    src/i18n/en.tcl src/common.tcl $(MINI_ANALYSIS_SRC) $(MINI_SUBDIRS_SRC) \
+                    $(MINI_GUI_TOC_PANEL_SRC) $(MINI_GUI_SPLIT_SRC) src/gui.tcl src/tui.tcl src/main.tcl \
                     $(COMPACT_SCRIPT) Makefile
 	@rm -f writhdeck-mini.tcl writhdeck-mini-raw.tcl
 	@cat src/boot.tcl > writhdeck-mini-raw.tcl
@@ -226,6 +248,8 @@ writhdeck-mini.tcl: src/boot.tcl src/state.tcl src/config.tcl $(MINI_SCHEME_FILE
 	@cat src/i18n/en.tcl src/common.tcl >> writhdeck-mini-raw.tcl
 	@for f in $(MINI_ANALYSIS_SRC); do cat $$f >> writhdeck-mini-raw.tcl; done
 	@for f in $(MINI_SUBDIRS_SRC); do cat $$f >> writhdeck-mini-raw.tcl; done
+	@for f in $(MINI_GUI_TOC_PANEL_SRC); do cat $$f >> writhdeck-mini-raw.tcl; done
+	@for f in $(MINI_GUI_SPLIT_SRC); do cat $$f >> writhdeck-mini-raw.tcl; done
 	@cat src/gui.tcl >> writhdeck-mini-raw.tcl
 	@$(DOS_FILTER) src/tui.tcl >> writhdeck-mini-raw.tcl
 	@cat src/main.tcl >> writhdeck-mini-raw.tcl
@@ -238,7 +262,7 @@ clean:
 	rm -f writhdeck.tcl writhdeck-cli.tcl writhdeck-compact.tcl writhdeck-cli-compact.tcl writhdeck-jim.tcl writhdeck-dos.tcl writhdeck-sfx writhdeck-mini.tcl writhdeck-mini-raw.tcl writhdeck-selfx.tcl writhdeck-selfx-raw.tcl
 	@echo "Cleaned build artifacts"
 
-.PHONY: test-gui test-cli test test-i18n test-syntax test-langs lint-doc
+.PHONY: test-gui test-cli test test-i18n test-syntax test-langs test-runtime test-units lint-doc
 
 test-gui: writhdeck.tcl
 	@echo "Testing writhdeck.tcl (GUI mode)..."
@@ -256,13 +280,21 @@ test-syntax:
 	@echo "Checking Tcl syntax..."
 	@tclsh tests/test-syntax.tcl
 
+test-runtime: writhdeck.tcl
+	@echo "Running runtime checks..."
+	@tclsh tests/test-runtime.tcl
+
+test-units: writhdeck-cli.tcl
+	@echo "Running unit tests..."
+	@tclsh tests/test-units.tcl
+
 test-langs:
 	@echo "Testing builds with different language combinations..."
 	@$(MAKE) clean > /dev/null && $(MAKE) LANGUAGES="fr" > /dev/null && echo "✓ LANGUAGES=fr (includes en automatically)"
 	@$(MAKE) clean > /dev/null && $(MAKE) LANGUAGES="de es" > /dev/null && echo "✓ LANGUAGES=de es"
 	@$(MAKE) clean > /dev/null && $(MAKE) > /dev/null && echo "✓ Default build (all languages)"
 
-test: test-i18n test-syntax test-gui test-cli test-langs
+test: test-i18n test-syntax test-runtime test-units test-gui test-cli test-langs
 	@echo ""
 	@echo "✓ All regression tests passed"
 

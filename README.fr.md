@@ -158,6 +158,8 @@ Des tests de régression complets préviennent les bugs et assurent la qualité 
 make test           # Lancer tous les tests
 make test-i18n      # Tester les traductions
 make test-syntax    # Vérifier la syntaxe Tcl
+make test-runtime   # Vérifications runtime (globals/procs présents au chargement)
+make test-units     # Tests unitaires (parseurs, persistance, barre de statut)
 make test-gui       # Tester le build GUI
 make test-cli       # Tester le build CLI
 make test-langs     # Tester les combinaisons de langues

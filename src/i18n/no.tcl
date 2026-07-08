@@ -3,7 +3,7 @@ dict set ::i18n no {
     toc_jump_bar       "Skriv inn hopp  esc/ctrl+q avbryt"
     toc_headings       "%d overskrift%s"
     br_no_docs         "Ingen dokumenter ennå. Trykk n for å lage en ny."
-    br_help_tui        "h:%s  n:ny  t:notisbok  f:favoritt  s:statistikk  b:sikkerhetskopi  d:slett  r:gi nytt navn  i:info  a:analyser  c:innstillinger  w:ord  %s:avsnitt  q:avslutt"
+    br_help_tui        "h:%s  n:ny  t:notisbok  f:favoritt  s:statistikk  b:sikkerhetskopi  d:slett  r:gi nytt navn  i:info  a:analyser  c:innstillinger  w:ord  /:filter  %s:avsnitt  q:avslutt"
     br_backed_up       "sikkerhetskopi %s -> %s  (%s)"
     br_favorites       "Favoritter"
     br_stats_title     "Skrivstatistikk"
@@ -87,7 +87,7 @@ dict set ::i18n no {
 # >>> GUI-ONLY  (stripped from TUI/CLI builds by the Makefile - see CLAUDE.build.md)
 dict set ::i18n_gui no {
     toc_no_headings    "ingen overskrifter funnet"
-    br_help_gui        "h:hjelp  n:ny  t:notisbok  f:favoritt  s:statistikk  b:sikkerhetskopi  d:slett  r:gi nytt navn  i:info  c:innstillinger  z:last på nytt  %s:avsnitt  q:avslutt"
+    br_help_gui        "h:hjelp  n:ny  t:notisbok  f:favoritt  s:statistikk  b:sikkerhetskopi  d:slett  r:gi nytt navn  i:info  c:innstillinger  z:last på nytt  /:filter  %s:avsnitt  q:avslutt"
     br_stats_total_words "Ord totalt"
     br_stats_total_chars "Tegn totalt"
     ed_save_before     "Lagre \"%s\" før lukking?"
@@ -126,6 +126,7 @@ dict set ::i18n_gui no {
     br_key_analyse         "analyser"
     br_key_words           "ord"
     br_key_config          "innstillinger"
+    br_key_filter          "filter"
     br_key_reload          "last på nytt"
     br_key_quit            "avslutt"
     br_help_new_file       "Ny fil"
@@ -140,6 +141,7 @@ dict set ::i18n_gui no {
     br_help_rename_file    "Gi nytt navn"
     br_help_font_settings  "Skriftinnstillinger etter profil"
     br_help_reload         "Last på nytt"
+    br_help_filter         "Filtrer filer mens du skriver (ESC tømmer)"
     br_help_browser_sections "Nettleseravsnitt"
     br_help_fullscreen_br  "Fullskjerm"
     br_help_open_file_br   "Åpne fil"

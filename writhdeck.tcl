@@ -186,22 +186,27 @@ proc state-load {} {
         set cb [string first "\}" $raw [expr {$ob + 1}]]
         if {$ob >= 0 && $cb >= 0} {
             set sub [string range $raw [expr {$ob + 1}] [expr {$cb - 1}]]
-            set re {"([^"\\]*)"\s*:\s*\[(\d+)\s*,\s*(\d+)\]}
+            set re {"((?:[^"\\]|\\.)*)"\s*:\s*\[(\d+)\s*,\s*(\d+)\]}
             set start 0
             while {[regexp -start $start $re $sub -> key cy cx]} {
-                dict set ::cursor_cache $key [list [expr {int($cy)}] [expr {int($cx)}]]
                 set idx [string first "\"$key\"" $sub $start]
                 set start [expr {$idx + [string length $key] + 2}]
+                set key [string map [list {\\} "\\" {\"} "\""] $key]
+                dict set ::cursor_cache $key [list [expr {int($cy)}] [expr {int($cx)}]]
             }
         }
     }
-    foreach p [state-parse-array $raw "favorites"] { lappend ::favorites_list [file normalize $p] }
-    foreach p [state-parse-array $raw "recent"]    { lappend ::recent_list    [file normalize $p] }
+    foreach p [state-parse-array $raw "favorites"] {
+        lappend ::favorites_list [file normalize [string map [list {\\} "\\" {\"} "\""] $p]]
+    }
+    foreach p [state-parse-array $raw "recent"] {
+        lappend ::recent_list [file normalize [string map [list {\\} "\\" {\"} "\""] $p]]
+    }
     set new_cache {}
     dict for {k v} $::cursor_cache { dict set new_cache [file normalize $k] $v }
     set ::cursor_cache $new_cache
     foreach item [state-parse-array $raw "daily"] {
-        set item [string map [list {\t} "\t"] $item]
+        set item [string map [list {\\} "\\" {\"} "\"" {\t} "\t"] $item]
         set parts [split $item "\t"]
         if {[llength $parts] >= 3} {
             set fp [file normalize [lindex $parts 0]]
@@ -1427,7 +1432,7 @@ dict set ::i18n en {
     toc_jump_bar       "Enter jump  esc/ctrl+q cancel"
     toc_headings       "%d heading%s"
     br_no_docs         "No documents yet. Press n to create one."
-    br_help_tui        "h:%s  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  a:analyse  c:config  w:words  %s:sections  q:quit"
+    br_help_tui        "h:%s  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  a:analyse  c:config  w:words  /:filter  %s:sections  q:quit"
     br_backed_up       "backup %s -> %s  (%s)"
     br_favorites       "Favorites"
     br_stats_title     "Writing stats"
@@ -1511,7 +1516,7 @@ dict set ::i18n en {
 # >>> GUI-ONLY  (stripped from TUI/CLI builds by the Makefile - see CLAUDE.build.md)
 dict set ::i18n_gui en {
     toc_no_headings    "no headings found"
-    br_help_gui        "h:help  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  c:config  z:reload  %s:sections  q:quit"
+    br_help_gui        "h:help  n:new  t:scratchpad  f:fav  s:stats  b:backup  d:delete  r:rename  i:info  c:config  z:reload  /:filter  %s:sections  q:quit"
     br_stats_total_words "Total words"
     br_stats_total_chars "Total characters"
     ed_save_before     "Save \"%s\" before closing?"
@@ -1550,6 +1555,7 @@ dict set ::i18n_gui en {
     br_key_analyse         "analyse"
     br_key_words           "words"
     br_key_config          "config"
+    br_key_filter          "filter"
     br_key_reload          "reload"
     br_key_quit            "quit"
     br_help_new_file       "New file"
@@ -1564,6 +1570,7 @@ dict set ::i18n_gui en {
     br_help_rename_file    "Rename"
     br_help_font_settings  "Font settings by profile"
     br_help_reload         "Reload"
+    br_help_filter         "Filter files as you type (ESC clears)"
     br_help_browser_sections "Browser sections"
     br_help_fullscreen_br  "Fullscreen"
     br_help_open_file_br   "Open file"
@@ -1661,7 +1668,7 @@ dict set ::i18n de {
     toc_jump_bar       "Enter springen  esc/ctrl+q abbrechen"
     toc_headings       "%d Ueberschrift%s"
     br_no_docs         "Keine Dokumente. Druecke n, um ein Dokument zu erstellen."
-    br_help_tui        "h:%s  n:neu  t:notizen  f:fav  s:statistiken  b:sicherung  d:loeschen  r:umbenennen  i:info  a:analyse  c:konfiguration  w:woerter  %s:abschnitte  q:beenden"
+    br_help_tui        "h:%s  n:neu  t:notizen  f:fav  s:statistiken  b:sicherung  d:loeschen  r:umbenennen  i:info  a:analyse  c:konfiguration  w:woerter  /:filter  %s:abschnitte  q:beenden"
     br_backed_up       "sicherung %s -> %s  (%s)"
     br_favorites       "Favoriten"
     br_stats_title     "Schreibstatistiken"
@@ -1745,7 +1752,7 @@ dict set ::i18n de {
 # >>> GUI-ONLY  (stripped from TUI/CLI builds by the Makefile - see CLAUDE.build.md)
 dict set ::i18n_gui de {
     toc_no_headings    "keine Ueberschriften gefunden"
-    br_help_gui        "h:hilfe  n:neu  t:notizen  f:fav  s:statistiken  b:sicherung  d:loeschen  r:umbenennen  i:info  c:konfiguration  z:neuladen  %s:abschnitte  q:beenden"
+    br_help_gui        "h:hilfe  n:neu  t:notizen  f:fav  s:statistiken  b:sicherung  d:loeschen  r:umbenennen  i:info  c:konfiguration  z:neuladen  /:filter  %s:abschnitte  q:beenden"
     br_stats_total_words "Woerter insgesamt"
     br_stats_total_chars "Zeichen insgesamt"
     ed_save_before     "\"%s\" vor dem Schliessen speichern?"
@@ -1784,6 +1791,7 @@ dict set ::i18n_gui de {
     br_key_analyse         "analyse"
     br_key_words           "woerter"
     br_key_config          "konfiguration"
+    br_key_filter          "filter"
     br_key_reload          "neuladen"
     br_key_quit            "beenden"
     br_help_new_file       "Neue Datei"
@@ -1798,6 +1806,7 @@ dict set ::i18n_gui de {
     br_help_rename_file    "Umbenennen"
     br_help_font_settings  "Schrifteinstellungen nach Profil"
     br_help_reload         "Neuladen"
+    br_help_filter         "Dateien beim Tippen filtern (ESC loescht)"
     br_help_browser_sections "Browser-Abschnitte"
     br_help_fullscreen_br  "Vollbild"
     br_help_open_file_br   "Datei oeffnen"
@@ -1895,7 +1904,7 @@ dict set ::i18n es {
     toc_jump_bar       "Enter saltar  esc/ctrl+q cancelar"
     toc_headings       "%d encabezado%s"
     br_no_docs         "Sin documentos. Presiona n para crear uno."
-    br_help_tui        "h:%s  n:nuevo  t:notas  f:fav  s:estadisticas  b:copia  d:eliminar  r:renombrar  i:info  a:analizar  c:configuracion  w:palabras  %s:secciones  q:salir"
+    br_help_tui        "h:%s  n:nuevo  t:notas  f:fav  s:estadisticas  b:copia  d:eliminar  r:renombrar  i:info  a:analizar  c:configuracion  w:palabras  /:filtro  %s:secciones  q:salir"
     br_backed_up       "copia %s -> %s  (%s)"
     br_favorites       "Favoritos"
     br_stats_title     "Estadisticas de escritura"
@@ -1979,7 +1988,7 @@ dict set ::i18n es {
 # >>> GUI-ONLY  (stripped from TUI/CLI builds by the Makefile - see CLAUDE.build.md)
 dict set ::i18n_gui es {
     toc_no_headings    "no se encontraron encabezados"
-    br_help_gui        "h:ayuda  n:nuevo  t:notas  f:fav  s:estadisticas  b:copia  d:eliminar  r:renombrar  i:info  c:configuracion  z:recargar  %s:secciones  q:salir"
+    br_help_gui        "h:ayuda  n:nuevo  t:notas  f:fav  s:estadisticas  b:copia  d:eliminar  r:renombrar  i:info  c:configuracion  z:recargar  /:filtro  %s:secciones  q:salir"
     br_stats_total_words "Total de palabras"
     br_stats_total_chars "Total de caracteres"
     ed_save_before     "Guardar \"%s\" antes de cerrar?"
@@ -2018,6 +2027,7 @@ dict set ::i18n_gui es {
     br_key_analyse         "analizar"
     br_key_words           "palabras"
     br_key_config          "configuracion"
+    br_key_filter          "filtro"
     br_key_reload          "recargar"
     br_key_quit            "salir"
     br_help_new_file       "Nuevo archivo"
@@ -2032,6 +2042,7 @@ dict set ::i18n_gui es {
     br_help_rename_file    "Renombrar"
     br_help_font_settings  "Configuracion de fuente por perfil"
     br_help_reload         "Recargar"
+    br_help_filter         "Filtrar archivos al escribir (ESC borra)"
     br_help_browser_sections "Secciones del navegador"
     br_help_fullscreen_br  "Pantalla completa"
     br_help_open_file_br   "Abrir archivo"
@@ -2129,7 +2140,7 @@ dict set ::i18n fr {
     toc_jump_bar       "Enter aller  esc/ctrl+q annuler"
     toc_headings       "%d titre%s"
     br_no_docs         "Aucun document. Appuyez sur n pour en créer un."
-    br_help_tui        "h:%s  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  a:analyse  c:config  w:mots  %s:sections  q:quitter"
+    br_help_tui        "h:%s  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  a:analyse  c:config  w:mots  /:filtre  %s:sections  q:quitter"
     br_backed_up       "sauvegarde %s -> %s  (%s)"
     br_favorites       "Favoris"
     br_stats_title     "Statistiques d'écriture"
@@ -2213,7 +2224,7 @@ dict set ::i18n fr {
 # >>> GUI-ONLY  (stripped from TUI/CLI builds by the Makefile - see CLAUDE.build.md)
 dict set ::i18n_gui fr {
     toc_no_headings    "aucun titre trouvé"
-    br_help_gui        "h:aide  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  c:config  z:recharger  %s:sections  q:quitter"
+    br_help_gui        "h:aide  n:nouveau  t:bloc-notes  f:fav  s:stats  b:backup  d:supprimer  r:renommer  i:infos  c:config  z:recharger  /:filtre  %s:sections  q:quitter"
     br_stats_total_words "Nombre de mots"
     br_stats_total_chars "Nombre de lettres"
     ed_save_before     "Enregistrer \"%s\" avant de fermer ?"
@@ -2252,6 +2263,7 @@ dict set ::i18n_gui fr {
     br_key_analyse         "analyse"
     br_key_words           "mots"
     br_key_config          "config"
+    br_key_filter          "filtre"
     br_key_reload          "recharger"
     br_key_quit            "quitter"
     br_help_new_file       "Nouveau fichier"
@@ -2266,6 +2278,7 @@ dict set ::i18n_gui fr {
     br_help_rename_file    "Renommer"
     br_help_font_settings  "Paramètres de police par profil"
     br_help_reload         "Recharger"
+    br_help_filter         "Filtrer les fichiers en tapant (ESC efface)"
     br_help_browser_sections "Sections du navigateur"
     br_help_fullscreen_br  "Plein écran"
     br_help_open_file_br   "Ouvrir un fichier"
@@ -2363,7 +2376,7 @@ dict set ::i18n ko {
     toc_jump_bar       "이동 입력  esc/ctrl+q 취소"
     toc_headings       "%d개의 제목%s"
     br_no_docs         "문서가 없습니다. n을 눌러서 새 문서를 만드세요."
-    br_help_tui        "h:%s  n:새로운  t:메모장  f:즐겨찾기  s:통계  b:백업  d:삭제  r:이름변경  i:정보  a:분석  c:설정  w:단어  %s:섹션  q:종료"
+    br_help_tui        "h:%s  n:새로운  t:메모장  f:즐겨찾기  s:통계  b:백업  d:삭제  r:이름변경  i:정보  a:분석  c:설정  w:단어  /:필터  %s:섹션  q:종료"
     br_backed_up       "백업 %s -> %s  (%s)"
     br_favorites       "즐겨찾기"
     br_stats_title     "작문 통계"
@@ -2447,7 +2460,7 @@ dict set ::i18n ko {
 # >>> GUI-ONLY  (stripped from TUI/CLI builds by the Makefile - see CLAUDE.build.md)
 dict set ::i18n_gui ko {
     toc_no_headings    "제목을 찾을 수 없음"
-    br_help_gui        "h:도움말  n:새로운  t:메모장  f:즐겨찾기  s:통계  b:백업  d:삭제  r:이름변경  i:정보  c:설정  z:다시로드  %s:섹션  q:종료"
+    br_help_gui        "h:도움말  n:새로운  t:메모장  f:즐겨찾기  s:통계  b:백업  d:삭제  r:이름변경  i:정보  c:설정  z:다시로드  /:필터  %s:섹션  q:종료"
     br_stats_total_words "총 단어 수"
     br_stats_total_chars "총 글자 수"
     ed_save_before     "종료하기 전에 \"%s\"를 저장하시겠습니까?"
@@ -2486,6 +2499,7 @@ dict set ::i18n_gui ko {
     br_key_analyse         "분석"
     br_key_words           "단어"
     br_key_config          "설정"
+    br_key_filter          "필터"
     br_key_reload          "다시로드"
     br_key_quit            "종료"
     br_help_new_file       "새 파일"
@@ -2500,6 +2514,7 @@ dict set ::i18n_gui ko {
     br_help_rename_file    "이름 변경"
     br_help_font_settings  "프로필별 글꼴 설정"
     br_help_reload         "다시 로드"
+    br_help_filter         "입력하는 대로 파일 필터링 (ESC 지우기)"
     br_help_browser_sections "브라우저 섹션"
     br_help_fullscreen_br  "전체 화면"
     br_help_open_file_br   "파일 열기"
@@ -2597,7 +2612,7 @@ dict set ::i18n no {
     toc_jump_bar       "Skriv inn hopp  esc/ctrl+q avbryt"
     toc_headings       "%d overskrift%s"
     br_no_docs         "Ingen dokumenter ennå. Trykk n for å lage en ny."
-    br_help_tui        "h:%s  n:ny  t:notisbok  f:favoritt  s:statistikk  b:sikkerhetskopi  d:slett  r:gi nytt navn  i:info  a:analyser  c:innstillinger  w:ord  %s:avsnitt  q:avslutt"
+    br_help_tui        "h:%s  n:ny  t:notisbok  f:favoritt  s:statistikk  b:sikkerhetskopi  d:slett  r:gi nytt navn  i:info  a:analyser  c:innstillinger  w:ord  /:filter  %s:avsnitt  q:avslutt"
     br_backed_up       "sikkerhetskopi %s -> %s  (%s)"
     br_favorites       "Favoritter"
     br_stats_title     "Skrivstatistikk"
@@ -2681,7 +2696,7 @@ dict set ::i18n no {
 # >>> GUI-ONLY  (stripped from TUI/CLI builds by the Makefile - see CLAUDE.build.md)
 dict set ::i18n_gui no {
     toc_no_headings    "ingen overskrifter funnet"
-    br_help_gui        "h:hjelp  n:ny  t:notisbok  f:favoritt  s:statistikk  b:sikkerhetskopi  d:slett  r:gi nytt navn  i:info  c:innstillinger  z:last på nytt  %s:avsnitt  q:avslutt"
+    br_help_gui        "h:hjelp  n:ny  t:notisbok  f:favoritt  s:statistikk  b:sikkerhetskopi  d:slett  r:gi nytt navn  i:info  c:innstillinger  z:last på nytt  /:filter  %s:avsnitt  q:avslutt"
     br_stats_total_words "Ord totalt"
     br_stats_total_chars "Tegn totalt"
     ed_save_before     "Lagre \"%s\" før lukking?"
@@ -2720,6 +2735,7 @@ dict set ::i18n_gui no {
     br_key_analyse         "analyser"
     br_key_words           "ord"
     br_key_config          "innstillinger"
+    br_key_filter          "filter"
     br_key_reload          "last på nytt"
     br_key_quit            "avslutt"
     br_help_new_file       "Ny fil"
@@ -2734,6 +2750,7 @@ dict set ::i18n_gui no {
     br_help_rename_file    "Gi nytt navn"
     br_help_font_settings  "Skriftinnstillinger etter profil"
     br_help_reload         "Last på nytt"
+    br_help_filter         "Filtrer filer mens du skriver (ESC tømmer)"
     br_help_browser_sections "Nettleseravsnitt"
     br_help_fullscreen_br  "Fullskjerm"
     br_help_open_file_br   "Åpne fil"
@@ -2882,6 +2899,16 @@ proc list-docs {dir} {
         lappend result [lindex $item 1]
     }
     return $result
+}
+
+# Incremental browser filter ("/" key in the browser): when non-empty, only
+# file/favorite/recent entries whose name contains the string are shown
+# (case-insensitive substring, no glob). Shared GUI/TUI.
+set ::br_type_filter ""
+proc br-filter-match {name} {
+    if {$::br_type_filter eq ""} { return 1 }
+    return [expr {[string first [string tolower $::br_type_filter] \
+                                [string tolower $name]] >= 0}]
 }
 
 proc br-dirs {} {
@@ -4294,6 +4321,471 @@ proc br-is-root {dir} {
 }
 
 # ===========================================================================
+# gui-toc-panel.tcl
+# ===========================================================================
+# --- pinned TOC panel (optional module) -----------------------------------------
+# Extracted from src/gui.tcl. Optional GUI module (GUI_TOC_PANEL build flag,
+# same pattern as src/gui-config.tcl): loaded before gui.tcl, wrapped in
+# if {!$::no_gui}. Every call site in gui.tcl / gui-split.tcl is guarded with
+# [info procs toc-panel-toggle] ne "" (or gated by ::toc_panel_open, which can
+# only become 1 here). The state vars ::toc_panel_open / ::toc_ed stay in
+# gui.tcl so var-gated call sites remain valid when this module is absent.
+if {!$::no_gui} {
+
+    proc toc-panel-update-margin {on} {
+        if {$::split_mode} return
+        set mw [expr {$::cfg_margin_width * ($::typewriter_mode && $::cfg_hemingway_mode ? 2 : 1)}]
+        set padx_out [expr {$mw - $mw / 3}]
+        if {$on} {
+            catch { pack configure .ed.t -padx [list $padx_out 0] }
+        } else {
+            catch { pack configure .ed.t -padx $padx_out }
+        }
+    }
+
+    proc toc-panel-fill {headings} {
+        set lst .ed.toc.lst
+        $lst delete 0 end
+        if {![llength $headings]} {
+            $lst insert end " [t toc_no_headings]"
+            return
+        }
+        foreach item $headings {
+            lassign $item ln title level
+            set indent [string repeat "  " [expr {$level - 1}]]
+            $lst insert end " ${indent}${title}"
+        }
+    }
+
+    proc toc-panel-select-near-cursor {} {
+        if {![winfo exists .ed.toc.lst]} return
+        set headings [toc-collect]
+        if {![llength $headings]} return
+        set curline [lindex [split [$::toc_ed index insert] .] 0]
+        set presel 0
+        set idx 0
+        foreach item $headings {
+            if {[lindex $item 0] <= $curline} { set presel $idx }
+            incr idx
+        }
+        .ed.toc.lst selection clear 0 end
+        .ed.toc.lst selection set $presel
+        .ed.toc.lst see $presel
+    }
+
+    proc toc-panel-refresh {} {
+        if {!$::toc_panel_open} return
+        if {![winfo exists .ed.toc.lst]} return
+        set ::toc_ed [active-ed]
+        if {$::split_ws2_mode && $::toc_ed eq ".ed.pw.r.t"} {
+            set ::toc_fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
+        } else {
+            set ::toc_fn $::filename
+        }
+        toc-panel-fill [toc-collect]
+        toc-panel-select-near-cursor
+    }
+
+    proc toc-panel-jump {} {
+        if {![winfo exists .ed.toc.lst]} return
+        set sel [.ed.toc.lst curselection]
+        if {![llength $sel]} return
+        set headings [toc-collect]
+        set selIdx [lindex $sel 0]
+        if {$selIdx >= [llength $headings]} return
+        lassign [lindex $headings $selIdx] ln title
+        dict set ::session_headings $::toc_fn $selIdx
+        $::toc_ed mark set insert $ln.0
+        $::toc_ed see insert
+        focus $::toc_ed
+    }
+
+    proc toc-panel-open {} {
+        set ::toc_ed [active-ed]
+        if {$::split_ws2_mode && $::toc_ed eq ".ed.pw.r.t"} {
+            set ::toc_fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
+        } else {
+            set ::toc_fn $::filename
+        }
+        lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ c_heading _ _
+
+        frame .ed.toc -bg $bg_bar -bd 0 -width 180
+        pack propagate .ed.toc 0
+
+        frame .ed.toc.sep -bg $fg_bar -width 5 -cursor sb_h_double_arrow
+        pack .ed.toc.sep -side left -fill y
+        bind .ed.toc.sep <ButtonPress-1>  {
+            set ::_toc_drag_x %X
+            set ::_toc_drag_w [winfo width .ed.toc]
+        }
+        bind .ed.toc.sep <B1-Motion> {
+            set _w [expr {max(80, min(500, $::_toc_drag_w - (%X - $::_toc_drag_x)))}]
+            .ed.toc configure -width $_w
+        }
+
+        frame .ed.toc.inner -bg $bg_bar
+        pack .ed.toc.inner -fill both -expand 1
+
+        label .ed.toc.inner.hdr -text [t toc_title] \
+            -bg $bg_bar -fg $fg_bar -font $::font_sm -anchor w -padx 6 -pady 4
+        pack .ed.toc.inner.hdr -side top -fill x
+
+        scrollbar .ed.toc.sb -orient vertical \
+            -command {.ed.toc.lst yview} \
+            -bg $bg_bar -troughcolor $bg
+        listbox .ed.toc.lst \
+            -font $::font_sm -bg $bg -fg $c_heading \
+            -selectbackground $bg_sel -selectforeground $fg \
+            -activestyle none -borderwidth 0 -highlightthickness 0 \
+            -relief flat -width 0 -height 0 \
+            -yscrollcommand {.ed.toc.sb set}
+        pack .ed.toc.sb  -in .ed.toc.inner -side right -fill y
+        pack .ed.toc.lst -in .ed.toc.inner -fill both -expand 1
+
+        pack .ed.toc -side right -fill y -after .ed.sb
+
+        bind .ed.toc.lst <ButtonRelease-1>     toc-panel-jump
+        bind .ed.toc.lst <Return>              toc-panel-jump
+        bind .ed.toc.lst <$::cfg_key_toc>      toc-panel-close
+        bind .ed.toc.lst <$::cfg_key_toc_pinned> toc-panel-close
+        bind .ed.toc.lst <Escape>              { focus $::toc_ed }
+
+        set ::toc_panel_open 1
+        toc-panel-update-margin 1
+        toc-panel-fill [toc-collect]
+        toc-panel-select-near-cursor
+    }
+
+    proc toc-panel-close {} {
+        catch { destroy .ed.toc }
+        set ::toc_panel_open 0
+        toc-panel-update-margin 0
+        catch { focus $::toc_ed }
+    }
+
+    proc toc-panel-theme {} {
+        if {!$::toc_panel_open} return
+        lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ c_heading _ _
+        catch { .ed.toc configure -bg $bg_bar }
+        catch { .ed.toc.sep configure -bg $fg_bar }
+        catch { .ed.toc.inner configure -bg $bg_bar }
+        catch { .ed.toc.inner.hdr configure -bg $bg_bar -fg $fg_bar }
+        catch { .ed.toc.sb configure -bg $bg_bar -troughcolor $bg }
+        catch { .ed.toc.lst configure -bg $bg -fg $c_heading \
+                    -selectbackground $bg_sel -selectforeground $fg }
+    }
+
+    proc toc-panel-toggle {} {
+        if {$::toc_panel_open} { toc-panel-close } else { toc-panel-open }
+    }
+
+}
+
+# ===========================================================================
+# gui-split.tcl
+# ===========================================================================
+# --- split view + second-workspace pane (optional module) ------------------------
+# Extracted from src/gui.tcl. Optional GUI module (GUI_SPLIT build flag, same
+# pattern as src/gui-config.tcl): loaded before gui.tcl, wrapped in
+# if {!$::no_gui}. Call sites in gui.tcl are either guarded with
+# [info procs split-toggle] ne "" or gated by ::split_mode / ::split_ws2_mode
+# (defined in src/config.tcl, only ever set to 1 here). primary-ed stays in
+# gui.tcl (used everywhere, trivial). The pinned-TOC bindings below are
+# guarded because the TOC panel is itself an optional module.
+if {!$::no_gui} {
+
+    set ::split_ln_was_on 0
+
+    proc split-peer-modified {t} {
+        if {[$t edit modified]} { set ::dirty 1; $t edit modified false }
+        ed-status
+        if {$::hl_after_id ne ""} { after cancel $::hl_after_id }
+        set ::hl_after_id [after 300 { set ::hl_after_id ""; highlight-headings; ln-update }]
+    }
+
+    proc split-pane-padding {} {
+        set px [expr {$::cfg_split_shrink_margin ? max(1,$::cfg_margin_width/2) : $::cfg_margin_width}]
+        set py $::cfg_margin_height
+        return [list [expr {$px/3}] [expr {$px - $px/3}] [expr {$py/3}] [expr {$py - $py/3}]]
+    }
+
+    proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2 bg2} {
+        set frame ".ed.pw.$side"
+        frame $frame -bg $bg2
+        scrollbar ${frame}.sb -orient vertical -bg $bg_bar -troughcolor $bg
+        lassign [split-pane-padding] _padx_in _padx_out _pady_in _pady_out
+        .ed.t peer create ${frame}.t \
+            -wrap word -font [.ed.t cget -font] \
+            -width 1 \
+            -bg $bg -fg $fg \
+            -insertbackground $fg -selectbackground $bg_sel -selectforeground $fg \
+            -blockcursor 0 -insertwidth 2 -insertofftime 0 \
+            -borderwidth 0 -padx $_padx_in -pady $_pady_in \
+            -highlightthickness 2 -highlightbackground $bg -highlightcolor $fg \
+            -yscrollcommand "${frame}.sb set" \
+            -spacing1 $sp1 -spacing2 $sp2 -spacing3 0
+        ${frame}.sb configure -command "${frame}.t yview"
+        pack ${frame}.sb -side right -fill y
+        pack ${frame}.t  -fill both  -expand 1 -padx $_padx_out -pady $_pady_out
+        set t ${frame}.t
+        bind $t <KeyRelease>                { ed-status }
+        bind $t <ButtonRelease>             { ed-status }
+        bind $t <<Modified>>                [list split-peer-modified $t]
+        bind $t <$::cfg_key_save>           { save-file; break }
+        bind $t <$::cfg_key_save_as>        { save-as; break }
+        bind $t <$::cfg_key_close>          { close-editor; break }
+        bind $t <$::cfg_key_paste>          { ed-paste; break }
+        bind $t <$::cfg_key_select_all>     "[list $t tag add sel 1.0 end]; break"
+        bind $t <$::cfg_key_dark_toggle>    { toggle-dark-mode; break }
+        bind $t <Tab>                       {%W insert insert "\t"; break}
+        bind $t <$::cfg_key_goto>           { goto-dialog; break }
+        bind $t <$::cfg_key_help>           { help-dialog; break }
+        bind $t <$::cfg_key_undo>           "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break; [list catch [list $t edit undo]]; ed-status; break"
+        bind $t <$::cfg_key_redo>           "[list catch [list $t edit redo]]; ed-status; break"
+        bind $t <$::cfg_key_find>           { search-open; break }
+        bind $t <$::cfg_key_replace>        { replace-open; break }
+        bind $t <$::cfg_key_open>           { open-file-dialog; break }
+        bind $t <$::cfg_key_typewriter>     { typewriter-toggle; break }
+        bind $t <KeyRelease>               +[list typewriter-tick $t]
+        bind $t <ButtonRelease>            +[list typewriter-tick $t]
+        foreach _k {Left Right Up Down BackSpace Delete} {
+            bind $t <$_k> "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break"
+        }
+        bind $t <$::cfg_key_toc>            { toc-show; break }
+        bind $t <$::cfg_key_toc_pinned>     { if {[info procs toc-panel-toggle] ne ""} { toc-panel-toggle }; break }
+        bind $t <$::cfg_key_line_numbers>   { ln-toggle; break }
+        bind $t <$::cfg_key_fullscreen>     { toggle-fullscreen; break }
+        bind $t <$::cfg_key_split>          { split-toggle; break }
+        bind $t <$::cfg_key_split_focus>    { split-cycle-focus; break }
+        bind $t <$::cfg_key_workspace>      { workspace-toggle; break }
+        bind $t <Control-equal>             { font-resize  1; break }
+        bind $t <Control-plus>              { font-resize  1; break }
+        bind $t <Control-KP_Add>            { font-resize  1; break }
+        bind $t <Control-minus>             { font-resize -1; break }
+        bind $t <Control-KP_Subtract>       { font-resize -1; break }
+        bind $t <$::cfg_key_sticky_sel>     { break }
+        bind-cmd-mode $t
+    }
+
+    proc split-open {} {
+        if {$::toc_panel_open} { toc-panel-close }
+        wm geometry . [winfo width .]x[winfo height .]
+        lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ _ _ bg2
+        set sp1 [.ed.t cget -spacing1]
+        set sp2 [.ed.t cget -spacing2]
+        set cur [.ed.t index insert]
+
+        pack forget .ed.t .ed.sb
+        if {[winfo exists .ed.ln]} {
+            set ::split_ln_was_on 1
+            pack forget .ed.ln
+        } else {
+            set ::split_ln_was_on 0
+        }
+
+        panedwindow .ed.pw -orient horizontal -bg $bg_bar -sashwidth 4 -sashpad 0 -sashrelief flat
+        split-make-pane l $bg $fg $bg_bar $bg_sel $sp1 $sp2 $bg2
+        split-make-pane r $bg $fg $bg_bar $bg_sel $sp1 $sp2 $bg2
+        .ed.pw add .ed.pw.l -stretch always
+        .ed.pw add .ed.pw.r -stretch always
+        pack .ed.pw -fill both -expand 1 -before .ed.bar
+
+        .ed.pw.l.t mark set insert $cur
+        .ed.pw.l.t see insert
+
+        set ::split_mode 1
+        focus .ed.pw.l.t
+        if {$::ws_dual_mode} { split-ws2-open; focus .ed.pw.l.t }
+    }
+
+    proc split-close {} {
+        if {!$::split_mode} return
+        if {$::split_ws2_mode} {
+            split-ws2-save-state
+            set ::split_ws2_mode 0
+        }
+        catch { .ed.t mark set insert [.ed.pw.l.t index insert] }
+        pack forget .ed.pw
+        destroy .ed.pw
+        pack .ed.sb  -side right -fill y
+        if {$::split_ln_was_on && [winfo exists .ed.ln]} {
+            pack .ed.ln -side left  -fill y
+        }
+        pack .ed.t -fill both -expand 1 \
+            -padx [expr {$::cfg_margin_width - $::cfg_margin_width/3}] \
+            -pady [expr {$::cfg_margin_height - $::cfg_margin_height/3}]
+        .ed.t see insert
+        set ::split_mode 0
+        focus .ed.t
+    }
+
+    proc split-toggle {} {
+        if {$::split_mode} { split-close } else { split-open }
+    }
+
+    proc split-cycle-focus {} {
+        if {!$::split_mode} return
+        if {[focus] eq ".ed.pw.r.t"} {
+            focus .ed.pw.l.t
+        } else {
+            focus .ed.pw.r.t
+        }
+        if {$::split_ws2_mode} { ed-update-title }
+    }
+
+    proc split-ws2-open {} {
+        lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ _ _ bg2
+        set sp1 [.ed.t cget -spacing1]
+        set sp2 [.ed.t cget -spacing2]
+        lassign [split-pane-padding] _padx_in _padx_out _pady_in _pady_out
+        catch { pack forget .ed.pw.r.sb .ed.pw.r.t }
+        catch { destroy .ed.pw.r.t }
+        text .ed.pw.r.t \
+            -wrap word -font [.ed.t cget -font] -width 1 \
+            -bg $bg -fg $fg -insertbackground $fg \
+            -selectbackground $bg_sel -selectforeground $fg \
+            -blockcursor 0 -insertwidth 2 -insertofftime 0 \
+            -borderwidth 0 -padx $_padx_in -pady $_pady_in \
+            -highlightthickness 2 -highlightbackground $bg -highlightcolor $fg \
+            -yscrollcommand ".ed.pw.r.sb set" -spacing1 $sp1 -spacing2 $sp2 -spacing3 0
+        .ed.pw.r.sb configure -command ".ed.pw.r.t yview"
+        pack .ed.pw.r.sb -side right -fill y
+        pack .ed.pw.r.t  -fill both  -expand 1 -padx $_padx_out -pady $_pady_out
+        if {$::ws_n == 1} {
+            set _r_content $::ws2_content;  set _r_dirty $::ws2_dirty;  set _r_cursor $::ws2_cursor
+        } else {
+            set _r_content $::ws1_content;  set _r_dirty $::ws1_dirty;  set _r_cursor $::ws1_cursor
+        }
+        .ed.pw.r.t configure -undo 0
+        .ed.pw.r.t delete 1.0 end
+        if {$_r_content ne ""} { .ed.pw.r.t insert 1.0 $_r_content }
+        .ed.pw.r.t edit reset
+        .ed.pw.r.t edit modified false
+        .ed.pw.r.t configure -undo 1
+        if {$_r_dirty} { .ed.pw.r.t edit modified true }
+        catch { .ed.pw.r.t mark set insert $_r_cursor }
+        .ed.pw.r.t see insert
+        bind .ed.pw.l.t <FocusIn>               { if {$::split_ws2_mode} { ed-update-title } }
+        bind .ed.pw.r.t <<Modified>>             { split-ws2-track-dirty }
+        bind .ed.pw.r.t <FocusIn>               { ed-update-title }
+        bind .ed.pw.r.t <KeyRelease>             { ed-status }
+        bind .ed.pw.r.t <ButtonRelease>          { ed-status }
+        bind .ed.pw.r.t <$::cfg_key_save>        { split-ws2-save; break }
+        bind .ed.pw.r.t <$::cfg_key_save_as>     { split-ws2-save-as; break }
+        bind .ed.pw.r.t <$::cfg_key_close>       { split-toggle; break }
+        bind .ed.pw.r.t <$::cfg_key_paste>       { ed-paste; break }
+        bind .ed.pw.r.t <$::cfg_key_select_all>  { .ed.pw.r.t tag add sel 1.0 end; break }
+        bind .ed.pw.r.t <$::cfg_key_dark_toggle> { toggle-dark-mode; break }
+        bind .ed.pw.r.t <Tab>                    { .ed.pw.r.t insert insert "\t"; break }
+        bind .ed.pw.r.t <$::cfg_key_goto>        { goto-dialog; break }
+        bind .ed.pw.r.t <$::cfg_key_help>        { help-dialog; break }
+        bind .ed.pw.r.t <$::cfg_key_undo>        { catch {.ed.pw.r.t edit undo}; ed-status; break }
+        bind .ed.pw.r.t <$::cfg_key_redo>        { catch {.ed.pw.r.t edit redo}; ed-status; break }
+        bind .ed.pw.r.t <$::cfg_key_find>        { search-open; break }
+        bind .ed.pw.r.t <$::cfg_key_replace>     { replace-open; break }
+        bind .ed.pw.r.t <$::cfg_key_open>        { open-file-dialog; break }
+        bind .ed.pw.r.t <$::cfg_key_toc>         { toc-show; break }
+        bind .ed.pw.r.t <$::cfg_key_toc_pinned>  { if {[info procs toc-panel-toggle] ne ""} { toc-panel-toggle }; break }
+        bind .ed.pw.r.t <$::cfg_key_line_numbers> { ln-toggle; break }
+        bind .ed.pw.r.t <$::cfg_key_fullscreen>  { toggle-fullscreen; break }
+        bind .ed.pw.r.t <$::cfg_key_typewriter>  { typewriter-toggle; break }
+        bind .ed.pw.r.t <KeyRelease>            +[list typewriter-tick .ed.pw.r.t]
+        bind .ed.pw.r.t <ButtonRelease>         +[list typewriter-tick .ed.pw.r.t]
+        foreach _k {Left Right Up Down BackSpace Delete} {
+            bind .ed.pw.r.t <$_k> "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break"
+        }
+        bind .ed.pw.r.t <$::cfg_key_split>       { split-toggle; break }
+        bind .ed.pw.r.t <$::cfg_key_split_focus> { split-cycle-focus; break }
+        bind .ed.pw.r.t <$::cfg_key_workspace>   { workspace-toggle; break }
+        bind .ed.pw.r.t <Control-equal>          { font-resize  1; break }
+        bind .ed.pw.r.t <Control-plus>           { font-resize  1; break }
+        bind .ed.pw.r.t <Control-KP_Add>         { font-resize  1; break }
+        bind .ed.pw.r.t <Control-minus>          { font-resize -1; break }
+        bind .ed.pw.r.t <Control-KP_Subtract>    { font-resize -1; break }
+        bind .ed.pw.r.t <$::cfg_key_sticky_sel>  { break }
+        bind-cmd-mode .ed.pw.r.t
+        set ::ws_dual_mode 1
+        set ::split_ws2_mode 1
+        focus .ed.pw.r.t
+    }
+
+    proc split-ws2-track-dirty {} {
+        if {[.ed.pw.r.t edit modified]} {
+            if {$::ws_n == 1} { set ::ws2_dirty 1 } else { set ::ws1_dirty 1 }
+            .ed.pw.r.t edit modified false
+        }
+        ed-status
+    }
+
+    proc split-ws2-save {} {
+        set fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
+        if {$fn eq ""} { split-ws2-save-as; return }
+        if {[file exists $fn] && ![file writable $fn]} {
+            if {[confirm-dialog [format [t ed_save_readonly] [file tail $fn]]] eq "yes"} { split-ws2-save-as }
+            return
+        }
+        if {[catch {set fh [open $fn w]} err]} { return }
+        chan configure $fh -encoding utf-8
+        puts -nonewline $fh [.ed.pw.r.t get 1.0 {end - 1 chars}]; close $fh
+        if {$::ws_n == 1} {
+            set ::ws2_dirty 0; set ::ws2_file_mtime [file mtime $fn]
+        } else {
+            set ::ws1_dirty 0; set ::ws1_file_mtime [file mtime $fn]
+        }
+        .ed.pw.r.t edit modified false
+        ed-status
+    }
+
+    proc split-ws2-save-as {} {
+        set cur_fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
+        set dir [expr {$cur_fn ne "" ? [file dirname $cur_fn] : $::DOCS_DIR_DEFAULT}]
+        set name [string trim [input-dialog "Save as" "Save as:"]]
+        if {$name eq ""} return
+        if {[file extension $name] eq ""} { append name $::FILE_EXT }
+        set new_path [file join $dir $name]
+        if {[file exists $new_path] && $new_path ne $cur_fn} {
+            if {[confirm-dialog "\"$name\" already exists. Overwrite?"] ne "yes"} return
+        }
+        if {$::ws_n == 1} { set ::ws2_filename $new_path; set ::ws2_scratchpad 0
+        } else              { set ::ws1_filename $new_path; set ::ws1_scratchpad 0 }
+        split-ws2-save
+    }
+
+    proc split-ws2-load-file {path} {
+        .ed.pw.r.t configure -undo 0
+        .ed.pw.r.t delete 1.0 end
+        if {[file exists $path] && [file size $path] > 0} {
+            set fh [open $path r]; chan configure $fh -encoding utf-8
+            .ed.pw.r.t insert 1.0 [read $fh]; close $fh
+        }
+        .ed.pw.r.t edit reset; .ed.pw.r.t edit modified false
+        .ed.pw.r.t configure -undo 1
+        if {$::ws_n == 1} {
+            set ::ws2_filename $path; set ::ws2_scratchpad 0; set ::ws2_dirty 0
+            set ::ws2_file_mtime [expr {[file exists $path] ? [file mtime $path] : 0}]
+        } else {
+            set ::ws1_filename $path; set ::ws1_scratchpad 0; set ::ws1_dirty 0
+            set ::ws1_file_mtime [expr {[file exists $path] ? [file mtime $path] : 0}]
+        }
+        recent-push $path
+        .ed.pw.r.t mark set insert 1.0; .ed.pw.r.t see insert
+        ed-status
+    }
+
+    proc split-ws2-save-state {} {
+        if {![winfo exists .ed.pw.r.t]} return
+        if {$::ws_n == 1} {
+            set ::ws2_content [.ed.pw.r.t get 1.0 end-1c]
+            set ::ws2_cursor  [.ed.pw.r.t index insert]
+        } else {
+            set ::ws1_content [.ed.pw.r.t get 1.0 end-1c]
+            set ::ws1_cursor  [.ed.pw.r.t index insert]
+        }
+    }
+
+}
+
+# ===========================================================================
 # gui-config.tcl
 # ===========================================================================
 if {!$::no_gui} {
@@ -5290,6 +5782,7 @@ foreach {char cmd key} {
     d br-delete br_key_delete
     r br-rename br_key_rename
     i br-info-shortcut br_key_info
+    / br-filter-begin br_key_filter
 } {
     set label "$char:[t $key]"
     lappend _shortcuts [list $label $cmd]
@@ -5373,6 +5866,7 @@ proc br-refresh {} {
         lappend ::br_entries [list updir [file dirname $::br_cwd] ".."]
         foreach d [list-subdirs $::br_cwd] { lappend ::br_entries [list dir $::br_cwd $d] }
         foreach f [list-docs $::br_cwd] {
+            if {![br-filter-match $f]} continue
             lappend ::br_entries [list file $::br_cwd $f]
             incr total
         }
@@ -5380,13 +5874,17 @@ proc br-refresh {} {
         foreach dir [br-dirs] {
             foreach f [list-docs $dir] { lappend shown [file join $dir $f] }
         }
-        foreach e [build-extra-entries $shown] { lappend ::br_entries $e }
+        foreach e [build-extra-entries $shown] {
+            if {[lindex $e 0] in {favorite recent} && ![br-filter-match [lindex $e 2]]} continue
+            lappend ::br_entries $e
+        }
         foreach dir [br-dirs] {
             lappend ::br_entries [list header $dir ""]
             if {$_subnav} {
                 foreach d [list-subdirs $dir] { lappend ::br_entries [list dir $dir $d] }
             }
             foreach f [list-docs $dir] {
+                if {![br-filter-match $f]} continue
                 lappend ::br_entries [list file $dir $f]
                 incr total
             }
@@ -5929,6 +6427,39 @@ if {[info procs profile-config-dialog] ne ""} {
 }
 bind .br.mid.lst <q>           { quit-app }
 bind .br.mid.lst <z>           { br-reload }
+
+# --- incremental filter bar ("/" key) ------------------------------------------
+# Shows an entry above the status bar; typing filters the file list live
+# (via ::br_type_filter, applied in br-refresh). ESC clears and closes,
+# Return/arrows give focus back to the list with the filter still applied.
+proc br-filter-begin {} {
+    catch { destroy .br.filter }
+    frame .br.filter -bg $::bg
+    label .br.filter.l -text "/" -bg $::bg -fg $::fg -font $::font_sm
+    entry .br.filter.e -textvariable ::br_type_filter \
+        -bg $::bg -fg $::fg -insertbackground $::fg \
+        -relief flat -highlightthickness 0 -font $::font_sm
+    pack .br.filter.l -side left -padx {8 2}
+    pack .br.filter.e -side left -fill x -expand 1
+    pack .br.filter -side bottom -fill x
+    bind .br.filter.e <KeyRelease> { br-refresh }
+    bind .br.filter.e <Escape>     { br-filter-end; break }
+    bind .br.filter.e <Return>     { focus .br.mid.lst; break }
+    bind .br.filter.e <Up>         { focus .br.mid.lst; break }
+    bind .br.filter.e <Down>       { focus .br.mid.lst; break }
+    focus .br.filter.e
+    .br.filter.e icursor end
+}
+
+proc br-filter-end {} {
+    set ::br_type_filter ""
+    catch { destroy .br.filter }
+    br-refresh
+    focus .br.mid.lst
+}
+
+bind .br.mid.lst <slash>  { br-filter-begin; break }
+bind .br.mid.lst <Escape> { if {$::br_type_filter ne ""} { br-filter-end } }
 
 proc br-select-line {line_offset} {
     set tags [.br.mid.lst tag ranges selected]
@@ -6692,7 +7223,7 @@ proc close-editor {{force_browser 0}} {
     set ::session_file ""
     if {$::watch_after_id ne ""} { after cancel $::watch_after_id; set ::watch_after_id "" }
     autosave-stop
-    split-close
+    if {[info procs split-close] ne ""} { split-close }
     if {$::ws_n == 2} {
         set ::ws2_filename   $::filename
         set ::ws2_scratchpad $::scratchpad
@@ -6774,7 +7305,7 @@ proc apply-theme {} {
         catch { .ed.pw.${side}.t tag configure focus_dim -foreground $c_comment }
     }
     catch { .ed.t tag configure focus_dim -foreground $c_comment }
-    toc-panel-theme
+    if {[info procs toc-panel-theme] ne ""} { toc-panel-theme }
 }
 
 proc ws-check-inactive-dirty {} {
@@ -6901,8 +7432,10 @@ proc toggle-fullscreen {} {
 
 bind .ed.t          <$::cfg_key_fullscreen> { toggle-fullscreen; break }
 bind .br.mid.lst    <$::cfg_key_fullscreen> { toggle-fullscreen }
-bind .ed.t          <$::cfg_key_split>       { split-toggle; break }
-bind .ed.t          <$::cfg_key_split_focus> { split-cycle-focus; break }
+if {[info procs split-toggle] ne ""} {
+    bind .ed.t      <$::cfg_key_split>       { split-toggle; break }
+    bind .ed.t      <$::cfg_key_split_focus> { split-cycle-focus; break }
+}
 bind .ed.t          <$::cfg_key_workspace>   { workspace-toggle; break }
 bind .ed.t          <Button-3>               { editor-context-menu %W %X %Y %x %y; break }
 
@@ -7315,157 +7848,9 @@ proc toc-collect {} {
     return $result
 }
 
-# --- pinned TOC panel ---------------------------------------------------------
-
-proc toc-panel-update-margin {on} {
-    if {$::split_mode} return
-    set mw [expr {$::cfg_margin_width * ($::typewriter_mode && $::cfg_hemingway_mode ? 2 : 1)}]
-    set padx_out [expr {$mw - $mw / 3}]
-    if {$on} {
-        catch { pack configure .ed.t -padx [list $padx_out 0] }
-    } else {
-        catch { pack configure .ed.t -padx $padx_out }
-    }
-}
-
-proc toc-panel-fill {headings} {
-    set lst .ed.toc.lst
-    $lst delete 0 end
-    if {![llength $headings]} {
-        $lst insert end " [t toc_no_headings]"
-        return
-    }
-    foreach item $headings {
-        lassign $item ln title level
-        set indent [string repeat "  " [expr {$level - 1}]]
-        $lst insert end " ${indent}${title}"
-    }
-}
-
-proc toc-panel-select-near-cursor {} {
-    if {![winfo exists .ed.toc.lst]} return
-    set headings [toc-collect]
-    if {![llength $headings]} return
-    set curline [lindex [split [$::toc_ed index insert] .] 0]
-    set presel 0
-    set idx 0
-    foreach item $headings {
-        if {[lindex $item 0] <= $curline} { set presel $idx }
-        incr idx
-    }
-    .ed.toc.lst selection clear 0 end
-    .ed.toc.lst selection set $presel
-    .ed.toc.lst see $presel
-}
-
-proc toc-panel-refresh {} {
-    if {!$::toc_panel_open} return
-    if {![winfo exists .ed.toc.lst]} return
-    set ::toc_ed [active-ed]
-    if {$::split_ws2_mode && $::toc_ed eq ".ed.pw.r.t"} {
-        set ::toc_fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
-    } else {
-        set ::toc_fn $::filename
-    }
-    toc-panel-fill [toc-collect]
-    toc-panel-select-near-cursor
-}
-
-proc toc-panel-jump {} {
-    if {![winfo exists .ed.toc.lst]} return
-    set sel [.ed.toc.lst curselection]
-    if {![llength $sel]} return
-    set headings [toc-collect]
-    set selIdx [lindex $sel 0]
-    if {$selIdx >= [llength $headings]} return
-    lassign [lindex $headings $selIdx] ln title
-    dict set ::session_headings $::toc_fn $selIdx
-    $::toc_ed mark set insert $ln.0
-    $::toc_ed see insert
-    focus $::toc_ed
-}
-
-proc toc-panel-open {} {
-    set ::toc_ed [active-ed]
-    if {$::split_ws2_mode && $::toc_ed eq ".ed.pw.r.t"} {
-        set ::toc_fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
-    } else {
-        set ::toc_fn $::filename
-    }
-    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ c_heading _ _
-
-    frame .ed.toc -bg $bg_bar -bd 0 -width 180
-    pack propagate .ed.toc 0
-
-    frame .ed.toc.sep -bg $fg_bar -width 5 -cursor sb_h_double_arrow
-    pack .ed.toc.sep -side left -fill y
-    bind .ed.toc.sep <ButtonPress-1>  {
-        set ::_toc_drag_x %X
-        set ::_toc_drag_w [winfo width .ed.toc]
-    }
-    bind .ed.toc.sep <B1-Motion> {
-        set _w [expr {max(80, min(500, $::_toc_drag_w - (%X - $::_toc_drag_x)))}]
-        .ed.toc configure -width $_w
-    }
-
-    frame .ed.toc.inner -bg $bg_bar
-    pack .ed.toc.inner -fill both -expand 1
-
-    label .ed.toc.inner.hdr -text [t toc_title] \
-        -bg $bg_bar -fg $fg_bar -font $::font_sm -anchor w -padx 6 -pady 4
-    pack .ed.toc.inner.hdr -side top -fill x
-
-    scrollbar .ed.toc.sb -orient vertical \
-        -command {.ed.toc.lst yview} \
-        -bg $bg_bar -troughcolor $bg
-    listbox .ed.toc.lst \
-        -font $::font_sm -bg $bg -fg $c_heading \
-        -selectbackground $bg_sel -selectforeground $fg \
-        -activestyle none -borderwidth 0 -highlightthickness 0 \
-        -relief flat -width 0 -height 0 \
-        -yscrollcommand {.ed.toc.sb set}
-    pack .ed.toc.sb  -in .ed.toc.inner -side right -fill y
-    pack .ed.toc.lst -in .ed.toc.inner -fill both -expand 1
-
-    pack .ed.toc -side right -fill y -after .ed.sb
-
-    bind .ed.toc.lst <ButtonRelease-1>     toc-panel-jump
-    bind .ed.toc.lst <Return>              toc-panel-jump
-    bind .ed.toc.lst <$::cfg_key_toc>      toc-panel-close
-    bind .ed.toc.lst <$::cfg_key_toc_pinned> toc-panel-close
-    bind .ed.toc.lst <Escape>              { focus $::toc_ed }
-
-    set ::toc_panel_open 1
-    toc-panel-update-margin 1
-    toc-panel-fill [toc-collect]
-    toc-panel-select-near-cursor
-}
-
-proc toc-panel-close {} {
-    catch { destroy .ed.toc }
-    set ::toc_panel_open 0
-    toc-panel-update-margin 0
-    catch { focus $::toc_ed }
-}
-
-proc toc-panel-theme {} {
-    if {!$::toc_panel_open} return
-    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ c_heading _ _
-    catch { .ed.toc configure -bg $bg_bar }
-    catch { .ed.toc.sep configure -bg $fg_bar }
-    catch { .ed.toc.inner configure -bg $bg_bar }
-    catch { .ed.toc.inner.hdr configure -bg $bg_bar -fg $fg_bar }
-    catch { .ed.toc.sb configure -bg $bg_bar -troughcolor $bg }
-    catch { .ed.toc.lst configure -bg $bg -fg $c_heading \
-                -selectbackground $bg_sel -selectforeground $fg }
-}
-
-proc toc-panel-toggle {} {
-    if {$::toc_panel_open} { toc-panel-close } else { toc-panel-open }
-}
 
 proc toc-show {} {
-    if {$::cfg_toc_pinned} {
+    if {$::cfg_toc_pinned && [info procs toc-panel-toggle] ne ""} {
         toc-panel-toggle
         return
     }
@@ -7540,7 +7925,9 @@ proc toc-jump {w headings} {
 }
 
 bind .ed.t <$::cfg_key_toc>          { toc-show;   break }
-bind .ed.t <$::cfg_key_toc_pinned>   { toc-panel-toggle; break }
+if {[info procs toc-panel-toggle] ne ""} {
+    bind .ed.t <$::cfg_key_toc_pinned>   { toc-panel-toggle; break }
+}
 bind .br.mid.lst <$::cfg_key_toc>   { br-toc-show; break }
 bind .ed.t <$::cfg_key_line_numbers> { ln-toggle;  break }
 
@@ -7963,6 +8350,7 @@ proc help-dialog {} {
             "r"                                 [t br_help_rename_file] \
             "c"                                 [t br_help_font_settings] \
             "z"                                 [t br_help_reload] \
+            "/"                                 [t br_help_filter] \
             [key-label $::cfg_key_toc]          [t br_help_browser_sections] \
             [key-label $::cfg_key_fullscreen]   [t br_help_fullscreen_br] \
             [key-label $::cfg_key_open]         [t br_help_open_file_br] \
@@ -8090,299 +8478,12 @@ proc goto-dialog {} {
 }
 
 # --- split view ---------------------------------------------------------------
-set ::split_ln_was_on 0
 
 proc primary-ed {} {
     if {$::split_mode} { return ".ed.pw.l.t" }
     return ".ed.t"
 }
 
-proc split-peer-modified {t} {
-    if {[$t edit modified]} { set ::dirty 1; $t edit modified false }
-    ed-status
-    if {$::hl_after_id ne ""} { after cancel $::hl_after_id }
-    set ::hl_after_id [after 300 { set ::hl_after_id ""; highlight-headings; ln-update }]
-}
-
-proc split-pane-padding {} {
-    set px [expr {$::cfg_split_shrink_margin ? max(1,$::cfg_margin_width/2) : $::cfg_margin_width}]
-    set py $::cfg_margin_height
-    return [list [expr {$px/3}] [expr {$px - $px/3}] [expr {$py/3}] [expr {$py - $py/3}]]
-}
-
-proc split-make-pane {side bg fg bg_bar bg_sel sp1 sp2 bg2} {
-    set frame ".ed.pw.$side"
-    frame $frame -bg $bg2
-    scrollbar ${frame}.sb -orient vertical -bg $bg_bar -troughcolor $bg
-    lassign [split-pane-padding] _padx_in _padx_out _pady_in _pady_out
-    .ed.t peer create ${frame}.t \
-        -wrap word -font [.ed.t cget -font] \
-        -width 1 \
-        -bg $bg -fg $fg \
-        -insertbackground $fg -selectbackground $bg_sel -selectforeground $fg \
-        -blockcursor 0 -insertwidth 2 -insertofftime 0 \
-        -borderwidth 0 -padx $_padx_in -pady $_pady_in \
-        -highlightthickness 2 -highlightbackground $bg -highlightcolor $fg \
-        -yscrollcommand "${frame}.sb set" \
-        -spacing1 $sp1 -spacing2 $sp2 -spacing3 0
-    ${frame}.sb configure -command "${frame}.t yview"
-    pack ${frame}.sb -side right -fill y
-    pack ${frame}.t  -fill both  -expand 1 -padx $_padx_out -pady $_pady_out
-    set t ${frame}.t
-    bind $t <KeyRelease>                { ed-status }
-    bind $t <ButtonRelease>             { ed-status }
-    bind $t <<Modified>>                [list split-peer-modified $t]
-    bind $t <$::cfg_key_save>           { save-file; break }
-    bind $t <$::cfg_key_save_as>        { save-as; break }
-    bind $t <$::cfg_key_close>          { close-editor; break }
-    bind $t <$::cfg_key_paste>          { ed-paste; break }
-    bind $t <$::cfg_key_select_all>     "[list $t tag add sel 1.0 end]; break"
-    bind $t <$::cfg_key_dark_toggle>    { toggle-dark-mode; break }
-    bind $t <Tab>                       {%W insert insert "\t"; break}
-    bind $t <$::cfg_key_goto>           { goto-dialog; break }
-    bind $t <$::cfg_key_help>           { help-dialog; break }
-    bind $t <$::cfg_key_undo>           "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break; [list catch [list $t edit undo]]; ed-status; break"
-    bind $t <$::cfg_key_redo>           "[list catch [list $t edit redo]]; ed-status; break"
-    bind $t <$::cfg_key_find>           { search-open; break }
-    bind $t <$::cfg_key_replace>        { replace-open; break }
-    bind $t <$::cfg_key_open>           { open-file-dialog; break }
-    bind $t <$::cfg_key_typewriter>     { typewriter-toggle; break }
-    bind $t <KeyRelease>               +[list typewriter-tick $t]
-    bind $t <ButtonRelease>            +[list typewriter-tick $t]
-    foreach _k {Left Right Up Down BackSpace Delete} {
-        bind $t <$_k> "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break"
-    }
-    bind $t <$::cfg_key_toc>            { toc-show; break }
-    bind $t <$::cfg_key_toc_pinned>     { toc-panel-toggle; break }
-    bind $t <$::cfg_key_line_numbers>   { ln-toggle; break }
-    bind $t <$::cfg_key_fullscreen>     { toggle-fullscreen; break }
-    bind $t <$::cfg_key_split>          { split-toggle; break }
-    bind $t <$::cfg_key_split_focus>    { split-cycle-focus; break }
-    bind $t <$::cfg_key_workspace>      { workspace-toggle; break }
-    bind $t <Control-equal>             { font-resize  1; break }
-    bind $t <Control-plus>              { font-resize  1; break }
-    bind $t <Control-KP_Add>            { font-resize  1; break }
-    bind $t <Control-minus>             { font-resize -1; break }
-    bind $t <Control-KP_Subtract>       { font-resize -1; break }
-    bind $t <$::cfg_key_sticky_sel>     { break }
-    bind-cmd-mode $t
-}
-
-proc split-open {} {
-    if {$::toc_panel_open} { toc-panel-close }
-    wm geometry . [winfo width .]x[winfo height .]
-    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ _ _ bg2
-    set sp1 [.ed.t cget -spacing1]
-    set sp2 [.ed.t cget -spacing2]
-    set cur [.ed.t index insert]
-
-    pack forget .ed.t .ed.sb
-    if {[winfo exists .ed.ln]} {
-        set ::split_ln_was_on 1
-        pack forget .ed.ln
-    } else {
-        set ::split_ln_was_on 0
-    }
-
-    panedwindow .ed.pw -orient horizontal -bg $bg_bar -sashwidth 4 -sashpad 0 -sashrelief flat
-    split-make-pane l $bg $fg $bg_bar $bg_sel $sp1 $sp2 $bg2
-    split-make-pane r $bg $fg $bg_bar $bg_sel $sp1 $sp2 $bg2
-    .ed.pw add .ed.pw.l -stretch always
-    .ed.pw add .ed.pw.r -stretch always
-    pack .ed.pw -fill both -expand 1 -before .ed.bar
-
-    .ed.pw.l.t mark set insert $cur
-    .ed.pw.l.t see insert
-
-    set ::split_mode 1
-    focus .ed.pw.l.t
-    if {$::ws_dual_mode} { split-ws2-open; focus .ed.pw.l.t }
-}
-
-proc split-close {} {
-    if {!$::split_mode} return
-    if {$::split_ws2_mode} {
-        split-ws2-save-state
-        set ::split_ws2_mode 0
-    }
-    catch { .ed.t mark set insert [.ed.pw.l.t index insert] }
-    pack forget .ed.pw
-    destroy .ed.pw
-    pack .ed.sb  -side right -fill y
-    if {$::split_ln_was_on && [winfo exists .ed.ln]} {
-        pack .ed.ln -side left  -fill y
-    }
-    pack .ed.t -fill both -expand 1 \
-        -padx [expr {$::cfg_margin_width - $::cfg_margin_width/3}] \
-        -pady [expr {$::cfg_margin_height - $::cfg_margin_height/3}]
-    .ed.t see insert
-    set ::split_mode 0
-    focus .ed.t
-}
-
-proc split-toggle {} {
-    if {$::split_mode} { split-close } else { split-open }
-}
-
-proc split-cycle-focus {} {
-    if {!$::split_mode} return
-    if {[focus] eq ".ed.pw.r.t"} {
-        focus .ed.pw.l.t
-    } else {
-        focus .ed.pw.r.t
-    }
-    if {$::split_ws2_mode} { ed-update-title }
-}
-
-proc split-ws2-open {} {
-    lassign [theme-colors] bg fg bg_bar fg_bar bg_sel _ _ _ bg2
-    set sp1 [.ed.t cget -spacing1]
-    set sp2 [.ed.t cget -spacing2]
-    lassign [split-pane-padding] _padx_in _padx_out _pady_in _pady_out
-    catch { pack forget .ed.pw.r.sb .ed.pw.r.t }
-    catch { destroy .ed.pw.r.t }
-    text .ed.pw.r.t \
-        -wrap word -font [.ed.t cget -font] -width 1 \
-        -bg $bg -fg $fg -insertbackground $fg \
-        -selectbackground $bg_sel -selectforeground $fg \
-        -blockcursor 0 -insertwidth 2 -insertofftime 0 \
-        -borderwidth 0 -padx $_padx_in -pady $_pady_in \
-        -highlightthickness 2 -highlightbackground $bg -highlightcolor $fg \
-        -yscrollcommand ".ed.pw.r.sb set" -spacing1 $sp1 -spacing2 $sp2 -spacing3 0
-    .ed.pw.r.sb configure -command ".ed.pw.r.t yview"
-    pack .ed.pw.r.sb -side right -fill y
-    pack .ed.pw.r.t  -fill both  -expand 1 -padx $_padx_out -pady $_pady_out
-    if {$::ws_n == 1} {
-        set _r_content $::ws2_content;  set _r_dirty $::ws2_dirty;  set _r_cursor $::ws2_cursor
-    } else {
-        set _r_content $::ws1_content;  set _r_dirty $::ws1_dirty;  set _r_cursor $::ws1_cursor
-    }
-    .ed.pw.r.t configure -undo 0
-    .ed.pw.r.t delete 1.0 end
-    if {$_r_content ne ""} { .ed.pw.r.t insert 1.0 $_r_content }
-    .ed.pw.r.t edit reset
-    .ed.pw.r.t edit modified false
-    .ed.pw.r.t configure -undo 1
-    if {$_r_dirty} { .ed.pw.r.t edit modified true }
-    catch { .ed.pw.r.t mark set insert $_r_cursor }
-    .ed.pw.r.t see insert
-    bind .ed.pw.l.t <FocusIn>               { if {$::split_ws2_mode} { ed-update-title } }
-    bind .ed.pw.r.t <<Modified>>             { split-ws2-track-dirty }
-    bind .ed.pw.r.t <FocusIn>               { ed-update-title }
-    bind .ed.pw.r.t <KeyRelease>             { ed-status }
-    bind .ed.pw.r.t <ButtonRelease>          { ed-status }
-    bind .ed.pw.r.t <$::cfg_key_save>        { split-ws2-save; break }
-    bind .ed.pw.r.t <$::cfg_key_save_as>     { split-ws2-save-as; break }
-    bind .ed.pw.r.t <$::cfg_key_close>       { split-toggle; break }
-    bind .ed.pw.r.t <$::cfg_key_paste>       { ed-paste; break }
-    bind .ed.pw.r.t <$::cfg_key_select_all>  { .ed.pw.r.t tag add sel 1.0 end; break }
-    bind .ed.pw.r.t <$::cfg_key_dark_toggle> { toggle-dark-mode; break }
-    bind .ed.pw.r.t <Tab>                    { .ed.pw.r.t insert insert "\t"; break }
-    bind .ed.pw.r.t <$::cfg_key_goto>        { goto-dialog; break }
-    bind .ed.pw.r.t <$::cfg_key_help>        { help-dialog; break }
-    bind .ed.pw.r.t <$::cfg_key_undo>        { catch {.ed.pw.r.t edit undo}; ed-status; break }
-    bind .ed.pw.r.t <$::cfg_key_redo>        { catch {.ed.pw.r.t edit redo}; ed-status; break }
-    bind .ed.pw.r.t <$::cfg_key_find>        { search-open; break }
-    bind .ed.pw.r.t <$::cfg_key_replace>     { replace-open; break }
-    bind .ed.pw.r.t <$::cfg_key_open>        { open-file-dialog; break }
-    bind .ed.pw.r.t <$::cfg_key_toc>         { toc-show; break }
-    bind .ed.pw.r.t <$::cfg_key_toc_pinned>  { toc-panel-toggle; break }
-    bind .ed.pw.r.t <$::cfg_key_line_numbers> { ln-toggle; break }
-    bind .ed.pw.r.t <$::cfg_key_fullscreen>  { toggle-fullscreen; break }
-    bind .ed.pw.r.t <$::cfg_key_typewriter>  { typewriter-toggle; break }
-    bind .ed.pw.r.t <KeyRelease>            +[list typewriter-tick .ed.pw.r.t]
-    bind .ed.pw.r.t <ButtonRelease>         +[list typewriter-tick .ed.pw.r.t]
-    foreach _k {Left Right Up Down BackSpace Delete} {
-        bind .ed.pw.r.t <$_k> "if {\$::typewriter_mode && \$::cfg_hemingway_mode} break"
-    }
-    bind .ed.pw.r.t <$::cfg_key_split>       { split-toggle; break }
-    bind .ed.pw.r.t <$::cfg_key_split_focus> { split-cycle-focus; break }
-    bind .ed.pw.r.t <$::cfg_key_workspace>   { workspace-toggle; break }
-    bind .ed.pw.r.t <Control-equal>          { font-resize  1; break }
-    bind .ed.pw.r.t <Control-plus>           { font-resize  1; break }
-    bind .ed.pw.r.t <Control-KP_Add>         { font-resize  1; break }
-    bind .ed.pw.r.t <Control-minus>          { font-resize -1; break }
-    bind .ed.pw.r.t <Control-KP_Subtract>    { font-resize -1; break }
-    bind .ed.pw.r.t <$::cfg_key_sticky_sel>  { break }
-    bind-cmd-mode .ed.pw.r.t
-    set ::ws_dual_mode 1
-    set ::split_ws2_mode 1
-    focus .ed.pw.r.t
-}
-
-proc split-ws2-track-dirty {} {
-    if {[.ed.pw.r.t edit modified]} {
-        if {$::ws_n == 1} { set ::ws2_dirty 1 } else { set ::ws1_dirty 1 }
-        .ed.pw.r.t edit modified false
-    }
-    ed-status
-}
-
-proc split-ws2-save {} {
-    set fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
-    if {$fn eq ""} { split-ws2-save-as; return }
-    if {[file exists $fn] && ![file writable $fn]} {
-        if {[confirm-dialog [format [t ed_save_readonly] [file tail $fn]]] eq "yes"} { split-ws2-save-as }
-        return
-    }
-    if {[catch {set fh [open $fn w]} err]} { return }
-    chan configure $fh -encoding utf-8
-    puts -nonewline $fh [.ed.pw.r.t get 1.0 {end - 1 chars}]; close $fh
-    if {$::ws_n == 1} {
-        set ::ws2_dirty 0; set ::ws2_file_mtime [file mtime $fn]
-    } else {
-        set ::ws1_dirty 0; set ::ws1_file_mtime [file mtime $fn]
-    }
-    .ed.pw.r.t edit modified false
-    ed-status
-}
-
-proc split-ws2-save-as {} {
-    set cur_fn [expr {$::ws_n == 1 ? $::ws2_filename : $::ws1_filename}]
-    set dir [expr {$cur_fn ne "" ? [file dirname $cur_fn] : $::DOCS_DIR_DEFAULT}]
-    set name [string trim [input-dialog "Save as" "Save as:"]]
-    if {$name eq ""} return
-    if {[file extension $name] eq ""} { append name $::FILE_EXT }
-    set new_path [file join $dir $name]
-    if {[file exists $new_path] && $new_path ne $cur_fn} {
-        if {[confirm-dialog "\"$name\" already exists. Overwrite?"] ne "yes"} return
-    }
-    if {$::ws_n == 1} { set ::ws2_filename $new_path; set ::ws2_scratchpad 0
-    } else              { set ::ws1_filename $new_path; set ::ws1_scratchpad 0 }
-    split-ws2-save
-}
-
-proc split-ws2-load-file {path} {
-    .ed.pw.r.t configure -undo 0
-    .ed.pw.r.t delete 1.0 end
-    if {[file exists $path] && [file size $path] > 0} {
-        set fh [open $path r]; chan configure $fh -encoding utf-8
-        .ed.pw.r.t insert 1.0 [read $fh]; close $fh
-    }
-    .ed.pw.r.t edit reset; .ed.pw.r.t edit modified false
-    .ed.pw.r.t configure -undo 1
-    if {$::ws_n == 1} {
-        set ::ws2_filename $path; set ::ws2_scratchpad 0; set ::ws2_dirty 0
-        set ::ws2_file_mtime [expr {[file exists $path] ? [file mtime $path] : 0}]
-    } else {
-        set ::ws1_filename $path; set ::ws1_scratchpad 0; set ::ws1_dirty 0
-        set ::ws1_file_mtime [expr {[file exists $path] ? [file mtime $path] : 0}]
-    }
-    recent-push $path
-    .ed.pw.r.t mark set insert 1.0; .ed.pw.r.t see insert
-    ed-status
-}
-
-proc split-ws2-save-state {} {
-    if {![winfo exists .ed.pw.r.t]} return
-    if {$::ws_n == 1} {
-        set ::ws2_content [.ed.pw.r.t get 1.0 end-1c]
-        set ::ws2_cursor  [.ed.pw.r.t index insert]
-    } else {
-        set ::ws1_content [.ed.pw.r.t get 1.0 end-1c]
-        set ::ws1_cursor  [.ed.pw.r.t index insert]
-    }
-}
 
 proc workspace-toggle {} {
     if {$::split_mode} {
@@ -9348,6 +9449,7 @@ proc tui-compute-wc {} {
 proc tui-browser {} {
     set sel 0; set scroll 0; set msg ""
     set cwd ""
+    set fmode 0    ;# incremental filter typing mode ("/" key)
     set prev_rows -1; set prev_cols -1
     while 1 {
         set ::tui_size_n 14
@@ -9364,6 +9466,7 @@ proc tui-browser {} {
             lappend entries [list updir [file dirname $cwd] ".."]
             foreach d [list-subdirs $cwd] { lappend entries [list dir $cwd $d] }
             foreach f [list-docs $cwd] {
+                if {![br-filter-match $f]} continue
                 lappend entries [list file $cwd $f]
                 incr fcount
             }
@@ -9371,13 +9474,17 @@ proc tui-browser {} {
             foreach dir [br-dirs] {
                 foreach f [list-docs $dir] { lappend shown [file join $dir $f] }
             }
-            foreach e [build-extra-entries $shown] { lappend entries $e }
+            foreach e [build-extra-entries $shown] {
+                if {[lindex $e 0] in {favorite recent} && ![br-filter-match [lindex $e 2]]} continue
+                lappend entries $e
+            }
             foreach dir [br-dirs] {
                 lappend entries [list header $dir ""]
                 if {$_subnav} {
                     foreach d [list-subdirs $dir] { lappend entries [list dir $dir $d] }
                 }
                 foreach f [list-docs $dir] {
+                    if {![br-filter-match $f]} continue
                     lappend entries [list file $dir $f]
                     incr fcount
                 }
@@ -9440,12 +9547,38 @@ proc tui-browser {} {
         if {$::cfg_help_bar ne ""} { tui-help [expr {$rows-2}] [format [t br_help_tui] [t br_key_help] $::cfg_lbl_toc] $cols }
         set clk [expr {[status-zone-of clock] ne "" ? "  [clock format [clock seconds] -format {%H:%M}]" : ""}]
         set _barpath [expr {$_subnav && $cwd ne "" ? $cwd : $::DOCS_DIR_DEFAULT}]
-        if {$msg ne ""} { tui-bar [expr {$rows-1}] " $msg" "${clk} " $cols; set msg ""
+        if {$fmode || $::br_type_filter ne ""} {
+            set _fl " /$::br_type_filter"
+            if {$fmode} { append _fl "_" }
+            tui-bar [expr {$rows-1}] $_fl " [t br_files $fcount $plu]${clk} " $cols
+            set msg ""
+        } elseif {$msg ne ""} { tui-bar [expr {$rows-1}] " $msg" "${clk} " $cols; set msg ""
         } else { tui-bar [expr {$rows-1}] " [string map [list $::HOME_DIR ~] $_barpath]" \
                          " [t br_files $fcount $plu]${clk} " $cols }
         flush stdout
 
         set key [tui-getch]
+        # incremental filter typing mode: printable keys edit ::br_type_filter,
+        # ENTER keeps the filter and returns to normal keys, ESC clears it;
+        # UP/DOWN/HOME/END fall through so the selection can move while typing
+        if {$fmode} {
+            if {$key eq "ESC"} { set ::br_type_filter ""; set fmode 0; set sel 0; continue }
+            if {$key eq "ENTER"} { set fmode 0; continue }
+            if {$key eq "BACKSPACE"} {
+                if {$::br_type_filter eq ""} { set fmode 0 } else {
+                    set ::br_type_filter [string range $::br_type_filter 0 end-1]
+                }
+                set sel 0; continue
+            }
+            if {[string length $key] == 1 && $key >= " "} {
+                append ::br_type_filter $key
+                set sel 0; continue
+            }
+        } elseif {$key eq "/"} {
+            set fmode 1; continue
+        } elseif {$key eq "ESC" && $::br_type_filter ne ""} {
+            set ::br_type_filter ""; set sel 0; continue
+        }
         set cfi [expr {$nf > 0 ? [lindex $fidx $sel] : -1}]
         set ctype [expr {$cfi >= 0 ? [lindex [lindex $entries $cfi] 0] : ""}]
         switch -- $key {
