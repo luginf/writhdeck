@@ -141,7 +141,7 @@ dict set ::i18n_gui de {
     br_help_rename_file    "Umbenennen"
     br_help_font_settings  "Schrifteinstellungen nach Profil"
     br_help_reload         "Neuladen"
-    br_help_filter         "Dateien beim Tippen filtern (ESC loescht)"
+    br_help_filter         "Dateien beim Tippen filtern (ESC oder / loescht)"
     br_help_browser_sections "Browser-Abschnitte"
     br_help_fullscreen_br  "Vollbild"
     br_help_open_file_br   "Datei oeffnen"

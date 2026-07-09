@@ -141,7 +141,7 @@ dict set ::i18n_gui no {
     br_help_rename_file    "Gi nytt navn"
     br_help_font_settings  "Skriftinnstillinger etter profil"
     br_help_reload         "Last på nytt"
-    br_help_filter         "Filtrer filer mens du skriver (ESC tømmer)"
+    br_help_filter         "Filtrer filer mens du skriver (ESC eller / tømmer)"
     br_help_browser_sections "Nettleseravsnitt"
     br_help_fullscreen_br  "Fullskjerm"
     br_help_open_file_br   "Åpne fil"

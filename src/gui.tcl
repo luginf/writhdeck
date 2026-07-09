@@ -116,7 +116,10 @@ label .br.bar.cnt -textvariable ::br_status \
     -bg $bg_bar -fg $fg_bar -font $font_sm -anchor e -padx 8 -pady $bar_pady
 pack .br.bar.left -side left
 pack .br.bar.cnt  -side right
-pack .br.bar -side bottom -fill x
+# -before .br.mid: the bar must precede the list in packing order, otherwise
+# a large browser font makes the list request more height than the window
+# and the packer squeezes the bar out entirely
+pack .br.bar -side bottom -fill x -before .br.mid
 if {$::cfg_bar_height > 0} {
     .br.bar configure -height [expr {$::cfg_bar_height * 2}]
     pack propagate .br.bar 0
@@ -715,8 +718,9 @@ bind .br.mid.lst <z>           { br-reload }
 
 # --- incremental filter bar ("/" key) ------------------------------------------
 # Shows an entry above the status bar; typing filters the file list live
-# (via ::br_type_filter, applied in br-refresh). ESC clears and closes,
-# Return/arrows give focus back to the list with the filter still applied.
+# (via ::br_type_filter, applied in br-refresh). ESC or a second "/" clears
+# and closes, Return/arrows give focus back to the list with the filter still
+# applied ("/" is never needed as a filter character).
 proc br-filter-begin {} {
     catch { destroy .br.filter }
     frame .br.filter -bg $::bg
@@ -726,9 +730,12 @@ proc br-filter-begin {} {
         -relief flat -highlightthickness 0 -font $::font_sm
     pack .br.filter.l -side left -padx {8 2}
     pack .br.filter.e -side left -fill x -expand 1
-    pack .br.filter -side bottom -fill x
+    # -before .br.mid: keep the filter ahead of the list in packing order so it
+    # stays visible even when the list wants more height than the window has
+    pack .br.filter -side bottom -fill x -before .br.mid
     bind .br.filter.e <KeyRelease> { br-refresh }
     bind .br.filter.e <Escape>     { br-filter-end; break }
+    bind .br.filter.e <slash>      { br-filter-end; break }
     bind .br.filter.e <Return>     { focus .br.mid.lst; break }
     bind .br.filter.e <Up>         { focus .br.mid.lst; break }
     bind .br.filter.e <Down>       { focus .br.mid.lst; break }
@@ -743,7 +750,7 @@ proc br-filter-end {} {
     focus .br.mid.lst
 }
 
-bind .br.mid.lst <slash>  { br-filter-begin; break }
+bind .br.mid.lst <slash>  { if {[winfo exists .br.filter] || $::br_type_filter ne ""} { br-filter-end } else { br-filter-begin }; break }
 bind .br.mid.lst <Escape> { if {$::br_type_filter ne ""} { br-filter-end } }
 
 proc br-select-line {line_offset} {
@@ -1135,6 +1142,13 @@ proc cursor-place {} {
     if {$ch eq "" || $ch eq "\t" || $ch eq "\n" || $ch eq "\r"} {
         set ch " "
         set w [cursor-cell-width]
+    } else {
+        # At a soft-wrap point the bbox of the character (typically the space
+        # the line breaks on) stretches to the right margin: clamp the block
+        # to the glyph's own width.
+        set gw [font measure [.ed.t cget -font] $ch]
+        if {$gw <= 0} { set gw [cursor-cell-width] }
+        if {$w > $gw} { set w $gw }
     }
     # bbox is relative to the widget window (includes the internal padding), but
     # a child placed with -bordermode ignore is positioned from the outer corner

@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260618"
+set ::version          "v20260709"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -3796,10 +3796,11 @@ proc tui-browser {} {
 
         set key [tui-getch]
         # incremental filter typing mode: printable keys edit ::br_type_filter,
-        # ENTER keeps the filter and returns to normal keys, ESC clears it;
+        # ENTER keeps the filter and returns to normal keys, ESC or a second
+        # "/" clears it ("/" is never needed as a filter character);
         # UP/DOWN/HOME/END fall through so the selection can move while typing
         if {$fmode} {
-            if {$key eq "ESC"} { set ::br_type_filter ""; set fmode 0; set sel 0; continue }
+            if {$key eq "ESC" || $key eq "/"} { set ::br_type_filter ""; set fmode 0; set sel 0; continue }
             if {$key eq "ENTER"} { set fmode 0; continue }
             if {$key eq "BACKSPACE"} {
                 if {$::br_type_filter eq ""} { set fmode 0 } else {
@@ -3812,7 +3813,12 @@ proc tui-browser {} {
                 set sel 0; continue
             }
         } elseif {$key eq "/"} {
-            set fmode 1; continue
+            if {$::br_type_filter ne ""} {
+                set ::br_type_filter ""; set sel 0
+            } else {
+                set fmode 1
+            }
+            continue
         } elseif {$key eq "ESC" && $::br_type_filter ne ""} {
             set ::br_type_filter ""; set sel 0; continue
         }

@@ -141,7 +141,7 @@ dict set ::i18n_gui fr {
     br_help_rename_file    "Renommer"
     br_help_font_settings  "Paramètres de police par profil"
     br_help_reload         "Recharger"
-    br_help_filter         "Filtrer les fichiers en tapant (ESC efface)"
+    br_help_filter         "Filtrer les fichiers en tapant (ESC ou / efface)"
     br_help_browser_sections "Sections du navigateur"
     br_help_fullscreen_br  "Plein écran"
     br_help_open_file_br   "Ouvrir un fichier"

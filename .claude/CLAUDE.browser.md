@@ -70,8 +70,8 @@ Both settings are editable on the Misc tab (`ffilter` entry, immediately followe
 
 Live substring filter on top of the extension filter above. Shared state: `::br_type_filter` + `br-filter-match {name}` (`src/common.tcl`) — case-insensitive `string first` (no glob), empty = match all. Applied to `file`/`favorite`/`recent` entries in `br-refresh` (GUI) and the `tui-browser` entry-building loop; `dir`/`updir`/`header` entries are never filtered. Not persisted (transient, reset on restart).
 
-- **GUI**: `/` calls `br-filter-begin` — packs a `.br.filter` frame (label `/` + entry bound to `::br_type_filter`) above the status bar, `<KeyRelease>` triggers `br-refresh`. ESC in the entry or in the list calls `br-filter-end` (clears + destroys + refocuses list); Return/Up/Down refocus the list keeping the filter (bar stays visible as indicator). Also a clickable `/:filter` shortcut in the help bar (`br_key_filter`).
-- **TUI**: `/` sets the local `fmode` flag in `tui-browser`; while set, printable keys append to `::br_type_filter`, BACKSPACE deletes (exits when empty), ENTER keeps the filter and returns to normal keys, ESC clears; UP/DOWN/HOME/END fall through to navigation. Bottom-left bar shows `/text` (+ trailing `_` while typing). ESC with a filter active (outside fmode) clears it.
+- **GUI**: `/` calls `br-filter-begin` — packs a `.br.filter` frame (label `/` + entry bound to `::br_type_filter`) above the status bar, `<KeyRelease>` triggers `br-refresh`. ESC or a second `/` (in the entry or in the list) calls `br-filter-end` (clears + destroys + refocuses list) — `/` is never needed as a filter character; the list `<slash>` binding toggles (`br-filter-end` if `.br.filter` exists or filter active, else `br-filter-begin`). Return/Up/Down refocus the list keeping the filter (bar stays visible as indicator). Also a clickable `/:filter` shortcut in the help bar (`br_key_filter`).
+- **TUI**: `/` sets the local `fmode` flag in `tui-browser`; while set, printable keys append to `::br_type_filter`, BACKSPACE deletes (exits when empty), ENTER keeps the filter and returns to normal keys, ESC or `/` clears and exits; UP/DOWN/HOME/END fall through to navigation. Bottom-left bar shows `/text` (+ trailing `_` while typing). ESC or `/` with a filter active (outside fmode) clears it (`/` with no filter re-enters fmode).
 - i18n keys: `br_key_filter`, `br_help_filter` (GUI-only block); `/:filter` added to `br_help_tui`/`br_help_gui` in all 6 languages.
 
 ## Subfolder navigation (optional module `src/subdirs.tcl`)
@@ -93,6 +93,8 @@ Explorer-style browsing of subdirectories inside the document folders. Optional 
 All `toc-panel-*` procs live in the optional module `src/gui-toc-panel.tcl` (`GUI_TOC_PANEL=no` to exclude); every binding/call site is guarded with `[info procs toc-panel-toggle] ne ""` or gated by `::toc_panel_open` (see CLAUDE.md **Generated file structure**).
 
 ## GUI-specific patterns
+
+**Browser bottom widgets need pack-order priority** — `.br.bar` and `.br.filter` are packed with `-before .br.mid` so they precede the list in packing order. The list Text widget requests 24 lines of height; with a large browser font that exceeds the window, and Tk's packer squeezes the *last*-packed slaves out first — without `-before`, the bottom bar and filter disappear entirely. Keep `-before .br.mid` on any new widget packed under the list.
 
 **Help dialog close** — use `after idle [list destroy $w]; break` on keyboard bindings inside the Text widget; plain `destroy` triggers `<<TkTextBackspace>>` on the already-destroyed widget.
 

@@ -141,7 +141,7 @@ dict set ::i18n_gui ko {
     br_help_rename_file    "이름 변경"
     br_help_font_settings  "프로필별 글꼴 설정"
     br_help_reload         "다시 로드"
-    br_help_filter         "입력하는 대로 파일 필터링 (ESC 지우기)"
+    br_help_filter         "입력하는 대로 파일 필터링 (ESC 또는 / 지우기)"
     br_help_browser_sections "브라우저 섹션"
     br_help_fullscreen_br  "전체 화면"
     br_help_open_file_br   "파일 열기"

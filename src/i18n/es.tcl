@@ -141,7 +141,7 @@ dict set ::i18n_gui es {
     br_help_rename_file    "Renombrar"
     br_help_font_settings  "Configuracion de fuente por perfil"
     br_help_reload         "Recargar"
-    br_help_filter         "Filtrar archivos al escribir (ESC borra)"
+    br_help_filter         "Filtrar archivos al escribir (ESC o / borra)"
     br_help_browser_sections "Secciones del navegador"
     br_help_fullscreen_br  "Pantalla completa"
     br_help_open_file_br   "Abrir archivo"

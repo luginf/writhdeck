@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260706"
+set ::version          "v20260709"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -1570,7 +1570,7 @@ dict set ::i18n_gui en {
     br_help_rename_file    "Rename"
     br_help_font_settings  "Font settings by profile"
     br_help_reload         "Reload"
-    br_help_filter         "Filter files as you type (ESC clears)"
+    br_help_filter         "Filter files as you type (ESC or / clears)"
     br_help_browser_sections "Browser sections"
     br_help_fullscreen_br  "Fullscreen"
     br_help_open_file_br   "Open file"
@@ -1806,7 +1806,7 @@ dict set ::i18n_gui de {
     br_help_rename_file    "Umbenennen"
     br_help_font_settings  "Schrifteinstellungen nach Profil"
     br_help_reload         "Neuladen"
-    br_help_filter         "Dateien beim Tippen filtern (ESC loescht)"
+    br_help_filter         "Dateien beim Tippen filtern (ESC oder / loescht)"
     br_help_browser_sections "Browser-Abschnitte"
     br_help_fullscreen_br  "Vollbild"
     br_help_open_file_br   "Datei oeffnen"
@@ -2042,7 +2042,7 @@ dict set ::i18n_gui es {
     br_help_rename_file    "Renombrar"
     br_help_font_settings  "Configuracion de fuente por perfil"
     br_help_reload         "Recargar"
-    br_help_filter         "Filtrar archivos al escribir (ESC borra)"
+    br_help_filter         "Filtrar archivos al escribir (ESC o / borra)"
     br_help_browser_sections "Secciones del navegador"
     br_help_fullscreen_br  "Pantalla completa"
     br_help_open_file_br   "Abrir archivo"
@@ -2278,7 +2278,7 @@ dict set ::i18n_gui fr {
     br_help_rename_file    "Renommer"
     br_help_font_settings  "Paramètres de police par profil"
     br_help_reload         "Recharger"
-    br_help_filter         "Filtrer les fichiers en tapant (ESC efface)"
+    br_help_filter         "Filtrer les fichiers en tapant (ESC ou / efface)"
     br_help_browser_sections "Sections du navigateur"
     br_help_fullscreen_br  "Plein écran"
     br_help_open_file_br   "Ouvrir un fichier"
@@ -2514,7 +2514,7 @@ dict set ::i18n_gui ko {
     br_help_rename_file    "이름 변경"
     br_help_font_settings  "프로필별 글꼴 설정"
     br_help_reload         "다시 로드"
-    br_help_filter         "입력하는 대로 파일 필터링 (ESC 지우기)"
+    br_help_filter         "입력하는 대로 파일 필터링 (ESC 또는 / 지우기)"
     br_help_browser_sections "브라우저 섹션"
     br_help_fullscreen_br  "전체 화면"
     br_help_open_file_br   "파일 열기"
@@ -2750,7 +2750,7 @@ dict set ::i18n_gui no {
     br_help_rename_file    "Gi nytt navn"
     br_help_font_settings  "Skriftinnstillinger etter profil"
     br_help_reload         "Last på nytt"
-    br_help_filter         "Filtrer filer mens du skriver (ESC tømmer)"
+    br_help_filter         "Filtrer filer mens du skriver (ESC eller / tømmer)"
     br_help_browser_sections "Nettleseravsnitt"
     br_help_fullscreen_br  "Fullskjerm"
     br_help_open_file_br   "Åpne fil"
@@ -5831,7 +5831,10 @@ label .br.bar.cnt -textvariable ::br_status \
     -bg $bg_bar -fg $fg_bar -font $font_sm -anchor e -padx 8 -pady $bar_pady
 pack .br.bar.left -side left
 pack .br.bar.cnt  -side right
-pack .br.bar -side bottom -fill x
+# -before .br.mid: the bar must precede the list in packing order, otherwise
+# a large browser font makes the list request more height than the window
+# and the packer squeezes the bar out entirely
+pack .br.bar -side bottom -fill x -before .br.mid
 if {$::cfg_bar_height > 0} {
     .br.bar configure -height [expr {$::cfg_bar_height * 2}]
     pack propagate .br.bar 0
@@ -6430,8 +6433,9 @@ bind .br.mid.lst <z>           { br-reload }
 
 # --- incremental filter bar ("/" key) ------------------------------------------
 # Shows an entry above the status bar; typing filters the file list live
-# (via ::br_type_filter, applied in br-refresh). ESC clears and closes,
-# Return/arrows give focus back to the list with the filter still applied.
+# (via ::br_type_filter, applied in br-refresh). ESC or a second "/" clears
+# and closes, Return/arrows give focus back to the list with the filter still
+# applied ("/" is never needed as a filter character).
 proc br-filter-begin {} {
     catch { destroy .br.filter }
     frame .br.filter -bg $::bg
@@ -6441,9 +6445,12 @@ proc br-filter-begin {} {
         -relief flat -highlightthickness 0 -font $::font_sm
     pack .br.filter.l -side left -padx {8 2}
     pack .br.filter.e -side left -fill x -expand 1
-    pack .br.filter -side bottom -fill x
+    # -before .br.mid: keep the filter ahead of the list in packing order so it
+    # stays visible even when the list wants more height than the window has
+    pack .br.filter -side bottom -fill x -before .br.mid
     bind .br.filter.e <KeyRelease> { br-refresh }
     bind .br.filter.e <Escape>     { br-filter-end; break }
+    bind .br.filter.e <slash>      { br-filter-end; break }
     bind .br.filter.e <Return>     { focus .br.mid.lst; break }
     bind .br.filter.e <Up>         { focus .br.mid.lst; break }
     bind .br.filter.e <Down>       { focus .br.mid.lst; break }
@@ -6458,7 +6465,7 @@ proc br-filter-end {} {
     focus .br.mid.lst
 }
 
-bind .br.mid.lst <slash>  { br-filter-begin; break }
+bind .br.mid.lst <slash>  { if {[winfo exists .br.filter] || $::br_type_filter ne ""} { br-filter-end } else { br-filter-begin }; break }
 bind .br.mid.lst <Escape> { if {$::br_type_filter ne ""} { br-filter-end } }
 
 proc br-select-line {line_offset} {
@@ -6850,6 +6857,13 @@ proc cursor-place {} {
     if {$ch eq "" || $ch eq "\t" || $ch eq "\n" || $ch eq "\r"} {
         set ch " "
         set w [cursor-cell-width]
+    } else {
+        # At a soft-wrap point the bbox of the character (typically the space
+        # the line breaks on) stretches to the right margin: clamp the block
+        # to the glyph's own width.
+        set gw [font measure [.ed.t cget -font] $ch]
+        if {$gw <= 0} { set gw [cursor-cell-width] }
+        if {$w > $gw} { set w $gw }
     }
     # bbox is relative to the widget window (includes the internal padding), but
     # a child placed with -bordermode ignore is positioned from the outer corner
@@ -9559,10 +9573,11 @@ proc tui-browser {} {
 
         set key [tui-getch]
         # incremental filter typing mode: printable keys edit ::br_type_filter,
-        # ENTER keeps the filter and returns to normal keys, ESC clears it;
+        # ENTER keeps the filter and returns to normal keys, ESC or a second
+        # "/" clears it ("/" is never needed as a filter character);
         # UP/DOWN/HOME/END fall through so the selection can move while typing
         if {$fmode} {
-            if {$key eq "ESC"} { set ::br_type_filter ""; set fmode 0; set sel 0; continue }
+            if {$key eq "ESC" || $key eq "/"} { set ::br_type_filter ""; set fmode 0; set sel 0; continue }
             if {$key eq "ENTER"} { set fmode 0; continue }
             if {$key eq "BACKSPACE"} {
                 if {$::br_type_filter eq ""} { set fmode 0 } else {
@@ -9575,7 +9590,12 @@ proc tui-browser {} {
                 set sel 0; continue
             }
         } elseif {$key eq "/"} {
-            set fmode 1; continue
+            if {$::br_type_filter ne ""} {
+                set ::br_type_filter ""; set sel 0
+            } else {
+                set fmode 1
+            }
+            continue
         } elseif {$key eq "ESC" && $::br_type_filter ne ""} {
             set ::br_type_filter ""; set sel 0; continue
         }
