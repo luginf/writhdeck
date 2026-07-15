@@ -27,6 +27,10 @@ Que vous écriviez sur un Raspberry Pi Zero avec un écran E-ink, sur une tablet
 
 ![WrithDeck Screenshot 01](media/writhdeck_screen01.png)
 
+## Projet lié
+
+[Zettelium](https://github.com/luginf/zettelium-web) est une application de prise de notes façon Zettelkasten — pas un portage de WrithDeck, mais un projet parallèle construit de la même façon (fichier HTML autonome unique, sans serveur ni bundler) et pleinement compatible avec les fichiers texte brut/txt2tags de WrithDeck : les mêmes notes peuvent être ouvertes et éditées dans les deux applications.
+
 ## Installation
 
 Tcl/Tk 8.6+ doit être installé sur votre système :

@@ -34,6 +34,9 @@ Whether you're writing on a Raspberry Pi Zero with an E-ink screen, on an Androi
 - [Android version](https://github.com/luginf/writhdeck-android)
 - [ESP32 version (work in progress)](https://github.com/luginf/writhdeck-esp32)
 
+## Related project
+
+[Zettelium](https://github.com/luginf/zettelium-web) is a separate Zettelkasten note-taking app — not a WrithDeck port, but a parallel project built the same way (single self-contained HTML file, no server, no bundler) and fully compatible with WrithDeck's plain-text/txt2tags files, so the same notes can be opened and edited in either app.
 
 
 ## Installation
