@@ -1218,6 +1218,7 @@ proc tui-save-file {filepath lines} {
 proc tui-cmd-menu {} {
     set m {{t timer} {p pause} {b browser} {q quit} {s stats}}
     if {[info procs tui-analyse-dialog] ne ""} { lappend m {w words} {a analyse} }
+    if {[info procs tui-synonyms-dialog] ne ""} { lappend m {y synonyms} }
     return $m
 }
 
@@ -1999,6 +2000,16 @@ proc tui-editor {filepath {init_state {}}} {
                             if {$::tui_rep_jump ne ""} {
                                 set cy [expr {min($::tui_rep_jump, [llength $lines])}]; set cx 0
                             }
+                        }
+                        set ::tui_cmd_mode 0
+                        puts -nonewline "\033\[2J\033\[H"; flush stdout
+                        set wrap_dirty 1
+                        set clear_sel 0
+                    } elseif {$key eq "y"} {
+                        lassign [tui-size] rows cols
+                        if {[info procs tui-synonyms-dialog] ne ""} {
+                            set _word [tui-word-at [lindex $lines [expr {$cy-1}]] $cx]
+                            if {$_word ne ""} { tui-synonyms-dialog $_word $rows $cols }
                         }
                         set ::tui_cmd_mode 0
                         puts -nonewline "\033\[2J\033\[H"; flush stdout

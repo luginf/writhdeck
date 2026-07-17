@@ -29,7 +29,7 @@ _w=$(stty -g 2>/dev/null); trap '[ -n "$_w" ] && stty "$_w" 2>/dev/null' EXIT IN
 #
 # # # # # # # # # # # #
 
-set ::version          "v20260709"
+set ::version          "v20260716"
 
 # bail out immediately when invoked by bash tab-completion
 if {[info exists ::env(COMP_LINE)] || [info exists ::env(COMP_POINT)]} { exit 0 }
@@ -670,6 +670,20 @@ proc scheme-apply {name} {
 }
 
 proc ini-load {} {
+    # Repertoire de LANCEMENT (celui d'ou la commande est executee, [pwd] --
+    # PAS celui ou reside writhdeck.tcl, [file dirname [info script]]) :
+    # si l'un de ces noms courts y existe, il prend le pas sur
+    # l'emplacement fixe habituel ($::INI_FILE, deja possiblement
+    # redirige par compat-dos.tcl vers WRITHDEC.INI a cote du script).
+    # Utile sur un support a noms de fichiers limites (FAT 8.3) ou quand
+    # DOCS_DIR_DEFAULT n'est pas accessible/pertinent (ex. disquette de
+    # boot). Premier trouve gagne, dans cet ordre.
+    foreach _cand {writhdec.ini writhd.ini wrid.ini writhdeck.ini} {
+        set _p [file join [pwd] $_cand]
+        if {[file exists $_p]} { set ::INI_FILE $_p; break }
+    }
+    unset _cand _p
+
     if {![file exists $::INI_FILE]} { ini-save; return }
     set fh [open $::INI_FILE r]
     chan configure $fh -encoding utf-8
@@ -1501,6 +1515,10 @@ dict set ::i18n en {
     br_spellcheck_suggestions "suggestions: %s"
     br_spellcheck_no_suggestions "(no suggestions)"
     br_spellcheck_unavailable "Spell checker unavailable (dictionary '%s' not found)."
+    br_synonyms_title       "Synonyms"
+    br_synonyms_prompt      "Word:"
+    br_synonyms_empty       "No synonyms found."
+    br_synonyms_unavailable "Thesaurus unavailable (dictionary '%s' not found)."
     config_tab_timer       "Timer"
     timer_section          "Settings"
     timer_duration         "Duration (min):"
@@ -1737,6 +1755,10 @@ dict set ::i18n de {
     br_spellcheck_suggestions "Vorschlaege: %s"
     br_spellcheck_no_suggestions "(keine Vorschlaege)"
     br_spellcheck_unavailable "Rechtschreibpruefung nicht verfuegbar (Woerterbuch '%s' nicht gefunden)."
+    br_synonyms_title       "Synonyme"
+    br_synonyms_prompt      "Wort:"
+    br_synonyms_empty       "Keine Synonyme gefunden."
+    br_synonyms_unavailable "Synonymwoerterbuch nicht verfuegbar (Woerterbuch '%s' nicht gefunden)."
     config_tab_timer       "Timer"
     timer_section          "Einstellungen"
     timer_duration         "Dauer (min):"
@@ -1973,6 +1995,10 @@ dict set ::i18n es {
     br_spellcheck_suggestions "sugerencias: %s"
     br_spellcheck_no_suggestions "(sin sugerencias)"
     br_spellcheck_unavailable "Corrector ortografico no disponible (diccionario '%s' no encontrado)."
+    br_synonyms_title       "Sinonimos"
+    br_synonyms_prompt      "Palabra:"
+    br_synonyms_empty       "No se encontraron sinonimos."
+    br_synonyms_unavailable "Diccionario de sinonimos no disponible (diccionario '%s' no encontrado)."
     config_tab_timer       "Temporizador"
     timer_section          "Configuracion"
     timer_duration         "Duracion (min):"
@@ -2209,6 +2235,10 @@ dict set ::i18n fr {
     br_spellcheck_suggestions "suggestions : %s"
     br_spellcheck_no_suggestions "(aucune suggestion)"
     br_spellcheck_unavailable "Correcteur orthographique indisponible (dictionnaire '%s' introuvable)."
+    br_synonyms_title       "Synonymes"
+    br_synonyms_prompt      "Mot :"
+    br_synonyms_empty       "Aucun synonyme trouvé."
+    br_synonyms_unavailable "Dictionnaire des synonymes indisponible (dictionnaire '%s' introuvable)."
     config_tab_timer       "Minuterie"
     timer_section          "Parametres"
     timer_duration         "Duree (min) :"
@@ -2445,6 +2475,10 @@ dict set ::i18n ko {
     br_spellcheck_suggestions "제안: %s"
     br_spellcheck_no_suggestions "(제안 없음)"
     br_spellcheck_unavailable "맞춤법 검사 사용 불가 (사전 '%s'을 찾을 수 없습니다)."
+    br_synonyms_title       "동의어"
+    br_synonyms_prompt      "단어:"
+    br_synonyms_empty       "동의어를 찾을 수 없습니다."
+    br_synonyms_unavailable "동의어 사전 사용 불가 (사전 '%s'을 찾을 수 없습니다)."
     config_tab_timer       "타이머"
     timer_section          "설정"
     timer_duration         "기간 (분):"
@@ -2681,6 +2715,10 @@ dict set ::i18n no {
     br_spellcheck_suggestions "forslag: %s"
     br_spellcheck_no_suggestions "(ingen forslag)"
     br_spellcheck_unavailable "Stavekontroll utilgjengelig (ordbok '%s' ikke funnet)."
+    br_synonyms_title       "Synonymer"
+    br_synonyms_prompt      "Ord:"
+    br_synonyms_empty       "Ingen synonymer funnet."
+    br_synonyms_unavailable "Synonymordbok utilgjengelig (ordbok '%s' ikke funnet)."
     config_tab_timer       "Timer"
     timer_section          "Innstillinger"
     timer_duration         "Varighet (min):"
@@ -3557,6 +3595,120 @@ proc spell-check-document {fpath} {
     return $results
 }
 
+# --- synonyms (mythes thesaurus) --------------------------------------------
+# On-demand synonym lookup via the Mythes thesaurus data files used by
+# LibreOffice (Debian/Ubuntu packages: mythes-fr, mythes-en-us, mythes-de,
+# mythes-es, mythes-no...). No CLI binary exists for mythes (unlike hunspell),
+# so the .dat/.idx files are read and parsed directly in Tcl. Dictionary
+# naming matches hunspell's exactly (e.g. "fr_FR"), so spell-dict-resolve is
+# reused as-is.
+
+# Directories searched for th_<dict>_v2.dat / .idx, in order.
+proc thes-candidate-dirs {} {
+    return {/usr/share/mythes /usr/share/hunspell /usr/local/share/mythes /opt/homebrew/share/mythes}
+}
+
+# Returns {dat idx} paths for $dict, or {} if not installed.
+proc thes-files-resolve {dict} {
+    if {$dict eq ""} { return {} }
+    foreach dir [thes-candidate-dirs] {
+        set dat [file join $dir "th_${dict}_v2.dat"]
+        set idx [file join $dir "th_${dict}_v2.idx"]
+        if {[file readable $dat] && [file readable $idx]} { return [list $dat $idx] }
+    }
+    return {}
+}
+
+# True if a thesaurus is available for the resolved spell-check language.
+proc thes-available {} {
+    return [expr {[thes-files-resolve [spell-dict-resolve]] ne {}}]
+}
+
+# Lazily loads and caches the full word|offset index as a list of raw lines
+# (the .idx file is already sorted in plain Tcl string order, verified
+# against the Debian mythes-fr/-en-us/-de/-es/-no packages, which makes a
+# binary search over the cached lines both correct and fast without needing
+# to hold a parsed dict of ~200k entries in memory).
+proc thes-idx-load {idxpath} {
+    if {[info exists ::thes_idx_cache($idxpath)]} { return $::thes_idx_cache($idxpath) }
+    set lines {}
+    catch {
+        set fh [open $idxpath r]; chan configure $fh -encoding utf-8
+        gets $fh; gets $fh
+        while {[gets $fh line] >= 0} {
+            if {$line ne ""} { lappend lines $line }
+        }
+        close $fh
+    }
+    set ::thes_idx_cache($idxpath) $lines
+    return $lines
+}
+
+# Binary search for $word in the cached idx lines. Returns the byte offset
+# into the matching .dat file as a string, or "" if not found.
+proc thes-idx-find {lines word} {
+    set lo 0
+    set hi [expr {[llength $lines] - 1}]
+    while {$lo <= $hi} {
+        set mid [expr {($lo + $hi) / 2}]
+        set line [lindex $lines $mid]
+        set bar [string first "|" $line]
+        set cmp [string compare $word [string range $line 0 [expr {$bar - 1}]]]
+        if {$cmp == 0} { return [string range $line [expr {$bar + 1}] end] }
+        if {$cmp < 0} { set hi [expr {$mid - 1}] } else { set lo [expr {$mid + 1}] }
+    }
+    return ""
+}
+
+# Reads one entry at $offset in $datpath. Returns a list of {category
+# {syn1 syn2 ...}} pairs (one per sense), or {} on read failure.
+proc thes-dat-entry {datpath offset} {
+    set entries {}
+    catch {
+        set fh [open $datpath r]; chan configure $fh -encoding utf-8
+        seek $fh $offset
+        gets $fh header
+        set n [string range $header [expr {[string first "|" $header] + 1}] end]
+        for {set i 0} {$i < $n} {incr i} {
+            if {[gets $fh l] < 0} break
+            set parts [split $l "|"]
+            lappend entries [list [string trim [lindex $parts 0] "()"] [lrange $parts 1 end]]
+        }
+        close $fh
+    }
+    return $entries
+}
+
+# Looks up synonyms for $word. Returns a list of {category {syn1 syn2 ...}}
+# pairs (possibly {} if the word isn't in the thesaurus); caller must check
+# thes-available first to distinguish "no thesaurus" from "no synonyms".
+# Falls back to a lowercase match (thesaurus entries are lowercase, e.g. a
+# capitalised word at the start of a sentence would otherwise miss).
+proc thes-lookup {word} {
+    lassign [thes-files-resolve [spell-dict-resolve]] dat idx
+    if {$dat eq ""} { return {} }
+    set lines [thes-idx-load $idx]
+    set off [thes-idx-find $lines $word]
+    if {$off eq "" && $word ne [string tolower $word]} {
+        set off [thes-idx-find $lines [string tolower $word]]
+    }
+    if {$off eq ""} { return {} }
+    return [thes-dat-entry $dat $off]
+}
+
+# Returns the word touching column $cx (0-based) in $line, using the same
+# word pattern as spell-check-document, or "" if none. Shared by the TUI
+# editor's word-under-cursor synonym lookup.
+proc tui-word-at {line cx} {
+    foreach m [regexp -all -inline -indices {[[:alpha:]]+(?:['-][[:alpha:]]+)*} $line] {
+        lassign $m s e
+        if {($cx >= $s && $cx <= $e) || ($cx - 1 >= $s && $cx - 1 <= $e)} {
+            return [string range $line $s $e]
+        }
+    }
+    return ""
+}
+
 # --- GUI dialogs -----------------------------------------------------------
 
 proc br-analyse-shortcut {} {
@@ -3618,11 +3770,13 @@ proc analyse-dialog {fpath} {
     button $w.btns.rep   -text [t br_repetitions_title] -font $::font_sm -command [list repetitions-dialog $fpath]
     button $w.btns.occ   -text [t br_word_occ_title] -font $::font_sm -command [list word-occurrences-dialog $fpath]
     button $w.btns.spell -text [t br_spellcheck_title] -font $::font_sm -command [list spellcheck-dialog $fpath]
+    button $w.btns.syn   -text [t br_synonyms_title] -font $::font_sm -command synonyms-prompt
     button $w.btns.ok    -text "OK" -font $::font_sm -command [list destroy $w]
     pack $w.btns.ok    -side right -padx 8 -pady 6
     pack $w.btns.rep   -side right -padx 4 -pady 6
     pack $w.btns.occ   -side right -padx 4 -pady 6
     pack $w.btns.spell -side right -padx 4 -pady 6
+    pack $w.btns.syn   -side right -padx 4 -pady 6
 
     pack $w.hdr  -fill x
     pack $w.btns -side bottom -fill x
@@ -3862,6 +4016,79 @@ proc spellcheck-jump {fpath line word} {
     after idle [list focus -force $t]
 }
 
+# Displays synonyms for $word. Clicking a listed synonym re-runs this same
+# dialog for that word (browsing the thesaurus), so the click handler is
+# deferred with "after idle" to avoid destroying the window mid-callback.
+proc synonyms-dialog {word} {
+    if {![thes-available]} {
+        info-dialog [format [t br_synonyms_unavailable] [spell-dict-resolve]]
+        return
+    }
+    set entries [thes-lookup $word]
+
+    set w .syndlg
+    catch {destroy $w}
+    toplevel $w
+    wm title $w [t br_synonyms_title]
+    wm geometry $w 420x380
+    wm transient $w .
+
+    label $w.hdr -text $word -font [list [lindex $::font 0] [lindex $::font 1] bold] \
+        -bg $::bg_bar -fg $::fg_bar -anchor w -padx 10 -pady 5
+
+    frame $w.f -bg $::bg
+    text $w.f.t -font $::font_sm -bg $::bg -fg $::fg -bd 0 -highlightthickness 0 \
+        -yscrollcommand [list $w.f.sb set] -wrap word -width 50 -height 20 \
+        -selectbackground $::bg_sel -selectforeground $::fg -cursor arrow -padx 10 -pady 6
+    scrollbar $w.f.sb -orient vertical -command [list $w.f.t yview]
+
+    $w.f.t tag configure heading_tag -foreground $::cfg_color_heading
+    $w.f.t tag configure dim_tag     -foreground $::fg_bar
+
+    set _rn 0
+    $w.f.t configure -state normal
+    if {[llength $entries] == 0} {
+        $w.f.t insert end "\n  [t br_synonyms_empty]\n" dim_tag
+    } else {
+        foreach entry $entries {
+            lassign $entry cat syns
+            $w.f.t insert end "\n  ($cat)\n" heading_tag
+            foreach syn $syns {
+                set _tag "synhit$_rn"; incr _rn
+                $w.f.t insert end "    $syn\n" [list dim_tag $_tag]
+                $w.f.t tag bind $_tag <Button-1> [list after idle [list synonyms-dialog $syn]]
+                $w.f.t tag bind $_tag <Enter> [list $w.f.t configure -cursor hand2]
+                $w.f.t tag bind $_tag <Leave> [list $w.f.t configure -cursor arrow]
+            }
+        }
+    }
+    $w.f.t configure -state disabled
+
+    pack $w.f.sb -side right -fill y
+    pack $w.f.t  -side left  -fill both -expand 1
+
+    button $w.ok -text "OK" -font $::font_sm -command [list destroy $w]
+
+    pack $w.hdr -fill x
+    pack $w.ok  -side bottom -anchor e -padx 8 -pady 6
+    pack $w.f   -fill both -expand 1 -padx 2 -pady 2
+
+    bind $w <Return> [list destroy $w]
+    bind $w <Escape> [list destroy $w]
+    update
+    if {![winfo exists $w]} return
+    catch {grab $w}
+    focus $w.ok
+    tkwait window $w
+}
+
+# Prompts for a word (typed manually, e.g. from the Structure Analysis
+# dialog) and opens synonyms-dialog for it.
+proc synonyms-prompt {} {
+    set word [string trim [input-dialog [t br_synonyms_title] [t br_synonyms_prompt]]]
+    if {$word ne ""} { synonyms-dialog $word }
+}
+
 proc word-occurrences-dialog {fpath} {
     if {![file exists $fpath]} return
 
@@ -4019,7 +4246,7 @@ proc tui-analyse-dialog {fpath rows cols} {
                 puts -nonewline "\033\[K"
             }
         }
-        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  r:repetitions  w:words  o:spelling  q close" "" $cols
+        tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  r:repetitions  w:words  o:spelling  y:synonyms  q close" "" $cols
         flush stdout
 
         set _k ""; while {$_k eq ""} { set _k [tui-getch] }
@@ -4032,6 +4259,12 @@ proc tui-analyse-dialog {fpath rows cols} {
             o       { tui-spellcheck-dialog $fpath $rows $cols
                       if {$::tui_rep_jump ne ""} { break }
                       puts -nonewline "\033\[2J\033\[H"; flush stdout }
+            y       { set _word [string trim [tui-prompt [t br_synonyms_prompt] $rows $cols]]
+                      puts -nonewline "\033\[2J\033\[H"; flush stdout
+                      if {$_word ne ""} {
+                          tui-synonyms-dialog $_word $rows $cols
+                          puts -nonewline "\033\[2J\033\[H"; flush stdout
+                      } }
             UP - k  { incr _scroll -1 }
             DOWN - j { incr _scroll 1 }
             HOME    { set _scroll 0 }
@@ -4245,6 +4478,118 @@ proc tui-spellcheck-dialog {fpath rows cols} {
                 if {$_cur >= 0} {
                     set ::tui_rep_jump [lindex [lindex $all_lines $_cur] 2]
                     break
+                }
+            }
+            UP - k {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_cur - 1}]} {$_i >= 0} {incr _i -1} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { incr _scroll -1 }
+            }
+            DOWN - j {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_cur + 1}]} {$_i < $_total} {incr _i} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { incr _scroll 1 }
+            }
+            HOME {
+                if {$_cur >= 0} {
+                    for {set _i 0} {$_i < $_total} {incr _i} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { set _scroll 0 }
+            }
+            END {
+                if {$_cur >= 0} {
+                    for {set _i [expr {$_total - 1}]} {$_i >= 0} {incr _i -1} {
+                        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+                    }
+                } else { set _scroll [expr {max(0, $_total - $_usable)}] }
+            }
+            default { if {$_k eq $::cfg_tui_help} { break } }
+        }
+    }
+}
+
+# TUI counterpart of synonyms-dialog. ENTER on a listed synonym re-invokes
+# this proc for that word (browsing the thesaurus), mirroring the GUI's
+# click-through; the recursive call returns to this level on "q".
+proc tui-synonyms-dialog {word rows cols} {
+    if {![thes-available]} {
+        tui-info-dialog [format [t br_synonyms_unavailable] [spell-dict-resolve]] $rows $cols
+        return
+    }
+    set entries [thes-lookup $word]
+
+    # Each entry: {text inv jumpword} - jumpword is the synonym to look up
+    # next on ENTER, or "" for headings/non-selectable rows.
+    set all_lines {}
+    lappend all_lines [list "  [t br_synonyms_title] -- $word" 1 ""]
+    lappend all_lines [list "" 0 ""]
+
+    if {[llength $entries] == 0} {
+        lappend all_lines [list "  [t br_synonyms_empty]" 0 ""]
+    } else {
+        foreach entry $entries {
+            lassign $entry cat syns
+            lappend all_lines [list "  ($cat)" 1 ""]
+            foreach syn $syns {
+                lappend all_lines [list "    $syn" 0 $syn]
+            }
+            lappend all_lines [list "" 0 ""]
+        }
+    }
+
+    set _usable [expr {$rows - 4}]
+    set _total  [llength $all_lines]
+    set _scroll 0
+
+    set _cur -1
+    for {set _i 0} {$_i < $_total} {incr _i} {
+        if {[lindex [lindex $all_lines $_i] 2] ne ""} { set _cur $_i; break }
+    }
+
+    puts -nonewline "\033\[2J\033\[H"; flush stdout
+
+    while 1 {
+        if {$_cur >= 0} {
+            if {$_cur < $_scroll}             { set _scroll $_cur }
+            if {$_cur >= $_scroll + $_usable} { set _scroll [expr {$_cur - $_usable + 1}] }
+        }
+        set _max_scroll [expr {max(0, $_total - $_usable)}]
+        if {$_scroll > $_max_scroll} { set _scroll $_max_scroll }
+        if {$_scroll < 0}            { set _scroll 0 }
+
+        puts -nonewline "\033\[H"
+        for {set _i 0} {$_i < $_usable} {incr _i} {
+            set _idx [expr {$_scroll + $_i}]
+            if {$_idx < $_total} {
+                tui-move $_i 0
+                lassign [lindex $all_lines $_idx] _txt _inv _jw
+                if {$_idx == $_cur} { tui-attr sel } elseif {$_inv} { tui-attr reverse }
+                puts -nonewline "[string range $_txt 0 [expr {$cols - 1}]]\033\[K"
+                if {$_idx == $_cur || $_inv} { tui-attr off }
+            } else {
+                tui-move $_i 0
+                puts -nonewline "\033\[K"
+            }
+        }
+        if {$_cur >= 0} {
+            tui-bar [expr {$rows - 1}] "  UP/DOWN select  ENTER look up  q close" "" $cols
+        } else {
+            tui-bar [expr {$rows - 1}] "  UP/DOWN scroll  q close" "" $cols
+        }
+        flush stdout
+
+        set _k ""; while {$_k eq ""} { set _k [tui-getch] }
+        switch -- $_k {
+            q { break }
+            ENTER {
+                if {$_cur >= 0} {
+                    tui-synonyms-dialog [lindex [lindex $all_lines $_cur] 2] $rows $cols
+                    puts -nonewline "\033\[2J\033\[H"; flush stdout
                 }
             }
             UP - k {
@@ -6749,6 +7094,9 @@ proc gui-status-update {} {
         if {[info procs analyse-dialog] ne ""} {
             append ::ed_bar_center "  w: words  a: analyse"
         }
+        if {[info procs synonyms-dialog] ne ""} {
+            append ::ed_bar_center "  y: synonyms"
+        }
         set ::ed_bar_right ""
         return
     }
@@ -8082,6 +8430,15 @@ proc gui-handle-keypress {key} {
             set ::gui_cmd_mode 0
             ed-status
             return 1
+        } elseif {$key eq "y" || $key eq "Y"} {
+            if {[info procs synonyms-dialog] ne ""} {
+                set _t [primary-ed]
+                set _word [string trim [$_t get "insert wordstart" "insert wordend"]]
+                if {$_word ne ""} { synonyms-dialog $_word }
+            }
+            set ::gui_cmd_mode 0
+            ed-status
+            return 1
         } elseif {$key eq "q" || $key eq "Q"} {
             set ::gui_cmd_mode 0
             ed-status
@@ -8119,6 +8476,8 @@ proc bind-cmd-mode {w} {
     bind $w <W>     { if {![gui-handle-keypress W]} { %W insert insert W; ed-status }; break }
     bind $w <a>     { if {![gui-handle-keypress a]} { %W insert insert a; ed-status }; break }
     bind $w <A>     { if {![gui-handle-keypress A]} { %W insert insert A; ed-status }; break }
+    bind $w <y>     { if {![gui-handle-keypress y]} { %W insert insert y; ed-status }; break }
+    bind $w <Y>     { if {![gui-handle-keypress Y]} { %W insert insert Y; ed-status }; break }
     bind $w <Alt-t> { if {!$::gui_cmd_mode} { if {$::timer_active} { timer-pause } else { timer-start }; ed-status }; break }
     bind $w <Any-KeyPress> { if {$::gui_cmd_mode} { set k %K; if {$k ne "Escape"} break } }
 }
@@ -9861,6 +10220,7 @@ proc tui-save-file {filepath lines} {
 proc tui-cmd-menu {} {
     set m {{t timer} {p pause} {b browser} {q quit} {s stats}}
     if {[info procs tui-analyse-dialog] ne ""} { lappend m {w words} {a analyse} }
+    if {[info procs tui-synonyms-dialog] ne ""} { lappend m {y synonyms} }
     return $m
 }
 
@@ -10637,6 +10997,16 @@ proc tui-editor {filepath {init_state {}}} {
                             if {$::tui_rep_jump ne ""} {
                                 set cy [expr {min($::tui_rep_jump, [llength $lines])}]; set cx 0
                             }
+                        }
+                        set ::tui_cmd_mode 0
+                        puts -nonewline "\033\[2J\033\[H"; flush stdout
+                        set wrap_dirty 1
+                        set clear_sel 0
+                    } elseif {$key eq "y"} {
+                        lassign [tui-size] rows cols
+                        if {[info procs tui-synonyms-dialog] ne ""} {
+                            set _word [tui-word-at [lindex $lines [expr {$cy-1}]] $cx]
+                            if {$_word ne ""} { tui-synonyms-dialog $_word $rows $cols }
                         }
                         set ::tui_cmd_mode 0
                         puts -nonewline "\033\[2J\033\[H"; flush stdout

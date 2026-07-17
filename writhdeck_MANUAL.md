@@ -263,6 +263,7 @@ Press **ESC** while editing to enter a command mode. This provides quick access 
 | **t** | Toggle timer (countdown or stopwatch) |
 | **s** | Show daily writing statistics (full-screen) |
 | **w** | Show word occurrences in document (full-screen) |
+| **y** | Show synonyms for the word under the cursor (requires a Mythes thesaurus, e.g. `mythes-fr`) |
 | **q** | Quit / close file (with save prompt if unsaved) |
 | **Other keys** | Exit modal, return to normal text entry |
 
@@ -760,6 +761,7 @@ Appuyer sur **ESC** pendant l'édition pour entrer en mode commande. Cela donne 
 | **t** | Basculer la minuterie (compte à rebours ou chronomètre) |
 | **s** | Afficher les stats d'écriture journalières (plein écran) |
 | **w** | Afficher les occurrences de mots du document (plein écran) |
+| **y** | Afficher les synonymes du mot sous le curseur (nécessite un thésaurus Mythes, ex. `mythes-fr`) |
 | **q** | Quitter / fermer le fichier courant (avec prompt de sauvegarde si non sauvegardé) |
 | **Autres touches** | Quitter le mode modal, revenir à l'édition normale |
 

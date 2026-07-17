@@ -380,6 +380,20 @@ proc scheme-apply {name} {
 }
 
 proc ini-load {} {
+    # Repertoire de LANCEMENT (celui d'ou la commande est executee, [pwd] --
+    # PAS celui ou reside writhdeck.tcl, [file dirname [info script]]) :
+    # si l'un de ces noms courts y existe, il prend le pas sur
+    # l'emplacement fixe habituel ($::INI_FILE, deja possiblement
+    # redirige par compat-dos.tcl vers WRITHDEC.INI a cote du script).
+    # Utile sur un support a noms de fichiers limites (FAT 8.3) ou quand
+    # DOCS_DIR_DEFAULT n'est pas accessible/pertinent (ex. disquette de
+    # boot). Premier trouve gagne, dans cet ordre.
+    foreach _cand {writhdec.ini writhd.ini wrid.ini writhdeck.ini} {
+        set _p [file join [pwd] $_cand]
+        if {[file exists $_p]} { set ::INI_FILE $_p; break }
+    }
+    unset _cand _p
+
     if {![file exists $::INI_FILE]} { ini-save; return }
     set fh [open $::INI_FILE r]
     chan configure $fh -encoding utf-8

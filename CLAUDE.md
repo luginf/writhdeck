@@ -95,6 +95,8 @@ These markers help navigate the ~5000-line file during development.
 
 **No Unicode symbols or em-dashes in user-visible strings.** Use ASCII equivalents: `->` not `→`, `-` not `—`, `[+]`/`[-]` not `★`/`☆`, ` | ` not `·`, etc. French accented characters (é, à, è, ê, É…) are the only intentional non-ASCII. This applies to i18n strings, help text, status bar, and all TUI output.
 
+**INI file: launch-directory override.** `ini-load` (`src/config.tcl`) checks `[pwd]` (the directory the command was launched from, not `[file dirname [info script]]`) for `writhdec.ini`, `writhd.ini`, `wrid.ini`, then `writhdeck.ini`, in that order, before falling back to the usual `$::INI_FILE` (normally `$::DOCS_DIR_DEFAULT/writhdeck.ini`, or `WRITHDEC.INI` next to the script on DOS via `compat-dos.tcl`). First match wins; if none exist, behavior is unchanged. Added for short-filename-limited media (FAT 8.3, e.g. a boot floppy) or setups where `DOCS_DIR_DEFAULT` isn't reachable/relevant. Since this runs at the top of `ini-load` (sourced by `common.tcl`, shared by every build variant), it applies uniformly to GUI/CLI/Jim/DOS builds without touching each `boot-*.tcl` separately.
+
 ## Known limitations
 
 - No emoji support in GUI (Tk 8.6 color font limitation)

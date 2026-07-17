@@ -29,12 +29,13 @@ Editor mode activated by pressing the command-mode key (default: ESC) in the edi
 - **s** — show daily writing statistics (calls `daily-update` first to include unsaved words, then `tui-stats-dialog` / `br-stats`). Works for the **scratchpad** too (no filename): `scratchpad-stats-open`/`scratchpad-stats-record` (`src/common.tcl`) give it a stable virtual path `~/.writhdeck_scratchpad.txt` so daily stats accumulate and totals are read off a live snapshot, independent of ever saving to a real document. `scratchpad-stats-open` is called on scratchpad entry (`open-scratchpad` GUI, `tui-editor` filepath=="" branch) to capture the baseline; the stats dialogs display the name "scratchpad" instead of the dotfile. Same high-water-mark semantics as files (reopening an emptied scratchpad holds the day's count).
 - **w** — show word occurrences — calls `tui-word-occurrences` (same overlay as browser `w`)
 - **a** — structure/repetitions/spelling analysis — calls `tui-analyse-dialog` (TUI) / `analyse-dialog` (GUI); only when `src/analysis.tcl` is included in the build
+- **y** — synonyms for the word under the cursor — calls `tui-synonyms-dialog`/`tui-word-at` (TUI) or `synonyms-dialog` with the Tk `wordstart`/`wordend` indices (GUI); only when `src/analysis.tcl` is included in the build, and only shows results when a Mythes thesaurus is installed (see **Synonyms (Mythes thesaurus)** below)
 - **Other keys** — exit modal, revert to normal text entry
 
 **Implementation details:**
 - State tracked by `$::gui_cmd_mode` (GUI) and `$::tui_cmd_mode` (TUI)
-- GUI status message: `"$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats"` (+ `"  w: words  a: analyse"` when `tui-analyse-dialog`/`analyse-dialog` exists) — built in `ed-status` (`src/gui.tcl`)
-- GUI binding: `proc bind-cmd-mode {w}` in `src/gui.tcl` — sets all command-mode bindings (cfg_key_cmd_mode, p/P/t/T/c/C/q/Q/s/S/w/W, Alt-t, Any-KeyPress) on widget `$w`. Called for `.ed.t`, `split-make-pane` peer panes, and `split-ws2-open` independent pane. The catch-all `<Any-KeyPress>` binding (`break` unless the key is the cmd-mode key) is what already blocks arrow-key text movement while modal in the GUI.
+- GUI status message: `"$::cfg_lbl_cmd_mode: exit mode  t/p: timer/pause  b: browser  q: quit  s: stats"` (+ `"  w: words  a: analyse"` when `tui-analyse-dialog`/`analyse-dialog` exists, `"  y: synonyms"` when `synonyms-dialog` exists) — built in `ed-status` (`src/gui.tcl`)
+- GUI binding: `proc bind-cmd-mode {w}` in `src/gui.tcl` — sets all command-mode bindings (cfg_key_cmd_mode, p/P/t/T/c/C/q/Q/s/S/w/W/y/Y, Alt-t, Any-KeyPress) on widget `$w`. Called for `.ed.t`, `split-make-pane` peer panes, and `split-ws2-open` independent pane. The catch-all `<Any-KeyPress>` binding (`break` unless the key is the cmd-mode key) is what already blocks arrow-key text movement while modal in the GUI.
 - TUI: `$key eq $::cfg_tui_cmd_mode` in editor key handler
 - After closing `s`/`w`/`a` overlay: `set wrap_dirty 1` forces editor redraw (TUI)
 
@@ -42,8 +43,26 @@ Editor mode activated by pressing the command-mode key (default: ESC) in the edi
 - `LEFT`/`RIGHT` cycle `::tui_cmd_idx` (with wraparound) through the menu returned by `tui-cmd-menu` and redraw the bottom bar via `tui-cmd-message`, which wraps the highlighted entry in `[brackets]` (e.g. `[b:browser]`)
 - `ENTER` rewrites `$key` to the letter of the currently highlighted entry (e.g. `t`), so it falls through to the same dispatch used for a direct letter press
 - `UP`/`DOWN`/`SHIFT-*`/`CTRL-*`/`HOME`/`END`/`PPAGE`/`NPAGE`/`BACKSPACE`/`DC`/`TAB` are neutralized (rewritten to `""`) — none of them move the cursor or edit text while modal
-- `tui-cmd-menu` returns `{t timer} {p pause} {b browser} {q quit} {s stats}` plus `{w words} {a analyse}` when `tui-analyse-dialog` exists — kept in sync with the letters actually dispatched inside the `elseif {$::tui_cmd_mode}` block, so the menu always lists every option
+- `tui-cmd-menu` returns `{t timer} {p pause} {b browser} {q quit} {s stats}` plus `{w words} {a analyse}` when `tui-analyse-dialog` exists, plus `{y synonyms}` when `tui-synonyms-dialog` exists — kept in sync with the letters actually dispatched inside the `elseif {$::tui_cmd_mode}` block, so the menu always lists every option
 - `::tui_cmd_idx` (declared in `src/state.tcl`) is reset to `0` every time modal mode is entered
+
+## Synonyms (Mythes thesaurus)
+
+Word-level synonym lookup via the [Mythes](https://github.com/LibreOffice/dictionaries) thesaurus data used by LibreOffice — the same `mythes-fr`/`mythes-en-us`/`mythes-de`/`mythes-es`/`mythes-no` Debian/Ubuntu packages. Unlike hunspell, Mythes ships **no CLI binary** (`libmythes` is a shared library only), so `src/analysis.tcl` parses its `.dat`/`.idx` files directly instead of piping to an external process:
+
+- `thes-candidate-dirs {}` — fixed list of directories to search: `/usr/share/mythes`, `/usr/share/hunspell`, `/usr/local/share/mythes`, `/opt/homebrew/share/mythes`
+- `thes-files-resolve {dict}` — returns `{dat idx}` for `th_${dict}_v2.{dat,idx}` in the first candidate dir where both files exist, or `{}`. `dict` reuses `spell-dict-resolve` (`src/analysis.tcl`) as-is — Mythes and hunspell dictionary names are identical (e.g. `fr_FR`), verified against the actual Debian packages
+- `thes-available {}` — `[thes-files-resolve [spell-dict-resolve]] ne {}`; checked before every lookup to distinguish "no thesaurus installed" from "word not in thesaurus"
+- `thes-idx-load {idxpath}` / `thes-idx-find {lines word}` — the `.idx` file is loaded once per path and cached in `::thes_idx_cache($idxpath)` as a flat list of raw `word|offset` lines; `thes-idx-find` binary-searches it with plain `string compare`. This only works because the Mythes `.idx` files are sorted in exact Tcl `lsort` order (verified against `thes_fr.idx`) — if a future dictionary format sorts differently (e.g. locale-aware collation), the binary search would need to fall back to a linear scan
+- `thes-dat-entry {datpath offset}` — `seek`s to the byte offset (Tcl channel offsets are byte-based regardless of `-encoding utf-8`, confirmed against the actual files) and parses the `word|N` header followed by `N` `(Category)|syn1|syn2|...` lines into `{category {syn1 syn2 ...}}` pairs
+- `thes-lookup {word}` — ties the above together; tries `$word` then `[string tolower $word]` (thesaurus entries are lowercase, so a capitalised word at a sentence start would otherwise miss) and returns the entry list (possibly `{}` if genuinely not found — caller must have already checked `thes-available`)
+- `tui-word-at {line cx}` — extracts the word touching column `cx` (0-based) in `line`, same word regex as `spell-check-document`; shared helper for the TUI editor's `y` cmd-mode key
+
+**GUI** (`src/gui.tcl`/`src/analysis.tcl`): `synonyms-dialog {word}` shows results in a toplevel (`.syndlg`), one `(category)` heading per sense; clicking a listed synonym re-runs `synonyms-dialog` for that word via `after idle` (destroying `.syndlg` synchronously from inside its own tag binding is the same pitfall as the Help dialog close — see **GUI-specific patterns** in `CLAUDE.browser.md`). `synonyms-prompt {}` wraps `input-dialog` for manual word entry (the "Synonyms" button in `analyse-dialog`). The editor's `y`/`Y` cmd-mode key looks up `[$t get "insert wordstart" "insert wordend"]` on `[primary-ed]` directly (Tk's native word-boundary indices).
+
+**TUI**: see `tui-synonyms-dialog` in `CLAUDE.tui.md`.
+
+Both entry points degrade gracefully when `thes-available` is false: `[format [t br_synonyms_unavailable] [spell-dict-resolve]]` names the missing dictionary, mirroring `br_spellcheck_unavailable`.
 
 ## Second workspace (F10)
 

@@ -78,9 +78,10 @@ WrithDeck bundles a set of tools to review work in progress, available in both t
 - **Word occurrences** (`w`) — a frequency list of every word in the document, sorted by count, to spot overused terms.
 - **Repetition detection** — flags the same word (or lemma) repeated within a configurable range and, optionally, *hidden* repetitions such as "tour" inside "alentours". Scope and minimum length are configurable.
 - **Spell checking** — checks the whole document through Hunspell and lists each misspelling with suggestions; jump to any occurrence directly.
+- **Synonyms** (`y`) — looks up synonyms for the word under the cursor (or a typed word) through the Mythes thesaurus, the same format LibreOffice uses; click/select any listed synonym to look it up in turn.
 - **Daily statistics** (`s`) — per-file daily word counts (high-water mark), plus a configurable daily word goal shown live in the status bar.
 
-These analysis tools are optional at build time (`make ANALYSIS_TOOLS=no` to exclude them).
+These analysis tools are optional at build time (`make ANALYSIS_TOOLS=no` to exclude them). Spell checking requires [Hunspell](https://github.com/hunspell/hunspell) with a dictionary for your language (Debian/Ubuntu: `apt install hunspell hunspell-fr`, etc.); synonyms require a [Mythes](https://github.com/LibreOffice/dictionaries) thesaurus for your language (Debian/Ubuntu: `apt install mythes-fr`, etc.). Both degrade gracefully (a message explains what's missing) when not installed.
 
 ![WrithDeck tools](media/writhdeck_tools.png)
 

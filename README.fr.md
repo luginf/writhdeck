@@ -70,9 +70,10 @@ WrithDeck embarque un ensemble d'outils pour relire un travail en cours, disponi
 - **Occurrences de mots** (`w`) — la liste de fréquence de chaque mot du document, triée par nombre, pour repérer les termes surutilisés.
 - **Détection des répétitions** — signale un même mot (ou lemme) répété dans une portée configurable et, en option, les répétitions *cachées* comme « tour » dans « alentours ». Portée et longueur minimale réglables.
 - **Correction orthographique** — vérifie tout le document via Hunspell et liste chaque faute avec des suggestions ; sautez à n'importe quelle occurrence.
+- **Synonymes** (`y`) — cherche les synonymes du mot sous le curseur (ou d'un mot saisi) via le thésaurus Mythes, le même format que LibreOffice ; cliquez/sélectionnez un synonyme affiché pour le rechercher à son tour.
 - **Statistiques quotidiennes** (`s`) — comptage de mots par jour et par fichier (high-water mark), plus un objectif de mots journalier affiché en direct dans la barre d'état.
 
-Ces outils d'analyse sont optionnels à la compilation (`make ANALYSIS_TOOLS=no` pour les exclure).
+Ces outils d'analyse sont optionnels à la compilation (`make ANALYSIS_TOOLS=no` pour les exclure). La correction orthographique nécessite [Hunspell](https://github.com/hunspell/hunspell) avec un dictionnaire pour votre langue (Debian/Ubuntu : `apt install hunspell hunspell-fr`, etc.) ; les synonymes nécessitent un thésaurus [Mythes](https://github.com/LibreOffice/dictionaries) pour votre langue (Debian/Ubuntu : `apt install mythes-fr`, etc.). Les deux se dégradent proprement (un message indique ce qui manque) en leur absence.
 
 ![WrithDeck tools](media/writhdeck_tools.png)
 

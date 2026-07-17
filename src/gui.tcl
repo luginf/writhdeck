@@ -1034,6 +1034,9 @@ proc gui-status-update {} {
         if {[info procs analyse-dialog] ne ""} {
             append ::ed_bar_center "  w: words  a: analyse"
         }
+        if {[info procs synonyms-dialog] ne ""} {
+            append ::ed_bar_center "  y: synonyms"
+        }
         set ::ed_bar_right ""
         return
     }
@@ -2367,6 +2370,15 @@ proc gui-handle-keypress {key} {
             set ::gui_cmd_mode 0
             ed-status
             return 1
+        } elseif {$key eq "y" || $key eq "Y"} {
+            if {[info procs synonyms-dialog] ne ""} {
+                set _t [primary-ed]
+                set _word [string trim [$_t get "insert wordstart" "insert wordend"]]
+                if {$_word ne ""} { synonyms-dialog $_word }
+            }
+            set ::gui_cmd_mode 0
+            ed-status
+            return 1
         } elseif {$key eq "q" || $key eq "Q"} {
             set ::gui_cmd_mode 0
             ed-status
@@ -2404,6 +2416,8 @@ proc bind-cmd-mode {w} {
     bind $w <W>     { if {![gui-handle-keypress W]} { %W insert insert W; ed-status }; break }
     bind $w <a>     { if {![gui-handle-keypress a]} { %W insert insert a; ed-status }; break }
     bind $w <A>     { if {![gui-handle-keypress A]} { %W insert insert A; ed-status }; break }
+    bind $w <y>     { if {![gui-handle-keypress y]} { %W insert insert y; ed-status }; break }
+    bind $w <Y>     { if {![gui-handle-keypress Y]} { %W insert insert Y; ed-status }; break }
     bind $w <Alt-t> { if {!$::gui_cmd_mode} { if {$::timer_active} { timer-pause } else { timer-start }; ed-status }; break }
     bind $w <Any-KeyPress> { if {$::gui_cmd_mode} { set k %K; if {$k ne "Escape"} break } }
 }
